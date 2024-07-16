@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace GMEPPlumbing
+namespace GMEPPlumbing.Views
 {
   /// <summary>
   /// Interaction logic for UserControl1.xaml

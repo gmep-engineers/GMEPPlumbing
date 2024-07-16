@@ -30,10 +30,8 @@ C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\bin\Debug\en-US\AppHomeIn
 C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\bin\Debug\en-US\AcMr.resources.dll
 C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\bin\Debug\en-US\AcWindows.resources.dll
 C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\GMEPPlumbing.csproj.AssemblyReference.cache
-C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\UserInterface.g.cs
 C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\GMEPPlumbing_MarkupCompile.cache
 C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\GMEPPlumbing_MarkupCompile.lref
-C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\UserInterface.baml
 C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\GMEPPlumbing.g.resources
 C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\GMEPPlumbing.Properties.Resources.resources
 C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\GMEPPlumbing.csproj.GenerateResource.cache
@@ -41,3 +39,5 @@ C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\GMEPPlumbing.cs
 C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\GMEPPlumbing.csproj.CopyComplete
 C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\GMEPPlumbing.dll
 C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\GMEPPlumbing.pdb
+C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\Views\UserInterface.g.cs
+C:\Users\JacobH\source\repos\GMEPPlumbing\GMEPPlumbing\obj\Debug\Views\UserInterface.baml

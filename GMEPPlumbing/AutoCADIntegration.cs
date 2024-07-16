@@ -1,8 +1,6 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.Runtime;
+﻿using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
-using System.Drawing;
-using System.Windows;
+using GMEPPlumbing.Views;
 using System.Windows.Forms.Integration;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
