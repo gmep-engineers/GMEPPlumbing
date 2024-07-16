@@ -6,7 +6,122 @@
              xmlns:local="clr-namespace:GMEPPlumbing"
              mc:Ignorable="d"
              d:DesignHeight="720" d:DesignWidth="1280">
-    <Grid>
-        <TextBlock Text="Hello from WPF in AutoCAD!" HorizontalAlignment="Center" VerticalAlignment="Center" />
+    <Grid Background="#FF2D2D30">
+        <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Set 1 -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="Low Pressure:"
+               Foreground="#FFFFFF"
+               Margin="0,0,0,5" />
+            <TextBox Grid.Row="1" Grid.Column="0"
+             Width="150"
+             HorizontalAlignment="Left"
+             Background="#FF3E3E42"
+             Foreground="#FFFFFF" />
+            <TextBlock Grid.Row="1" Grid.Column="1"
+               Text="psi"
+               Foreground="#FFFFFF"
+               Margin="5,0,0,0"
+               VerticalAlignment="Center" />
+
+            <!-- Set 2 -->
+            <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="High Pressure:"
+               Foreground="#FFFFFF"
+               Margin="0,10,0,5" />
+            <TextBox Grid.Row="3" Grid.Column="0"
+             Width="150"
+             HorizontalAlignment="Left"
+             Background="#FF3E3E42"
+             Foreground="#FFFFFF" />
+            <TextBlock Grid.Row="3" Grid.Column="1"
+               Text="psi"
+               Foreground="#FFFFFF"
+               Margin="5,0,0,0"
+               VerticalAlignment="Center" />
+
+            <!-- Set 3 -->
+            <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="System Length:"
+               Foreground="#FFFFFF"
+               Margin="0,10,0,5" />
+            <TextBox Grid.Row="5" Grid.Column="0"
+             Width="150"
+             HorizontalAlignment="Left"
+             Background="#FF3E3E42"
+             Foreground="#FFFFFF" />
+            <TextBlock Grid.Row="5" Grid.Column="1"
+               Text="ft"
+               Foreground="#FFFFFF"
+               Margin="5,0,0,0"
+               VerticalAlignment="Center" />
+
+            <!-- Set 4 -->
+            <TextBlock Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="Fixture Calculation:"
+               Foreground="#FFFFFF"
+               Margin="0,10,0,5" />
+            <TextBox Grid.Row="7" Grid.Column="0"
+             Width="150"
+             HorizontalAlignment="Left"
+             Background="#FF3E3E42"
+             Foreground="#FFFFFF" />
+            <TextBlock Grid.Row="7" Grid.Column="1"
+               Text="gpm"
+               Foreground="#FFFFFF"
+               Margin="5,0,0,0"
+               VerticalAlignment="Center" />
+
+            <!-- Set 5 -->
+            <TextBlock Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="Meter Size:"
+               Foreground="#FFFFFF"
+               Margin="0,10,0,5" />
+            <TextBox Grid.Row="9" Grid.Column="0"
+             Width="150"
+             HorizontalAlignment="Left"
+             Background="#FF3E3E42"
+             Foreground="#FFFFFF" />
+            <TextBlock Grid.Row="9" Grid.Column="1"
+               Text="in"
+               Foreground="#FFFFFF"
+               Margin="5,0,0,0"
+               VerticalAlignment="Center" />
+
+            <!-- Set 6 -->
+            <TextBlock Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="Elevation:"
+               Foreground="#FFFFFF"
+               Margin="0,10,0,5" />
+            <TextBox Grid.Row="11" Grid.Column="0"
+             Width="150"
+             HorizontalAlignment="Left"
+             Background="#FF3E3E42"
+             Foreground="#FFFFFF" />
+            <TextBlock Grid.Row="11" Grid.Column="1"
+               Text="ft"
+               Foreground="#FFFFFF"
+               Margin="5,0,0,0"
+               VerticalAlignment="Center" />
+        </Grid>
     </Grid>
 </UserControl>
