@@ -60,13 +60,14 @@
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Services\WaterStaticLossService.cs" />
     <Compile Include="ViewModels\WaterSystemViewModel.cs" />
     <Page Include="Views\UserInterface.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Compile Include="AutoCADIntegration.cs" />
-    <Compile Include="Services\WaterCalculationService.cs" />
+    <Compile Include="Services\WaterMeterLossCalculationService.cs" />
     <Compile Include="Views\UserInterface.xaml.cs">
       <DependentUpon>UserInterface.xaml</DependentUpon>
       <SubType>Code</SubType>

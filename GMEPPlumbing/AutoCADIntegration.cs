@@ -16,7 +16,7 @@ namespace GMEPPlumbing
       var host = new ElementHost();
       host.Child = myControl;
 
-      var pw = new PaletteSet("GMEP Plumbing Service Calculator");
+      var pw = new PaletteSet("GMEP Plumbing Water Calculator");
       pw.Style = PaletteSetStyles.ShowAutoHideButton |
                  PaletteSetStyles.ShowCloseButton |
                  PaletteSetStyles.ShowPropertiesMenu;

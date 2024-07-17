@@ -1,15 +1,19 @@
 ﻿using GMEPPlumbing.Services;
+using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace GMEPPlumbing.ViewModels
 {
   public class WaterSystemViewModel : INotifyPropertyChanged
   {
-    private readonly WaterCalculationService _calculationService;
+    private readonly WaterMeterLossCalculationService _waterMeterLossService;
+    private readonly WaterStaticLossService _waterStaticLossService;
 
-    public WaterSystemViewModel(WaterCalculationService calculationService)
+    public WaterSystemViewModel(WaterMeterLossCalculationService waterMeterLoss, WaterStaticLossService elevationStaticLoss)
     {
-      _calculationService = calculationService;
+      _waterMeterLossService = waterMeterLoss;
+      _waterStaticLossService = elevationStaticLoss;
     }
 
     private double _lowPressure;
@@ -19,9 +23,11 @@ namespace GMEPPlumbing.ViewModels
       get => _lowPressure;
       set
       {
-        _lowPressure = value;
-        OnPropertyChanged(nameof(LowPressure));
-        CalculateAveragePressureDrop();
+        if (_lowPressure != value)
+        {
+          _lowPressure = value;
+          OnPropertyChanged();
+        }
       }
     }
 
@@ -32,33 +38,120 @@ namespace GMEPPlumbing.ViewModels
       get => _highPressure;
       set
       {
-        _highPressure = value;
-        OnPropertyChanged(nameof(HighPressure));
-        CalculateAveragePressureDrop();
+        if (_highPressure != value)
+        {
+          _highPressure = value;
+          OnPropertyChanged();
+        }
       }
     }
 
-    private double _averagePressureDrop;
+    private double _systemLength;
 
-    public double AveragePressureDrop
+    public double SystemLength
     {
-      get => _averagePressureDrop;
+      get => _systemLength;
       set
       {
-        _averagePressureDrop = value;
-        OnPropertyChanged(nameof(AveragePressureDrop));
+        if (_systemLength != value)
+        {
+          _systemLength = value;
+          OnPropertyChanged();
+        }
       }
     }
 
-    private void CalculateAveragePressureDrop()
+    private double _fixtureCalculation;
+
+    public double FixtureCalculation
     {
-      AveragePressureDrop = _calculationService.CalculateAveragePressureDrop(LowPressure, HighPressure);
+      get => _fixtureCalculation;
+      set
+      {
+        if (_fixtureCalculation != value)
+        {
+          _fixtureCalculation = value;
+          OnPropertyChanged();
+          CalculateMeterLoss();
+        }
+      }
     }
 
-    // Implement INotifyPropertyChanged
+    private double _meterSize;
+
+    public double MeterSize
+    {
+      get => _meterSize;
+      set
+      {
+        if (_meterSize != value)
+        {
+          _meterSize = value;
+          OnPropertyChanged();
+          CalculateMeterLoss();
+        }
+      }
+    }
+
+    private double _elevation;
+
+    public double Elevation
+    {
+      get => _elevation;
+      set
+      {
+        if (_elevation != value)
+        {
+          _elevation = value;
+          OnPropertyChanged();
+          CalculateStaticLoss();
+        }
+      }
+    }
+
+    private double _meterLoss;
+
+    public double MeterLoss
+    {
+      get => _meterLoss;
+      private set
+      {
+        if (_meterLoss != value)
+        {
+          _meterLoss = value;
+          OnPropertyChanged();
+        }
+      }
+    }
+
+    private double _staticLoss;
+
+    public double StaticLoss
+    {
+      get => _staticLoss;
+      private set
+      {
+        if (_staticLoss != value)
+        {
+          _staticLoss = value;
+          OnPropertyChanged();
+        }
+      }
+    }
+
+    private void CalculateMeterLoss()
+    {
+      MeterLoss = _waterMeterLossService.CalculateWaterMeterLoss(MeterSize, FixtureCalculation);
+    }
+
+    private void CalculateStaticLoss()
+    {
+      StaticLoss = _waterStaticLossService.CalculateStaticLoss(Elevation);
+    }
+
     public event PropertyChangedEventHandler PropertyChanged;
 
-    protected virtual void OnPropertyChanged(string propertyName)
+    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
     {
       PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using GMEPPlumbing.Services;
+using GMEPPlumbing.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,14 +17,12 @@ using System.Windows.Shapes;
 
 namespace GMEPPlumbing.Views
 {
-  /// <summary>
-  /// Interaction logic for UserControl1.xaml
-  /// </summary>
   public partial class UserInterface : UserControl
   {
     public UserInterface()
     {
       InitializeComponent();
+      DataContext = new WaterSystemViewModel(new WaterMeterLossCalculationService(), new WaterStaticLossService());
     }
   }
 }
