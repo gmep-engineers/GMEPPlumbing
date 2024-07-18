@@ -60,8 +60,11 @@
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Services\WaterRemainingPressurePer100FeetService.cs" />
+    <Compile Include="Services\WaterDevelopedLengthService.cs" />
+    <Compile Include="Services\WaterPressureAvailableService.cs" />
     <Compile Include="Services\WaterStaticLossService.cs" />
-    <Compile Include="Services\WaterTotalLoss.cs" />
+    <Compile Include="Services\WaterTotalLossService.cs" />
     <Compile Include="ViewModels\WaterSystemViewModel.cs" />
     <Page Include="Views\UserInterface.xaml">
       <Generator>MSBuild:Compile</Generator>

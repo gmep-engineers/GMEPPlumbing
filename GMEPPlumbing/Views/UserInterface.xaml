@@ -57,7 +57,9 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding LowPressure, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding LowPressure, UpdateSourceTrigger=PropertyChanged}"
+             GotFocus="TextBox_GotFocus" />
+
             <TextBlock Grid.Row="1" Grid.Column="1"
                Text="psi"
                Foreground="#FFFFFF"
@@ -74,7 +76,8 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding HighPressure, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding HighPressure, UpdateSourceTrigger=PropertyChanged}"
+             GotFocus="TextBox_GotFocus" />
             <TextBlock Grid.Row="3" Grid.Column="1"
                Text="psi"
                Foreground="#FFFFFF"
@@ -91,7 +94,8 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding RequiredPressure, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding RequiredPressure, UpdateSourceTrigger=PropertyChanged}"
+             GotFocus="TextBox_GotFocus" />
             <TextBlock Grid.Row="5" Grid.Column="1"
                Text="psi"
                Foreground="#FFFFFF"
@@ -108,7 +112,8 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding SystemLength, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding SystemLength, UpdateSourceTrigger=PropertyChanged}"
+             GotFocus="TextBox_GotFocus" />
             <TextBlock Grid.Row="7" Grid.Column="1"
                Text="ft"
                Foreground="#FFFFFF"
@@ -125,7 +130,8 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding FixtureCalculation, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding FixtureCalculation, UpdateSourceTrigger=PropertyChanged}"
+             GotFocus="TextBox_GotFocus" />
             <TextBlock Grid.Row="9" Grid.Column="1"
                Text="gpm"
                Foreground="#FFFFFF"
@@ -142,7 +148,7 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding MeterSize, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding MeterSize, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" />
             <TextBlock Grid.Row="11" Grid.Column="1"
                Text="in"
                Foreground="#FFFFFF"
@@ -159,7 +165,7 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding Elevation, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding Elevation, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" />
             <TextBlock Grid.Row="13" Grid.Column="1"
                Text="ft"
                Foreground="#FFFFFF"
@@ -176,7 +182,7 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding BackflowPressureLoss, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding BackflowPressureLoss, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" />
             <TextBlock Grid.Row="15" Grid.Column="1"
                Text="psi"
                Foreground="#FFFFFF"
@@ -193,7 +199,7 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding PRVPressureLoss, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding PRVPressureLoss, UpdateSourceTrigger=PropertyChanged}"  GotFocus="TextBox_GotFocus" />
             <TextBlock Grid.Row="17" Grid.Column="1"
                Text="psi"
                Foreground="#FFFFFF"
@@ -255,7 +261,7 @@
                        Margin="0,10,0,5" />
             <!-- Developed Length Value -->
             <TextBlock Grid.Row="28" Grid.Column="0"
-                       Text="{Binding DevelopedLength, StringFormat={}{0} ft}"
+                       Text="{Binding DevelopedLength, StringFormat={}{0:F1} ft}"
                        Foreground="#FFFFFF"
                        HorizontalAlignment="Left" />
 

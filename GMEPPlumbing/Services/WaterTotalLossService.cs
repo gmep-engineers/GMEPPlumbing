@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GMEPPlumbing.Services
 {
-  public class WaterTotalLoss
+  public class WaterTotalLossService
   {
     public double CalculateTotalLoss(double meterLoss, double staticLoss, double requiredPressure, double backflowLoss)
     {

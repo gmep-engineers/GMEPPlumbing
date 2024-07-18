@@ -22,7 +22,18 @@ namespace GMEPPlumbing.Views
     public UserInterface()
     {
       InitializeComponent();
-      DataContext = new WaterSystemViewModel(new WaterMeterLossCalculationService(), new WaterStaticLossService(), new WaterTotalLoss());
+      DataContext = new WaterSystemViewModel(new WaterMeterLossCalculationService(), new WaterStaticLossService(), new WaterTotalLossService(), new WaterPressureAvailableService(), new WaterDevelopedLengthService(), new WaterRemainingPressurePer100FeetService());
+    }
+
+    private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+    {
+      if (sender is TextBox textBox)
+      {
+        textBox.Dispatcher.BeginInvoke(new Action(() =>
+        {
+          textBox.SelectAll();
+        }), System.Windows.Threading.DispatcherPriority.Input);
+      }
     }
   }
 }

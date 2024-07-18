@@ -9,13 +9,19 @@ namespace GMEPPlumbing.ViewModels
   {
     private readonly WaterMeterLossCalculationService _waterMeterLossService;
     private readonly WaterStaticLossService _waterStaticLossService;
-    private readonly WaterTotalLoss _waterTotalLoss;
+    private readonly WaterTotalLossService _waterTotalLossService;
+    private readonly WaterPressureAvailableService _waterPressureAvailableService;
+    private readonly WaterDevelopedLengthService _waterDevelopedLengthService;
+    private readonly WaterRemainingPressurePer100FeetService _waterRemainingPressurePer100FeetService;
 
-    public WaterSystemViewModel(WaterMeterLossCalculationService waterMeterLoss, WaterStaticLossService elevationStaticLoss, WaterTotalLoss waterTotalLoss)
+    public WaterSystemViewModel(WaterMeterLossCalculationService waterMeterLoss, WaterStaticLossService elevationStaticLoss, WaterTotalLossService waterTotalLoss, WaterPressureAvailableService waterPressureAvailable, WaterDevelopedLengthService waterDevelopedLength, WaterRemainingPressurePer100FeetService waterRemainingPressurePer100Feet)
     {
       _waterMeterLossService = waterMeterLoss;
       _waterStaticLossService = elevationStaticLoss;
-      _waterTotalLoss = waterTotalLoss;
+      _waterTotalLossService = waterTotalLoss;
+      _waterPressureAvailableService = waterPressureAvailable;
+      _waterDevelopedLengthService = waterDevelopedLength;
+      _waterRemainingPressurePer100FeetService = waterRemainingPressurePer100Feet;
     }
 
     private double _lowPressure;
@@ -29,6 +35,7 @@ namespace GMEPPlumbing.ViewModels
         {
           _lowPressure = value;
           OnPropertyChanged();
+          CalculateWaterPressureAvailable();
         }
       }
     }
@@ -75,6 +82,7 @@ namespace GMEPPlumbing.ViewModels
         {
           _systemLength = value;
           OnPropertyChanged();
+          CalculateWaterDevelopedLength();
         }
       }
     }
@@ -186,6 +194,7 @@ namespace GMEPPlumbing.ViewModels
         {
           _staticLoss = value;
           OnPropertyChanged();
+          CalculateTotalLoss();
         }
       }
     }
@@ -201,6 +210,7 @@ namespace GMEPPlumbing.ViewModels
         {
           _totalLoss = value;
           OnPropertyChanged();
+          CalculateWaterPressureAvailable();
         }
       }
     }
@@ -216,6 +226,7 @@ namespace GMEPPlumbing.ViewModels
         {
           _pressureAvailable = value;
           OnPropertyChanged();
+          CalculateWaterPressureRemainingPer100Feet();
         }
       }
     }
@@ -231,6 +242,7 @@ namespace GMEPPlumbing.ViewModels
         {
           _developedLength = value;
           OnPropertyChanged();
+          CalculateWaterPressureRemainingPer100Feet();
         }
       }
     }
@@ -262,7 +274,22 @@ namespace GMEPPlumbing.ViewModels
 
     private void CalculateTotalLoss()
     {
-      TotalLoss = _waterTotalLoss.CalculateTotalLoss(MeterLoss, StaticLoss, RequiredPressure, BackflowPressureLoss);
+      TotalLoss = _waterTotalLossService.CalculateTotalLoss(MeterLoss, StaticLoss, RequiredPressure, BackflowPressureLoss);
+    }
+
+    private void CalculateWaterPressureAvailable()
+    {
+      PressureAvailable = _waterPressureAvailableService.CalculateAvailableWaterPressure(LowPressure, TotalLoss);
+    }
+
+    private void CalculateWaterDevelopedLength()
+    {
+      DevelopedLength = _waterDevelopedLengthService.CalculateDevelopedLength(SystemLength);
+    }
+
+    private void CalculateWaterPressureRemainingPer100Feet()
+    {
+      AveragePressureDrop = _waterRemainingPressurePer100FeetService.CalculateRemainingPressurePer100Feet(PressureAvailable, DevelopedLength);
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
