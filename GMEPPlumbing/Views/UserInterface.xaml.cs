@@ -22,7 +22,7 @@ namespace GMEPPlumbing.Views
     public UserInterface()
     {
       InitializeComponent();
-      DataContext = new WaterSystemViewModel(new WaterMeterLossCalculationService(), new WaterStaticLossService());
+      DataContext = new WaterSystemViewModel(new WaterMeterLossCalculationService(), new WaterStaticLossService(), new WaterTotalLoss());
     }
   }
 }

@@ -61,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Services\WaterStaticLossService.cs" />
+    <Compile Include="Services\WaterTotalLoss.cs" />
     <Compile Include="ViewModels\WaterSystemViewModel.cs" />
     <Page Include="Views\UserInterface.xaml">
       <Generator>MSBuild:Compile</Generator>

@@ -5,10 +5,25 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:GMEPPlumbing"
              mc:Ignorable="d"
-             d:DesignHeight="720" d:DesignWidth="1280">
+             d:DesignHeight="1200" d:DesignWidth="1280">
     <Grid Background="#FF2D2D30">
         <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -66,9 +81,9 @@
                Margin="5,0,0,0"
                VerticalAlignment="Center" />
 
-            <!-- Set 3: System Length -->
+            <!-- Set 3: Required Pressure -->
             <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
-               Text="System Length:"
+               Text="Required Pressure:"
                Foreground="#FFFFFF"
                Margin="0,10,0,5" />
             <TextBox Grid.Row="5" Grid.Column="0"
@@ -76,16 +91,16 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding SystemLength, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding RequiredPressure, UpdateSourceTrigger=PropertyChanged}" />
             <TextBlock Grid.Row="5" Grid.Column="1"
-               Text="ft"
+               Text="psi"
                Foreground="#FFFFFF"
                Margin="5,0,0,0"
                VerticalAlignment="Center" />
 
-            <!-- Set 4: Fixture Calculation -->
+            <!-- Set 4: System Length -->
             <TextBlock Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
-               Text="Fixture Calculation:"
+               Text="System Length:"
                Foreground="#FFFFFF"
                Margin="0,10,0,5" />
             <TextBox Grid.Row="7" Grid.Column="0"
@@ -93,16 +108,16 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding FixtureCalculation, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding SystemLength, UpdateSourceTrigger=PropertyChanged}" />
             <TextBlock Grid.Row="7" Grid.Column="1"
-               Text="gpm"
+               Text="ft"
                Foreground="#FFFFFF"
                Margin="5,0,0,0"
                VerticalAlignment="Center" />
 
-            <!-- Set 5: Meter Size -->
+            <!-- Set 5: Fixture Calculation -->
             <TextBlock Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2"
-               Text="Meter Size:"
+               Text="Fixture Calculation:"
                Foreground="#FFFFFF"
                Margin="0,10,0,5" />
             <TextBox Grid.Row="9" Grid.Column="0"
@@ -110,16 +125,16 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding MeterSize, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding FixtureCalculation, UpdateSourceTrigger=PropertyChanged}" />
             <TextBlock Grid.Row="9" Grid.Column="1"
-               Text="in"
+               Text="gpm"
                Foreground="#FFFFFF"
                Margin="5,0,0,0"
                VerticalAlignment="Center" />
 
-            <!-- Set 6: Elevation -->
+            <!-- Set 6: Meter Size -->
             <TextBlock Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2"
-               Text="Elevation:"
+               Text="Meter Size:"
                Foreground="#FFFFFF"
                Margin="0,10,0,5" />
             <TextBox Grid.Row="11" Grid.Column="0"
@@ -127,35 +142,131 @@
              HorizontalAlignment="Left"
              Background="#FF3E3E42"
              Foreground="#FFFFFF"
-             Text="{Binding Elevation, UpdateSourceTrigger=PropertyChanged}" />
+             Text="{Binding MeterSize, UpdateSourceTrigger=PropertyChanged}" />
             <TextBlock Grid.Row="11" Grid.Column="1"
+               Text="in"
+               Foreground="#FFFFFF"
+               Margin="5,0,0,0"
+               VerticalAlignment="Center" />
+
+            <!-- Set 7: Elevation -->
+            <TextBlock Grid.Row="12" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="Elevation:"
+               Foreground="#FFFFFF"
+               Margin="0,10,0,5" />
+            <TextBox Grid.Row="13" Grid.Column="0"
+             Width="150"
+             HorizontalAlignment="Left"
+             Background="#FF3E3E42"
+             Foreground="#FFFFFF"
+             Text="{Binding Elevation, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Grid.Row="13" Grid.Column="1"
                Text="ft"
                Foreground="#FFFFFF"
                Margin="5,0,0,0"
                VerticalAlignment="Center" />
 
-            <Rectangle Grid.Row="12" Grid.Column="0" Grid.ColumnSpan="2" Height="1" Fill="#FF3E3E42" Margin="0,20,0,20" />
+            <!-- Set 8: Backflow Pressure Loss (New) -->
+            <TextBlock Grid.Row="14" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="Backflow Pressure Loss:"
+               Foreground="#FFFFFF"
+               Margin="0,10,0,5" />
+            <TextBox Grid.Row="15" Grid.Column="0"
+             Width="150"
+             HorizontalAlignment="Left"
+             Background="#FF3E3E42"
+             Foreground="#FFFFFF"
+             Text="{Binding BackflowPressureLoss, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Grid.Row="15" Grid.Column="1"
+               Text="psi"
+               Foreground="#FFFFFF"
+               Margin="5,0,0,0"
+               VerticalAlignment="Center" />
+
+            <!-- Set 9: PRV Pressure Loss (New) -->
+            <TextBlock Grid.Row="16" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="PRV Pressure Loss:"
+               Foreground="#FFFFFF"
+               Margin="0,10,0,5" />
+            <TextBox Grid.Row="17" Grid.Column="0"
+             Width="150"
+             HorizontalAlignment="Left"
+             Background="#FF3E3E42"
+             Foreground="#FFFFFF"
+             Text="{Binding PRVPressureLoss, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Grid.Row="17" Grid.Column="1"
+               Text="psi"
+               Foreground="#FFFFFF"
+               Margin="5,0,0,0"
+               VerticalAlignment="Center" />
+
+            <Rectangle Grid.Row="18" Grid.Column="0" Grid.ColumnSpan="2" Height="1" Fill="#FF3E3E42" Margin="0,20,0,20" />
 
             <!-- Meter Loss Label -->
-            <TextBlock Grid.Row="13" Grid.Column="0" Grid.ColumnSpan="2"
+            <TextBlock Grid.Row="19" Grid.Column="0" Grid.ColumnSpan="2"
                        Text="Meter Loss:"
                        Foreground="#FFFFFF"
                        Margin="0,10,0,5" />
 
             <!-- Meter Loss Value -->
-            <TextBlock Grid.Row="14" Grid.Column="0"
-                       Text="{Binding MeterLoss, StringFormat={}{0} psi}"
+            <TextBlock Grid.Row="20" Grid.Column="0"
+                       Text="{Binding MeterLoss, StringFormat={}{0:F1} psi}"
                        Foreground="#FFFFFF"
                        HorizontalAlignment="Left" />
 
             <!-- Static Loss Label -->
-            <TextBlock Grid.Row="15" Grid.Column="0" Grid.ColumnSpan="2"
+            <TextBlock Grid.Row="21" Grid.Column="0" Grid.ColumnSpan="2"
                        Text="Static Loss:"
                        Foreground="#FFFFFF"
                        Margin="0,10,0,5" />
             <!-- Static Loss Value -->
-            <TextBlock Grid.Row="16" Grid.Column="0"
-                       Text="{Binding StaticLoss, StringFormat={}{0} psi}"
+            <TextBlock Grid.Row="22" Grid.Column="0"
+                       Text="{Binding StaticLoss, StringFormat={}{0:F1} psi}"
+                       Foreground="#FFFFFF"
+                       HorizontalAlignment="Left" />
+
+            <!-- Total Loss Label -->
+            <TextBlock Grid.Row="23" Grid.Column="0" Grid.ColumnSpan="2"
+                       Text="Total Loss:"
+                       Foreground="#FFFFFF"
+                       Margin="0,10,0,5" />
+            <!-- Total Loss Value -->
+            <TextBlock Grid.Row="24" Grid.Column="0"
+                       Text="{Binding TotalLoss, StringFormat={}{0:F1} psi}"
+                       Foreground="#FFFFFF"
+                       HorizontalAlignment="Left" />
+
+            <!-- Pressure Available Label -->
+            <TextBlock Grid.Row="25" Grid.Column="0" Grid.ColumnSpan="2"
+                       Text="Pressure Available:"
+                       Foreground="#FFFFFF"
+                       Margin="0,10,0,5" />
+            <!-- Pressure Available Value -->
+            <TextBlock Grid.Row="26" Grid.Column="0"
+                       Text="{Binding PressureAvailable, StringFormat={}{0:F1} psi}"
+
+                       Foreground="#FFFFFF"
+                       HorizontalAlignment="Left" />
+
+            <!-- Developed Length Label -->
+            <TextBlock Grid.Row="27" Grid.Column="0" Grid.ColumnSpan="2"
+                       Text="Developed Length:"
+                       Foreground="#FFFFFF"
+                       Margin="0,10,0,5" />
+            <!-- Developed Length Value -->
+            <TextBlock Grid.Row="28" Grid.Column="0"
+                       Text="{Binding DevelopedLength, StringFormat={}{0} ft}"
+                       Foreground="#FFFFFF"
+                       HorizontalAlignment="Left" />
+
+            <!-- Average Pressure Drop Label -->
+            <TextBlock Grid.Row="29" Grid.Column="0" Grid.ColumnSpan="2"
+                       Text="Average Pressure Drop per 100ft:"
+                       Foreground="#FFFFFF"
+                       Margin="0,10,0,5" />
+            <!-- Average Pressure Drop Value -->
+            <TextBlock Grid.Row="30" Grid.Column="0"
+                       Text="{Binding AveragePressureDrop, StringFormat={}{0:F1} psi}"
                        Foreground="#FFFFFF"
                        HorizontalAlignment="Left" />
         </Grid>
