@@ -150,11 +150,29 @@
             <TextBlock Text="Static Loss:" Foreground="#FFFFFF" Margin="0,10,0,5" />
             <TextBlock Text="{Binding StaticLoss, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
 
-            <TextBlock Text="Total Loss:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="Backflow Loss:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding BackflowPressureLoss, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="PRV Loss:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding PRVPressureLoss, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Additional Losses:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding AdditionalLossesTotal, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Minimum Pressure Required:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding PressureRequiredOrAtUnit, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Total Losses:" Foreground="#FFFFFF" Margin="0,10,0,5" />
             <TextBlock Text="{Binding TotalLoss, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
 
-            <TextBlock Text="Pressure Available:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="Minimum Street Pressure:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding StreetLowPressure, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Pressure Available for Friction:" Foreground="#FFFFFF" Margin="0,10,0,5" />
             <TextBlock Text="{Binding PressureAvailable, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Actual Length of System:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding SystemLength, StringFormat={}{0:F1} ft}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
 
             <TextBlock Text="Developed Length:" Foreground="#FFFFFF" Margin="0,10,0,5" />
             <TextBlock Text="{Binding DevelopedLength, StringFormat={}{0:F1} ft}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
