@@ -24,47 +24,47 @@ namespace GMEPPlumbing.ViewModels
       _waterRemainingPressurePer100FeetService = waterRemainingPressurePer100Feet;
     }
 
-    private double _lowPressure;
+    private double _streetLowPressure;
 
-    public double LowPressure
+    public double StreetLowPressure
     {
-      get => _lowPressure;
+      get => _streetLowPressure;
       set
       {
-        if (_lowPressure != value)
+        if (_streetLowPressure != value)
         {
-          _lowPressure = value;
+          _streetLowPressure = value;
           OnPropertyChanged();
           CalculateWaterPressureAvailable();
         }
       }
     }
 
-    private double _highPressure;
+    private double _streetHighPressure;
 
-    public double HighPressure
+    public double StreetHighPressure
     {
-      get => _highPressure;
+      get => _streetHighPressure;
       set
       {
-        if (_highPressure != value)
+        if (_streetHighPressure != value)
         {
-          _highPressure = value;
+          _streetHighPressure = value;
           OnPropertyChanged();
         }
       }
     }
 
-    private double _requiredPressure;
+    private double _pressureRequiredOrAtUnit;
 
-    public double RequiredPressure
+    public double PressureRequiredOrAtUnit
     {
-      get => _requiredPressure;
+      get => _pressureRequiredOrAtUnit;
       set
       {
-        if (_requiredPressure != value)
+        if (_pressureRequiredOrAtUnit != value)
         {
-          _requiredPressure = value;
+          _pressureRequiredOrAtUnit = value;
           OnPropertyChanged();
           CalculateTotalLoss();
         }
@@ -274,12 +274,12 @@ namespace GMEPPlumbing.ViewModels
 
     private void CalculateTotalLoss()
     {
-      TotalLoss = _waterTotalLossService.CalculateTotalLoss(MeterLoss, StaticLoss, RequiredPressure, BackflowPressureLoss);
+      TotalLoss = _waterTotalLossService.CalculateTotalLoss(MeterLoss, StaticLoss, PressureRequiredOrAtUnit, BackflowPressureLoss);
     }
 
     private void CalculateWaterPressureAvailable()
     {
-      PressureAvailable = _waterPressureAvailableService.CalculateAvailableWaterPressure(LowPressure, TotalLoss);
+      PressureAvailable = _waterPressureAvailableService.CalculateAvailableWaterPressure(StreetLowPressure, TotalLoss);
     }
 
     private void CalculateWaterDevelopedLength()

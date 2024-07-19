@@ -25,7 +25,7 @@ namespace GMEPPlumbing
 
       // Set initial size (this will be used when floating)
       pw.Size = new System.Drawing.Size(600, 800);
-      pw.MinimumSize = new System.Drawing.Size(250, 400);
+      pw.MinimumSize = new System.Drawing.Size(600, 800);
 
       pw.Add("MyTab", host);
 
