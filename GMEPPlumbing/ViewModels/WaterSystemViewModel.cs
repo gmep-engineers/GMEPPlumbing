@@ -470,7 +470,7 @@ namespace GMEPPlumbing.ViewModels
 
     private void CalculateWaterDevelopedLength()
     {
-      DevelopedLength = _waterDevelopedLengthService.CalculateDevelopedLength(SystemLength);
+      DevelopedLength = _waterDevelopedLengthService.CalculateDevelopedLength(SystemLength, DevelopedLengthPercentage);
     }
 
     private void CalculateWaterPressureRemainingPer100Feet()
@@ -504,7 +504,7 @@ namespace GMEPPlumbing.ViewModels
 
     private void CalculateWaterDevelopedLength2()
     {
-      DevelopedLength2 = _waterDevelopedLengthService.CalculateDevelopedLength(SystemLength2);
+      DevelopedLength2 = _waterDevelopedLengthService.CalculateDevelopedLength(SystemLength2, DevelopedLengthPercentage);
     }
 
     private void CalculateWaterPressureRemainingPer100Feet2()
