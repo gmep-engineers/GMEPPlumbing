@@ -8,9 +8,9 @@ namespace GMEPPlumbing.Services
 {
   public class WaterTotalLossService
   {
-    public double CalculateTotalLoss(double meterLoss, double staticLoss, double requiredPressure, double backflowLoss)
+    public double CalculateTotalLoss(double meterLoss, double staticLoss, double requiredPressure, double backflowLoss, double prvLoss, double additionalLosses)
     {
-      return meterLoss + staticLoss + requiredPressure + backflowLoss;
+      return meterLoss + staticLoss + requiredPressure + backflowLoss + prvLoss + additionalLosses;
     }
   }
 }

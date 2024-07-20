@@ -60,6 +60,7 @@
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Services\WaterAdditionalLosses.cs" />
     <Compile Include="Services\WaterRemainingPressurePer100FeetService.cs" />
     <Compile Include="Services\WaterDevelopedLengthService.cs" />
     <Compile Include="Services\WaterPressureAvailableService.cs" />

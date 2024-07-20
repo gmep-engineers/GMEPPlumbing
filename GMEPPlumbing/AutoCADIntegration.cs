@@ -24,8 +24,8 @@ namespace GMEPPlumbing
       pw.DockEnabled = DockSides.Left | DockSides.Right;
 
       // Set initial size (this will be used when floating)
-      pw.Size = new System.Drawing.Size(600, 800);
-      pw.MinimumSize = new System.Drawing.Size(600, 800);
+      pw.Size = new System.Drawing.Size(1280, 800);
+      pw.MinimumSize = new System.Drawing.Size(1280, 800);
 
       pw.Add("MyTab", host);
 

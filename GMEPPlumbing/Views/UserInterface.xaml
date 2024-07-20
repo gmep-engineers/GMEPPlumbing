@@ -8,9 +8,12 @@
              d:DesignHeight="1200" d:DesignWidth="1280">
     <Grid Background="#FF2D2D30">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="10" />
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="10" />
+            <ColumnDefinition Width="250" />
         </Grid.ColumnDefinitions>
 
         <!-- Left Column (Input) -->
@@ -122,8 +125,8 @@
                         <DataTemplate>
                             <Grid Margin="0,0,0,5">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="175" />
-                                    <ColumnDefinition Width="50" />
+                                    <ColumnDefinition Width="125" />
+                                    <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
@@ -136,11 +139,32 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <!-- New Additional Fields Section -->
+                <TextBlock Text="Additional Fields:" Foreground="#FFFFFF" FontWeight="Bold" Margin="0,20,0,10" />
+
+                <CheckBox Content="Existing Meter" Foreground="#FFFFFF" IsChecked="{Binding ExistingMeter}" Margin="0,0,0,5" />
+
+                <TextBlock Text="Pipe Material:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+                <TextBox Width="150" Background="#FF3E3E42" Foreground="#FFFFFF"
+                         Text="{Binding PipeMaterial, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" HorizontalAlignment="Left" />
+
+                <TextBlock Text="Cold Water Max Velocity:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+                <TextBox Width="150" Background="#FF3E3E42" Foreground="#FFFFFF"
+                         Text="{Binding ColdWaterMaxVelocity, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" HorizontalAlignment="Left" />
+
+                <TextBlock Text="Hot Water Max Velocity:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+                <TextBox Width="150" Background="#FF3E3E42" Foreground="#FFFFFF"
+                         Text="{Binding HotWaterMaxVelocity, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" HorizontalAlignment="Left" />
+
+                <TextBlock Text="Developed Length Percentage:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+                <TextBox Width="150" Background="#FF3E3E42" Foreground="#FFFFFF"
+                         Text="{Binding DevelopedLengthPercentage, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" HorizontalAlignment="Left" />
             </StackPanel>
         </ScrollViewer>
 
         <!-- Vertical Line -->
-        <Rectangle Grid.Column="1" Width="1" Fill="#FF3E3E42" Margin="10,20,10,20" VerticalAlignment="Stretch" />
+        <Rectangle Grid.Column="1" Width="1" Fill="#FF3E3E42" Margin="4,20,5,20" VerticalAlignment="Stretch" />
 
         <!-- Right Column (Output) -->
         <StackPanel Grid.Column="2" Margin="20">
@@ -179,6 +203,123 @@
 
             <TextBlock Text="Average Pressure Drop per 100ft:" Foreground="#FFFFFF" Margin="0,10,0,5" />
             <TextBlock Text="{Binding AveragePressureDrop, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+        </StackPanel>
+
+        <!-- Vertical Line -->
+        <Rectangle Grid.Column="2" Width="1" Fill="#FF3E3E42" Margin="4,20,5,20" VerticalAlignment="Stretch" HorizontalAlignment="Right" />
+
+        <!-- Input Column 2 -->
+        <ScrollViewer Grid.Column="3" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20">
+                <!-- Section Header 2 -->
+                <TextBlock Text="Section Header 2:" Foreground="#FFFFFF" Margin="0,0,0,5" />
+                <TextBox Width="150" HorizontalAlignment="Left" Background="#FF3E3E42" Foreground="#FFFFFF"
+                         Text="{Binding SectionHeader2, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" />
+
+                <!-- Pressure Required 2 -->
+                <TextBlock Text="Pressure Required 2:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Width="150" Background="#FF3E3E42" Foreground="#FFFFFF"
+                             Text="{Binding PressureRequired2, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" />
+                    <TextBlock Text="psi" Foreground="#FFFFFF" Margin="5,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Meter Size 2 -->
+                <TextBlock Text="Meter Size 2:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Width="150" Background="#FF3E3E42" Foreground="#FFFFFF"
+                             Text="{Binding MeterSize2, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" />
+                    <TextBlock Text="in" Foreground="#FFFFFF" Margin="5,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Fixture Calculation 2 -->
+                <TextBlock Text="Fixture Calculation 2:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Width="150" Background="#FF3E3E42" Foreground="#FFFFFF"
+                             Text="{Binding FixtureCalculation2, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" />
+                    <TextBlock Text="gpm" Foreground="#FFFFFF" Margin="5,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- System Length 2 -->
+                <TextBlock Text="System Length 2:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Width="150" Background="#FF3E3E42" Foreground="#FFFFFF"
+                             Text="{Binding SystemLength2, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" />
+                    <TextBlock Text="ft" Foreground="#FFFFFF" Margin="5,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Additional Losses 2 -->
+                <TextBlock Text="Additional Losses 2:" Foreground="#FFFFFF" FontWeight="Bold" Margin="0,20,0,10" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="75" />
+                        <ColumnDefinition Width="150" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Title of Loss" Foreground="#FFFFFF" Grid.Column="0" Margin="0,0,10,5" />
+                    <TextBlock Text="Amount of Loss (psi)" Foreground="#FFFFFF" Grid.Column="1" Margin="0,0,0,5" />
+                </Grid>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="75" />
+                        <ColumnDefinition Width="75" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="TitleTextBox2" Grid.Column="0" Margin="0,0,10,0" Background="#FF3E3E42" Foreground="#FFFFFF" />
+                    <TextBox x:Name="ValueTextBox2" Grid.Column="1" Margin="0,0,10,0" Background="#FF3E3E42" Foreground="#FFFFFF" />
+                    <Button Content="Add" Grid.Column="2" Click="AddButton2_Click" Width="60" Background="#FF3E3E42" Foreground="#FFFFFF" />
+                </Grid>
+                <ItemsControl x:Name="DynamicListView2" Margin="0,0,0,20">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="175" />
+                                    <ColumnDefinition Width="50" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Title}" Grid.Column="0" Foreground="#FFFFFF" />
+                                <TextBlock Text="{Binding Amount}" Grid.Column="1" Foreground="#FFFFFF" />
+                                <Button Content="Remove" Grid.Column="2" Click="RemoveButton2_Click"
+                                Width="60" Background="#FF3E3E42" Foreground="#FFFFFF"
+                                Margin="10,0,0,0" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Vertical Line 2 -->
+        <Rectangle Grid.Column="4" Width="1" Fill="#FF3E3E42" Margin="4,20,5,20" VerticalAlignment="Stretch" />
+
+        <!-- Output Column 2 -->
+        <StackPanel Grid.Column="5" Margin="20">
+            <TextBlock Text="Minimum Pressure Required 2:" Foreground="#FFFFFF" Margin="0,0,0,5" />
+            <TextBlock Text="{Binding PressureRequired2, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Meter Loss 2:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding MeterLoss2, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Total Losses 2:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding TotalLoss2, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Water Pressure Available:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding PressureRequiredOrAtUnit, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Pressure Available for Friction 2:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding PressureAvailable2, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Actual Length of System 2:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding SystemLength2, StringFormat={}{0:F1} ft}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Developed Length 2:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding DevelopedLength2, StringFormat={}{0:F1} ft}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <TextBlock Text="Average Pressure Drop 2:" Foreground="#FFFFFF" Margin="0,10,0,5" />
+            <TextBlock Text="{Binding AveragePressureDrop2, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
         </StackPanel>
     </Grid>
 </UserControl>
