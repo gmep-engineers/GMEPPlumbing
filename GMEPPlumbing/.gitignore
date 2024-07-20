@@ -1,0 +1,41 @@
+# Ignore debug build output
+/obj/Debug/
+
+# Ignore packages directory
+/packages/
+
+# Ignore Visual Studio files
+*.user
+*.suo
+.vs/
+
+# Ignore build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Ignore NuGet Packages
+*.nupkg
+# The packages folder can be ignored because of Package Restore
+**/[Pp]ackages/*
+# except build/, which is used as an MSBuild target.
+!**/[Pp]ackages/build/
+
+# Ignore other files
+*.dll
+*.so
+*.dylib
+
+# Ignore appsettings.json as it might contain sensitive information
+appsettings.json
+
+# Ignore project-specific files if they contain sensitive information
+GMEPPlumbing.csproj

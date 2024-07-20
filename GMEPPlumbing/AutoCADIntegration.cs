@@ -1,5 +1,6 @@
 ﻿using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
+using GMEPPlumbing.Services;
 using GMEPPlumbing.Views;
 using System.Windows.Forms.Integration;
 
@@ -12,6 +13,11 @@ namespace GMEPPlumbing
     [CommandMethod("Water")]
     public void Water()
     {
+      // Initialize MongoDB connection
+      MongoDBService.Initialize();
+
+      MongoDBService.AddRandomKeyValuePair();
+
       var myControl = new UserInterface();
       var host = new ElementHost();
       host.Child = myControl;
