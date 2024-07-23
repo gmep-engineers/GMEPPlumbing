@@ -47,6 +47,8 @@ namespace GMEPPlumbing.ViewModels
 
       AdditionalLosses.CollectionChanged += (s, e) => UpdateAdditionalLosses();
       AdditionalLosses2.CollectionChanged += (s, e) => UpdateAdditionalLosses2();
+
+      LoadDataFromMongoDBAsync();
     }
 
     #region Properties for Section 1
@@ -611,6 +613,76 @@ namespace GMEPPlumbing.ViewModels
         AdditionalLosses = new ObservableCollection<AdditionalLoss>(AdditionalLosses),
         AdditionalLosses2 = new ObservableCollection<AdditionalLoss>(AdditionalLosses2)
       };
+    }
+
+    public void UpdatePropertiesFromData(WaterSystemData data)
+    {
+      if (data == null) return;
+
+      SectionHeader1 = data.SectionHeader1;
+      StreetLowPressure = data.StreetLowPressure;
+      StreetHighPressure = data.StreetHighPressure;
+      MeterSize = data.MeterSize;
+      FixtureCalculation = data.FixtureCalculation;
+      Elevation = data.Elevation;
+      BackflowPressureLoss = data.BackflowPressureLoss;
+      PRVPressureLoss = data.PRVPressureLoss;
+      PressureRequiredOrAtUnit = data.PressureRequiredOrAtUnit;
+      SystemLength = data.SystemLength;
+      MeterLoss = data.MeterLoss;
+      StaticLoss = data.StaticLoss;
+      TotalLoss = data.TotalLoss;
+      PressureAvailable = data.PressureAvailable;
+      DevelopedLength = data.DevelopedLength;
+      AveragePressureDrop = data.AveragePressureDrop;
+      AdditionalLossesTotal = data.AdditionalLossesTotal;
+      ExistingMeter = data.ExistingMeter;
+      PipeMaterial = data.PipeMaterial;
+      ColdWaterMaxVelocity = data.ColdWaterMaxVelocity;
+      HotWaterMaxVelocity = data.HotWaterMaxVelocity;
+      DevelopedLengthPercentage = data.DevelopedLengthPercentage;
+
+      SectionHeader2 = data.SectionHeader2;
+      PressureRequired2 = data.PressureRequired2;
+      MeterSize2 = data.MeterSize2;
+      FixtureCalculation2 = data.FixtureCalculation2;
+      SystemLength2 = data.SystemLength2;
+      MeterLoss2 = data.MeterLoss2;
+      TotalLoss2 = data.TotalLoss2;
+      PressureAvailable2 = data.PressureAvailable2;
+      DevelopedLength2 = data.DevelopedLength2;
+      AveragePressureDrop2 = data.AveragePressureDrop2;
+      AdditionalLossesTotal2 = data.AdditionalLossesTotal2;
+
+      AdditionalLosses.Clear();
+      foreach (var loss in data.AdditionalLosses)
+      {
+        AdditionalLosses.Add(loss);
+      }
+
+      AdditionalLosses2.Clear();
+      foreach (var loss in data.AdditionalLosses2)
+      {
+        AdditionalLosses2.Add(loss);
+      }
+    }
+
+    private async void LoadDataFromMongoDBAsync()
+    {
+      try
+      {
+        var data = await MongoDBService.GetDrawingDataAsync(_currentDrawingId);
+        if (data != null)
+        {
+          UpdatePropertiesFromData(data);
+        }
+      }
+      catch (Exception ex)
+      {
+        // Handle any exceptions that occur during data retrieval
+        System.Diagnostics.Debug.WriteLine($"Error loading data from MongoDB: {ex.Message}");
+        // Optionally, you can notify the user about the error
+      }
     }
 
     #endregion INotifyPropertyChanged Implementation
