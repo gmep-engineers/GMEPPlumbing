@@ -1,8 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.EditorInput;
+using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace GMEPPlumbing.Services
 {
@@ -21,70 +24,58 @@ namespace GMEPPlumbing.Services
         IConfiguration configuration = builder.Build();
         var connectionString = configuration.GetConnectionString("MongoDB");
 
-        Console.WriteLine($"Attempting to connect to MongoDB with connection string: {connectionString}");
+        WriteToCommandLine($"Attempting to connect to MongoDB with connection string: {connectionString}");
 
         var settings = MongoClientSettings.FromConnectionString(connectionString);
         settings.ServerSelectionTimeout = TimeSpan.FromSeconds(5);
-
         _client = new MongoClient(settings);
         _database = _client.GetDatabase("GMEPPlumbing");
 
         // Test the connection
         _database.RunCommand((Command<BsonDocument>)"{ping:1}");
-
-        Console.WriteLine("Successfully connected to MongoDB.");
+        WriteToCommandLine("Successfully connected to MongoDB.");
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Failed to initialize MongoDB connection: {ex.Message}");
+        WriteToCommandLine($"Failed to initialize MongoDB connection: {ex.Message}");
         if (ex.InnerException != null)
         {
-          Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+          WriteToCommandLine($"Inner exception: {ex.InnerException.Message}");
         }
         throw;
       }
     }
 
-    public static IMongoCollection<T> GetCollection<T>(string name)
+    public static string GetOrCreateDrawingData(string drawingId)
     {
-      if (_database == null)
+      var collection = _database.GetCollection<BsonDocument>("TestCollection");
+      var filter = Builders<BsonDocument>.Filter.Eq("_id", drawingId);
+      var document = collection.Find(filter).FirstOrDefault();
+
+      if (document == null)
       {
-        Initialize();
+        // Create new document if not found
+        document = new BsonDocument
+        {
+            { "_id", drawingId },
+            { "CreatedAt", DateTime.UtcNow },
+            // Add other initial data as needed
+        };
+        collection.InsertOne(document);
       }
-      return _database.GetCollection<T>(name);
+
+      // Return the document as a string (you might want to serialize it differently based on your needs)
+      return document.ToJson();
     }
 
-    public static void AddRandomKeyValuePair()
+    private static void WriteToCommandLine(string message)
     {
-      try
-      {
-        if (_database == null)
-        {
-          Initialize();
-        }
+      Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\n" + message);
+    }
 
-        var collection = _database.GetCollection<BsonDocument>("TestCollection");
-
-        var randomKey = Guid.NewGuid().ToString();
-        var randomValue = Guid.NewGuid().ToString();
-
-        var document = new BsonDocument
-                {
-                    { randomKey, randomValue }
-                };
-
-        collection.InsertOne(document);
-
-        Console.WriteLine($"Added random key-value pair to TestCollection: {{{randomKey}: {randomValue}}}");
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Failed to add random key-value pair: {ex.Message}");
-        if (ex.InnerException != null)
-        {
-          Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
-        }
-      }
+    internal static void SaveDrawingData(string currentDrawingId, object dataToSave)
+    {
+      return;
     }
   }
 }

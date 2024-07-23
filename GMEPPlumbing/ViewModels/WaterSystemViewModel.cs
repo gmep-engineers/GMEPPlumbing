@@ -1,5 +1,5 @@
 ﻿using GMEPPlumbing.Services;
-using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -15,6 +15,10 @@ namespace GMEPPlumbing.ViewModels
     private readonly WaterRemainingPressurePer100FeetService _waterRemainingPressurePer100FeetService;
     private readonly WaterAdditionalLosses _waterAdditionalLossesService;
     private readonly WaterAdditionalLosses _waterAdditionalLossesService2;
+    private readonly string _currentDrawingId;
+
+    public ObservableCollection<AdditionalLoss> AdditionalLosses { get; set; }
+    public ObservableCollection<AdditionalLoss> AdditionalLosses2 { get; set; }
 
     public WaterSystemViewModel(
         WaterMeterLossCalculationService waterMeterLoss,
@@ -24,7 +28,8 @@ namespace GMEPPlumbing.ViewModels
         WaterDevelopedLengthService waterDevelopedLength,
         WaterRemainingPressurePer100FeetService waterRemainingPressurePer100Feet,
         WaterAdditionalLosses waterAdditionalLossesService,
-        WaterAdditionalLosses waterAdditionalLossesService2)
+        WaterAdditionalLosses waterAdditionalLossesService2,
+        string currentDrawingId)
     {
       _waterMeterLossService = waterMeterLoss;
       _waterStaticLossService = waterStaticLoss;
@@ -34,6 +39,35 @@ namespace GMEPPlumbing.ViewModels
       _waterRemainingPressurePer100FeetService = waterRemainingPressurePer100Feet;
       _waterAdditionalLossesService = waterAdditionalLossesService;
       _waterAdditionalLossesService2 = waterAdditionalLossesService2;
+      _currentDrawingId = currentDrawingId;
+
+      AdditionalLosses = new ObservableCollection<AdditionalLoss>();
+      AdditionalLosses2 = new ObservableCollection<AdditionalLoss>();
+
+      AdditionalLosses.CollectionChanged += (s, e) => UpdateAdditionalLosses();
+      AdditionalLosses2.CollectionChanged += (s, e) => UpdateAdditionalLosses2();
+
+      MongoDBService.GetOrCreateDrawingData(_currentDrawingId);
+    }
+
+    public void AddAdditionalLoss(string title, string amount)
+    {
+      AdditionalLosses.Add(new AdditionalLoss { Title = title, Amount = amount });
+    }
+
+    public void AddAdditionalLoss2(string title, string amount)
+    {
+      AdditionalLosses2.Add(new AdditionalLoss { Title = title, Amount = amount });
+    }
+
+    public void RemoveAdditionalLoss(AdditionalLoss loss)
+    {
+      AdditionalLosses.Remove(loss);
+    }
+
+    public void RemoveAdditionalLoss2(AdditionalLoss loss)
+    {
+      AdditionalLosses2.Remove(loss);
     }
 
     #region Properties for Section 1
@@ -480,7 +514,7 @@ namespace GMEPPlumbing.ViewModels
 
     public void UpdateAdditionalLosses()
     {
-      AdditionalLossesTotal = _waterAdditionalLossesService.CalculateTotalAdditionalLosses();
+      AdditionalLossesTotal = _waterAdditionalLossesService.CalculateTotalAdditionalLosses(AdditionalLosses);
     }
 
     #endregion Calculation Methods for Section 1
@@ -514,7 +548,7 @@ namespace GMEPPlumbing.ViewModels
 
     public void UpdateAdditionalLosses2()
     {
-      AdditionalLossesTotal2 = _waterAdditionalLossesService2.CalculateTotalAdditionalLosses();
+      AdditionalLossesTotal2 = _waterAdditionalLossesService2.CalculateTotalAdditionalLosses(AdditionalLosses2);
     }
 
     #endregion Calculation Methods for Section 2
@@ -537,5 +571,11 @@ namespace GMEPPlumbing.ViewModels
     }
 
     #endregion INotifyPropertyChanged Implementation
+  }
+
+  public class AdditionalLoss
+  {
+    public string Title { get; set; }
+    public string Amount { get; set; }
   }
 }

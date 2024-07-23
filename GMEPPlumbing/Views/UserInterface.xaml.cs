@@ -1,28 +1,19 @@
 ﻿using GMEPPlumbing.Services;
 using GMEPPlumbing.ViewModels;
 using System;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace GMEPPlumbing.Views
 {
   public partial class UserInterface : UserControl
   {
     private WaterSystemViewModel _viewModel;
-    public ObservableCollection<AdditionalLoss> AdditionalLosses { get; set; }
-    public ObservableCollection<AdditionalLoss> AdditionalLosses2 { get; set; }
 
-    public UserInterface()
+    public UserInterface(string currentDrawingId)
     {
       InitializeComponent();
-      AdditionalLosses = new ObservableCollection<AdditionalLoss>();
-      AdditionalLosses2 = new ObservableCollection<AdditionalLoss>();
-      AdditionalLosses.CollectionChanged += AdditionalLosses_CollectionChanged;
-      AdditionalLosses2.CollectionChanged += AdditionalLosses2_CollectionChanged;
-      DynamicListView.ItemsSource = AdditionalLosses;
-      DynamicListView2.ItemsSource = AdditionalLosses2;
 
       _viewModel = new WaterSystemViewModel(
           new WaterMeterLossCalculationService(),
@@ -31,17 +22,21 @@ namespace GMEPPlumbing.Views
           new WaterPressureAvailableService(),
           new WaterDevelopedLengthService(),
           new WaterRemainingPressurePer100FeetService(),
-          new WaterAdditionalLosses(this),
-          new WaterAdditionalLosses(this)); // Second instance for AdditionalLosses2
+          new WaterAdditionalLosses(),
+          new WaterAdditionalLosses(),
+          currentDrawingId);
 
       DataContext = _viewModel;
+
+      DynamicListView.ItemsSource = _viewModel.AdditionalLosses;
+      DynamicListView2.ItemsSource = _viewModel.AdditionalLosses2;
     }
 
     private void AddButton_Click(object sender, RoutedEventArgs e)
     {
       if (!string.IsNullOrWhiteSpace(TitleTextBox.Text) && !string.IsNullOrWhiteSpace(ValueTextBox.Text))
       {
-        AdditionalLosses.Add(new AdditionalLoss { Title = TitleTextBox.Text, Amount = ValueTextBox.Text });
+        _viewModel.AddAdditionalLoss(TitleTextBox.Text, ValueTextBox.Text);
         TitleTextBox.Clear();
         ValueTextBox.Clear();
       }
@@ -51,7 +46,7 @@ namespace GMEPPlumbing.Views
     {
       if (!string.IsNullOrWhiteSpace(TitleTextBox2.Text) && !string.IsNullOrWhiteSpace(ValueTextBox2.Text))
       {
-        AdditionalLosses2.Add(new AdditionalLoss { Title = TitleTextBox2.Text, Amount = ValueTextBox2.Text });
+        _viewModel.AddAdditionalLoss2(TitleTextBox2.Text, ValueTextBox2.Text);
         TitleTextBox2.Clear();
         ValueTextBox2.Clear();
       }
@@ -61,14 +56,14 @@ namespace GMEPPlumbing.Views
     {
       var button = (Button)sender;
       var itemToRemove = (AdditionalLoss)button.DataContext;
-      AdditionalLosses.Remove(itemToRemove);
+      _viewModel.RemoveAdditionalLoss(itemToRemove);
     }
 
     private void RemoveButton2_Click(object sender, RoutedEventArgs e)
     {
       var button = (Button)sender;
       var itemToRemove = (AdditionalLoss)button.DataContext;
-      AdditionalLosses2.Remove(itemToRemove);
+      _viewModel.RemoveAdditionalLoss2(itemToRemove);
     }
 
     private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -78,24 +73,8 @@ namespace GMEPPlumbing.Views
         textBox.Dispatcher.BeginInvoke(new Action(() =>
         {
           textBox.SelectAll();
-        }), System.Windows.Threading.DispatcherPriority.Input);
+        }), DispatcherPriority.Input);
       }
     }
-
-    private void AdditionalLosses_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-    {
-      _viewModel.UpdateAdditionalLosses();
-    }
-
-    private void AdditionalLosses2_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-    {
-      _viewModel.UpdateAdditionalLosses2();
-    }
-  }
-
-  public class AdditionalLoss
-  {
-    public string Title { get; set; }
-    public string Amount { get; set; }
   }
 }

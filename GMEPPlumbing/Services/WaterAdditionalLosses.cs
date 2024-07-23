@@ -1,20 +1,14 @@
-﻿using GMEPPlumbing.Views;
+﻿using GMEPPlumbing.ViewModels;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace GMEPPlumbing.Services
 {
   public class WaterAdditionalLosses
   {
-    private readonly UserInterface _userInterface;
-
-    public WaterAdditionalLosses(UserInterface userInterface)
+    public double CalculateTotalAdditionalLosses(ObservableCollection<AdditionalLoss> additionalLosses)
     {
-      _userInterface = userInterface;
-    }
-
-    public double CalculateTotalAdditionalLosses()
-    {
-      return _userInterface.AdditionalLosses.Sum(loss => double.TryParse(loss.Amount, out double amount) ? amount : 0);
+      return additionalLosses.Sum(loss => double.TryParse(loss.Amount, out double amount) ? amount : 0);
     }
   }
 }

@@ -1,7 +1,13 @@
-﻿using Autodesk.AutoCAD.Runtime;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
 using GMEPPlumbing.Services;
+using GMEPPlumbing.ViewModels;
 using GMEPPlumbing.Views;
+using System;
+using System.Collections;
 using System.Windows.Forms.Integration;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
@@ -10,35 +16,111 @@ namespace GMEPPlumbing
 {
   public class AutoCADIntegration
   {
+    private const string XRecordKey = "GMEPPlumbingID";
+    private PaletteSet pw;
+    private UserInterface myControl;
+    private string currentDrawingId;
+
     [CommandMethod("Water")]
     public void Water()
     {
       // Initialize MongoDB connection
       MongoDBService.Initialize();
 
-      MongoDBService.AddRandomKeyValuePair();
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
 
-      var myControl = new UserInterface();
+      currentDrawingId = RetrieveOrCreateDrawingId(db, ed);
+
+      InitializeUserInterface();
+    }
+
+    private string RetrieveOrCreateDrawingId(Database db, Editor ed)
+    {
+      string drawingId = null;
+
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        try
+        {
+          // Try to retrieve existing XRecord
+          drawingId = RetrieveXRecordId(db, tr);
+
+          if (string.IsNullOrEmpty(drawingId))
+          {
+            // Generate new ID if not found
+            drawingId = Guid.NewGuid().ToString();
+            CreateXRecordId(db, tr, drawingId);
+            ed.WriteMessage($"\nCreated new Drawing ID: {drawingId}");
+          }
+          else
+          {
+            ed.WriteMessage($"\nRetrieved existing Drawing ID: {drawingId}");
+          }
+
+          tr.Commit();
+        }
+        catch (System.Exception ex)
+        {
+          ed.WriteMessage($"\nError handling Drawing ID: {ex.Message}");
+          tr.Abort();
+        }
+      }
+
+      return drawingId;
+    }
+
+    private string RetrieveXRecordId(Database db, Transaction tr)
+    {
+      RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);
+      if (!regAppTable.Has(XRecordKey))
+        return null;
+
+      DBDictionary namedObjDict = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForRead);
+      if (!namedObjDict.Contains(XRecordKey))
+        return null;
+
+      Xrecord xRec = (Xrecord)tr.GetObject(namedObjDict.GetAt(XRecordKey), OpenMode.ForRead);
+      TypedValue[] values = xRec.Data.AsArray();
+      return values.Length > 0 ? values[0].Value.ToString() : null;
+    }
+
+    private void CreateXRecordId(Database db, Transaction tr, string drawingId)
+    {
+      RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForWrite);
+      if (!regAppTable.Has(XRecordKey))
+      {
+        RegAppTableRecord regAppTableRecord = new RegAppTableRecord();
+        regAppTableRecord.Name = XRecordKey;
+        regAppTable.Add(regAppTableRecord);
+        tr.AddNewlyCreatedDBObject(regAppTableRecord, true);
+      }
+
+      DBDictionary namedObjDict = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForWrite);
+      Xrecord xRec = new Xrecord();
+      xRec.Data = new ResultBuffer(new TypedValue((int)DxfCode.Text, drawingId));
+      namedObjDict.SetAt(XRecordKey, xRec);
+      tr.AddNewlyCreatedDBObject(xRec, true);
+    }
+
+    private void InitializeUserInterface()
+    {
+      myControl = new UserInterface(currentDrawingId);
       var host = new ElementHost();
       host.Child = myControl;
 
-      var pw = new PaletteSet("GMEP Plumbing Water Calculator");
+      pw = new PaletteSet("GMEP Plumbing Water Calculator");
       pw.Style = PaletteSetStyles.ShowAutoHideButton |
                  PaletteSetStyles.ShowCloseButton |
                  PaletteSetStyles.ShowPropertiesMenu;
-
       pw.DockEnabled = DockSides.Left | DockSides.Right;
 
-      // Set initial size (this will be used when floating)
       pw.Size = new System.Drawing.Size(1280, 800);
       pw.MinimumSize = new System.Drawing.Size(1280, 800);
-
       pw.Add("MyTab", host);
 
-      // Make the PaletteSet visible
       pw.Visible = true;
-
-      // docks on left side and unrolls
       pw.Dock = DockSides.Left;
       pw.RolledUp = false;
     }
