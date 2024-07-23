@@ -128,8 +128,8 @@ namespace GMEPPlumbing
                  PaletteSetStyles.ShowPropertiesMenu;
       pw.DockEnabled = DockSides.Left | DockSides.Right;
 
-      pw.Size = new System.Drawing.Size(1280, 800);
-      pw.MinimumSize = new System.Drawing.Size(1280, 800);
+      pw.Size = new System.Drawing.Size(1200, 800);
+      pw.MinimumSize = new System.Drawing.Size(1200, 800);
       pw.Add("MyTab", host);
 
       pw.Visible = true;

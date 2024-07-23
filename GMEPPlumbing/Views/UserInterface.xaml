@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:GMEPPlumbing"
              mc:Ignorable="d"
-             d:DesignHeight="1200" d:DesignWidth="1280">
+             d:DesignHeight="1200" d:DesignWidth="1200">
     <Grid Background="#FF2D2D30">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300" />
@@ -275,8 +275,8 @@
                         <DataTemplate>
                             <Grid Margin="0,0,0,5">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="175" />
-                                    <ColumnDefinition Width="50" />
+                                    <ColumnDefinition Width="125" />
+                                    <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
