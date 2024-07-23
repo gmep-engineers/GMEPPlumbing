@@ -11,20 +11,11 @@ namespace GMEPPlumbing.Views
   {
     private WaterSystemViewModel _viewModel;
 
-    public UserInterface(string currentDrawingId)
+    public UserInterface(WaterSystemViewModel viewModel)
     {
       InitializeComponent();
 
-      _viewModel = new WaterSystemViewModel(
-          new WaterMeterLossCalculationService(),
-          new WaterStaticLossService(),
-          new WaterTotalLossService(),
-          new WaterPressureAvailableService(),
-          new WaterDevelopedLengthService(),
-          new WaterRemainingPressurePer100FeetService(),
-          new WaterAdditionalLosses(),
-          new WaterAdditionalLosses(),
-          currentDrawingId);
+      _viewModel = viewModel;
 
       DataContext = _viewModel;
 

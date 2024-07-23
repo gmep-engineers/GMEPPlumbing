@@ -1,4 +1,5 @@
 ﻿using GMEPPlumbing.Services;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -46,28 +47,6 @@ namespace GMEPPlumbing.ViewModels
 
       AdditionalLosses.CollectionChanged += (s, e) => UpdateAdditionalLosses();
       AdditionalLosses2.CollectionChanged += (s, e) => UpdateAdditionalLosses2();
-
-      MongoDBService.GetOrCreateDrawingData(_currentDrawingId);
-    }
-
-    public void AddAdditionalLoss(string title, string amount)
-    {
-      AdditionalLosses.Add(new AdditionalLoss { Title = title, Amount = amount });
-    }
-
-    public void AddAdditionalLoss2(string title, string amount)
-    {
-      AdditionalLosses2.Add(new AdditionalLoss { Title = title, Amount = amount });
-    }
-
-    public void RemoveAdditionalLoss(AdditionalLoss loss)
-    {
-      AdditionalLosses.Remove(loss);
-    }
-
-    public void RemoveAdditionalLoss2(AdditionalLoss loss)
-    {
-      AdditionalLosses2.Remove(loss);
     }
 
     #region Properties for Section 1
@@ -551,6 +530,26 @@ namespace GMEPPlumbing.ViewModels
       AdditionalLossesTotal2 = _waterAdditionalLossesService2.CalculateTotalAdditionalLosses(AdditionalLosses2);
     }
 
+    public void AddAdditionalLoss(string title, string amount)
+    {
+      AdditionalLosses.Add(new AdditionalLoss { Title = title, Amount = amount });
+    }
+
+    public void AddAdditionalLoss2(string title, string amount)
+    {
+      AdditionalLosses2.Add(new AdditionalLoss { Title = title, Amount = amount });
+    }
+
+    public void RemoveAdditionalLoss(AdditionalLoss loss)
+    {
+      AdditionalLosses.Remove(loss);
+    }
+
+    public void RemoveAdditionalLoss2(AdditionalLoss loss)
+    {
+      AdditionalLosses2.Remove(loss);
+    }
+
     #endregion Calculation Methods for Section 2
 
     #region INotifyPropertyChanged Implementation
@@ -570,7 +569,101 @@ namespace GMEPPlumbing.ViewModels
       return true;
     }
 
+    public WaterSystemData GetWaterSystemData()
+    {
+      return new WaterSystemData
+      {
+        Id = _currentDrawingId,
+        CreatedAt = DateTime.UtcNow,
+        SectionHeader1 = SectionHeader1,
+        StreetLowPressure = StreetLowPressure,
+        StreetHighPressure = StreetHighPressure,
+        MeterSize = MeterSize,
+        FixtureCalculation = FixtureCalculation,
+        Elevation = Elevation,
+        BackflowPressureLoss = BackflowPressureLoss,
+        PRVPressureLoss = PRVPressureLoss,
+        PressureRequiredOrAtUnit = PressureRequiredOrAtUnit,
+        SystemLength = SystemLength,
+        MeterLoss = MeterLoss,
+        StaticLoss = StaticLoss,
+        TotalLoss = TotalLoss,
+        PressureAvailable = PressureAvailable,
+        DevelopedLength = DevelopedLength,
+        AveragePressureDrop = AveragePressureDrop,
+        AdditionalLossesTotal = AdditionalLossesTotal,
+        ExistingMeter = ExistingMeter,
+        PipeMaterial = PipeMaterial,
+        ColdWaterMaxVelocity = ColdWaterMaxVelocity,
+        HotWaterMaxVelocity = HotWaterMaxVelocity,
+        DevelopedLengthPercentage = DevelopedLengthPercentage,
+        SectionHeader2 = SectionHeader2,
+        PressureRequired2 = PressureRequired2,
+        MeterSize2 = MeterSize2,
+        FixtureCalculation2 = FixtureCalculation2,
+        SystemLength2 = SystemLength2,
+        MeterLoss2 = MeterLoss2,
+        TotalLoss2 = TotalLoss2,
+        PressureAvailable2 = PressureAvailable2,
+        DevelopedLength2 = DevelopedLength2,
+        AveragePressureDrop2 = AveragePressureDrop2,
+        AdditionalLossesTotal2 = AdditionalLossesTotal2,
+        AdditionalLosses = new ObservableCollection<AdditionalLoss>(AdditionalLosses),
+        AdditionalLosses2 = new ObservableCollection<AdditionalLoss>(AdditionalLosses2)
+      };
+    }
+
     #endregion INotifyPropertyChanged Implementation
+  }
+
+  public class WaterSystemData
+  {
+    public string Id { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    // Properties for Section 1
+    public string SectionHeader1 { get; set; }
+
+    public double StreetLowPressure { get; set; }
+    public double StreetHighPressure { get; set; }
+    public double MeterSize { get; set; }
+    public double FixtureCalculation { get; set; }
+    public double Elevation { get; set; }
+    public double BackflowPressureLoss { get; set; }
+    public double PRVPressureLoss { get; set; }
+    public double PressureRequiredOrAtUnit { get; set; }
+    public double SystemLength { get; set; }
+    public double MeterLoss { get; set; }
+    public double StaticLoss { get; set; }
+    public double TotalLoss { get; set; }
+    public double PressureAvailable { get; set; }
+    public double DevelopedLength { get; set; }
+    public double AveragePressureDrop { get; set; }
+    public double AdditionalLossesTotal { get; set; }
+    public bool ExistingMeter { get; set; }
+    public string PipeMaterial { get; set; }
+    public int ColdWaterMaxVelocity { get; set; }
+    public int HotWaterMaxVelocity { get; set; }
+    public int DevelopedLengthPercentage { get; set; }
+
+    // Properties for Section 2
+    public string SectionHeader2 { get; set; }
+
+    public double PressureRequired2 { get; set; }
+    public double MeterSize2 { get; set; }
+    public double FixtureCalculation2 { get; set; }
+    public double SystemLength2 { get; set; }
+    public double MeterLoss2 { get; set; }
+    public double TotalLoss2 { get; set; }
+    public double PressureAvailable2 { get; set; }
+    public double DevelopedLength2 { get; set; }
+    public double AveragePressureDrop2 { get; set; }
+    public double AdditionalLossesTotal2 { get; set; }
+
+    // Collections for additional losses
+    public ObservableCollection<AdditionalLoss> AdditionalLosses { get; set; }
+
+    public ObservableCollection<AdditionalLoss> AdditionalLosses2 { get; set; }
   }
 
   public class AdditionalLoss

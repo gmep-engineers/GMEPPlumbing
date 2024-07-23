@@ -20,6 +20,7 @@ namespace GMEPPlumbing
     private PaletteSet pw;
     private UserInterface myControl;
     private string currentDrawingId;
+    private WaterSystemViewModel viewModel;
 
     [CommandMethod("Water")]
     public void Water()
@@ -106,7 +107,18 @@ namespace GMEPPlumbing
 
     private void InitializeUserInterface()
     {
-      myControl = new UserInterface(currentDrawingId);
+      viewModel = new WaterSystemViewModel(
+          new WaterMeterLossCalculationService(),
+          new WaterStaticLossService(),
+          new WaterTotalLossService(),
+          new WaterPressureAvailableService(),
+          new WaterDevelopedLengthService(),
+          new WaterRemainingPressurePer100FeetService(),
+          new WaterAdditionalLosses(),
+          new WaterAdditionalLosses(),
+          currentDrawingId);
+
+      myControl = new UserInterface(viewModel);
       var host = new ElementHost();
       host.Child = myControl;
 
@@ -123,6 +135,34 @@ namespace GMEPPlumbing
       pw.Visible = true;
       pw.Dock = DockSides.Left;
       pw.RolledUp = false;
+
+      // Add event handler for PaletteSet closing
+      pw.StateChanged += Pw_StateChanged;
+    }
+
+    private async void Pw_StateChanged(object sender, PaletteSetStateEventArgs e)
+    {
+      if (e.NewState == StateEventIndex.Hide)
+      {
+        // PaletteSet is being closed
+        try
+        {
+          WaterSystemData data = viewModel.GetWaterSystemData();
+          bool updateResult = await MongoDBService.UpdateDrawingDataAsync(data);
+          if (updateResult)
+          {
+            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nSuccessfully updated drawing data in MongoDB.");
+          }
+          else
+          {
+            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nFailed to update drawing data in MongoDB.");
+          }
+        }
+        catch (System.Exception ex)
+        {
+          Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage($"\nError updating drawing data: {ex.Message}");
+        }
+      }
     }
   }
 }
