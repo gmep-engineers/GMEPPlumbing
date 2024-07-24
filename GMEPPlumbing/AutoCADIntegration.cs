@@ -3,6 +3,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
+using GMEPPlumbing.Commands;
 using GMEPPlumbing.Services;
 using GMEPPlumbing.ViewModels;
 using GMEPPlumbing.Views;
@@ -11,6 +12,7 @@ using System.Collections;
 using System.Windows.Forms.Integration;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
+[assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
 
 namespace GMEPPlumbing
 {
