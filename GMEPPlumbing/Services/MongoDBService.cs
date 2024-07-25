@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
+using System.Windows.Markup;
 
 namespace GMEPPlumbing.Services
 {
@@ -82,10 +83,12 @@ namespace GMEPPlumbing.Services
     }
 
     // Update
-    public static async Task<bool> UpdateDrawingDataAsync(WaterSystemData data)
+    public static async Task<bool> UpdateDrawingDataAsync(WaterSystemData data, DateTime fileCreationTime)
     {
       try
       {
+        data.FileCreationTime = fileCreationTime;
+
         var collection = _database.GetCollection<WaterSystemData>(CollectionName);
         var filter = Builders<WaterSystemData>.Filter.Eq("_id", data.Id);
         var result = await collection.ReplaceOneAsync(filter, data, new ReplaceOptions { IsUpsert = true });

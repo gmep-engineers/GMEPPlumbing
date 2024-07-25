@@ -93,24 +93,24 @@ namespace GMEPPlumbing.Commands
 
           // Define the constant values
           string[] descriptions = {
-        "METER LOSS",
-        "** FT STATIC LOSS",
-        "MIN. PRESSURE REQUIRED",
-        "TOTAL LOSSES (ITEMS 1-3)",
-        "MIN. STREET PRESSURE",
-        "PRESSURE AVAILABLE FOR FRICTION",
-        "ACTUAL LENGTH OF SYSTEM",
-        "DEVELOPED LENGTH (130% OF ITEM 7)",
-        "AVERAGE PRESSURE DROP"
-      };
+            "METER LOSS",
+            "** FT STATIC LOSS",
+            "MIN. PRESSURE REQUIRED",
+            "TOTAL LOSSES (ITEMS 1-3)",
+            "MIN. STREET PRESSURE",
+            "PRESSURE AVAILABLE FOR FRICTION",
+            "ACTUAL LENGTH OF SYSTEM",
+            "DEVELOPED LENGTH (130% OF ITEM 7)",
+            "AVERAGE PRESSURE DROP"
+          };
 
           string[] units = {
-        "PSI", "PSI", "PSI", "PSI", "PSI", "PSI", "FT", "FT", "PSI/100FT"
-      };
+            "PSI", "PSI", "PSI", "PSI", "PSI", "PSI", "FT", "FT", "PSI/100FT"
+          };
 
           string[] values = {
-        "4.0", "8.7", "20.0", "", "65", "", "120", "", ""
-      };
+            "4.0", "8.7", "20.0", "", "65", "", "120", "", ""
+          };
 
           for (int i = 4; i < 13; i++)
           {

@@ -9,6 +9,7 @@ using GMEPPlumbing.ViewModels;
 using GMEPPlumbing.Views;
 using System;
 using System.Collections;
+using System.IO;
 using System.Windows.Forms.Integration;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
@@ -150,7 +151,8 @@ namespace GMEPPlumbing
         try
         {
           WaterSystemData data = viewModel.GetWaterSystemData();
-          bool updateResult = await MongoDBService.UpdateDrawingDataAsync(data);
+          var fileCreationTime = GetFileCreationTime();
+          bool updateResult = await MongoDBService.UpdateDrawingDataAsync(data, fileCreationTime);
           if (updateResult)
           {
             Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nSuccessfully updated drawing data in MongoDB.");
@@ -164,6 +166,21 @@ namespace GMEPPlumbing
         {
           Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage($"\nError updating drawing data: {ex.Message}");
         }
+      }
+    }
+
+    private DateTime GetFileCreationTime()
+    {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc != null && !string.IsNullOrEmpty(doc.Name))
+      {
+        FileInfo fileInfo = new FileInfo(doc.Name);
+        return fileInfo.CreationTime;
+      }
+      else
+      {
+        // If the document is not saved or there's an issue, return the current time
+        return DateTime.Now;
       }
     }
   }

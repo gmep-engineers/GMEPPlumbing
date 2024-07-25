@@ -692,6 +692,7 @@ namespace GMEPPlumbing.ViewModels
   {
     public string Id { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime FileCreationTime { get; set; }
 
     // Properties for Section 1
     public string SectionHeader1 { get; set; }
