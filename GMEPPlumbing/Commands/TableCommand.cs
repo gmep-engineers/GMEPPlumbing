@@ -49,7 +49,7 @@ namespace GMEPPlumbing.Commands
             {
               Cell cell = table.Cells[row, col];
               cell.TextHeight = 0.09375000;
-              cell.TextStyleId = CreateOrGetTextStyle(db, tr, "archquik");
+              cell.TextStyleId = CreateOrGetTextStyle(db, tr, "Archquick");
             }
 
             if (row == 0)
@@ -91,11 +91,36 @@ namespace GMEPPlumbing.Commands
           table.Cells[3, 3].TextString = "VALUE";
           table.Cells[3, 3].Alignment = CellAlignment.MiddleCenter;
 
+          // Define the constant values
+          string[] descriptions = {
+        "METER LOSS",
+        "** FT STATIC LOSS",
+        "MIN. PRESSURE REQUIRED",
+        "TOTAL LOSSES (ITEMS 1-3)",
+        "MIN. STREET PRESSURE",
+        "PRESSURE AVAILABLE FOR FRICTION",
+        "ACTUAL LENGTH OF SYSTEM",
+        "DEVELOPED LENGTH (130% OF ITEM 7)",
+        "AVERAGE PRESSURE DROP"
+      };
+
+          string[] units = {
+        "PSI", "PSI", "PSI", "PSI", "PSI", "PSI", "FT", "FT", "PSI/100FT"
+      };
+
+          string[] values = {
+        "4.0", "8.7", "20.0", "", "65", "", "120", "", ""
+      };
+
           for (int i = 4; i < 13; i++)
           {
+            table.Cells[i, 0].TextString = (i - 3).ToString() + ".";
             table.Cells[i, 0].Alignment = CellAlignment.MiddleLeft;
+            table.Cells[i, 1].TextString = descriptions[i - 4];
             table.Cells[i, 1].Alignment = CellAlignment.MiddleLeft;
+            table.Cells[i, 2].TextString = units[i - 4];
             table.Cells[i, 2].Alignment = CellAlignment.MiddleCenter;
+            table.Cells[i, 3].TextString = values[i - 4];
             table.Cells[i, 3].Alignment = CellAlignment.MiddleCenter;
           }
 
