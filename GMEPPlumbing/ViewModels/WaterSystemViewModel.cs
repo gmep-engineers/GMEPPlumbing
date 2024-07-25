@@ -1,7 +1,9 @@
-﻿using GMEPPlumbing.Services;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using GMEPPlumbing.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace GMEPPlumbing.ViewModels
@@ -16,7 +18,8 @@ namespace GMEPPlumbing.ViewModels
     private readonly WaterRemainingPressurePer100FeetService _waterRemainingPressurePer100FeetService;
     private readonly WaterAdditionalLosses _waterAdditionalLossesService;
     private readonly WaterAdditionalLosses _waterAdditionalLossesService2;
-    private readonly string _currentDrawingId;
+    public string _currentDrawingId;
+    private readonly AutoCADIntegration _autoCADIntegration;
 
     public ObservableCollection<AdditionalLoss> AdditionalLosses { get; set; }
     public ObservableCollection<AdditionalLoss> AdditionalLosses2 { get; set; }
@@ -30,7 +33,8 @@ namespace GMEPPlumbing.ViewModels
         WaterRemainingPressurePer100FeetService waterRemainingPressurePer100Feet,
         WaterAdditionalLosses waterAdditionalLossesService,
         WaterAdditionalLosses waterAdditionalLossesService2,
-        string currentDrawingId)
+        string currentDrawingId,
+        AutoCADIntegration autoCADIntegration)
     {
       _waterMeterLossService = waterMeterLoss;
       _waterStaticLossService = waterStaticLoss;
@@ -41,6 +45,7 @@ namespace GMEPPlumbing.ViewModels
       _waterAdditionalLossesService = waterAdditionalLossesService;
       _waterAdditionalLossesService2 = waterAdditionalLossesService2;
       _currentDrawingId = currentDrawingId;
+      _autoCADIntegration = autoCADIntegration;
 
       AdditionalLosses = new ObservableCollection<AdditionalLoss>();
       AdditionalLosses2 = new ObservableCollection<AdditionalLoss>();
@@ -674,6 +679,15 @@ namespace GMEPPlumbing.ViewModels
         var data = await MongoDBService.GetDrawingDataAsync(_currentDrawingId);
         if (data != null)
         {
+          DateTime fileCreationTime = _autoCADIntegration.GetFileCreationTime();
+          bool fileCreationTimeIsEqual = fileCreationTime.Equals(data.FileCreationTime);
+          if (!fileCreationTimeIsEqual)
+          {
+            _autoCADIntegration.DeleteXRecordId();
+            _currentDrawingId = _autoCADIntegration.RetrieveOrCreateDrawingId();
+            data.Id = _currentDrawingId;
+            data.FileCreationTime = fileCreationTime;
+          }
           UpdatePropertiesFromData(data);
         }
       }

@@ -31,18 +31,17 @@ namespace GMEPPlumbing
       // Initialize MongoDB connection
       MongoDBService.Initialize();
 
-      Document doc = Application.DocumentManager.MdiActiveDocument;
-      Database db = doc.Database;
-      Editor ed = doc.Editor;
-
-      currentDrawingId = RetrieveOrCreateDrawingId(db, ed);
+      currentDrawingId = RetrieveOrCreateDrawingId();
 
       InitializeUserInterface();
     }
 
-    private string RetrieveOrCreateDrawingId(Database db, Editor ed)
+    public string RetrieveOrCreateDrawingId()
     {
       string drawingId = null;
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
 
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
@@ -75,7 +74,7 @@ namespace GMEPPlumbing
       return drawingId;
     }
 
-    private string RetrieveXRecordId(Database db, Transaction tr)
+    public string RetrieveXRecordId(Database db, Transaction tr)
     {
       RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);
       if (!regAppTable.Has(XRecordKey))
@@ -90,7 +89,7 @@ namespace GMEPPlumbing
       return values.Length > 0 ? values[0].Value.ToString() : null;
     }
 
-    private void CreateXRecordId(Database db, Transaction tr, string drawingId)
+    public void CreateXRecordId(Database db, Transaction tr, string drawingId)
     {
       RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForWrite);
       if (!regAppTable.Has(XRecordKey))
@@ -108,6 +107,39 @@ namespace GMEPPlumbing
       tr.AddNewlyCreatedDBObject(xRec, true);
     }
 
+    public void DeleteXRecordId()
+    {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        DBDictionary namedObjDict = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForWrite);
+
+        if (namedObjDict.Contains(XRecordKey))
+        {
+          namedObjDict.Remove(XRecordKey);
+          ed.WriteMessage($"\nSuccessfully deleted Drawing ID XRecord.");
+        }
+        else
+        {
+          ed.WriteMessage($"\nNo Drawing ID XRecord found to delete.");
+        }
+
+        // Optionally, remove the RegApp entry as well
+        RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);
+        if (regAppTable.Has(XRecordKey))
+        {
+          regAppTable.UpgradeOpen();
+          ObjectId regAppId = regAppTable[XRecordKey];
+          RegAppTableRecord regAppRecord = (RegAppTableRecord)tr.GetObject(regAppId, OpenMode.ForWrite);
+          regAppRecord.Erase();
+          ed.WriteMessage($"\nRemoved RegApp entry for Drawing ID.");
+        }
+      }
+    }
+
     private void InitializeUserInterface()
     {
       viewModel = new WaterSystemViewModel(
@@ -119,7 +151,8 @@ namespace GMEPPlumbing
           new WaterRemainingPressurePer100FeetService(),
           new WaterAdditionalLosses(),
           new WaterAdditionalLosses(),
-          currentDrawingId);
+          currentDrawingId,
+          this);
 
       myControl = new UserInterface(viewModel);
       var host = new ElementHost();
@@ -169,7 +202,7 @@ namespace GMEPPlumbing
       }
     }
 
-    private DateTime GetFileCreationTime()
+    public DateTime GetFileCreationTime()
     {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       if (doc != null && !string.IsNullOrEmpty(doc.Name))
