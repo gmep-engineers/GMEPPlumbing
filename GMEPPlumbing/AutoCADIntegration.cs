@@ -36,6 +36,15 @@ namespace GMEPPlumbing
       InitializeUserInterface();
     }
 
+    public void WriteMessage(string message)
+    {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+
+      ed.WriteMessage(message);
+    }
+
     public string RetrieveOrCreateDrawingId()
     {
       string drawingId = null;
@@ -208,12 +217,12 @@ namespace GMEPPlumbing
       if (doc != null && !string.IsNullOrEmpty(doc.Name))
       {
         FileInfo fileInfo = new FileInfo(doc.Name);
-        return fileInfo.CreationTime;
+        return fileInfo.CreationTime.ToUniversalTime();
       }
       else
       {
         // If the document is not saved or there's an issue, return the current time
-        return DateTime.Now;
+        return DateTime.Now.ToUniversalTime();
       }
     }
   }

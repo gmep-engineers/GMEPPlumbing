@@ -261,7 +261,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"C:\Users\JacobH\OneDrive - GMEPE\Desktop\Plumbing Program\PLBG Residential - Sample.dwg"</PostBuildEvent>
+    <PostBuildEvent>"C:\Users\JacobH\OneDrive - GMEPE\Desktop\Plumbing Program\PLBG Residential - Sample - Copy.dwg"</PostBuildEvent>
   </PropertyGroup>
   <Import Project="packages\MongoDB.Libmongocrypt.1.10.0\build\MongoDB.Libmongocrypt.targets" Condition="Exists('packages\MongoDB.Libmongocrypt.1.10.0\build\MongoDB.Libmongocrypt.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
