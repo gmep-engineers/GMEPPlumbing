@@ -4,7 +4,9 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows.Markup;
 
 namespace GMEPPlumbing.ViewModels
 {
@@ -624,6 +626,10 @@ namespace GMEPPlumbing.ViewModels
     {
       if (data == null) return;
 
+      _currentDrawingId = _autoCADIntegration.RetrieveOrCreateDrawingId();
+      data.Id = _currentDrawingId;
+      data.FileCreationTime = _autoCADIntegration.GetFileCreationTime().ToUniversalTime();
+
       SectionHeader1 = data.SectionHeader1;
       StreetLowPressure = data.StreetLowPressure;
       StreetHighPressure = data.StreetHighPressure;
@@ -679,29 +685,6 @@ namespace GMEPPlumbing.ViewModels
         var data = await MongoDBService.GetDrawingDataAsync(_currentDrawingId);
         if (data != null)
         {
-          DateTime fileCreationTime = _autoCADIntegration.GetFileCreationTime();
-
-          DateTime time1 = fileCreationTime.ToUniversalTime().Date.AddHours(fileCreationTime.ToUniversalTime().Hour)
-                                                        .AddMinutes(fileCreationTime.ToUniversalTime().Minute)
-                                                        .AddSeconds(fileCreationTime.ToUniversalTime().Second);
-          DateTime time2 = data.FileCreationTime.ToUniversalTime().Date.AddHours(data.FileCreationTime.ToUniversalTime().Hour)
-                                                                       .AddMinutes(data.FileCreationTime.ToUniversalTime().Minute)
-                                                                       .AddSeconds(data.FileCreationTime.ToUniversalTime().Second);
-
-          bool fileCreationTimeIsEqual = time1 == time2;
-
-          _autoCADIntegration.WriteMessage("File creation time 1? " + time1 + "\n");
-          _autoCADIntegration.WriteMessage("File creation time 2? " + time2 + "\n");
-          _autoCADIntegration.WriteMessage("File creation time equal? " + fileCreationTimeIsEqual.ToString() + "\n");
-          if (!fileCreationTimeIsEqual)
-          {
-            _autoCADIntegration.DeleteXRecordId();
-            _autoCADIntegration.WriteMessage("Deleting xRecord ID..." + "\n");
-            _currentDrawingId = _autoCADIntegration.RetrieveOrCreateDrawingId();
-            _autoCADIntegration.WriteMessage("Creating new xRecord ID..." + "\n");
-            data.Id = _currentDrawingId;
-            data.FileCreationTime = fileCreationTime.ToUniversalTime();
-          }
           UpdatePropertiesFromData(data);
         }
       }
@@ -721,6 +704,7 @@ namespace GMEPPlumbing.ViewModels
     public string Id { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime FileCreationTime { get; set; }
+    public bool NotEqualFileCreationFlag { get; set; } = false;
 
     // Properties for Section 1
     public string SectionHeader1 { get; set; }
@@ -765,11 +749,68 @@ namespace GMEPPlumbing.ViewModels
     public ObservableCollection<AdditionalLoss> AdditionalLosses { get; set; }
 
     public ObservableCollection<AdditionalLoss> AdditionalLosses2 { get; set; }
+
+    public WaterSystemData Clone()
+    {
+      return new WaterSystemData
+      {
+        Id = this.Id,
+        CreatedAt = this.CreatedAt,
+        FileCreationTime = this.FileCreationTime,
+        NotEqualFileCreationFlag = this.NotEqualFileCreationFlag,
+        SectionHeader1 = this.SectionHeader1,
+        StreetLowPressure = this.StreetLowPressure,
+        StreetHighPressure = this.StreetHighPressure,
+        MeterSize = this.MeterSize,
+        FixtureCalculation = this.FixtureCalculation,
+        Elevation = this.Elevation,
+        BackflowPressureLoss = this.BackflowPressureLoss,
+        PRVPressureLoss = this.PRVPressureLoss,
+        PressureRequiredOrAtUnit = this.PressureRequiredOrAtUnit,
+        SystemLength = this.SystemLength,
+        MeterLoss = this.MeterLoss,
+        StaticLoss = this.StaticLoss,
+        TotalLoss = this.TotalLoss,
+        PressureAvailable = this.PressureAvailable,
+        DevelopedLength = this.DevelopedLength,
+        AveragePressureDrop = this.AveragePressureDrop,
+        AdditionalLossesTotal = this.AdditionalLossesTotal,
+        ExistingMeter = this.ExistingMeter,
+        PipeMaterial = this.PipeMaterial,
+        ColdWaterMaxVelocity = this.ColdWaterMaxVelocity,
+        HotWaterMaxVelocity = this.HotWaterMaxVelocity,
+        DevelopedLengthPercentage = this.DevelopedLengthPercentage,
+        SectionHeader2 = this.SectionHeader2,
+        PressureRequired2 = this.PressureRequired2,
+        MeterSize2 = this.MeterSize2,
+        FixtureCalculation2 = this.FixtureCalculation2,
+        SystemLength2 = this.SystemLength2,
+        MeterLoss2 = this.MeterLoss2,
+        TotalLoss2 = this.TotalLoss2,
+        PressureAvailable2 = this.PressureAvailable2,
+        DevelopedLength2 = this.DevelopedLength2,
+        AveragePressureDrop2 = this.AveragePressureDrop2,
+        AdditionalLossesTotal2 = this.AdditionalLossesTotal2,
+        AdditionalLosses = new ObservableCollection<AdditionalLoss>(
+              this.AdditionalLosses.Select(al => al.Clone())),
+        AdditionalLosses2 = new ObservableCollection<AdditionalLoss>(
+              this.AdditionalLosses2.Select(al => al.Clone()))
+      };
+    }
   }
 
   public class AdditionalLoss
   {
     public string Title { get; set; }
     public string Amount { get; set; }
+
+    public AdditionalLoss Clone()
+    {
+      return new AdditionalLoss
+      {
+        Title = this.Title,
+        Amount = this.Amount
+      };
+    }
   }
 }

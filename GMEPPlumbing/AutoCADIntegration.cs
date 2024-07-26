@@ -136,7 +136,16 @@ namespace GMEPPlumbing
           ed.WriteMessage($"\nNo Drawing ID XRecord found to delete.");
         }
 
-        tr.Commit();
+        // Optionally, remove the RegApp entry as well
+        RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);
+        if (regAppTable.Has(XRecordKey))
+        {
+          regAppTable.UpgradeOpen();
+          ObjectId regAppId = regAppTable[XRecordKey];
+          RegAppTableRecord regAppRecord = (RegAppTableRecord)tr.GetObject(regAppId, OpenMode.ForWrite);
+          regAppRecord.Erase();
+          ed.WriteMessage($"\nRemoved RegApp entry for Drawing ID.");
+        }
       }
     }
 
