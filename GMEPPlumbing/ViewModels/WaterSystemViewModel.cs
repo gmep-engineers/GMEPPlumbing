@@ -680,13 +680,27 @@ namespace GMEPPlumbing.ViewModels
         if (data != null)
         {
           DateTime fileCreationTime = _autoCADIntegration.GetFileCreationTime();
-          bool fileCreationTimeIsEqual = fileCreationTime.Equals(data.FileCreationTime);
+
+          DateTime time1 = fileCreationTime.ToUniversalTime().Date.AddHours(fileCreationTime.ToUniversalTime().Hour)
+                                                        .AddMinutes(fileCreationTime.ToUniversalTime().Minute)
+                                                        .AddSeconds(fileCreationTime.ToUniversalTime().Second);
+          DateTime time2 = data.FileCreationTime.ToUniversalTime().Date.AddHours(data.FileCreationTime.ToUniversalTime().Hour)
+                                                                       .AddMinutes(data.FileCreationTime.ToUniversalTime().Minute)
+                                                                       .AddSeconds(data.FileCreationTime.ToUniversalTime().Second);
+
+          bool fileCreationTimeIsEqual = time1 == time2;
+
+          _autoCADIntegration.WriteMessage("File creation time 1? " + time1 + "\n");
+          _autoCADIntegration.WriteMessage("File creation time 2? " + time2 + "\n");
+          _autoCADIntegration.WriteMessage("File creation time equal? " + fileCreationTimeIsEqual.ToString() + "\n");
           if (!fileCreationTimeIsEqual)
           {
             _autoCADIntegration.DeleteXRecordId();
+            _autoCADIntegration.WriteMessage("Deleting xRecord ID..." + "\n");
             _currentDrawingId = _autoCADIntegration.RetrieveOrCreateDrawingId();
+            _autoCADIntegration.WriteMessage("Creating new xRecord ID..." + "\n");
             data.Id = _currentDrawingId;
-            data.FileCreationTime = fileCreationTime;
+            data.FileCreationTime = fileCreationTime.ToUniversalTime();
           }
           UpdatePropertiesFromData(data);
         }
