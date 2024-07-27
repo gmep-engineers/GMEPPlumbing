@@ -7,6 +7,7 @@ using GMEPPlumbing.Commands;
 using GMEPPlumbing.Services;
 using GMEPPlumbing.ViewModels;
 using GMEPPlumbing.Views;
+using MongoDB.Bson.Serialization.Conventions;
 using System;
 using System.Collections;
 using System.IO;
@@ -25,6 +26,9 @@ namespace GMEPPlumbing
     private UserInterface myControl;
     private string currentDrawingId;
     private WaterSystemViewModel viewModel;
+    private bool needsXRecordUpdate = false;
+    private string newDrawingId;
+    private DateTime newCreationTime;
 
     public Document doc { get; private set; }
     public Database db { get; private set; }
@@ -67,6 +71,22 @@ namespace GMEPPlumbing
           else
           {
             ed.WriteMessage($"\nRetrieved existing Drawing ID: {currentDrawingId}, Creation Time: {creationTime}");
+            var newCreationTime = GetFileCreationTime();
+            ed.WriteMessage($"\nNew Creation Time: {newCreationTime}");
+
+            if (Math.Abs((newCreationTime - creationTime).TotalSeconds) > 1)
+            {
+              needsXRecordUpdate = true;
+              this.newDrawingId = Guid.NewGuid().ToString();
+              this.newCreationTime = newCreationTime;
+              ed.WriteMessage($"\nXRecord update needed. Will update after data load.");
+              ed.WriteMessage($"\nOld Creation Time: {creationTime}");
+              ed.WriteMessage($"\nNew Creation Time: {newCreationTime}");
+            }
+            else
+            {
+              ed.WriteMessage("\nCreation time has not changed. No update needed.");
+            }
           }
 
           tr.Commit();
@@ -77,6 +97,51 @@ namespace GMEPPlumbing
           tr.Abort();
         }
       }
+    }
+
+    private void UpdateXRecordId(Transaction tr, string newId, DateTime newCreationTime)
+    {
+      DBDictionary namedObjDict = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForWrite);
+      if (namedObjDict.Contains(XRecordKey))
+      {
+        Xrecord xRec = (Xrecord)tr.GetObject(namedObjDict.GetAt(XRecordKey), OpenMode.ForWrite);
+        // Convert DateTime to AutoCAD date (number of days since December 30, 1899)
+        double acadDate = (newCreationTime - new DateTime(1899, 12, 30)).TotalDays;
+        // Update the Xrecord with new data
+        xRec.Data = new ResultBuffer(
+            new TypedValue((int)DxfCode.Text, newId),
+            new TypedValue((int)DxfCode.Real, acadDate)
+        );
+      }
+      else
+      {
+        // If the XRecord doesn't exist, create a new one
+        CreateXRecordId(db, tr, newId);
+      }
+    }
+
+    private void UpdateXRecordAfterDataLoad()
+    {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      using (DocumentLock docLock = doc.LockDocument())
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          try
+          {
+            UpdateXRecordId(tr, newDrawingId, newCreationTime);
+            currentDrawingId = newDrawingId;
+            ed.WriteMessage($"\nUpdated Drawing ID: {currentDrawingId}, New Creation Time: {newCreationTime}");
+            tr.Commit();
+          }
+          catch (System.Exception ex)
+          {
+            ed.WriteMessage($"\nError updating XRecord after data load: {ex.Message}");
+            tr.Abort();
+          }
+        }
+      }
+      needsXRecordUpdate = false;
     }
 
     public DateTime RetrieveXRecordId(Database db, Transaction tr)
@@ -182,6 +247,11 @@ namespace GMEPPlumbing
             viewModel.UpdatePropertiesFromData(data);
           });
 
+          if (needsXRecordUpdate)
+          {
+            UpdateXRecordAfterDataLoad();
+          }
+
           Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nSuccessfully loaded data from MongoDB.\n");
         }
       }
@@ -205,7 +275,7 @@ namespace GMEPPlumbing
           }
           else
           {
-            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nFailed to update drawing data in MongoDB.\n");
+            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nFailed to update drawing data in MongoDB. (possibly no data has changed since the last update)\n");
           }
         }
         catch (System.Exception ex)
