@@ -6,6 +6,7 @@ using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
 using GMEPPlumbing.ViewModels;
 using System;
+using System.Collections.Generic;
 
 namespace GMEPPlumbing.Commands
 {
@@ -26,8 +27,14 @@ namespace GMEPPlumbing.Commands
             BlockTableRecord currentSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
             Table table = new Table();
 
+            // Calculate the number of rows dynamically
+            int rowCount = 13;
+            rowCount += (data.PRVPressureLoss != 0.0) ? 1 : 0;
+            rowCount += (data.BackflowPressureLoss != 0.0) ? 1 : 0;
+            rowCount += data.AdditionalLosses.Count;
+
             table.TableStyle = db.Tablestyle;
-            table.SetSize(13, 4);
+            table.SetSize(rowCount, 4);
 
             PromptPointResult pr = ed.GetPoint("\nSpecify insertion point: ");
             if (pr.Status != PromptStatus.OK)
@@ -44,7 +51,7 @@ namespace GMEPPlumbing.Commands
             table.Columns[3].Width = 0.65590551;
 
             // Set row heights and text properties
-            for (int row = 0; row < 13; row++)
+            for (int row = 0; row < rowCount; row++)
             {
               for (int col = 0; col < 4; col++)
               {
@@ -93,36 +100,54 @@ namespace GMEPPlumbing.Commands
             table.Cells[3, 3].Alignment = CellAlignment.MiddleCenter;
 
             // Define the constant values
-            string[] descriptions = {
-            "METER LOSS",
-            "** FT STATIC LOSS",
-            "MIN. PRESSURE REQUIRED",
-            "TOTAL LOSSES (ITEMS 1-3)",
-            "MIN. STREET PRESSURE",
-            "PRESSURE AVAILABLE FOR FRICTION",
-            "ACTUAL LENGTH OF SYSTEM",
-            "DEVELOPED LENGTH (130% OF ITEM 7)",
-            "AVERAGE PRESSURE DROP"
-          };
-
-            string[] units = {
-            "PSI", "PSI", "PSI", "PSI", "PSI", "PSI", "FT", "FT", "PSI/100FT"
-          };
-
-            string[] values = {
-            $"{data.MeterLoss}", $"{data.StaticLoss}", $"{data.PressureRequiredOrAtUnit}", $"{data.TotalLoss}", $"{data.StreetLowPressure}", $"{data.PressureAvailable}", $"{data.SystemLength}", $"{data.DevelopedLength}", $"{data.AveragePressureDrop}"
-          };
-
-            for (int i = 4; i < 13; i++)
+            List<(string Description, string Unit, string Value)> rows = new List<(string, string, string)>
             {
-              table.Cells[i, 0].TextString = (i - 3).ToString() + ".";
-              table.Cells[i, 0].Alignment = CellAlignment.MiddleLeft;
-              table.Cells[i, 1].TextString = descriptions[i - 4];
-              table.Cells[i, 1].Alignment = CellAlignment.MiddleLeft;
-              table.Cells[i, 2].TextString = units[i - 4];
-              table.Cells[i, 2].Alignment = CellAlignment.MiddleCenter;
-              table.Cells[i, 3].TextString = values[i - 4];
-              table.Cells[i, 3].Alignment = CellAlignment.MiddleCenter;
+                ("METER LOSS", "PSI", $"{data.MeterLoss:F1}"),
+                ($"{data.Elevation}FT STATIC LOSS", "PSI", $"{data.StaticLoss:F1}")
+            };
+
+            // Add PRV pressure loss if not zero
+            if (data.PRVPressureLoss != 0.0)
+            {
+              rows.Add(("PRV PRESSURE LOSS", "PSI", $"{data.PRVPressureLoss:F1}"));
+            }
+
+            // Add backflow pressure loss if not zero
+            if (data.BackflowPressureLoss != 0.0)
+            {
+              rows.Add(("BACKFLOW PRESSURE LOSS", "PSI", $"{data.BackflowPressureLoss:F1}"));
+            }
+
+            // Add additional losses
+            foreach (var loss in data.AdditionalLosses)
+            {
+              rows.Add((loss.Title, "PSI", loss.Amount));
+            }
+
+            // Add remaining rows
+            rows.AddRange(new List<(string, string, string)>
+            {
+                ("MIN. PRESSURE REQUIRED", "PSI", $"{data.PressureRequiredOrAtUnit:F1}"),
+                ($"TOTAL LOSSES (ITEMS 1-{3 + rowCount - 13})", "PSI", $"{data.TotalLoss:F1}"),
+                ("MIN. STREET PRESSURE", "PSI", $"{data.StreetLowPressure:F1}"),
+                ("PRESSURE AVAILABLE FOR FRICTION", "PSI", $"{data.PressureAvailable:F1}"),
+                ("ACTUAL LENGTH OF SYSTEM", "FT", $"{data.SystemLength:F1}"),
+                ($"DEVELOPED LENGTH ({data.DevelopedLengthPercentage}% OF ITEM 7)", "FT", $"{data.DevelopedLength:F1}"),
+                ("AVERAGE PRESSURE DROP", "PSI/100FT", $"{data.AveragePressureDrop:F1}")
+            });
+
+            // Populate the table with the rows
+            for (int i = 0; i < rows.Count; i++)
+            {
+              int rowIndex = i + 4;
+              table.Cells[rowIndex, 0].TextString = $"{i + 1}.";
+              table.Cells[rowIndex, 0].Alignment = CellAlignment.MiddleLeft;
+              table.Cells[rowIndex, 1].TextString = rows[i].Description;
+              table.Cells[rowIndex, 1].Alignment = CellAlignment.MiddleLeft;
+              table.Cells[rowIndex, 2].TextString = rows[i].Unit;
+              table.Cells[rowIndex, 2].Alignment = CellAlignment.MiddleCenter;
+              table.Cells[rowIndex, 3].TextString = rows[i].Value;
+              table.Cells[rowIndex, 3].Alignment = CellAlignment.MiddleCenter;
             }
 
             currentSpace.AppendEntity(table);
