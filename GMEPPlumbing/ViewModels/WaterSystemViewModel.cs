@@ -20,7 +20,6 @@ namespace GMEPPlumbing.ViewModels
     private readonly WaterRemainingPressurePer100FeetService _waterRemainingPressurePer100FeetService;
     private readonly WaterAdditionalLosses _waterAdditionalLossesService;
     private readonly WaterAdditionalLosses _waterAdditionalLossesService2;
-    public string _currentDrawingId;
     private readonly AutoCADIntegration _autoCADIntegration;
 
     public ObservableCollection<AdditionalLoss> AdditionalLosses { get; set; }
@@ -35,7 +34,6 @@ namespace GMEPPlumbing.ViewModels
         WaterRemainingPressurePer100FeetService waterRemainingPressurePer100Feet,
         WaterAdditionalLosses waterAdditionalLossesService,
         WaterAdditionalLosses waterAdditionalLossesService2,
-        string currentDrawingId,
         AutoCADIntegration autoCADIntegration)
     {
       _waterMeterLossService = waterMeterLoss;
@@ -46,7 +44,6 @@ namespace GMEPPlumbing.ViewModels
       _waterRemainingPressurePer100FeetService = waterRemainingPressurePer100Feet;
       _waterAdditionalLossesService = waterAdditionalLossesService;
       _waterAdditionalLossesService2 = waterAdditionalLossesService2;
-      _currentDrawingId = currentDrawingId;
       _autoCADIntegration = autoCADIntegration;
 
       AdditionalLosses = new ObservableCollection<AdditionalLoss>();
@@ -578,11 +575,11 @@ namespace GMEPPlumbing.ViewModels
       return true;
     }
 
-    public WaterSystemData GetWaterSystemData()
+    public WaterSystemData GetWaterSystemData(string currentDrawingId)
     {
       return new WaterSystemData
       {
-        Id = _currentDrawingId,
+        Id = currentDrawingId,
         CreatedAt = DateTime.UtcNow,
         SectionHeader1 = SectionHeader1,
         StreetLowPressure = StreetLowPressure,
@@ -625,10 +622,6 @@ namespace GMEPPlumbing.ViewModels
     public void UpdatePropertiesFromData(WaterSystemData data)
     {
       if (data == null) return;
-
-      _currentDrawingId = _autoCADIntegration.RetrieveOrCreateDrawingId();
-      data.Id = _currentDrawingId;
-      data.FileCreationTime = _autoCADIntegration.GetFileCreationTime().ToUniversalTime();
 
       SectionHeader1 = data.SectionHeader1;
       StreetLowPressure = data.StreetLowPressure;
@@ -680,19 +673,10 @@ namespace GMEPPlumbing.ViewModels
 
     private async void LoadDataFromMongoDBAsync()
     {
-      try
+      var data = await _autoCADIntegration.LoadDataFromMongoDBAsync();
+      if (data != null)
       {
-        var data = await MongoDBService.GetDrawingDataAsync(_currentDrawingId);
-        if (data != null)
-        {
-          UpdatePropertiesFromData(data);
-        }
-      }
-      catch (Exception ex)
-      {
-        // Handle any exceptions that occur during data retrieval
-        System.Diagnostics.Debug.WriteLine($"Error loading data from MongoDB: {ex.Message}");
-        // Optionally, you can notify the user about the error
+        UpdatePropertiesFromData(data);
       }
     }
 

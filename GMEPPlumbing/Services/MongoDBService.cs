@@ -83,12 +83,10 @@ namespace GMEPPlumbing.Services
     }
 
     // Update
-    public static async Task<bool> UpdateDrawingDataAsync(WaterSystemData data, DateTime fileCreationTime)
+    public static async Task<bool> UpdateDrawingDataAsync(WaterSystemData data)
     {
       try
       {
-        data.FileCreationTime = fileCreationTime;
-
         var collection = _database.GetCollection<WaterSystemData>(CollectionName);
         var filter = Builders<WaterSystemData>.Filter.Eq("_id", data.Id);
         var result = await collection.ReplaceOneAsync(filter, data, new ReplaceOptions { IsUpsert = true });

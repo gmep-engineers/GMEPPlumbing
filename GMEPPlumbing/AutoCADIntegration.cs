@@ -10,6 +10,7 @@ using GMEPPlumbing.Views;
 using System;
 using System.Collections;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Forms.Integration;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
@@ -25,11 +26,18 @@ namespace GMEPPlumbing
     private string currentDrawingId;
     private WaterSystemViewModel viewModel;
 
+    public Document doc { get; private set; }
+    public Database db { get; private set; }
+    public Editor ed { get; private set; }
+
     [CommandMethod("Water")]
     public void Water()
     {
-      // Initialize MongoDB connection
       MongoDBService.Initialize();
+
+      doc = Application.DocumentManager.MdiActiveDocument;
+      db = doc.Database;
+      ed = doc.Editor;
 
       currentDrawingId = RetrieveOrCreateDrawingId();
 
@@ -38,19 +46,12 @@ namespace GMEPPlumbing
 
     public void WriteMessage(string message)
     {
-      Document doc = Application.DocumentManager.MdiActiveDocument;
-      Database db = doc.Database;
-      Editor ed = doc.Editor;
-
       ed.WriteMessage(message);
     }
 
     public string RetrieveOrCreateDrawingId()
     {
       string drawingId = null;
-      Document doc = Application.DocumentManager.MdiActiveDocument;
-      Database db = doc.Database;
-      Editor ed = doc.Editor;
 
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
@@ -151,6 +152,7 @@ namespace GMEPPlumbing
 
     private void InitializeUserInterface()
     {
+      // Create the viewModel & get the data off mongoDB
       viewModel = new WaterSystemViewModel(
           new WaterMeterLossCalculationService(),
           new WaterStaticLossService(),
@@ -160,7 +162,6 @@ namespace GMEPPlumbing
           new WaterRemainingPressurePer100FeetService(),
           new WaterAdditionalLosses(),
           new WaterAdditionalLosses(),
-          currentDrawingId,
           this);
 
       myControl = new UserInterface(viewModel);
@@ -192,9 +193,8 @@ namespace GMEPPlumbing
         // PaletteSet is being closed
         try
         {
-          WaterSystemData data = viewModel.GetWaterSystemData();
-          var fileCreationTime = GetFileCreationTime();
-          bool updateResult = await MongoDBService.UpdateDrawingDataAsync(data, fileCreationTime);
+          WaterSystemData data = viewModel.GetWaterSystemData(currentDrawingId);
+          bool updateResult = await MongoDBService.UpdateDrawingDataAsync(data);
           if (updateResult)
           {
             Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nSuccessfully updated drawing data in MongoDB.");
@@ -211,6 +211,19 @@ namespace GMEPPlumbing
       }
     }
 
+    public async Task<WaterSystemData> LoadDataFromMongoDBAsync()
+    {
+      try
+      {
+        return await MongoDBService.GetDrawingDataAsync(currentDrawingId);
+      }
+      catch (System.Exception ex)
+      {
+        System.Diagnostics.Debug.WriteLine($"Error loading data from MongoDB: {ex.Message}");
+        return null;
+      }
+    }
+
     public DateTime GetFileCreationTime()
     {
       Document doc = Application.DocumentManager.MdiActiveDocument;
@@ -222,7 +235,7 @@ namespace GMEPPlumbing
       else
       {
         // If the document is not saved or there's an issue, return the current time
-        return DateTime.Now.ToUniversalTime();
+        return DateTime.UtcNow;
       }
     }
   }
