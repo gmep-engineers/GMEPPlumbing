@@ -458,13 +458,35 @@ namespace GMEPPlumbing.ViewModels
       }
     }
 
+    private string _meterLossErrorMessage;
+
+    public string MeterLossErrorMessage
+    {
+      get => _meterLossErrorMessage;
+      private set => SetProperty(ref _meterLossErrorMessage, value);
+    }
+
     #endregion Properties for Section 2
 
     #region Calculation Methods for Section 1
 
     private void CalculateMeterLoss()
     {
-      MeterLoss = _waterMeterLossService.CalculateWaterMeterLoss(MeterSize, FixtureCalculation);
+      var (pressureLoss, message) = _waterMeterLossService.CalculateWaterMeterLoss(MeterSize, FixtureCalculation);
+
+      if (pressureLoss.HasValue)
+      {
+        MeterLoss = pressureLoss.Value;
+        MeterLossErrorMessage = null;
+      }
+      else
+      {
+        MeterLoss = 0;
+        MeterLossErrorMessage = message;
+      }
+
+      OnPropertyChanged(nameof(MeterLoss));
+      OnPropertyChanged(nameof(MeterLossErrorMessage));
     }
 
     private void CalculateStaticLoss()
@@ -501,9 +523,31 @@ namespace GMEPPlumbing.ViewModels
 
     #region Calculation Methods for Section 2
 
+    private string _meterLossErrorMessage2;
+
+    public string MeterLossErrorMessage2
+    {
+      get => _meterLossErrorMessage2;
+      private set => SetProperty(ref _meterLossErrorMessage2, value);
+    }
+
     private void CalculateMeterLoss2()
     {
-      MeterLoss2 = _waterMeterLossService.CalculateWaterMeterLoss(MeterSize2, FixtureCalculation2);
+      var (pressureLoss, message) = _waterMeterLossService.CalculateWaterMeterLoss(MeterSize2, FixtureCalculation2);
+
+      if (pressureLoss.HasValue)
+      {
+        MeterLoss2 = pressureLoss.Value;
+        MeterLossErrorMessage2 = null;
+      }
+      else
+      {
+        MeterLoss2 = 0;
+        MeterLossErrorMessage2 = message;
+      }
+
+      OnPropertyChanged(nameof(MeterLoss2));
+      OnPropertyChanged(nameof(MeterLossErrorMessage2));
     }
 
     private void CalculateTotalLoss2()

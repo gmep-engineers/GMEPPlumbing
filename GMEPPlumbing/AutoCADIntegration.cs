@@ -177,9 +177,6 @@ namespace GMEPPlumbing
         var data = await MongoDBService.GetDrawingDataAsync(currentDrawingId);
         if (data != null)
         {
-          // Use the dispatcher to update the UI thread
-          Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nData Max Velocity: " + data.HotWaterMaxVelocity.ToString());
-
           myControl.Dispatcher.Invoke(() =>
           {
             viewModel.UpdatePropertiesFromData(data);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 
 namespace GMEPPlumbing.Services
 {
@@ -73,24 +74,38 @@ namespace GMEPPlumbing.Services
             { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.6 }
         };
 
-    public double CalculateWaterMeterLoss(double waterMeterSizeInch, double flowGPM)
+    public (double? PressureLoss, string Message) CalculateWaterMeterLoss(double waterMeterSizeInch, double flowGPM)
     {
       int sizeIndex = Array.FindIndex(WaterMeterBreakPoints, x => x >= waterMeterSizeInch);
       int flowIndex = Array.FindIndex(FlowGPMBreakPoints, x => x >= flowGPM);
 
       if (sizeIndex == -1 || flowIndex == -1 || flowGPM > 2500)
       {
-        throw new ArgumentOutOfRangeException("Input values are out of the acceptable range.");
+        return (null, "Input values are out of the acceptable range.");
       }
 
       double pressureLoss = PressureLossTable[flowIndex, sizeIndex];
 
       if (pressureLoss == 0.0)
       {
-        throw new InvalidOperationException("Use larger meter for this combination of meter size and flow rate.");
+        string suitableSizes = GetSuitableMeterSizes(flowIndex);
+        return (null, $"The current meter size is not suitable for this flow rate. Suitable meter sizes for {FlowGPMBreakPoints[flowIndex]} GPM: {suitableSizes} inches");
       }
 
-      return pressureLoss;
+      return (pressureLoss, "Calculation successful.");
+    }
+
+    private string GetSuitableMeterSizes(int flowIndex)
+    {
+      StringBuilder suitableSizes = new StringBuilder();
+      for (int i = 0; i < WaterMeterBreakPoints.Length; i++)
+      {
+        if (PressureLossTable[flowIndex, i] > 0.0)
+        {
+          suitableSizes.Append(WaterMeterBreakPoints[i]).Append(", ");
+        }
+      }
+      return suitableSizes.Length > 0 ? suitableSizes.ToString().TrimEnd(',', ' ') : "No suitable sizes found";
     }
   }
 }
