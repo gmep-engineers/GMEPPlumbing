@@ -67,5 +67,10 @@ namespace GMEPPlumbing.Views
         }), DispatcherPriority.Input);
       }
     }
+
+    private void CreateWaterTable_Click(object sender, RoutedEventArgs e)
+    {
+      _viewModel.BuildWaterTable();
+    }
   }
 }

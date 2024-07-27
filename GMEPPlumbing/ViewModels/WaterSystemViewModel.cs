@@ -1,4 +1,5 @@
 ﻿using Autodesk.AutoCAD.ApplicationServices;
+using GMEPPlumbing.Commands;
 using GMEPPlumbing.Services;
 using System;
 using System.Collections.ObjectModel;
@@ -82,16 +83,25 @@ namespace GMEPPlumbing.ViewModels
       set => SetProperty(ref _streetHighPressure, value);
     }
 
-    private double _meterSize;
+    private string _meterSize;
 
-    public double MeterSize
+    public string MeterSize
     {
       get => _meterSize;
       set
       {
         if (SetProperty(ref _meterSize, value))
         {
-          CalculateMeterLoss();
+          if (FractionParser.TryParseFraction(value, out double parsedValue))
+          {
+            CalculateMeterLoss(parsedValue);
+          }
+          else
+          {
+            // Handle invalid input
+            MeterLoss = 0;
+            MeterLossErrorMessage = "Invalid meter size input";
+          }
         }
       }
     }
@@ -105,7 +115,16 @@ namespace GMEPPlumbing.ViewModels
       {
         if (SetProperty(ref _fixtureCalculation, value))
         {
-          CalculateMeterLoss();
+          if (FractionParser.TryParseFraction(MeterSize, out double parsedValue))
+          {
+            CalculateMeterLoss(parsedValue);
+          }
+          else
+          {
+            // Handle invalid input
+            MeterLoss = 0;
+            MeterLossErrorMessage = "Invalid meter size input";
+          }
         }
       }
     }
@@ -338,16 +357,25 @@ namespace GMEPPlumbing.ViewModels
       }
     }
 
-    private double _meterSize2;
+    private string _meterSize2;
 
-    public double MeterSize2
+    public string MeterSize2
     {
       get => _meterSize2;
       set
       {
         if (SetProperty(ref _meterSize2, value))
         {
-          CalculateMeterLoss2();
+          if (FractionParser.TryParseFraction(value, out double parsedValue))
+          {
+            CalculateMeterLoss2(parsedValue);
+          }
+          else
+          {
+            // Handle invalid input
+            MeterLoss2 = 0;
+            MeterLossErrorMessage2 = "Invalid meter size input";
+          }
         }
       }
     }
@@ -361,7 +389,16 @@ namespace GMEPPlumbing.ViewModels
       {
         if (SetProperty(ref _fixtureCalculation2, value))
         {
-          CalculateMeterLoss2();
+          if (FractionParser.TryParseFraction(MeterSize2, out double parsedValue))
+          {
+            CalculateMeterLoss(parsedValue);
+          }
+          else
+          {
+            // Handle invalid input
+            MeterLoss2 = 0;
+            MeterLossErrorMessage2 = "Invalid meter size input";
+          }
         }
       }
     }
@@ -470,9 +507,9 @@ namespace GMEPPlumbing.ViewModels
 
     #region Calculation Methods for Section 1
 
-    private void CalculateMeterLoss()
+    private void CalculateMeterLoss(double meterSize)
     {
-      var (pressureLoss, message) = _waterMeterLossService.CalculateWaterMeterLoss(MeterSize, FixtureCalculation);
+      var (pressureLoss, message) = _waterMeterLossService.CalculateWaterMeterLoss(meterSize, FixtureCalculation);
 
       if (pressureLoss.HasValue)
       {
@@ -531,9 +568,9 @@ namespace GMEPPlumbing.ViewModels
       private set => SetProperty(ref _meterLossErrorMessage2, value);
     }
 
-    private void CalculateMeterLoss2()
+    private void CalculateMeterLoss2(double meterSize)
     {
-      var (pressureLoss, message) = _waterMeterLossService.CalculateWaterMeterLoss(MeterSize2, FixtureCalculation2);
+      var (pressureLoss, message) = _waterMeterLossService.CalculateWaterMeterLoss(meterSize, FixtureCalculation2);
 
       if (pressureLoss.HasValue)
       {
@@ -612,6 +649,12 @@ namespace GMEPPlumbing.ViewModels
       field = value;
       OnPropertyChanged(propertyName);
       return true;
+    }
+
+    public void BuildWaterTable()
+    {
+      var data = GetWaterSystemData();
+      TableCommand.CreateWaterCalculationTable(data);
     }
 
     public WaterSystemData GetWaterSystemData()
@@ -718,7 +761,7 @@ namespace GMEPPlumbing.ViewModels
 
     public double StreetLowPressure { get; set; }
     public double StreetHighPressure { get; set; }
-    public double MeterSize { get; set; }
+    public string MeterSize { get; set; }
     public double FixtureCalculation { get; set; }
     public double Elevation { get; set; }
     public double BackflowPressureLoss { get; set; }
@@ -742,7 +785,7 @@ namespace GMEPPlumbing.ViewModels
     public string SectionHeader2 { get; set; }
 
     public double PressureRequired2 { get; set; }
-    public double MeterSize2 { get; set; }
+    public string MeterSize2 { get; set; }
     public double FixtureCalculation2 { get; set; }
     public double SystemLength2 { get; set; }
     public double MeterLoss2 { get; set; }
@@ -762,5 +805,29 @@ namespace GMEPPlumbing.ViewModels
   {
     public string Title { get; set; }
     public string Amount { get; set; }
+  }
+
+  public static class FractionParser
+  {
+    public static bool TryParseFraction(string input, out double result)
+    {
+      result = 0;
+      if (string.IsNullOrWhiteSpace(input))
+        return false;
+
+      // Try parsing as a regular double first
+      if (double.TryParse(input, out result))
+        return true;
+
+      // If not a regular double, try parsing as a fraction
+      var parts = input.Split('/');
+      if (parts.Length == 2 && int.TryParse(parts[0], out int numerator) && int.TryParse(parts[1], out int denominator) && denominator != 0)
+      {
+        result = (double)numerator / denominator;
+        return true;
+      }
+
+      return false;
+    }
   }
 }
