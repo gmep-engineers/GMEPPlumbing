@@ -46,6 +46,8 @@ namespace GMEPPlumbing
       RetrieveOrCreateDrawingId();
       InitializeUserInterface();
       LoadDataAsync();
+
+      pw.Focus();
     }
 
     public void WriteMessage(string message)

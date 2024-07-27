@@ -76,11 +76,11 @@ namespace GMEPPlumbing.Commands
             table.Cells[0, 0].Alignment = CellAlignment.MiddleCenter;
             table.MergeCells(CellRange.Create(table, 0, 0, 0, 3));
 
-            table.Cells[1, 0].TextString = "STREET PRESSURE: 65 MIN / 75 MAX";
+            table.Cells[1, 0].TextString = $"STREET PRESSURE: {data.StreetLowPressure} MIN / {data.StreetHighPressure} MAX";
             table.Cells[1, 0].Alignment = CellAlignment.MiddleLeft;
             table.MergeCells(CellRange.Create(table, 1, 0, 1, 3));
 
-            table.Cells[2, 0].TextString = "METER SIZE: 5/8\" FOR 15 GPM";
+            table.Cells[2, 0].TextString = $"METER SIZE: {data.MeterSize}\" FOR {data.FixtureCalculation} GPM";
             table.Cells[2, 0].Alignment = CellAlignment.MiddleLeft;
             table.MergeCells(CellRange.Create(table, 2, 0, 2, 3));
 
@@ -110,7 +110,7 @@ namespace GMEPPlumbing.Commands
           };
 
             string[] values = {
-            "4.0", "8.7", "20.0", "", "65", "", "120", "", ""
+            $"{data.MeterLoss}", $"{data.StaticLoss}", $"{data.PressureRequiredOrAtUnit}", $"{data.TotalLoss}", $"{data.StreetLowPressure}", $"{data.PressureAvailable}", $"{data.SystemLength}", $"{data.DevelopedLength}", $"{data.AveragePressureDrop}"
           };
 
             for (int i = 4; i < 13; i++)

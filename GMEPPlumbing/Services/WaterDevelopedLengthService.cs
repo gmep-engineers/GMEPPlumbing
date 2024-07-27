@@ -8,7 +8,7 @@ namespace GMEPPlumbing.Services
 {
   public class WaterDevelopedLengthService
   {
-    public double CalculateDevelopedLength(double systemLength, int developedLengthPercentage)
+    public double CalculateDevelopedLength(double systemLength, double developedLengthPercentage)
     {
       double developedLengthMultiplier = developedLengthPercentage / 100;
       return systemLength * developedLengthMultiplier;
