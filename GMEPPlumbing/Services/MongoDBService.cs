@@ -3,6 +3,7 @@ using Autodesk.AutoCAD.EditorInput;
 using GMEPPlumbing.ViewModels;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,15 @@ namespace GMEPPlumbing.Services
     private static IMongoDatabase _database;
     private static IMongoClient _client;
     private const string CollectionName = "DrawingData";
+
+    // This class wraps WaterSystemData with an _id for MongoDB
+    private class WaterSystemDataWrapper
+    {
+      [BsonId]
+      public string Id { get; set; }
+
+      public WaterSystemData Data { get; set; }
+    }
 
     public static void Initialize()
     {
@@ -51,12 +61,13 @@ namespace GMEPPlumbing.Services
     }
 
     // Create
-    public static async Task<WaterSystemData> CreateDrawingDataAsync(WaterSystemData data)
+    public static async Task<WaterSystemData> CreateDrawingDataAsync(WaterSystemData data, string drawingId)
     {
       try
       {
-        var collection = _database.GetCollection<WaterSystemData>(CollectionName);
-        await collection.InsertOneAsync(data);
+        var collection = _database.GetCollection<WaterSystemDataWrapper>(CollectionName);
+        var wrapper = new WaterSystemDataWrapper { Id = drawingId, Data = data };
+        await collection.InsertOneAsync(wrapper);
         return data;
       }
       catch (Exception ex)
@@ -71,9 +82,10 @@ namespace GMEPPlumbing.Services
     {
       try
       {
-        var collection = _database.GetCollection<WaterSystemData>(CollectionName);
-        var filter = Builders<WaterSystemData>.Filter.Eq("_id", drawingId);
-        return await collection.Find(filter).FirstOrDefaultAsync();
+        var collection = _database.GetCollection<WaterSystemDataWrapper>(CollectionName);
+        var filter = Builders<WaterSystemDataWrapper>.Filter.Eq(w => w.Id, drawingId);
+        var wrapper = await collection.Find(filter).FirstOrDefaultAsync();
+        return wrapper?.Data;
       }
       catch (Exception ex)
       {
@@ -83,50 +95,19 @@ namespace GMEPPlumbing.Services
     }
 
     // Update
-    public static async Task<bool> UpdateDrawingDataAsync(WaterSystemData data)
+    public static async Task<bool> UpdateDrawingDataAsync(WaterSystemData data, string currentDrawingId)
     {
       try
       {
-        var collection = _database.GetCollection<WaterSystemData>(CollectionName);
-        var filter = Builders<WaterSystemData>.Filter.Eq("_id", data.Id);
-        var result = await collection.ReplaceOneAsync(filter, data, new ReplaceOptions { IsUpsert = true });
+        var collection = _database.GetCollection<WaterSystemDataWrapper>(CollectionName);
+        var filter = Builders<WaterSystemDataWrapper>.Filter.Eq(w => w.Id, currentDrawingId);
+        var update = Builders<WaterSystemDataWrapper>.Update.Set(w => w.Data, data);
+        var result = await collection.UpdateOneAsync(filter, update, new UpdateOptions { IsUpsert = true });
         return result.IsAcknowledged && (result.ModifiedCount > 0 || result.UpsertedId != null);
       }
       catch (Exception ex)
       {
         WriteToCommandLine($"Failed to update drawing data: {ex.Message}");
-        throw;
-      }
-    }
-
-    // Delete
-    public static async Task<bool> DeleteDrawingDataAsync(string drawingId)
-    {
-      try
-      {
-        var collection = _database.GetCollection<WaterSystemData>(CollectionName);
-        var filter = Builders<WaterSystemData>.Filter.Eq("_id", drawingId);
-        var result = await collection.DeleteOneAsync(filter);
-        return result.IsAcknowledged && result.DeletedCount > 0;
-      }
-      catch (Exception ex)
-      {
-        WriteToCommandLine($"Failed to delete drawing data: {ex.Message}");
-        throw;
-      }
-    }
-
-    // Get All
-    public static async Task<List<WaterSystemData>> GetAllDrawingDataAsync()
-    {
-      try
-      {
-        var collection = _database.GetCollection<WaterSystemData>(CollectionName);
-        return await collection.Find(_ => true).ToListAsync();
-      }
-      catch (Exception ex)
-      {
-        WriteToCommandLine($"Failed to get all drawing data: {ex.Message}");
         throw;
       }
     }

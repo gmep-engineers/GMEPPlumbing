@@ -39,9 +39,9 @@ namespace GMEPPlumbing
       db = doc.Database;
       ed = doc.Editor;
 
-      currentDrawingId = RetrieveOrCreateDrawingId();
-
+      RetrieveOrCreateDrawingId();
       InitializeUserInterface();
+      LoadDataAsync();
     }
 
     public void WriteMessage(string message)
@@ -49,27 +49,24 @@ namespace GMEPPlumbing
       ed.WriteMessage(message);
     }
 
-    public string RetrieveOrCreateDrawingId()
+    public void RetrieveOrCreateDrawingId()
     {
-      string drawingId = null;
-
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         try
         {
-          // Try to retrieve existing XRecord
-          drawingId = RetrieveXRecordId(db, tr);
+          DateTime creationTime = RetrieveXRecordId(db, tr);
 
-          if (string.IsNullOrEmpty(drawingId))
+          if (string.IsNullOrEmpty(currentDrawingId))
           {
-            // Generate new ID if not found
-            drawingId = Guid.NewGuid().ToString();
-            CreateXRecordId(db, tr, drawingId);
-            ed.WriteMessage($"\nCreated new Drawing ID: {drawingId}");
+            currentDrawingId = Guid.NewGuid().ToString();
+            creationTime = GetFileCreationTime();
+            CreateXRecordId(db, tr, currentDrawingId);
+            ed.WriteMessage($"\nCreated new Drawing ID: {currentDrawingId}, Creation Time: {creationTime}");
           }
           else
           {
-            ed.WriteMessage($"\nRetrieved existing Drawing ID: {drawingId}");
+            ed.WriteMessage($"\nRetrieved existing Drawing ID: {currentDrawingId}, Creation Time: {creationTime}");
           }
 
           tr.Commit();
@@ -80,23 +77,30 @@ namespace GMEPPlumbing
           tr.Abort();
         }
       }
-
-      return drawingId;
     }
 
-    public string RetrieveXRecordId(Database db, Transaction tr)
+    public DateTime RetrieveXRecordId(Database db, Transaction tr)
     {
       RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);
       if (!regAppTable.Has(XRecordKey))
-        return null;
+        return DateTime.MinValue;
 
       DBDictionary namedObjDict = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForRead);
       if (!namedObjDict.Contains(XRecordKey))
-        return null;
+        return DateTime.MinValue;
 
       Xrecord xRec = (Xrecord)tr.GetObject(namedObjDict.GetAt(XRecordKey), OpenMode.ForRead);
       TypedValue[] values = xRec.Data.AsArray();
-      return values.Length > 0 ? values[0].Value.ToString() : null;
+
+      if (values.Length < 2)
+        return DateTime.MinValue;
+
+      currentDrawingId = values[0].Value.ToString();
+      double acadDate = (double)values[1].Value;
+
+      DateTime creationTime = new DateTime(1899, 12, 30).AddDays(acadDate);
+
+      return creationTime;
     }
 
     public void CreateXRecordId(Database db, Transaction tr, string drawingId)
@@ -104,50 +108,31 @@ namespace GMEPPlumbing
       RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForWrite);
       if (!regAppTable.Has(XRecordKey))
       {
-        RegAppTableRecord regAppTableRecord = new RegAppTableRecord();
-        regAppTableRecord.Name = XRecordKey;
+        RegAppTableRecord regAppTableRecord = new RegAppTableRecord
+        {
+          Name = XRecordKey
+        };
         regAppTable.Add(regAppTableRecord);
         tr.AddNewlyCreatedDBObject(regAppTableRecord, true);
       }
 
       DBDictionary namedObjDict = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForWrite);
       Xrecord xRec = new Xrecord();
-      xRec.Data = new ResultBuffer(new TypedValue((int)DxfCode.Text, drawingId));
+
+      // Get the file creation time
+      DateTime creationTime = GetFileCreationTime();
+
+      // Convert DateTime to AutoCAD date (number of days since December 30, 1899)
+      double acadDate = (creationTime - new DateTime(1899, 12, 30)).TotalDays;
+
+      // Create a ResultBuffer with multiple TypedValues
+      xRec.Data = new ResultBuffer(
+          new TypedValue((int)DxfCode.Text, drawingId),
+          new TypedValue((int)DxfCode.Real, acadDate)
+      );
+
       namedObjDict.SetAt(XRecordKey, xRec);
       tr.AddNewlyCreatedDBObject(xRec, true);
-    }
-
-    public void DeleteXRecordId()
-    {
-      Document doc = Application.DocumentManager.MdiActiveDocument;
-      Database db = doc.Database;
-      Editor ed = doc.Editor;
-
-      using (Transaction tr = db.TransactionManager.StartTransaction())
-      {
-        DBDictionary namedObjDict = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForWrite);
-
-        if (namedObjDict.Contains(XRecordKey))
-        {
-          namedObjDict.Remove(XRecordKey);
-          ed.WriteMessage($"\nSuccessfully deleted Drawing ID XRecord.");
-        }
-        else
-        {
-          ed.WriteMessage($"\nNo Drawing ID XRecord found to delete.");
-        }
-
-        // Optionally, remove the RegApp entry as well
-        RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);
-        if (regAppTable.Has(XRecordKey))
-        {
-          regAppTable.UpgradeOpen();
-          ObjectId regAppId = regAppTable[XRecordKey];
-          RegAppTableRecord regAppRecord = (RegAppTableRecord)tr.GetObject(regAppId, OpenMode.ForWrite);
-          regAppRecord.Erase();
-          ed.WriteMessage($"\nRemoved RegApp entry for Drawing ID.");
-        }
-      }
     }
 
     private void InitializeUserInterface()
@@ -161,8 +146,7 @@ namespace GMEPPlumbing
           new WaterDevelopedLengthService(),
           new WaterRemainingPressurePer100FeetService(),
           new WaterAdditionalLosses(),
-          new WaterAdditionalLosses(),
-          this);
+          new WaterAdditionalLosses());
 
       myControl = new UserInterface(viewModel);
       var host = new ElementHost();
@@ -186,47 +170,56 @@ namespace GMEPPlumbing
       pw.StateChanged += Pw_StateChanged;
     }
 
+    private async void LoadDataAsync()
+    {
+      try
+      {
+        var data = await MongoDBService.GetDrawingDataAsync(currentDrawingId);
+        if (data != null)
+        {
+          // Use the dispatcher to update the UI thread
+          Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nData Max Velocity: " + data.HotWaterMaxVelocity.ToString());
+
+          myControl.Dispatcher.Invoke(() =>
+          {
+            viewModel.UpdatePropertiesFromData(data);
+          });
+
+          Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nSuccessfully loaded data from MongoDB.\n");
+        }
+      }
+      catch (System.Exception ex)
+      {
+        Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage($"\nError loading data from MongoDB: {ex.Message}\n");
+      }
+    }
+
     private async void Pw_StateChanged(object sender, PaletteSetStateEventArgs e)
     {
       if (e.NewState == StateEventIndex.Hide)
       {
-        // PaletteSet is being closed
         try
         {
-          WaterSystemData data = viewModel.GetWaterSystemData(currentDrawingId);
-          bool updateResult = await MongoDBService.UpdateDrawingDataAsync(data);
+          WaterSystemData data = viewModel.GetWaterSystemData();
+          bool updateResult = await MongoDBService.UpdateDrawingDataAsync(data, currentDrawingId);
           if (updateResult)
           {
-            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nSuccessfully updated drawing data in MongoDB.");
+            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nSuccessfully updated drawing data in MongoDB.\n");
           }
           else
           {
-            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nFailed to update drawing data in MongoDB.");
+            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nFailed to update drawing data in MongoDB.\n");
           }
         }
         catch (System.Exception ex)
         {
-          Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage($"\nError updating drawing data: {ex.Message}");
+          Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage($"\nError updating drawing data: {ex.Message}\n");
         }
       }
     }
 
-    public async Task<WaterSystemData> LoadDataFromMongoDBAsync()
+    private DateTime GetFileCreationTime()
     {
-      try
-      {
-        return await MongoDBService.GetDrawingDataAsync(currentDrawingId);
-      }
-      catch (System.Exception ex)
-      {
-        System.Diagnostics.Debug.WriteLine($"Error loading data from MongoDB: {ex.Message}");
-        return null;
-      }
-    }
-
-    public DateTime GetFileCreationTime()
-    {
-      Document doc = Application.DocumentManager.MdiActiveDocument;
       if (doc != null && !string.IsNullOrEmpty(doc.Name))
       {
         FileInfo fileInfo = new FileInfo(doc.Name);
@@ -234,7 +227,6 @@ namespace GMEPPlumbing
       }
       else
       {
-        // If the document is not saved or there's an issue, return the current time
         return DateTime.UtcNow;
       }
     }

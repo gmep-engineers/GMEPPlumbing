@@ -20,7 +20,6 @@ namespace GMEPPlumbing.ViewModels
     private readonly WaterRemainingPressurePer100FeetService _waterRemainingPressurePer100FeetService;
     private readonly WaterAdditionalLosses _waterAdditionalLossesService;
     private readonly WaterAdditionalLosses _waterAdditionalLossesService2;
-    private readonly AutoCADIntegration _autoCADIntegration;
 
     public ObservableCollection<AdditionalLoss> AdditionalLosses { get; set; }
     public ObservableCollection<AdditionalLoss> AdditionalLosses2 { get; set; }
@@ -33,8 +32,7 @@ namespace GMEPPlumbing.ViewModels
         WaterDevelopedLengthService waterDevelopedLength,
         WaterRemainingPressurePer100FeetService waterRemainingPressurePer100Feet,
         WaterAdditionalLosses waterAdditionalLossesService,
-        WaterAdditionalLosses waterAdditionalLossesService2,
-        AutoCADIntegration autoCADIntegration)
+        WaterAdditionalLosses waterAdditionalLossesService2)
     {
       _waterMeterLossService = waterMeterLoss;
       _waterStaticLossService = waterStaticLoss;
@@ -44,15 +42,12 @@ namespace GMEPPlumbing.ViewModels
       _waterRemainingPressurePer100FeetService = waterRemainingPressurePer100Feet;
       _waterAdditionalLossesService = waterAdditionalLossesService;
       _waterAdditionalLossesService2 = waterAdditionalLossesService2;
-      _autoCADIntegration = autoCADIntegration;
 
       AdditionalLosses = new ObservableCollection<AdditionalLoss>();
       AdditionalLosses2 = new ObservableCollection<AdditionalLoss>();
 
       AdditionalLosses.CollectionChanged += (s, e) => UpdateAdditionalLosses();
       AdditionalLosses2.CollectionChanged += (s, e) => UpdateAdditionalLosses2();
-
-      LoadDataFromMongoDBAsync();
     }
 
     #region Properties for Section 1
@@ -575,12 +570,10 @@ namespace GMEPPlumbing.ViewModels
       return true;
     }
 
-    public WaterSystemData GetWaterSystemData(string currentDrawingId)
+    public WaterSystemData GetWaterSystemData()
     {
       return new WaterSystemData
       {
-        Id = currentDrawingId,
-        CreatedAt = DateTime.UtcNow,
         SectionHeader1 = SectionHeader1,
         StreetLowPressure = StreetLowPressure,
         StreetHighPressure = StreetHighPressure,
@@ -671,25 +664,11 @@ namespace GMEPPlumbing.ViewModels
       }
     }
 
-    private async void LoadDataFromMongoDBAsync()
-    {
-      var data = await _autoCADIntegration.LoadDataFromMongoDBAsync();
-      if (data != null)
-      {
-        UpdatePropertiesFromData(data);
-      }
-    }
-
     #endregion INotifyPropertyChanged Implementation
   }
 
   public class WaterSystemData
   {
-    public string Id { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime FileCreationTime { get; set; }
-    public bool NotEqualFileCreationFlag { get; set; } = false;
-
     // Properties for Section 1
     public string SectionHeader1 { get; set; }
 
@@ -733,68 +712,11 @@ namespace GMEPPlumbing.ViewModels
     public ObservableCollection<AdditionalLoss> AdditionalLosses { get; set; }
 
     public ObservableCollection<AdditionalLoss> AdditionalLosses2 { get; set; }
-
-    public WaterSystemData Clone()
-    {
-      return new WaterSystemData
-      {
-        Id = this.Id,
-        CreatedAt = this.CreatedAt,
-        FileCreationTime = this.FileCreationTime,
-        NotEqualFileCreationFlag = this.NotEqualFileCreationFlag,
-        SectionHeader1 = this.SectionHeader1,
-        StreetLowPressure = this.StreetLowPressure,
-        StreetHighPressure = this.StreetHighPressure,
-        MeterSize = this.MeterSize,
-        FixtureCalculation = this.FixtureCalculation,
-        Elevation = this.Elevation,
-        BackflowPressureLoss = this.BackflowPressureLoss,
-        PRVPressureLoss = this.PRVPressureLoss,
-        PressureRequiredOrAtUnit = this.PressureRequiredOrAtUnit,
-        SystemLength = this.SystemLength,
-        MeterLoss = this.MeterLoss,
-        StaticLoss = this.StaticLoss,
-        TotalLoss = this.TotalLoss,
-        PressureAvailable = this.PressureAvailable,
-        DevelopedLength = this.DevelopedLength,
-        AveragePressureDrop = this.AveragePressureDrop,
-        AdditionalLossesTotal = this.AdditionalLossesTotal,
-        ExistingMeter = this.ExistingMeter,
-        PipeMaterial = this.PipeMaterial,
-        ColdWaterMaxVelocity = this.ColdWaterMaxVelocity,
-        HotWaterMaxVelocity = this.HotWaterMaxVelocity,
-        DevelopedLengthPercentage = this.DevelopedLengthPercentage,
-        SectionHeader2 = this.SectionHeader2,
-        PressureRequired2 = this.PressureRequired2,
-        MeterSize2 = this.MeterSize2,
-        FixtureCalculation2 = this.FixtureCalculation2,
-        SystemLength2 = this.SystemLength2,
-        MeterLoss2 = this.MeterLoss2,
-        TotalLoss2 = this.TotalLoss2,
-        PressureAvailable2 = this.PressureAvailable2,
-        DevelopedLength2 = this.DevelopedLength2,
-        AveragePressureDrop2 = this.AveragePressureDrop2,
-        AdditionalLossesTotal2 = this.AdditionalLossesTotal2,
-        AdditionalLosses = new ObservableCollection<AdditionalLoss>(
-              this.AdditionalLosses.Select(al => al.Clone())),
-        AdditionalLosses2 = new ObservableCollection<AdditionalLoss>(
-              this.AdditionalLosses2.Select(al => al.Clone()))
-      };
-    }
   }
 
   public class AdditionalLoss
   {
     public string Title { get; set; }
     public string Amount { get; set; }
-
-    public AdditionalLoss Clone()
-    {
-      return new AdditionalLoss
-      {
-        Title = this.Title,
-        Amount = this.Amount
-      };
-    }
   }
 }
