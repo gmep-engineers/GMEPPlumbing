@@ -209,10 +209,15 @@
             <TextBlock Text="Average Pressure Drop per 100ft:" Foreground="#FFFFFF" Margin="0,10,0,5" />
             <TextBlock Text="{Binding AveragePressureDrop, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
 
-            <Button Content="Create Basic Water Table"
-                Margin="0,20,0,0"
+            <Button Content="Create Basic Residential Water Table"
+                Margin="0,10,0,0"
                 Padding="10,5"
-                Click="CreateWaterTable_Click" />
+                Click="CreateBasicResidentialWaterTable_Click" />
+
+            <Button Content="Create Basic Commercial Water Table"
+                Margin="0,5,0,0"
+                Padding="10,5"
+                Click="CreateBasicCommercialWaterTable_Click" />
         </StackPanel>
 
         <!-- Vertical Line -->

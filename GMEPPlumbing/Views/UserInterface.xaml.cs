@@ -68,9 +68,14 @@ namespace GMEPPlumbing.Views
       }
     }
 
-    private void CreateWaterTable_Click(object sender, RoutedEventArgs e)
+    private void CreateBasicResidentialWaterTable_Click(object sender, RoutedEventArgs e)
     {
-      _viewModel.BuildWaterTable();
+      _viewModel.BuildBasicResidentialWaterTable();
+    }
+
+    private void CreateBasicCommercialWaterTable_Click(object sender, RoutedEventArgs e)
+    {
+      _viewModel.BuildBasicCommercialWaterTable();
     }
   }
 }

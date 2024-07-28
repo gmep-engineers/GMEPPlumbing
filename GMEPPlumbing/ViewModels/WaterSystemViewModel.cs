@@ -651,10 +651,16 @@ namespace GMEPPlumbing.ViewModels
       return true;
     }
 
-    public void BuildWaterTable()
+    public void BuildBasicResidentialWaterTable()
     {
       var data = GetWaterSystemData();
-      TableCommand.CreateWaterCalculationTable(data);
+      TableCommand.CreateWaterCalculationTableResidentialBasic(data);
+    }
+
+    public void BuildBasicCommercialWaterTable()
+    {
+      var data = GetWaterSystemData();
+      TableCommand.CreateWaterCalculationTableCommercialBasic(data);
     }
 
     public WaterSystemData GetWaterSystemData()

@@ -12,7 +12,7 @@ namespace GMEPPlumbing.Commands
 {
   public class TableCommand
   {
-    public static void CreateWaterCalculationTable(WaterSystemData data)
+    public static void CreateWaterCalculationTableResidentialBasic(WaterSystemData data)
     {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
@@ -79,7 +79,7 @@ namespace GMEPPlumbing.Commands
             }
 
             // Populate the table
-            table.Cells[0, 0].TextString = "TYPICAL WATER CALCULATIONS";
+            table.Cells[0, 0].TextString = $"{data.SectionHeader1}";
             table.Cells[0, 0].Alignment = CellAlignment.MiddleCenter;
             table.MergeCells(CellRange.Create(table, 0, 0, 0, 3));
 
@@ -158,6 +158,161 @@ namespace GMEPPlumbing.Commands
           catch (System.Exception ex)
           {
             ed.WriteMessage($"\nError creating water calculation table: {ex.Message}");
+            tr.Abort();
+          }
+        }
+      }
+    }
+
+    public static void CreateWaterCalculationTableCommercialBasic(WaterSystemData data)
+    {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+
+      using (DocumentLock docLock = doc.LockDocument())
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          try
+          {
+            BlockTableRecord currentSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+            Table table = new Table();
+
+            // Calculate the number of rows dynamically
+            int rowCount = 14 + data.AdditionalLosses.Count;
+            // Add rows for backflow preventer and PRV if they have non-zero values
+            if (data.BackflowPressureLoss > 0) rowCount++;
+            if (data.PRVPressureLoss > 0) rowCount++;
+
+            table.TableStyle = db.Tablestyle;
+            table.SetSize(rowCount, 2);
+
+            PromptPointResult pr = ed.GetPoint("\nSpecify insertion point: ");
+            if (pr.Status != PromptStatus.OK)
+              return;
+            table.Position = pr.Value;
+
+            // Set layer to "M-TEXT"
+            table.Layer = "M-TEXT";
+
+            // Set table width and column widths
+            table.Width = 11.8206;
+            table.Columns[0].Width = 10.0467;
+            table.Columns[1].Width = 1.7739;
+
+            // Set row heights and text properties
+            for (int row = 0; row < rowCount; row++)
+            {
+              for (int col = 0; col < 2; col++)
+              {
+                Cell cell = table.Cells[row, col];
+                cell.TextHeight = 0.09375000;
+                cell.TextStyleId = CreateOrGetTextStyle(db, tr, "A2");
+              }
+
+              if (row == 0)
+              {
+                table.Rows[row].Height = 0.6413;  // Header
+                table.Cells[row, 0].TextHeight = 0.1875;
+              }
+              else if (row >= 1 && row <= 4)
+              {
+                table.Rows[row].Height = 0.2500;
+              }
+              else
+              {
+                table.Rows[row].Height = 0.4955;
+              }
+            }
+
+            // Populate the table
+            table.Cells[0, 0].TextString = $"{data.SectionHeader1.ToUpper()}";
+            table.Cells[0, 0].Alignment = CellAlignment.MiddleCenter;
+            table.Cells[1, 1].TextString = "COLD WATER";
+            table.Cells[1, 1].Alignment = CellAlignment.MiddleCenter;
+
+            table.MergeCells(CellRange.Create(table, 1, 1, 4, 1));
+
+            table.Cells[1, 0].TextString = $"STREET PRESSURE: {data.StreetLowPressure}PSI*";
+            table.Cells[1, 0].Alignment = CellAlignment.MiddleLeft;
+
+            table.Cells[2, 0].TextString = $"METER SIZE: {data.MeterSize} {(data.ExistingMeter ? "EXISTING METER" : "NEW METER")}";
+            table.Cells[2, 0].Alignment = CellAlignment.MiddleLeft;
+
+            table.Cells[3, 0].TextString = $"PIPE MATERIAL: {data.PipeMaterial}";
+            table.Cells[3, 0].Alignment = CellAlignment.MiddleLeft;
+
+            table.Cells[4, 0].TextString = $"COLD WATER MAX. VEL.= {data.ColdWaterMaxVelocity} FPS, HOT WATER MAX. VEL.={data.HotWaterMaxVelocity}FPS";
+            table.Cells[4, 0].Alignment = CellAlignment.MiddleLeft;
+
+            // Define the dynamic rows
+            List<(string Description, string Value)> rows = new List<(string, string)>
+        {
+            ($"1. {data.MeterSize}\" METER LOSS, PSI", $"{data.MeterLoss:F1}"),
+            ($"2. {data.Elevation}FT STATIC LOSS, PSI", $"{data.StaticLoss:F1}")
+        };
+
+            // Add backflow preventer loss if non-zero
+            if (data.BackflowPressureLoss > 0)
+            {
+              rows.Add(($"3. BACKFLOW PREVENTER LOSS, PSI", $"{data.BackflowPressureLoss:F1}"));
+            }
+
+            // Add PRV loss if non-zero
+            if (data.PRVPressureLoss > 0)
+            {
+              rows.Add(($"{rows.Count + 1}. PRV LOSS, PSI", $"{data.PRVPressureLoss:F1}"));
+            }
+
+            // Add additional losses
+            int itemNumber = rows.Count + 1;
+            foreach (var loss in data.AdditionalLosses)
+            {
+              rows.Add(($"{itemNumber}. {loss.Title}, PSI", loss.Amount));
+              itemNumber++;
+            }
+
+            rows.Add(($"{itemNumber}. MINIMUM PRESSURE REQUIRED, PSI", $"{data.PressureRequiredOrAtUnit:F1}"));
+            itemNumber++;
+
+            // Add remaining rows
+            rows.AddRange(new List<(string, string)>
+            {
+                ($"{itemNumber}. TOTAL LOSSES, PSI (1 THRU {itemNumber - 1})", $"{data.TotalLoss:F1}"),
+                ($"{itemNumber + 1}. WATER PRESSURE (MIN), PSI", $"{data.StreetLowPressure:F1}"),
+                ($"{itemNumber + 2}. PRESSURE AVAILABLE FOR FRICTION, PSI", $"{data.PressureAvailable:F1}"),
+                ($"{itemNumber + 3}. ACTUAL LENGTH OF SYSTEM, FT", $"{data.SystemLength:F1}"),
+                ($"{itemNumber + 4}. DEVELOPED LENGTH (130% OF ITEM {itemNumber + 3})", $"{data.DevelopedLength:F1}"),
+                ($"{itemNumber + 5}. AVERAGE PRESSURE DROP, PSI/100FT", $"{data.AveragePressureDrop:F1}")
+            });
+
+            //Populate the table with the rows
+            for (int i = 0; i < rows.Count; i++)
+            {
+              int rowIndex = i + 5;
+              table.Cells[rowIndex, 0].TextString = rows[i].Description;
+              table.Cells[rowIndex, 0].Alignment = CellAlignment.MiddleLeft;
+              table.Cells[rowIndex, 1].TextString = rows[i].Value;
+              table.Cells[rowIndex, 1].Alignment = CellAlignment.MiddleCenter;
+            }
+
+            // Add note at the bottom
+            table.InsertRows(rowCount, 0.5257, 1);
+            table.Cells[rowCount, 0].TextString = "NOTE: *IF STREET PRESSURE EXCEEDS 80 PSI, A PRESSURE REDUCING VALVE IS TO BE INSTALLED TO REDUCE THE PRESSURE TO 80PSI.";
+            table.Cells[rowCount, 0].Alignment = CellAlignment.MiddleLeft;
+            table.MergeCells(CellRange.Create(table, rowCount, 0, rowCount, 1));
+            table.Cells[rowCount, 0].TextStyleId = CreateOrGetTextStyle(db, tr, "A2");
+            table.Cells[rowCount, 0].TextHeight = 0.09375000;
+
+            currentSpace.AppendEntity(table);
+            tr.AddNewlyCreatedDBObject(table, true);
+            tr.Commit();
+            ed.WriteMessage("\nCommercial water calculation table created successfully.");
+          }
+          catch (System.Exception ex)
+          {
+            ed.WriteMessage($"\nError creating commercial water calculation table: {ex.Message}");
             tr.Abort();
           }
         }
