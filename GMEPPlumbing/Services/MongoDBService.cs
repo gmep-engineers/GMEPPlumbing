@@ -33,12 +33,17 @@ namespace GMEPPlumbing.Services
     {
       try
       {
+        string dllPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        string dllDirectory = Path.GetDirectoryName(dllPath);
+        WriteToCommandLine($"DLL directory: {dllDirectory}");
+
         var builder = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
+            .SetBasePath(dllDirectory)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
         IConfiguration configuration = builder.Build();
         var connectionString = configuration.GetConnectionString("MongoDB");
-        WriteToCommandLine($"Attempting to connect to MongoDB with connection string: {connectionString}");
+        WriteToCommandLine($"Attempting to connect to MongoDB with connection string.\n");
 
         var settings = MongoClientSettings.FromConnectionString(connectionString);
         settings.ServerSelectionTimeout = TimeSpan.FromSeconds(5);
@@ -56,6 +61,7 @@ namespace GMEPPlumbing.Services
         {
           WriteToCommandLine($"Inner exception: {ex.InnerException.Message}");
         }
+        WriteToCommandLine($"Stack trace: {ex.StackTrace}");
         throw;
       }
     }

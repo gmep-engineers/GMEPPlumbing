@@ -79,7 +79,7 @@ namespace GMEPPlumbing.Commands
             }
 
             // Populate the table
-            table.Cells[0, 0].TextString = $"{data.SectionHeader1}";
+            table.Cells[0, 0].TextString = $"{data.SectionHeader1.ToUpper()}";
             table.Cells[0, 0].Alignment = CellAlignment.MiddleCenter;
             table.MergeCells(CellRange.Create(table, 0, 0, 0, 3));
 

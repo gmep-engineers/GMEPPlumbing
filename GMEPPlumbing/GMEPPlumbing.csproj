@@ -239,7 +239,7 @@
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="libmongocrypt.dylib" />
     <None Include="libmongocrypt.so" />
