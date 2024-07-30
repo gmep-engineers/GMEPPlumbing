@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows.Controls;
 using System.Windows.Markup;
 
 namespace GMEPPlumbing.ViewModels
@@ -24,6 +25,8 @@ namespace GMEPPlumbing.ViewModels
 
     public ObservableCollection<AdditionalLoss> AdditionalLosses { get; set; }
     public ObservableCollection<AdditionalLoss> AdditionalLosses2 { get; set; }
+    public ObservableCollection<ComboBoxItem> SectionHeaderOptions1 { get; set; }
+    public ObservableCollection<ComboBoxItem> SectionHeaderOptions2 { get; set; }
 
     public WaterSystemViewModel(
         WaterMeterLossCalculationService waterMeterLoss,
@@ -44,6 +47,17 @@ namespace GMEPPlumbing.ViewModels
       _waterAdditionalLossesService = waterAdditionalLossesService;
       _waterAdditionalLossesService2 = waterAdditionalLossesService2;
 
+      SectionHeaderOptions1 = new ObservableCollection<ComboBoxItem>
+      {
+          new ComboBoxItem { Content = "TYPICAL WATER CALCULATIONS" },
+          new ComboBoxItem { Content = "TYPICAL WATER CALCULATIONS FOR MAIN CPVC PIPE TO THE UNIT SUBMETER" },
+      };
+
+      SectionHeaderOptions2 = new ObservableCollection<ComboBoxItem>
+      {
+          new ComboBoxItem { Content = "TYPICAL WATER CALCULATIONS FOR PEX PIPE INSIDE THE UNIT" }
+      };
+
       AdditionalLosses = new ObservableCollection<AdditionalLoss>();
       AdditionalLosses2 = new ObservableCollection<AdditionalLoss>();
 
@@ -53,7 +67,7 @@ namespace GMEPPlumbing.ViewModels
 
     #region Properties for Section 1
 
-    private string _sectionHeader1 = "Main CPVC Pipe to Unit Submeter";
+    private string _sectionHeader1 = "TYPICAL WATER CALCULATIONS";
 
     public string SectionHeader1
     {
@@ -335,7 +349,7 @@ namespace GMEPPlumbing.ViewModels
 
     #region Properties for Section 2
 
-    private string _sectionHeader2 = "PEX Pipe Inside the Unit";
+    private string _sectionHeader2 = "";
 
     public string SectionHeader2
     {
@@ -801,9 +815,7 @@ namespace GMEPPlumbing.ViewModels
     public double AveragePressureDrop2 { get; set; }
     public double AdditionalLossesTotal2 { get; set; }
 
-    // Collections for additional losses
     public ObservableCollection<AdditionalLoss> AdditionalLosses { get; set; }
-
     public ObservableCollection<AdditionalLoss> AdditionalLosses2 { get; set; }
   }
 

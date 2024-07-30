@@ -6,6 +6,105 @@
              xmlns:local="clr-namespace:GMEPPlumbing"
              mc:Ignorable="d"
              d:DesignHeight="1200" d:DesignWidth="1200">
+    <UserControl.Resources>
+        <!-- ComboBoxToggleButton Template -->
+        <ControlTemplate x:Key="ComboBoxToggleButton" TargetType="ToggleButton">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="20" />
+                </Grid.ColumnDefinitions>
+                <Border x:Name="Border" Grid.ColumnSpan="2" Background="#FF3E3E42" BorderBrush="#FF6E6E70" BorderThickness="1" />
+                <Border Grid.Column="0" Margin="1" Background="#FF3E3E42" BorderBrush="#FF6E6E70" BorderThickness="0,0,1,0" />
+                <Path x:Name="Arrow" Grid.Column="1" Fill="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M 0 0 L 4 4 L 8 0 Z" />
+            </Grid>
+        </ControlTemplate>
+
+        <!-- ComboBoxTextBox Template -->
+        <ControlTemplate x:Key="ComboBoxTextBox" TargetType="TextBox">
+            <Border x:Name="PART_ContentHost" Focusable="False" Background="#FF3E3E42" />
+        </ControlTemplate>
+
+        <!-- DarkComboBoxStyle -->
+        <Style x:Key="DarkComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Background" Value="#FF3E3E42" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#FF6E6E70" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton
+                        Name="ToggleButton"
+                        Template="{StaticResource ComboBoxToggleButton}"
+                        Grid.Column="2"
+                        Focusable="false"
+                        IsChecked="{Binding Path=IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}"
+                        ClickMode="Press">
+                            </ToggleButton>
+                            <ContentPresenter
+                        Name="ContentSite"
+                        IsHitTestVisible="False"
+                        Content="{TemplateBinding SelectionBoxItem}"
+                        ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                        ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                        Margin="3,3,23,3"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Left" />
+                            <TextBox x:Name="PART_EditableTextBox"
+                        Style="{x:Null}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Margin="3,3,23,3"
+                        Focusable="True"
+                        Background="Transparent"
+                        Foreground="#FFFFFF"
+                        Visibility="Hidden"
+                        IsReadOnly="{TemplateBinding IsReadOnly}"
+                        SelectionChanged="PART_EditableTextBox_SelectionChanged">
+                            </TextBox>
+                            <Popup
+                        Name="Popup"
+                        Placement="Bottom"
+                        IsOpen="{TemplateBinding IsDropDownOpen}"
+                        AllowsTransparency="True"
+                        Focusable="False"
+                        PopupAnimation="Slide">
+                                <Grid
+                          Name="DropDown"
+                          SnapsToDevicePixels="True"
+                          MinWidth="{TemplateBinding ActualWidth}"
+                          MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border
+                                x:Name="DropDownBorder"
+                                Background="#FF3E3E42"
+                                BorderThickness="1"
+                                BorderBrush="#FF6E6E70" />
+                                    <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEditable" Value="true">
+                                <Setter Property="IsTabStop" Value="false" />
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="ContentSite" Property="Visibility" Value="Hidden" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsEditable" Value="true">
+                    <Setter Property="IsTabStop" Value="false" />
+                    <Setter Property="Padding" Value="3,3,23,3" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
     <Grid Background="#FF2D2D30">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300" />
@@ -22,8 +121,14 @@
             <StackPanel  Margin="20">
                 <!-- Section Header -->
                 <TextBlock Text="Section Header 1:" Foreground="#FFFFFF" Margin="0,0,0,5" />
-                <TextBox Width="150" HorizontalAlignment="Left" Background="#FF3E3E42" Foreground="#FFFFFF"
-                     Text="{Binding SectionHeader1, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" />
+                <ComboBox Width="200" HorizontalAlignment="Left"
+                  Style="{StaticResource DarkComboBoxStyle}"
+                  IsEditable="True"
+                  Text="{Binding SectionHeader1, UpdateSourceTrigger=PropertyChanged}"
+                  ItemsSource="{Binding SectionHeaderOptions1}"
+                  SelectedIndex="0"
+                  GotFocus="ComboBox_GotFocus">
+                </ComboBox>
 
                 <!-- Street Low Pressure -->
                 <TextBlock Text="Street Low Pressure:" Foreground="#FFFFFF" Margin="0,10,0,5" />
@@ -228,8 +333,14 @@
             <StackPanel Margin="20">
                 <!-- Section Header 2 -->
                 <TextBlock Text="Section Header 2:" Foreground="#FFFFFF" Margin="0,0,0,5" />
-                <TextBox Width="150" HorizontalAlignment="Left" Background="#FF3E3E42" Foreground="#FFFFFF"
-                         Text="{Binding SectionHeader2, UpdateSourceTrigger=PropertyChanged}" GotFocus="TextBox_GotFocus" />
+                <ComboBox Width="200" HorizontalAlignment="Left"
+                  Style="{StaticResource DarkComboBoxStyle}"
+                  IsEditable="True"
+                  Text="{Binding SectionHeader2, UpdateSourceTrigger=PropertyChanged}"
+                  ItemsSource="{Binding SectionHeaderOptions2}"
+                  SelectedIndex="-1"
+                  GotFocus="ComboBox_GotFocus">
+                </ComboBox>
 
                 <!-- Pressure Required 2 -->
                 <TextBlock Text="Pressure Required 2:" Foreground="#FFFFFF" Margin="0,10,0,5" />

@@ -44,9 +44,22 @@ namespace GMEPPlumbing.Commands
             // Set layer to "M-TEXT"
             table.Layer = "M-TEXT";
 
+            // Calculate table width based on section header length
+            int maxHeaderLength;
+            if (data.PressureRequired2 != 0 && !string.IsNullOrEmpty(data.MeterSize2) &&
+                data.FixtureCalculation2 != 0 && data.SystemLength2 != 0)
+            {
+              maxHeaderLength = Math.Max(data.SectionHeader1.Length, data.SectionHeader2.Length);
+            }
+            else
+            {
+              maxHeaderLength = data.SectionHeader1.Length;
+            }
+            double additionalWidth = Math.Max(maxHeaderLength - 40, 0) * 0.125;
+
             // Set column widths
             table.Columns[0].Width = 0.40535461;
-            table.Columns[1].Width = 2.89712166;
+            table.Columns[1].Width = 2.89712166 + additionalWidth;
             table.Columns[2].Width = 0.90693862;
             table.Columns[3].Width = 0.65590551;
 
@@ -237,7 +250,7 @@ namespace GMEPPlumbing.Commands
             table.Cells[1, 0].TextString = $"STREET PRESSURE: {data.StreetLowPressure}PSI*";
             table.Cells[1, 0].Alignment = CellAlignment.MiddleLeft;
 
-            table.Cells[2, 0].TextString = $"METER SIZE: {data.MeterSize} {(data.ExistingMeter ? "EXISTING METER" : "NEW METER")}";
+            table.Cells[2, 0].TextString = $"METER SIZE: {data.MeterSize} {(data.ExistingMeter ? "\" EXISTING METER" : "NEW METER")}";
             table.Cells[2, 0].Alignment = CellAlignment.MiddleLeft;
 
             table.Cells[3, 0].TextString = $"PIPE MATERIAL: {data.PipeMaterial}";
