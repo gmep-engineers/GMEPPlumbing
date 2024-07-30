@@ -209,9 +209,22 @@ namespace GMEPPlumbing.Commands
             // Set layer to "M-TEXT"
             table.Layer = "M-TEXT";
 
+            // Calculate table width based on section header length
+            int maxHeaderLength;
+            if (data.PressureRequired2 != 0 && !string.IsNullOrEmpty(data.MeterSize2) &&
+                data.FixtureCalculation2 != 0 && data.SystemLength2 != 0)
+            {
+              maxHeaderLength = Math.Max(data.SectionHeader1.Length, data.SectionHeader2.Length);
+            }
+            else
+            {
+              maxHeaderLength = data.SectionHeader1.Length;
+            }
+            double additionalWidth = Math.Max(maxHeaderLength - 57, 0) * 0.175;
+
             // Set table width and column widths
-            table.Width = 11.8206;
-            table.Columns[0].Width = 10.0467;
+            table.Width = 11.8206 + additionalWidth;
+            table.Columns[0].Width = 10.0467 + additionalWidth;
             table.Columns[1].Width = 1.7739;
 
             // Set row heights and text properties

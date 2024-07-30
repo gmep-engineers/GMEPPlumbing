@@ -53,10 +53,14 @@ namespace GMEPPlumbing.ViewModels
           new ComboBoxItem { Content = "TYPICAL WATER CALCULATIONS FOR MAIN CPVC PIPE TO THE UNIT SUBMETER" },
       };
 
+      SelectedSectionHeader1 = SectionHeader1;
+
       SectionHeaderOptions2 = new ObservableCollection<ComboBoxItem>
       {
           new ComboBoxItem { Content = "TYPICAL WATER CALCULATIONS FOR PEX PIPE INSIDE THE UNIT" }
       };
+
+      SelectedSectionHeader2 = SectionHeader2;
 
       AdditionalLosses = new ObservableCollection<AdditionalLoss>();
       AdditionalLosses2 = new ObservableCollection<AdditionalLoss>();
@@ -67,12 +71,41 @@ namespace GMEPPlumbing.ViewModels
 
     #region Properties for Section 1
 
-    private string _sectionHeader1 = "TYPICAL WATER CALCULATIONS";
+    private string _sectionHeader1;
 
     public string SectionHeader1
     {
       get => _sectionHeader1;
-      set => SetProperty(ref _sectionHeader1, value);
+      set
+      {
+        if (SetProperty(ref _sectionHeader1, value))
+        {
+          UpdateSelectedSectionHeader1(value);
+        }
+      }
+    }
+
+    private string _selectedSectionHeader1;
+
+    public string SelectedSectionHeader1
+    {
+      get => _selectedSectionHeader1;
+      set
+      {
+        if (SetProperty(ref _selectedSectionHeader1, value))
+        {
+          SectionHeader1 = value;
+        }
+      }
+    }
+
+    private void UpdateSelectedSectionHeader1(string value)
+    {
+      if (!SectionHeaderOptions1.Any(item => (string)item.Content == value))
+      {
+        SectionHeaderOptions1.Add(new ComboBoxItem { Content = value });
+      }
+      SelectedSectionHeader1 = value;
     }
 
     private double _streetLowPressure;
@@ -349,12 +382,41 @@ namespace GMEPPlumbing.ViewModels
 
     #region Properties for Section 2
 
-    private string _sectionHeader2 = "";
+    private string _sectionHeader2;
 
     public string SectionHeader2
     {
       get => _sectionHeader2;
-      set => SetProperty(ref _sectionHeader2, value);
+      set
+      {
+        if (SetProperty(ref _sectionHeader2, value))
+        {
+          UpdateSelectedSectionHeader2(value);
+        }
+      }
+    }
+
+    private string _selectedSectionHeader2;
+
+    public string SelectedSectionHeader2
+    {
+      get => _selectedSectionHeader2;
+      set
+      {
+        if (SetProperty(ref _selectedSectionHeader2, value))
+        {
+          SectionHeader2 = value;
+        }
+      }
+    }
+
+    private void UpdateSelectedSectionHeader2(string value)
+    {
+      if (!string.IsNullOrEmpty(value) && !SectionHeaderOptions2.Any(item => (string)item.Content == value))
+      {
+        SectionHeaderOptions2.Add(new ComboBoxItem { Content = value });
+      }
+      SelectedSectionHeader2 = value;
     }
 
     private double _pressureRequired2;
@@ -724,6 +786,7 @@ namespace GMEPPlumbing.ViewModels
       if (data == null) return;
 
       SectionHeader1 = data.SectionHeader1;
+      UpdateSelectedSectionHeader1(data.SectionHeader1);
       StreetLowPressure = data.StreetLowPressure;
       StreetHighPressure = data.StreetHighPressure;
       MeterSize = data.MeterSize;
@@ -747,6 +810,7 @@ namespace GMEPPlumbing.ViewModels
       DevelopedLengthPercentage = data.DevelopedLengthPercentage;
 
       SectionHeader2 = data.SectionHeader2;
+      UpdateSelectedSectionHeader2(data.SectionHeader2);
       PressureRequired2 = data.PressureRequired2;
       MeterSize2 = data.MeterSize2;
       FixtureCalculation2 = data.FixtureCalculation2;

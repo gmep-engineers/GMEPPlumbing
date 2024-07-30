@@ -336,9 +336,9 @@
                 <ComboBox Width="200" HorizontalAlignment="Left"
                   Style="{StaticResource DarkComboBoxStyle}"
                   IsEditable="True"
-                  Text="{Binding SectionHeader2, UpdateSourceTrigger=PropertyChanged}"
+                  Text="{Binding SelectedSectionHeader2, UpdateSourceTrigger=PropertyChanged}"
                   ItemsSource="{Binding SectionHeaderOptions2}"
-                  SelectedIndex="-1"
+                  DisplayMemberPath="Content"
                   GotFocus="ComboBox_GotFocus">
                 </ComboBox>
 
