@@ -1,5 +1,5 @@
 # Ignore debug build output
-/obj/Debug/
+obj/Debug/
 
 # Ignore packages directory
 /packages/
