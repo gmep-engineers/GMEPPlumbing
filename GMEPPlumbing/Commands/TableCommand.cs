@@ -234,7 +234,7 @@ namespace GMEPPlumbing.Commands
               {
                 Cell cell = table.Cells[row, col];
                 cell.TextHeight = 0.09375000;
-                cell.TextStyleId = CreateOrGetTextStyle(db, tr, "A2");
+                cell.TextStyleId = CreateOrGetTextStyle(db, tr, "gmep");
               }
 
               if (row == 0)
