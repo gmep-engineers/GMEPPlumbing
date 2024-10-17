@@ -118,23 +118,26 @@ namespace GMEPPlumbing.Commands
                 ("METER LOSS", "PSI", $"{data.MeterLoss:F1}"),
                 ($"{data.Elevation}FT STATIC LOSS", "PSI", $"{data.StaticLoss:F1}")
             };
-
+            int actualLengthItemNum = 7;
             // Add PRV pressure loss if not zero
             if (data.PRVPressureLoss != 0.0)
             {
               rows.Add(("PRV PRESSURE LOSS", "PSI", $"{data.PRVPressureLoss:F1}"));
+              actualLengthItemNum++;
             }
 
             // Add backflow pressure loss if not zero
             if (data.BackflowPressureLoss != 0.0)
             {
               rows.Add(("BACKFLOW PRESSURE LOSS", "PSI", $"{data.BackflowPressureLoss:F1}"));
+              actualLengthItemNum++;
             }
 
             // Add additional losses
             foreach (var loss in data.AdditionalLosses)
             {
               rows.Add((loss.Title, "PSI", loss.Amount));
+              actualLengthItemNum++;
             }
 
             // Add remaining rows
@@ -145,7 +148,7 @@ namespace GMEPPlumbing.Commands
                 ("MIN. STREET PRESSURE", "PSI", $"{data.StreetLowPressure:F1}"),
                 ("PRESSURE AVAILABLE FOR FRICTION", "PSI", $"{data.PressureAvailable:F1}"),
                 ("ACTUAL LENGTH OF SYSTEM", "FT", $"{data.SystemLength:F1}"),
-                ($"DEVELOPED LENGTH ({data.DevelopedLengthPercentage}% OF ITEM 7)", "FT", $"{data.DevelopedLength:F1}"),
+                ($"DEVELOPED LENGTH ({data.DevelopedLengthPercentage}% OF ITEM {actualLengthItemNum})", "FT", $"{data.DevelopedLength:F1}"),
                 ("AVERAGE PRESSURE DROP", "PSI/100FT", $"{data.AveragePressureDrop:F1}")
             });
 
