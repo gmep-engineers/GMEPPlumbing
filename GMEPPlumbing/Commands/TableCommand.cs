@@ -91,6 +91,15 @@ namespace GMEPPlumbing.Commands
               }
             }
 
+            string formattedMeterSize = "";
+            switch (data.MeterSize)
+            {
+              case "0.625": formattedMeterSize = "5/8"; break;
+              case "0.75": formattedMeterSize = "3/4"; break;
+              case "1.5": formattedMeterSize = "1-1/2"; break;
+              default: formattedMeterSize = data.MeterSize; break;
+            }
+
             // Populate the table
             table.Cells[0, 0].TextString = $"{data.SectionHeader1.ToUpper()}";
             table.Cells[0, 0].Alignment = CellAlignment.MiddleCenter;
@@ -100,7 +109,7 @@ namespace GMEPPlumbing.Commands
             table.Cells[1, 0].Alignment = CellAlignment.MiddleLeft;
             table.MergeCells(CellRange.Create(table, 1, 0, 1, 3));
 
-            table.Cells[2, 0].TextString = $"METER SIZE: {data.MeterSize}\" FOR {data.FixtureCalculation} GPM";
+            table.Cells[2, 0].TextString = $"METER SIZE: {formattedMeterSize}\" FOR {data.FixtureCalculation} GPM";
             table.Cells[2, 0].Alignment = CellAlignment.MiddleLeft;
             table.MergeCells(CellRange.Create(table, 2, 0, 2, 3));
 
@@ -115,7 +124,7 @@ namespace GMEPPlumbing.Commands
             // Define the constant values
             List<(string Description, string Unit, string Value)> rows = new List<(string, string, string)>
             {
-                ("METER LOSS", "PSI", $"{data.MeterLoss:F1}"),
+                ($"{formattedMeterSize}\" METER LOSS", "PSI", $"{data.MeterLoss:F1}"),
                 ($"{data.Elevation}FT STATIC LOSS", "PSI", $"{data.StaticLoss:F1}")
             };
             int actualLengthItemNum = 7;
