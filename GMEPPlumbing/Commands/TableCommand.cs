@@ -266,7 +266,7 @@ namespace GMEPPlumbing.Commands
             table.Cells[2, 0].TextString = $"METER SIZE: {data.MeterSize} {(data.ExistingMeter ? "\" EXISTING METER" : "NEW METER")}";
             table.Cells[2, 0].Alignment = CellAlignment.MiddleLeft;
 
-            table.Cells[3, 0].TextString = $"PIPE MATERIAL: {data.PipeMaterial}";
+            table.Cells[3, 0].TextString = $"PIPE MATERIAL: {data.PipeMaterial.ToUpper()}";
             table.Cells[3, 0].Alignment = CellAlignment.MiddleLeft;
 
             table.Cells[4, 0].TextString = $"COLD WATER MAX. VEL.= {data.ColdWaterMaxVelocity} FPS, HOT WATER MAX. VEL.={data.HotWaterMaxVelocity}FPS";
