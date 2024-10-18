@@ -127,7 +127,21 @@ namespace GMEPPlumbing.ViewModels
     public double StreetHighPressure
     {
       get => _streetHighPressure;
-      set => SetProperty(ref _streetHighPressure, value);
+      set
+      {
+        if (SetProperty(ref _streetHighPressure, value))
+        {
+          if (value > 80)
+          {
+            PrvPressureLossEnabled = true;
+          }
+          else
+          {
+            PrvPressureLossEnabled = false;
+          }
+        }
+      }
+      //set => SetProperty(ref _streetHighPressure, value);
     }
 
     private string _meterSize;
@@ -577,6 +591,14 @@ namespace GMEPPlumbing.ViewModels
     {
       get => _meterLossErrorMessage;
       private set => SetProperty(ref _meterLossErrorMessage, value);
+    }
+
+    private bool _prvPressureLossEnabled;
+
+    public bool PrvPressureLossEnabled
+    {
+      get => _prvPressureLossEnabled;
+      private set => SetProperty(ref _prvPressureLossEnabled, value);
     }
 
     #endregion Properties for Section 2
