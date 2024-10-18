@@ -95,8 +95,11 @@ namespace GMEPPlumbing.Commands
             switch (data.MeterSize)
             {
               case "0.625": formattedMeterSize = "5/8"; break;
+              case ".625": formattedMeterSize = "5/8"; break;
               case "0.75": formattedMeterSize = "3/4"; break;
+              case ".75": formattedMeterSize = "3/4"; break;
               case "1.5": formattedMeterSize = "1-1/2"; break;
+              case "1.50": formattedMeterSize = "1-1/2"; break;
               default: formattedMeterSize = data.MeterSize; break;
             }
 
