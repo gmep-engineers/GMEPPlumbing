@@ -134,10 +134,16 @@ namespace GMEPPlumbing.ViewModels
           if (value > 80)
           {
             PrvPressureLossEnabled = true;
+            PrvPressureLoss = OldPrvPressureLoss;
           }
           else
           {
             PrvPressureLossEnabled = false;
+            if (PrvPressureLoss != 0)
+            {
+              OldPrvPressureLoss = PrvPressureLoss;
+            }
+            PrvPressureLoss = 0;
           }
         }
       }
@@ -220,7 +226,7 @@ namespace GMEPPlumbing.ViewModels
 
     private double _prvPressureLoss;
 
-    public double PRVPressureLoss
+    public double PrvPressureLoss
     {
       get => _prvPressureLoss;
       set
@@ -228,6 +234,20 @@ namespace GMEPPlumbing.ViewModels
         if (SetProperty(ref _prvPressureLoss, value))
         {
           CalculateTotalLoss();
+        }
+      }
+    }
+
+    private double _oldPrvPressureLoss;
+
+    public double OldPrvPressureLoss
+    {
+      get => _oldPrvPressureLoss;
+      set
+      {
+        if (SetProperty(ref _oldPrvPressureLoss, value))
+        {
+          _oldPrvPressureLoss = value;
         }
       }
     }
@@ -631,7 +651,7 @@ namespace GMEPPlumbing.ViewModels
 
     private void CalculateTotalLoss()
     {
-      TotalLoss = _waterTotalLossService.CalculateTotalLoss(MeterLoss, StaticLoss, PressureRequiredOrAtUnit, BackflowPressureLoss, PRVPressureLoss, AdditionalLossesTotal);
+      TotalLoss = _waterTotalLossService.CalculateTotalLoss(MeterLoss, StaticLoss, PressureRequiredOrAtUnit, BackflowPressureLoss, PrvPressureLoss, AdditionalLossesTotal);
     }
 
     private void CalculateWaterPressureAvailable()
@@ -772,7 +792,7 @@ namespace GMEPPlumbing.ViewModels
         FixtureCalculation = FixtureCalculation,
         Elevation = Elevation,
         BackflowPressureLoss = BackflowPressureLoss,
-        PRVPressureLoss = PRVPressureLoss,
+        PrvPressureLoss = PrvPressureLoss,
         PressureRequiredOrAtUnit = PressureRequiredOrAtUnit,
         SystemLength = SystemLength,
         MeterLoss = MeterLoss,
@@ -815,7 +835,7 @@ namespace GMEPPlumbing.ViewModels
       FixtureCalculation = data.FixtureCalculation;
       Elevation = data.Elevation;
       BackflowPressureLoss = data.BackflowPressureLoss;
-      PRVPressureLoss = data.PRVPressureLoss;
+      PrvPressureLoss = data.PrvPressureLoss;
       PressureRequiredOrAtUnit = data.PressureRequiredOrAtUnit;
       SystemLength = data.SystemLength;
       MeterLoss = data.MeterLoss;
@@ -871,7 +891,8 @@ namespace GMEPPlumbing.ViewModels
     public double FixtureCalculation { get; set; }
     public double Elevation { get; set; }
     public double BackflowPressureLoss { get; set; }
-    public double PRVPressureLoss { get; set; }
+    public double PrvPressureLoss { get; set; }
+    public double OldPrvPressureLoss { get; set; }
     public double PressureRequiredOrAtUnit { get; set; }
     public double SystemLength { get; set; }
     public double MeterLoss { get; set; }

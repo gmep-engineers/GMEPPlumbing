@@ -29,7 +29,7 @@ namespace GMEPPlumbing.Commands
 
             // Calculate the number of rows dynamically
             int rowCount = 13;
-            rowCount += (data.PRVPressureLoss != 0.0) ? 1 : 0;
+            rowCount += (data.PrvPressureLoss != 0.0) ? 1 : 0;
             rowCount += (data.BackflowPressureLoss != 0.0) ? 1 : 0;
             rowCount += data.AdditionalLosses.Count;
 
@@ -129,9 +129,9 @@ namespace GMEPPlumbing.Commands
             };
             int actualLengthItemNum = 7;
             // Add PRV pressure loss if not zero
-            if (data.PRVPressureLoss != 0.0)
+            if (data.PrvPressureLoss != 0.0)
             {
-              rows.Add(("PRV PRESSURE LOSS", "PSI", $"{data.PRVPressureLoss:F1}"));
+              rows.Add(("PRV PRESSURE LOSS", "PSI", $"{data.PrvPressureLoss:F1}"));
               actualLengthItemNum++;
             }
 
@@ -208,7 +208,7 @@ namespace GMEPPlumbing.Commands
             int rowCount = 14 + data.AdditionalLosses.Count;
             // Add rows for backflow preventer and PRV if they have non-zero values
             if (data.BackflowPressureLoss > 0) rowCount++;
-            if (data.PRVPressureLoss > 0) rowCount++;
+            if (data.PrvPressureLoss > 0) rowCount++;
 
             table.TableStyle = db.Tablestyle;
             table.SetSize(rowCount, 2);
@@ -298,9 +298,9 @@ namespace GMEPPlumbing.Commands
             }
 
             // Add PRV loss if non-zero
-            if (data.PRVPressureLoss > 0)
+            if (data.PrvPressureLoss > 0)
             {
-              rows.Add(($"{rows.Count + 1}. PRV LOSS, PSI", $"{data.PRVPressureLoss:F1}"));
+              rows.Add(($"{rows.Count + 1}. PRV LOSS, PSI", $"{data.PrvPressureLoss:F1}"));
             }
 
             // Add additional losses
