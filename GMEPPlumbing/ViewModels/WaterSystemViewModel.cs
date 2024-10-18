@@ -144,10 +144,11 @@ namespace GMEPPlumbing.ViewModels
               OldPrvPressureLoss = PrvPressureLoss;
             }
             PrvPressureLoss = 0;
+            PrvPressureLossErrorMessage = "";
           }
+          CalculateTotalLoss();
         }
       }
-      //set => SetProperty(ref _streetHighPressure, value);
     }
 
     private string _meterSize;
@@ -233,7 +234,15 @@ namespace GMEPPlumbing.ViewModels
       {
         if (SetProperty(ref _prvPressureLoss, value))
         {
-          CalculateTotalLoss();
+          if (value <= 0)
+          {
+            PrvPressureLossErrorMessage = "PRV Loss must be greater than 0.";
+          }
+          else
+          {
+            PrvPressureLossErrorMessage = "";
+            CalculateTotalLoss();
+          }
         }
       }
     }
@@ -603,6 +612,13 @@ namespace GMEPPlumbing.ViewModels
           CalculateTotalLoss2();
         }
       }
+    }
+
+    private string _prvPressureLossErrorMessage;
+    public string PrvPressureLossErrorMessage
+    {
+      get => _prvPressureLossErrorMessage;
+      private set => SetProperty(ref _prvPressureLossErrorMessage, value);
     }
 
     private string _meterLossErrorMessage;

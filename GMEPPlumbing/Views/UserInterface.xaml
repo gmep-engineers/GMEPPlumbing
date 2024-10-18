@@ -186,6 +186,8 @@
                     <TextBlock Text="psi" Foreground="#FFFFFF" Margin="5,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
 
+                
+
                 <!-- Pressure Required or at unit -->
                 <TextBlock Text="Pressure Required or @ Unit:" Foreground="#FFFFFF" Margin="0,10,0,5" />
                 <StackPanel Orientation="Horizontal">
@@ -289,6 +291,12 @@
 
             <TextBlock Text="PRV Loss:" Foreground="#FFFFFF" Margin="0,10,0,5" />
             <TextBlock Text="{Binding PrvPressureLoss, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
+
+            <!-- New TextBlock for error message -->
+            <TextBlock Text="{Binding PrvPressureLossErrorMessage}"
+               Foreground="Red"
+               Margin="0,0,0,0"
+               TextWrapping="WrapWithOverflow" />       
 
             <TextBlock Text="Additional Losses:" Foreground="#FFFFFF" Margin="0,10,0,5" />
             <TextBlock Text="{Binding AdditionalLossesTotal, StringFormat={}{0:F1} psi}" Foreground="#FFFFFF" HorizontalAlignment="Left" />
