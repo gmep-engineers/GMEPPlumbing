@@ -220,7 +220,28 @@ namespace GMEPPlumbing.ViewModels
       {
         if (SetProperty(ref _backflowPressureLoss, value))
         {
-          CalculateTotalLoss();
+          if (value <= 0)
+          {
+            BackflowPressureLossErrorMessage = "Backflow Loss must be greater than 0.";
+          }
+          else
+          {
+            BackflowPressureLossErrorMessage = "";
+            CalculateTotalLoss();
+          }
+        }
+      }
+    }
+
+    private double _oldBackflowPressureLoss;
+    public double OldBackflowPressureLoss
+    {
+      get => _oldBackflowPressureLoss;
+      set
+      {
+        if (SetProperty(ref _oldBackflowPressureLoss, value))
+        {
+          _oldBackflowPressureLoss = value;
         }
       }
     }
@@ -376,6 +397,32 @@ namespace GMEPPlumbing.ViewModels
       {
         if (SetProperty(ref _additionalLossesTotal, value))
         {
+          CalculateTotalLoss();
+        }
+      }
+    }
+
+    private bool _usingBackflowPressureLoss = false;
+    public bool UsingBackflowPressureLoss
+    {
+      get => _usingBackflowPressureLoss;
+      set
+      {
+        if (SetProperty(ref _usingBackflowPressureLoss, value))
+        {
+          if (value == true)
+          {
+            BackflowPressureLoss = OldBackflowPressureLoss;
+          }
+          else
+          {
+            if (BackflowPressureLoss != 0)
+            {
+              OldBackflowPressureLoss = BackflowPressureLoss;
+            }
+            BackflowPressureLoss = 0;
+            BackflowPressureLossErrorMessage = "";
+          }
           CalculateTotalLoss();
         }
       }
@@ -612,6 +659,13 @@ namespace GMEPPlumbing.ViewModels
           CalculateTotalLoss2();
         }
       }
+    }
+
+    private string _backflowPressureLossErrorMessage;
+    public string BackflowPressureLossErrorMessage
+    {
+      get => _backflowPressureLossErrorMessage;
+      private set => SetProperty(ref _backflowPressureLossErrorMessage, value);
     }
 
     private string _prvPressureLossErrorMessage;
@@ -907,6 +961,7 @@ namespace GMEPPlumbing.ViewModels
     public double FixtureCalculation { get; set; }
     public double Elevation { get; set; }
     public double BackflowPressureLoss { get; set; }
+    public double OldBackflowPressureLoss { get; set; }
     public double PrvPressureLoss { get; set; }
     public double OldPrvPressureLoss { get; set; }
     public double PressureRequiredOrAtUnit { get; set; }
