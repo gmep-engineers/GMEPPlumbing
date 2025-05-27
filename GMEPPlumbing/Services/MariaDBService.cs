@@ -38,6 +38,29 @@ namespace GMEPPlumbing.Services
                 await Connection.CloseAsync();
             }
         }
+        public async Task<string> GetProjectId(string projectNo)
+        {
+            if (projectNo == null || projectNo == string.Empty)
+            {
+                return string.Empty;
+            }
+            string query = "SELECT id FROM projects WHERE gmep_project_no = @projectNo";
+            await OpenConnectionAsync();
+            MySqlCommand command = new MySqlCommand(query, Connection);
+            command.Parameters.AddWithValue("@projectNo", projectNo);
+            MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+
+            Dictionary<int, string> projectIds = new Dictionary<int, string>();
+            string id = "";
+            if (reader.Read())
+            {
+                id = reader.GetString("id");
+            }
+            reader.Close();
+
+            await CloseConnectionAsync();
+            return id;
+        }
         public async Task<WaterSystemData> GetWaterSystemData(
             string projectId
         )

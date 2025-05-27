@@ -29,15 +29,18 @@ namespace GMEPPlumbing
     private bool needsXRecordUpdate = false;
     private string newDrawingId;
     private DateTime newCreationTime;
+    public MariaDBService MariaDBService { get; set; } = new MariaDBService();
 
     public Document doc { get; private set; }
     public Database db { get; private set; }
     public Editor ed { get; private set; }
+    public string ProjectId { get; private set; } = string.Empty;
 
     [CommandMethod("Water")]
     public void Water()
     {
-      MongoDBService.Initialize();
+      //MongoDBService.Initialize();
+
 
       doc = Application.DocumentManager.MdiActiveDocument;
       db = doc.Database;
