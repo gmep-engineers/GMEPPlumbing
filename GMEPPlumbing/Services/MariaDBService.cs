@@ -9,6 +9,7 @@ using GMEPPlumbing.ViewModels;
 using MySql.Data.MySqlClient;
 using System.Text.Json;
 using Mysqlx.Crud;
+using static Mysqlx.Notice.Frame.Types;
 
 namespace GMEPPlumbing.Services
 {
@@ -54,9 +55,42 @@ namespace GMEPPlumbing.Services
             while (await reader.ReadAsync())
             {
                 waterSystemData.SectionHeader1 = reader.GetString("section_header_1");
-                waterSystemData.SectionHeader2 = reader.GetString("section_header_1");
-                waterSystemData.StreetHighPressure = reader.GetDouble("street_high_pressure");
                 waterSystemData.StreetLowPressure = reader.GetDouble("street_low_pressure");
+                waterSystemData.StreetHighPressure = reader.GetDouble("street_high_pressure");
+                waterSystemData.MeterSize = reader.GetString("meter_size");    
+                waterSystemData.FixtureCalculation = reader.GetDouble("fixture_calculation");
+                waterSystemData.Elevation = reader.GetDouble("elevation");
+                waterSystemData.BackflowPressureLoss = reader.GetDouble("backflow_pressure_loss");
+                waterSystemData.OldBackflowPressureLoss = reader.GetDouble("old_backflow_pressure_loss");
+                waterSystemData.PrvPressureLoss = reader.GetDouble("prv_pressure_loss");
+                waterSystemData.OldPrvPressureLoss = reader.GetDouble("old_prv_pressure_loss");
+                waterSystemData.PressureRequiredOrAtUnit = reader.GetDouble("pressure_required_or_at_unit");
+                waterSystemData.SystemLength = reader.GetDouble("system_length");
+                waterSystemData.MeterLoss = reader.GetDouble("meter_loss");
+                waterSystemData.StaticLoss = reader.GetDouble("static_loss");
+                waterSystemData.TotalLoss = reader.GetDouble("total_loss");
+                waterSystemData.PressureAvailable = reader.GetDouble("pressure_available");
+                waterSystemData.DevelopedLength = reader.GetDouble("developed_length");
+                waterSystemData.AveragePressureDrop = reader.GetDouble("average_pressure_drop");
+                waterSystemData.AdditionalLossesTotal = reader.GetDouble("additional_losses_total");
+                waterSystemData.ExistingMeter = reader.GetBoolean("existing_meter");
+                waterSystemData.PipeMaterial = reader.GetString("pipe_material");
+                waterSystemData.ColdWaterMaxVelocity = reader.GetInt32("cold_water_max_velocity");
+                waterSystemData.HotWaterMaxVelocity = reader.GetInt32("hot_water_max_velocity");
+                waterSystemData.DevelopedLengthPercentage = reader.GetInt32("developed_length_percentage");
+
+                // Section 2
+                waterSystemData.SectionHeader2 = reader.GetString("section_header_2");
+                waterSystemData.PressureRequired2 = reader.GetDouble("pressure_required_2");
+                waterSystemData.MeterSize2 = reader.GetString("meter_size_2");
+                waterSystemData.FixtureCalculation2 = reader.GetDouble("fixture_calculation_2");
+                waterSystemData.SystemLength2 = reader.GetDouble("system_length_2");
+                waterSystemData.MeterLoss2 = reader.GetDouble("meter_loss_2");
+                waterSystemData.TotalLoss2 = reader.GetDouble("total_loss_2");
+                waterSystemData.PressureAvailable2 = reader.GetDouble("pressure_available_2");
+                waterSystemData.DevelopedLength2 = reader.GetDouble("developed_length_2");
+                waterSystemData.AveragePressureDrop2 = reader.GetDouble("average_pressure_drop_2");
+                waterSystemData.AdditionalLossesTotal2 = reader.GetDouble("additional_losses_total_2");
 
 
             }
@@ -64,8 +98,169 @@ namespace GMEPPlumbing.Services
 
 
             await CloseConnectionAsync();
-            return lightings;
+            return waterSystemData;
         }
+
+        public async Task UpdateWaterSystem(WaterSystemData waterSystemData, string projectId)
+        {
+            await OpenConnectionAsync();
+
+            string query = @"
+                INSERT INTO water_system_data (
+                    project_id,
+                    section_header_1,
+                    street_low_pressure,
+                    street_high_pressure,
+                    meter_size,
+                    fixture_calculation,
+                    elevation,
+                    backflow_pressure_loss,
+                    old_backflow_pressure_loss,
+                    prv_pressure_loss,
+                    old_prv_pressure_loss,
+                    pressure_required_or_at_unit,
+                    system_length,
+                    meter_loss,
+                    static_loss,
+                    total_loss,
+                    pressure_available,
+                    developed_length,
+                    average_pressure_drop,
+                    additional_losses_total,
+                    existing_meter,
+                    pipe_material,
+                    cold_water_max_velocity,
+                    hot_water_max_velocity,
+                    developed_length_percentage,
+                    section_header_2,
+                    pressure_required_2,
+                    meter_size_2,
+                    fixture_calculation_2,
+                    system_length_2,
+                    meter_loss_2,
+                    total_loss_2,
+                    pressure_available_2,
+                    developed_length_2,
+                    average_pressure_drop_2,
+                    additional_losses_total_2
+                ) VALUES (
+                    @projectId,
+                    @sectionHeader1,
+                    @streetLowPressure,
+                    @streetHighPressure,
+                    @meterSize,
+                    @fixtureCalculation,
+                    @elevation,
+                    @backflowPressureLoss,
+                    @oldBackflowPressureLoss,
+                    @prvPressureLoss,
+                    @oldPrvPressureLoss,
+                    @pressureRequiredOrAtUnit,
+                    @systemLength,
+                    @meterLoss,
+                    @staticLoss,
+                    @totalLoss,
+                    @pressureAvailable,
+                    @developedLength,
+                    @averagePressureDrop,
+                    @additionalLossesTotal,
+                    @existingMeter,
+                    @pipeMaterial,
+                    @coldWaterMaxVelocity,
+                    @hotWaterMaxVelocity,
+                    @developedLengthPercentage,
+                    @sectionHeader2,
+                    @pressureRequired2,
+                    @meterSize2,
+                    @fixtureCalculation2,
+                    @systemLength2,
+                    @meterLoss2,
+                    @totalLoss2,
+                    @pressureAvailable2,
+                    @developedLength2,
+                    @averagePressureDrop2,
+                    @additionalLossesTotal2
+                )
+                ON DUPLICATE KEY UPDATE
+                    section_header_1 = @sectionHeader1,
+                    street_low_pressure = @streetLowPressure,
+                    street_high_pressure = @streetHighPressure,
+                    meter_size = @meterSize,
+                    fixture_calculation = @fixtureCalculation,
+                    elevation = @elevation,
+                    backflow_pressure_loss = @backflowPressureLoss,
+                    old_backflow_pressure_loss = @oldBackflowPressureLoss,
+                    prv_pressure_loss = @prvPressureLoss,
+                    old_prv_pressure_loss = @oldPrvPressureLoss,
+                    pressure_required_or_at_unit = @pressureRequiredOrAtUnit,
+                    system_length = @systemLength,
+                    meter_loss = @meterLoss,
+                    static_loss = @staticLoss,
+                    total_loss = @totalLoss,
+                    pressure_available = @pressureAvailable,
+                    developed_length = @developedLength,
+                    average_pressure_drop = @averagePressureDrop,
+                    additional_losses_total = @additionalLossesTotal,
+                    existing_meter = @existingMeter,
+                    pipe_material = @pipeMaterial,
+                    cold_water_max_velocity = @coldWaterMaxVelocity,
+                    hot_water_max_velocity = @hotWaterMaxVelocity,
+                    developed_length_percentage = @developedLengthPercentage,
+                    section_header_2 = @sectionHeader2,
+                    pressure_required_2 = @pressureRequired2,
+                    meter_size_2 = @meterSize2,
+                    fixture_calculation_2 = @fixtureCalculation2,
+                    system_length_2 = @systemLength2,
+                    meter_loss_2 = @meterLoss2,
+                    total_loss_2 = @totalLoss2,
+                    pressure_available_2 = @pressureAvailable2,
+                    developed_length_2 = @developedLength2,
+                    average_pressure_drop_2 = @averagePressureDrop2,
+                    additional_losses_total_2 = @additionalLossesTotal2
+                    ";
+
+            MySqlCommand command = new MySqlCommand(query, Connection);
+            command.Parameters.AddWithValue("@projectId", projectId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@sectionHeader1", waterSystemData.SectionHeader1 ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@streetLowPressure", waterSystemData.StreetLowPressure);
+            command.Parameters.AddWithValue("@streetHighPressure", waterSystemData.StreetHighPressure);
+            command.Parameters.AddWithValue("@meterSize", waterSystemData.MeterSize ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@fixtureCalculation", waterSystemData.FixtureCalculation);
+            command.Parameters.AddWithValue("@elevation", waterSystemData.Elevation);
+            command.Parameters.AddWithValue("@backflowPressureLoss", waterSystemData.BackflowPressureLoss);
+            command.Parameters.AddWithValue("@oldBackflowPressureLoss", waterSystemData.OldBackflowPressureLoss);
+            command.Parameters.AddWithValue("@prvPressureLoss", waterSystemData.PrvPressureLoss);
+            command.Parameters.AddWithValue("@oldPrvPressureLoss", waterSystemData.OldPrvPressureLoss);
+            command.Parameters.AddWithValue("@pressureRequiredOrAtUnit", waterSystemData.PressureRequiredOrAtUnit);
+            command.Parameters.AddWithValue("@systemLength", waterSystemData.SystemLength);
+            command.Parameters.AddWithValue("@meterLoss", waterSystemData.MeterLoss);
+            command.Parameters.AddWithValue("@staticLoss", waterSystemData.StaticLoss);
+            command.Parameters.AddWithValue("@totalLoss", waterSystemData.TotalLoss);
+            command.Parameters.AddWithValue("@pressureAvailable", waterSystemData.PressureAvailable);
+            command.Parameters.AddWithValue("@developedLength", waterSystemData.DevelopedLength);
+            command.Parameters.AddWithValue("@averagePressureDrop", waterSystemData.AveragePressureDrop);
+            command.Parameters.AddWithValue("@additionalLossesTotal", waterSystemData.AdditionalLossesTotal);
+            command.Parameters.AddWithValue("@existingMeter", waterSystemData.ExistingMeter);
+            command.Parameters.AddWithValue("@pipeMaterial", waterSystemData.PipeMaterial ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@coldWaterMaxVelocity", waterSystemData.ColdWaterMaxVelocity);
+            command.Parameters.AddWithValue("@hotWaterMaxVelocity", waterSystemData.HotWaterMaxVelocity);
+            command.Parameters.AddWithValue("@developedLengthPercentage", waterSystemData.DevelopedLengthPercentage);
+            command.Parameters.AddWithValue("@sectionHeader2", waterSystemData.SectionHeader2 ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@pressureRequired2", waterSystemData.PressureRequired2);
+            command.Parameters.AddWithValue("@meterSize2", waterSystemData.MeterSize2 ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@fixtureCalculation2", waterSystemData.FixtureCalculation2);
+            command.Parameters.AddWithValue("@systemLength2", waterSystemData.SystemLength2);
+            command.Parameters.AddWithValue("@meterLoss2", waterSystemData.MeterLoss2);
+            command.Parameters.AddWithValue("@totalLoss2", waterSystemData.TotalLoss2);
+            command.Parameters.AddWithValue("@pressureAvailable2", waterSystemData.PressureAvailable2);
+            command.Parameters.AddWithValue("@developedLength2", waterSystemData.DevelopedLength2);
+            command.Parameters.AddWithValue("@averagePressureDrop2", waterSystemData.AveragePressureDrop2);
+            command.Parameters.AddWithValue("@additionalLossesTotal2", waterSystemData.AdditionalLossesTotal2);
+
+            await command.ExecuteNonQueryAsync();
+            await CloseConnectionAsync();
+        }
+
 
 
     }
