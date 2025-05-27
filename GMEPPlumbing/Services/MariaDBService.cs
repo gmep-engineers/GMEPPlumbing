@@ -124,11 +124,13 @@ namespace GMEPPlumbing.Services
             return waterSystemData;
         }
 
-        public async Task UpdateWaterSystem(WaterSystemData waterSystemData, string projectId)
+        public async Task<bool> UpdateWaterSystem(WaterSystemData waterSystemData, string projectId)
         {
-            await OpenConnectionAsync();
+            try
+            {
+                await OpenConnectionAsync();
 
-            string query = @"
+                string query = @"
                 INSERT INTO water_system_data (
                     project_id,
                     section_header_1,
@@ -242,49 +244,54 @@ namespace GMEPPlumbing.Services
                     additional_losses_total_2 = @additionalLossesTotal2
                     ";
 
-            MySqlCommand command = new MySqlCommand(query, Connection);
-            command.Parameters.AddWithValue("@projectId", projectId ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@sectionHeader1", waterSystemData.SectionHeader1 ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@streetLowPressure", waterSystemData.StreetLowPressure);
-            command.Parameters.AddWithValue("@streetHighPressure", waterSystemData.StreetHighPressure);
-            command.Parameters.AddWithValue("@meterSize", waterSystemData.MeterSize ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@fixtureCalculation", waterSystemData.FixtureCalculation);
-            command.Parameters.AddWithValue("@elevation", waterSystemData.Elevation);
-            command.Parameters.AddWithValue("@backflowPressureLoss", waterSystemData.BackflowPressureLoss);
-            command.Parameters.AddWithValue("@oldBackflowPressureLoss", waterSystemData.OldBackflowPressureLoss);
-            command.Parameters.AddWithValue("@prvPressureLoss", waterSystemData.PrvPressureLoss);
-            command.Parameters.AddWithValue("@oldPrvPressureLoss", waterSystemData.OldPrvPressureLoss);
-            command.Parameters.AddWithValue("@pressureRequiredOrAtUnit", waterSystemData.PressureRequiredOrAtUnit);
-            command.Parameters.AddWithValue("@systemLength", waterSystemData.SystemLength);
-            command.Parameters.AddWithValue("@meterLoss", waterSystemData.MeterLoss);
-            command.Parameters.AddWithValue("@staticLoss", waterSystemData.StaticLoss);
-            command.Parameters.AddWithValue("@totalLoss", waterSystemData.TotalLoss);
-            command.Parameters.AddWithValue("@pressureAvailable", waterSystemData.PressureAvailable);
-            command.Parameters.AddWithValue("@developedLength", waterSystemData.DevelopedLength);
-            command.Parameters.AddWithValue("@averagePressureDrop", waterSystemData.AveragePressureDrop);
-            command.Parameters.AddWithValue("@additionalLossesTotal", waterSystemData.AdditionalLossesTotal);
-            command.Parameters.AddWithValue("@existingMeter", waterSystemData.ExistingMeter);
-            command.Parameters.AddWithValue("@pipeMaterial", waterSystemData.PipeMaterial ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@coldWaterMaxVelocity", waterSystemData.ColdWaterMaxVelocity);
-            command.Parameters.AddWithValue("@hotWaterMaxVelocity", waterSystemData.HotWaterMaxVelocity);
-            command.Parameters.AddWithValue("@developedLengthPercentage", waterSystemData.DevelopedLengthPercentage);
-            command.Parameters.AddWithValue("@sectionHeader2", waterSystemData.SectionHeader2 ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@pressureRequired2", waterSystemData.PressureRequired2);
-            command.Parameters.AddWithValue("@meterSize2", waterSystemData.MeterSize2 ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@fixtureCalculation2", waterSystemData.FixtureCalculation2);
-            command.Parameters.AddWithValue("@systemLength2", waterSystemData.SystemLength2);
-            command.Parameters.AddWithValue("@meterLoss2", waterSystemData.MeterLoss2);
-            command.Parameters.AddWithValue("@totalLoss2", waterSystemData.TotalLoss2);
-            command.Parameters.AddWithValue("@pressureAvailable2", waterSystemData.PressureAvailable2);
-            command.Parameters.AddWithValue("@developedLength2", waterSystemData.DevelopedLength2);
-            command.Parameters.AddWithValue("@averagePressureDrop2", waterSystemData.AveragePressureDrop2);
-            command.Parameters.AddWithValue("@additionalLossesTotal2", waterSystemData.AdditionalLossesTotal2);
+                MySqlCommand command = new MySqlCommand(query, Connection);
+                command.Parameters.AddWithValue("@projectId", projectId ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@sectionHeader1", waterSystemData.SectionHeader1 ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@streetLowPressure", waterSystemData.StreetLowPressure);
+                command.Parameters.AddWithValue("@streetHighPressure", waterSystemData.StreetHighPressure);
+                command.Parameters.AddWithValue("@meterSize", waterSystemData.MeterSize ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@fixtureCalculation", waterSystemData.FixtureCalculation);
+                command.Parameters.AddWithValue("@elevation", waterSystemData.Elevation);
+                command.Parameters.AddWithValue("@backflowPressureLoss", waterSystemData.BackflowPressureLoss);
+                command.Parameters.AddWithValue("@oldBackflowPressureLoss", waterSystemData.OldBackflowPressureLoss);
+                command.Parameters.AddWithValue("@prvPressureLoss", waterSystemData.PrvPressureLoss);
+                command.Parameters.AddWithValue("@oldPrvPressureLoss", waterSystemData.OldPrvPressureLoss);
+                command.Parameters.AddWithValue("@pressureRequiredOrAtUnit", waterSystemData.PressureRequiredOrAtUnit);
+                command.Parameters.AddWithValue("@systemLength", waterSystemData.SystemLength);
+                command.Parameters.AddWithValue("@meterLoss", waterSystemData.MeterLoss);
+                command.Parameters.AddWithValue("@staticLoss", waterSystemData.StaticLoss);
+                command.Parameters.AddWithValue("@totalLoss", waterSystemData.TotalLoss);
+                command.Parameters.AddWithValue("@pressureAvailable", waterSystemData.PressureAvailable);
+                command.Parameters.AddWithValue("@developedLength", waterSystemData.DevelopedLength);
+                command.Parameters.AddWithValue("@averagePressureDrop", waterSystemData.AveragePressureDrop);
+                command.Parameters.AddWithValue("@additionalLossesTotal", waterSystemData.AdditionalLossesTotal);
+                command.Parameters.AddWithValue("@existingMeter", waterSystemData.ExistingMeter);
+                command.Parameters.AddWithValue("@pipeMaterial", waterSystemData.PipeMaterial ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@coldWaterMaxVelocity", waterSystemData.ColdWaterMaxVelocity);
+                command.Parameters.AddWithValue("@hotWaterMaxVelocity", waterSystemData.HotWaterMaxVelocity);
+                command.Parameters.AddWithValue("@developedLengthPercentage", waterSystemData.DevelopedLengthPercentage);
+                command.Parameters.AddWithValue("@sectionHeader2", waterSystemData.SectionHeader2 ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@pressureRequired2", waterSystemData.PressureRequired2);
+                command.Parameters.AddWithValue("@meterSize2", waterSystemData.MeterSize2 ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@fixtureCalculation2", waterSystemData.FixtureCalculation2);
+                command.Parameters.AddWithValue("@systemLength2", waterSystemData.SystemLength2);
+                command.Parameters.AddWithValue("@meterLoss2", waterSystemData.MeterLoss2);
+                command.Parameters.AddWithValue("@totalLoss2", waterSystemData.TotalLoss2);
+                command.Parameters.AddWithValue("@pressureAvailable2", waterSystemData.PressureAvailable2);
+                command.Parameters.AddWithValue("@developedLength2", waterSystemData.DevelopedLength2);
+                command.Parameters.AddWithValue("@averagePressureDrop2", waterSystemData.AveragePressureDrop2);
+                command.Parameters.AddWithValue("@additionalLossesTotal2", waterSystemData.AdditionalLossesTotal2);
 
-            await command.ExecuteNonQueryAsync();
-            await CloseConnectionAsync();
+                await command.ExecuteNonQueryAsync();
+                await CloseConnectionAsync();
+            }
+            catch (Exception ex)
+            {
+                await CloseConnectionAsync();
+                return false;
+            }
+            return true;
         }
-
-
 
     }
 }

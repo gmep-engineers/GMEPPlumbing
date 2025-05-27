@@ -37,10 +37,11 @@ namespace GMEPPlumbing
     public string ProjectId { get; private set; } = string.Empty;
 
     [CommandMethod("Water")]
-    public void Water()
+    public async Task Water()
     {
       //MongoDBService.Initialize();
-
+      string projectNo = CADObjectCommands.GetProjectNoFromFileName();
+      ProjectId = await MariaDBService.GetProjectId(projectNo);
 
       doc = Application.DocumentManager.MdiActiveDocument;
       db = doc.Database;
@@ -244,7 +245,8 @@ namespace GMEPPlumbing
     {
       try
       {
-        var data = await MongoDBService.GetDrawingDataAsync(currentDrawingId);
+        //var data = await MongoDBService.GetDrawingDataAsync(currentDrawingId);
+        var data = await MariaDBService.GetWaterSystemData(ProjectId);
         if (data != null)
         {
           myControl.Dispatcher.Invoke(() =>
@@ -273,7 +275,8 @@ namespace GMEPPlumbing
         try
         {
           WaterSystemData data = viewModel.GetWaterSystemData();
-          bool updateResult = await MongoDBService.UpdateDrawingDataAsync(data, currentDrawingId);
+          //bool updateResult = await MongoDBService.UpdateDrawingDataAsync(data, currentDrawingId);
+          bool updateResult = await MariaDBService.UpdateWaterSystem(data, ProjectId);
           if (updateResult)
           {
             Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nSuccessfully updated drawing data in MongoDB.\n");
