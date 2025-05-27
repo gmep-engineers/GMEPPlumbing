@@ -181,7 +181,7 @@ namespace GMEPPlumbing.Services
             {
                 await OpenConnectionAsync();
 
-                // First, delete existing additional losses that are not in addtionalosses or additionallosses2 for the project
+                // First, delete existing additional losses that are not in additionalosses or additionallosses2 for the project
 
                 string deleteQuery = @"
                 DELETE FROM plumbing_additional_losses
