@@ -77,13 +77,44 @@ namespace GMEPPlumbing.Services
             string projectId
         )
         {
-            // Get the lighting data from the database
-            WaterSystemData waterSystemData = new WaterSystemData();
-            string query = @"SELECT * FROM plumbing_water_systems WHERE project_id = @projectId";
             await OpenConnectionAsync();
+            //get the additional losses
+
+            WaterSystemData waterSystemData = new WaterSystemData();
+
+            string query = @"SELECT * FROM plumbing_additional_losses WHERE project_id = @projectId";
             MySqlCommand command = new MySqlCommand(query, Connection);
             command.Parameters.AddWithValue("@projectId", projectId);
             MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                bool is2 = reader.GetBoolean("is_2");
+                AdditionalLoss additionalLoss = new AdditionalLoss
+                {
+                    Id = reader.GetString("id"),
+                    Title = reader.GetString("title"),
+                    Amount = reader.GetString("amount")
+                };
+                if (is2)
+                {
+                    waterSystemData.AdditionalLosses2.Add(additionalLoss);
+                }
+                else
+                {
+                    waterSystemData.AdditionalLosses.Add(additionalLoss);
+                }
+            }
+            reader.Close();
+
+
+
+            // Get the lighting data from the database
+
+            query = @"SELECT * FROM plumbing_water_systems WHERE project_id = @projectId";
+          
+            command = new MySqlCommand(query, Connection);
+            command.Parameters.AddWithValue("@projectId", projectId);
+            reader = (MySqlDataReader)await command.ExecuteReaderAsync();
 
             List<string> newLuminaireIds = new List<string>();
 
