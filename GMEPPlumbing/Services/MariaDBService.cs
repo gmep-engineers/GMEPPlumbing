@@ -10,6 +10,10 @@ using MySql.Data.MySqlClient;
 using System.Text.Json;
 using Mysqlx.Crud;
 using static Mysqlx.Notice.Frame.Types;
+using System.Windows.Controls;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.ApplicationServices;
 
 namespace GMEPPlumbing.Services
 {
@@ -18,10 +22,18 @@ namespace GMEPPlumbing.Services
         public string ConnectionString { get; set; }
         public MySqlConnection Connection { get; set; }
 
+        public Document doc { get; private set; }
+        public Database db { get; private set; }
+        public Editor ed { get; private set; }
+
         public MariaDBService()
         {
             ConnectionString = Properties.Settings.Default.ConnectionString;
             Connection = new MySqlConnection(ConnectionString);
+
+            doc = Application.DocumentManager.MdiActiveDocument;
+            db = doc.Database;
+            ed = doc.Editor;
         }
         public async Task OpenConnectionAsync()
         {
@@ -67,7 +79,7 @@ namespace GMEPPlumbing.Services
         {
             // Get the lighting data from the database
             WaterSystemData waterSystemData = new WaterSystemData();
-            string query = @"SELECT * WHERE project_id = @projectId";
+            string query = @"SELECT * FROM plumbing_water_systems WHERE project_id = @projectId";
             await OpenConnectionAsync();
             MySqlCommand command = new MySqlCommand(query, Connection);
             command.Parameters.AddWithValue("@projectId", projectId);
@@ -131,7 +143,7 @@ namespace GMEPPlumbing.Services
                 await OpenConnectionAsync();
 
                 string query = @"
-                INSERT INTO water_system_data (
+                INSERT INTO plumbing_water_systems (
                     project_id,
                     section_header_1,
                     street_low_pressure,
@@ -287,6 +299,7 @@ namespace GMEPPlumbing.Services
             }
             catch (Exception ex)
             {
+                ed.WriteMessage("database error: " + ex.Message);
                 await CloseConnectionAsync();
                 return false;
             }
