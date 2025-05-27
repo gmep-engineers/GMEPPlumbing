@@ -179,6 +179,88 @@ namespace GMEPPlumbing.Services
             {
                 await OpenConnectionAsync();
 
+                // First, delete existing additional losses that are not in addtionalosses or additionallosses2 for the project
+
+                string deleteQuery = @"
+                DELETE FROM plumbing_additional_losses
+                WHERE project_id = @projectId
+                AND id NOT IN (@ids)";
+
+                var ids = string.Join(",", waterSystemData.AdditionalLosses.Select(a => $"'{a.Id}'").Concat(waterSystemData.AdditionalLosses2.Select(a => $"'{a.Id}'")));
+                
+                if (!string.IsNullOrEmpty(ids))
+                {
+                    MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, Connection);
+                    deleteCommand.Parameters.AddWithValue("@projectId", projectId);
+                    deleteCommand.Parameters.AddWithValue("@ids", ids);
+                    await deleteCommand.ExecuteNonQueryAsync();
+                }
+                else
+                {
+                    deleteQuery = @"
+                    DELETE FROM plumbing_additional_losses
+                    WHERE project_id = @projectId";
+                    MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, Connection);
+                    deleteCommand.Parameters.AddWithValue("@projectId", projectId);
+                    await deleteCommand.ExecuteNonQueryAsync();
+                }
+
+                foreach(var loss in waterSystemData.AdditionalLosses)
+                {
+                    string insertQuery = @"
+                    INSERT INTO plumbing_additional_losses (
+                        id,
+                        project_id,
+                        title,
+                        amount,
+                        is_2
+                    ) VALUES (
+                        @id,
+                        @projectId,
+                        @title,
+                        @amount,
+                        0
+                    )
+                    ON DUPLICATE KEY UPDATE
+                        title = @title,
+                        amount = @amount";
+                    MySqlCommand insertCommand = new MySqlCommand(insertQuery, Connection);
+                    insertCommand.Parameters.AddWithValue("@id", loss.Id);
+                    insertCommand.Parameters.AddWithValue("@projectId", projectId);
+                    insertCommand.Parameters.AddWithValue("@title", loss.Title);
+                    insertCommand.Parameters.AddWithValue("@amount", loss.Amount);
+                    await insertCommand.ExecuteNonQueryAsync();
+                }
+                foreach(var loss in waterSystemData.AdditionalLosses2)
+                {
+                    string insertQuery = @"
+                    INSERT INTO plumbing_additional_losses (
+                        id,
+                        project_id,
+                        title,
+                        amount,
+                        is_2
+                    ) VALUES (
+                        @id,
+                        @projectId,
+                        @title,
+                        @amount,
+                        1
+                    )
+                    ON DUPLICATE KEY UPDATE
+                        title = @title,
+                        amount = @amount";
+                    MySqlCommand insertCommand = new MySqlCommand(insertQuery, Connection);
+                    insertCommand.Parameters.AddWithValue("@id", loss.Id);
+                    insertCommand.Parameters.AddWithValue("@projectId", projectId);
+                    insertCommand.Parameters.AddWithValue("@title", loss.Title);
+                    insertCommand.Parameters.AddWithValue("@amount", loss.Amount);
+                    await insertCommand.ExecuteNonQueryAsync();
+                }
+
+
+
+
                 string query = @"
                 INSERT INTO plumbing_water_systems (
                     project_id,
