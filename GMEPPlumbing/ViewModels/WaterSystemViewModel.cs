@@ -999,6 +999,7 @@ namespace GMEPPlumbing.ViewModels
 
   public class AdditionalLoss
   {
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Title { get; set; }
     public string Amount { get; set; }
   }
