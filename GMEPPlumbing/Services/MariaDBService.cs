@@ -81,6 +81,8 @@ namespace GMEPPlumbing.Services
             //get the additional losses
 
             WaterSystemData waterSystemData = new WaterSystemData();
+            waterSystemData.AdditionalLosses = new ObservableCollection<AdditionalLoss>();
+            waterSystemData.AdditionalLosses2 = new ObservableCollection<AdditionalLoss>();
 
             string query = @"SELECT * FROM plumbing_additional_losses WHERE project_id = @projectId";
             MySqlCommand command = new MySqlCommand(query, Connection);
