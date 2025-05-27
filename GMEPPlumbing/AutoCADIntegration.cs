@@ -37,7 +37,7 @@ namespace GMEPPlumbing
     public string ProjectId { get; private set; } = string.Empty;
 
     [CommandMethod("Water")]
-    public async Task Water()
+    public async void Water()
     {
       //MongoDBService.Initialize();
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
