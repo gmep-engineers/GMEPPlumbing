@@ -19,6 +19,8 @@ namespace GMEPPlumbing.Services
 {
     public class MariaDBService
     {
+        public ObservableCollection<AdditionalLoss> AdditionalLosses { get; set; } = new ObservableCollection<AdditionalLoss>();
+        public ObservableCollection<AdditionalLoss> AdditionalLosses2 { get; set; } = new ObservableCollection<AdditionalLoss>();
         public string ConnectionString { get; set; }
         public MySqlConnection Connection { get; set; }
 
