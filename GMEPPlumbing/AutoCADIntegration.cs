@@ -19,6 +19,10 @@ using System.Windows.Documents;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -110,15 +114,15 @@ namespace GMEPPlumbing
                 }
                 if (planName != "" && viewport != "")
                 {
-                    string keyword = planName + ": " + viewport;
+                    string keyword = planName + ":" + viewport;
                     if (!keywords.Contains(keyword))
                     {
                         keywords.Add(keyword);
                     }
                     else
                     {
-                        int count = keywords.Count(x => x == keyword || (x.StartsWith(keyword + " (") && x.EndsWith(")")));
-                        keywords.Add(planName + ": " + viewport + " (" + (count + 1).ToString() + ")");
+                        int count = keywords.Count(x => x == keyword || (x.StartsWith(keyword + "(") && x.EndsWith(")")));
+                        keywords.Add(keyword + "(" + (count + 1).ToString() + ")");
                     }
                 }
             }
@@ -130,6 +134,7 @@ namespace GMEPPlumbing
             PromptResult pr = ed.GetKeywords(promptOptions);
             string resultKeyword = pr.StringResult;
             int index = keywords.IndexOf(resultKeyword);
+           // ed.WriteMessage("BasePoints: " + basePoints.Count().ToString() + "ketwords: " + keywords.Count().ToString() + "index: " + index.ToString() + "resultKeyword: " + resultKeyword);
             List<ObjectId> basePointIds = basePoints.ElementAt(index).Value;
 
             //Picking start and end floors
@@ -139,10 +144,25 @@ namespace GMEPPlumbing
             }
             PromptResult floorResult = ed.GetKeywords(floorOptions);
             int startFloor = int.Parse(floorResult.StringResult);
-            
 
+            foreach (ObjectId objId in basePointIds)
+            {
+                var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                var pc2 = entity2.DynamicBlockReferencePropertyCollection;
+                foreach (DynamicBlockReferenceProperty prop in pc2)
+                {
+                    if (prop.PropertyName == "Floor")
+                    {
+                        int floor = Convert.ToInt32(prop.Value);
+                        if (floor == startFloor)
+                        {
+                            ZoomToBlock(ed, entity2);
+                        }
+                    }
+                }
+            }
 
-        }
+         }
     }
 
 
@@ -165,12 +185,12 @@ namespace GMEPPlumbing
         bool gas = prompt.Gas;
         bool sewerVent = prompt.SewerVent;
         bool storm = prompt.Storm;
-        string planName = prompt.PlanName;
+        string planName = prompt.PlanName.ToUpper();
         string floorQtyResult = prompt.FloorQty;
         string Id = Guid.NewGuid().ToString();
 
 
-            string viewport = "";
+        string viewport = "";
         if (water) viewport += "Water";
         if (viewport != "" && gas) viewport += "-";
         if (gas) viewport += "Gas";
@@ -254,6 +274,20 @@ namespace GMEPPlumbing
       LoadDataAsync();
 
       pw.Focus();
+    }
+    public static void ZoomToBlock(Editor ed, BlockReference blockRef)
+    {
+        Extents3d ext = blockRef.GeometricExtents;
+        using (ViewTableRecord view = ed.GetCurrentView())
+        {
+            view.CenterPoint = new Point2d(
+                (ext.MinPoint.X + ext.MaxPoint.X) / 2,
+                (ext.MinPoint.Y + ext.MaxPoint.Y) / 2
+            );
+            view.Height = ext.MaxPoint.Y - ext.MinPoint.Y;
+            view.Width = ext.MaxPoint.X - ext.MinPoint.X;
+            ed.SetCurrentView(view);
+        }
     }
 
     public void WriteMessage(string message)
