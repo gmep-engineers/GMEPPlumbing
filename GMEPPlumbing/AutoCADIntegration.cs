@@ -35,6 +35,14 @@ namespace GMEPPlumbing
     public Database db { get; private set; }
     public Editor ed { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
+    [CommandMethod("SETPLUMBINGBASEPOINT")]
+    public async void setPlumbingBasePoint()
+    {
+        doc = Application.DocumentManager.MdiActiveDocument;
+        db = doc.Database;
+        ed = doc.Editor;
+
+    }
 
     [CommandMethod("Water")]
     public async void Water()
