@@ -1,0 +1,27 @@
+﻿<Window x:Class="GMEPPlumbing.Views.BasePointPromptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GMEPPlumbing.Views"
+        mc:Ignorable="d"
+        Title="BasePointPromptWindow" Height="319" Width="417">
+    <Grid Margin="0,0,0,2">
+        <StackPanel Orientation="Vertical">
+            <Label HorizontalAlignment="Center" Content="Plan Name" FontWeight="Bold" Margin="10,10,0,0" FontSize="14"/>
+            <TextBox x:Name="PlanNameText" HorizontalAlignment="Center" Width="200" Height="25"/>
+            <Label HorizontalAlignment="Center" Content="# Floors" FontWeight="Bold" Margin="10,10,0,0" FontSize="14"/>
+            <TextBox x:Name="FloorQtyText" HorizontalAlignment="Center" Width="200" Height="25"/>
+            <StackPanel Orientation="Horizontal"  Margin="20">
+                <CheckBox x:Name="WaterCheck" Content="COLD/HOT WATER" Margin="10,0,0,20"/>
+                <CheckBox x:Name="SewerVentCheck" Content="SEWER/VENT" Margin="10,0,0,20"/>
+                <CheckBox x:Name="GasCheck" Content="GAS" Margin="10,0,0,20"/>
+                <CheckBox x:Name="StormCheck" Content="STORM" Margin="10,0,0,20"/>
+            </StackPanel>
+        </StackPanel>
+        <StackPanel Margin="0 0 0 20" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+            <Button Content="OK" Width="60" Margin="0,0,10,0" IsDefault="True" Click="Ok_Click"/>
+            <Button Content="Cancel" Width="60" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
