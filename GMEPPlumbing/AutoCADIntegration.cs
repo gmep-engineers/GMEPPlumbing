@@ -18,6 +18,7 @@ using Autodesk.AutoCAD.Geometry;
 using System.Windows.Documents;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -127,6 +128,20 @@ namespace GMEPPlumbing
                 promptOptions.Keywords.Add(keyword);
             }
             PromptResult pr = ed.GetKeywords(promptOptions);
+            string resultKeyword = pr.StringResult;
+            int index = keywords.IndexOf(resultKeyword);
+            List<ObjectId> basePointIds = basePoints.ElementAt(index).Value;
+
+            //Picking start and end floors
+            PromptKeywordOptions floorOptions = new PromptKeywordOptions("\nStarting Floor: ");
+            for (int i = 1; i <= basePointIds.Count; i++) {
+                floorOptions.Keywords.Add(i.ToString());
+            }
+            PromptResult floorResult = ed.GetKeywords(floorOptions);
+            int startFloor = int.Parse(floorResult.StringResult);
+            
+
+
         }
     }
 
