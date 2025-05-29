@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms.Integration;
 using System.Windows.Media.Media3D;
 using Autodesk.AutoCAD.Geometry;
+using System.Windows.Documents;
+using System.Collections.Generic;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -49,6 +51,7 @@ namespace GMEPPlumbing
         {
             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
             BlockTableRecord timeClockBlock = (BlockTableRecord)tr.GetObject(bt["GMEP PLMG Basepoint"], OpenMode.ForRead);
+            Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
             foreach (ObjectId id in timeClockBlock.GetAnonymousBlockIds())
             {
                if (id.IsValid)
@@ -63,17 +66,18 @@ namespace GMEPPlumbing
                                 var pc = entity.DynamicBlockReferencePropertyCollection;
                                 foreach (DynamicBlockReferenceProperty prop in pc)
                                 {
-                                    if (prop.PropertyName == "Plan")
+                                    if (prop.PropertyName == "Id")
                                     {
-                                        prop.Value = "Water";
-                                    }
-                                    else if (prop.PropertyName == "Type")
-                                    {
-                                        prop.Value = "Water";
-                                    }
-                                    else if (prop.PropertyName == "Floor")
-                                    {
-                                        prop.Value = 1;
+
+                                        string key = prop.Value.ToString();
+                                        if (key != "0")
+                                        {
+                                            if (!basePoints.ContainsKey(key))
+                                            {
+                                                basePoints[key] = new List<ObjectId>();
+                                            }
+                                            basePoints[key].Add(entity.ObjectId);
+                                        }
                                     }
                                 }
                             }
@@ -81,6 +85,34 @@ namespace GMEPPlumbing
                     }
                }
             }
+            ed.WriteMessage("\nFound " + basePoints.Count + " base points in the drawing.");
+            //meow meow
+            PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nPick View: ");
+            foreach (var key in basePoints.Keys)
+            {
+                var objId = basePoints[key][0];
+                var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                var pc = entity.DynamicBlockReferencePropertyCollection;
+                string planName = "";
+                string viewport = "";
+                foreach (DynamicBlockReferenceProperty prop in pc)
+                {
+                    if (prop.PropertyName == "Plan")
+                    {
+                            planName = prop.Value.ToString();
+                    }
+                    if (prop.PropertyName == "Type")
+                    {
+                        viewport = prop.Value.ToString();
+                    }
+                }
+                if (planName != "" && viewport != "")
+                {
+                    promptOptions.Keywords.Add(planName + ": " + viewport);
+                }
+            }
+            PromptResult pr = ed.GetKeywords(promptOptions);
+
         }
     }
 
@@ -111,11 +143,11 @@ namespace GMEPPlumbing
 
             string viewport = "";
         if (water) viewport += "Water";
-        if (viewport != "" && gas) viewport += "/";
+        if (viewport != "" && gas) viewport += "-";
         if (gas) viewport += "Gas";
-        if (viewport != "" && sewerVent) viewport += "/";
-        if (sewerVent) viewport += "Sewer/Vent";
-        if (viewport != "" && storm) viewport += "/";
+        if (viewport != "" && sewerVent) viewport += "-";
+        if (sewerVent) viewport += "Sewer-Vent";
+        if (viewport != "" && storm) viewport += "-";
         if (storm) viewport += "Storm";
 
 
