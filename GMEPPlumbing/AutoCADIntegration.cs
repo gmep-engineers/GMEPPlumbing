@@ -16,6 +16,7 @@ using System.Windows.Forms.Integration;
 using System.Windows.Media.Media3D;
 using Autodesk.AutoCAD.Geometry;
 using System.Windows.Documents;
+using System.Linq;
 using System.Collections.Generic;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
@@ -87,7 +88,7 @@ namespace GMEPPlumbing
             }
             ed.WriteMessage("\nFound " + basePoints.Count + " base points in the drawing.");
             //meow meow
-            PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nPick View: ");
+            List<string> keywords = new List<string>();
             foreach (var key in basePoints.Keys)
             {
                 var objId = basePoints[key][0];
@@ -108,11 +109,24 @@ namespace GMEPPlumbing
                 }
                 if (planName != "" && viewport != "")
                 {
-                    promptOptions.Keywords.Add(planName + ": " + viewport);
+                    string keyword = planName + ": " + viewport;
+                    if (!keywords.Contains(keyword))
+                    {
+                        keywords.Add(keyword);
+                    }
+                    else
+                    {
+                        int count = keywords.Count(x => x == keyword || (x.StartsWith(keyword + " (") && x.EndsWith(")")));
+                        keywords.Add(planName + ": " + viewport + " (" + (count + 1).ToString() + ")");
+                    }
                 }
             }
+            PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nPick View: ");
+            foreach (var keyword in keywords)
+            {
+                promptOptions.Keywords.Add(keyword);
+            }
             PromptResult pr = ed.GetKeywords(promptOptions);
-
         }
     }
 
