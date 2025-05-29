@@ -89,7 +89,8 @@ namespace GMEPPlumbing
                     out block,
                     out point
                     );
-                    if (br != null)
+                        br.Layer = "Defpoints";
+                        if (br != null)
                     {
                         curSpace.AppendEntity(br);
                         tr.AddNewlyCreatedDBObject(br, true);
@@ -104,6 +105,10 @@ namespace GMEPPlumbing
                             else if (prop.PropertyName == "Floor")
                             {
                                 prop.Value = i + 1;
+                            }
+                            else if (prop.PropertyName == "Type")
+                            {
+                                prop.Value = viewport;
                             }
                         }
                     }
