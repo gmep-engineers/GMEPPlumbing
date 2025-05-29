@@ -38,6 +38,53 @@ namespace GMEPPlumbing
     public Editor ed { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
 
+    [CommandMethod("UPWATER")]
+    public async void UpWater()
+    {
+        doc = Application.DocumentManager.MdiActiveDocument;
+        db = doc.Database;
+        ed = doc.Editor;
+
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            BlockTableRecord timeClockBlock = (BlockTableRecord)tr.GetObject(bt["GMEP PLMG Basepoint"], OpenMode.ForRead);
+            foreach (ObjectId id in timeClockBlock.GetAnonymousBlockIds())
+            {
+               if (id.IsValid)
+               {
+                    using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord)
+                    {
+                        if (anonymousBtr != null)
+                        {
+                            foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                            {
+                                var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                                var pc = entity.DynamicBlockReferencePropertyCollection;
+                                foreach (DynamicBlockReferenceProperty prop in pc)
+                                {
+                                    if (prop.PropertyName == "Plan")
+                                    {
+                                        prop.Value = "Water";
+                                    }
+                                    else if (prop.PropertyName == "Type")
+                                    {
+                                        prop.Value = "Water";
+                                    }
+                                    else if (prop.PropertyName == "Floor")
+                                    {
+                                        prop.Value = 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+               }
+            }
+        }
+    }
+
+
     [CommandMethod("SETPLUMBINGBASEPOINT")]
     public async void SetPlumbingBasePoint()
     {
@@ -59,9 +106,10 @@ namespace GMEPPlumbing
         bool storm = prompt.Storm;
         string planName = prompt.PlanName;
         string floorQtyResult = prompt.FloorQty;
+        string Id = Guid.NewGuid().ToString();
 
 
-        string viewport = "";
+            string viewport = "";
         if (water) viewport += "Water";
         if (viewport != "" && gas) viewport += "/";
         if (gas) viewport += "Gas";
@@ -117,6 +165,10 @@ namespace GMEPPlumbing
                         else if (prop.PropertyName == "Type")
                         {
                             prop.Value = viewport;
+                        }
+                        else if (prop.PropertyName == "Id")
+                        {
+                            prop.Value = Id;
                         }
                     }
                 }
