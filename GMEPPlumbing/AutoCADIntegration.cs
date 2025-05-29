@@ -44,76 +44,83 @@ namespace GMEPPlumbing
         doc = Application.DocumentManager.MdiActiveDocument;
         db = doc.Database;
         ed = doc.Editor;
-        PromptKeywordOptions viewportOptions = new PromptKeywordOptions("Enter the Viewport Type");
-        viewportOptions.Keywords.Add("COLD-HOT WATER");
-        viewportOptions.Keywords.Add("GAS");
-        viewportOptions.Keywords.Add("WATER-GAS");
-        viewportOptions.Keywords.Add("SEWER");
-        viewportOptions.Keywords.Add("STORM");
-        viewportOptions.Keywords.Add("SEWER-STORM");
 
-        PromptStringOptions planNameOption = new PromptStringOptions("\nEnter the plan name: ");
-        PromptStringOptions floorQtyOption = new PromptStringOptions("\nEnter the floor quantity: ");
-        
-        PromptResult viewportResult = ed.GetKeywords(viewportOptions);
-        string viewport = viewportResult.StringResult.ToUpper();
 
-        PromptResult planeNameResult = ed.GetString(planNameOption);
-        string planName = planeNameResult.StringResult;
+        var prompt = new Views.BasePointPromptWindow();
+        bool? result = prompt.ShowDialog();
+        if (result != true)
+        {
+            ed.WriteMessage("\nOperation cancelled.");
+            return;
+        }
+        bool water = prompt.Water;
+        bool gas = prompt.Gas;
+        bool sewerVent = prompt.SewerVent;
+        bool storm = prompt.Storm;
+        string planName = prompt.PlanName;
+        string floorQtyResult = prompt.FloorQty;
 
-        PromptResult floorQtyResult = ed.GetString(floorQtyOption);
 
-        if (!int.TryParse(floorQtyResult.StringResult, out int floorQty))
+        string viewport = "";
+        if (water) viewport += "Water";
+        if (viewport != "" && gas) viewport += "/";
+        if (gas) viewport += "Gas";
+        if (viewport != "" && sewerVent) viewport += "/";
+        if (sewerVent) viewport += "Sewer/Vent";
+        if (viewport != "" && storm) viewport += "/";
+        if (storm) viewport += "Storm";
+
+
+
+        if (!int.TryParse(floorQtyResult, out int floorQty))
         {
             ed.WriteMessage("\nInvalid floor quantity. Please enter a valid integer.");
             return;
         }
-        if (viewportResult.Status == PromptStatus.OK && planeNameResult.Status == PromptStatus.OK && floorQtyResult.Status == PromptStatus.OK)
+      
+        for (int i = 0; i < floorQty; i++)
         {
-            for (int i = 0; i < floorQty; i++)
+            Point3d point;
+            ObjectId blockId;
+            using (Transaction tr = db.TransactionManager.StartTransaction())
             {
-                Point3d point;
-                ObjectId blockId;
-                using (Transaction tr = db.TransactionManager.StartTransaction())
+                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+
+                BlockTableRecord block;
+                string message = "\nCreating Plumbing Base Point for " + planName + " on floor " + (i + 1);
+                BlockReference br = CADObjectCommands.CreateBlockReference(
+                tr,
+                bt,
+                "GMEP PLMG Basepoint",
+                out block,
+                out point
+                );
+                    br.Layer = "Defpoints";
+                    if (br != null)
                 {
-                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                    BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-
-
-                    BlockTableRecord block;
-                    string message = "\nCreating Plumbing Base Point for " + planName + " on floor " + (i + 1);
-                    BlockReference br = CADObjectCommands.CreateBlockReference(
-                    tr,
-                    bt,
-                    "GMEP PLMG Basepoint",
-                    out block,
-                    out point
-                    );
-                        br.Layer = "Defpoints";
-                        if (br != null)
+                    curSpace.AppendEntity(br);
+                    tr.AddNewlyCreatedDBObject(br, true);
+                    blockId = br.ObjectId;
+                    DynamicBlockReferencePropertyCollection properties = br.DynamicBlockReferencePropertyCollection;
+                    foreach (DynamicBlockReferenceProperty prop in properties)
                     {
-                        curSpace.AppendEntity(br);
-                        tr.AddNewlyCreatedDBObject(br, true);
-                        blockId = br.ObjectId;
-                        DynamicBlockReferencePropertyCollection properties = br.DynamicBlockReferencePropertyCollection;
-                        foreach (DynamicBlockReferenceProperty prop in properties)
+                        if (prop.PropertyName == "Plan")
                         {
-                            if (prop.PropertyName == "Plan")
-                            {
-                                prop.Value = planName;
-                            }
-                            else if (prop.PropertyName == "Floor")
-                            {
-                                prop.Value = i + 1;
-                            }
-                            else if (prop.PropertyName == "Type")
-                            {
-                                prop.Value = viewport;
-                            }
+                            prop.Value = planName;
+                        }
+                        else if (prop.PropertyName == "Floor")
+                        {
+                            prop.Value = i + 1;
+                        }
+                        else if (prop.PropertyName == "Type")
+                        {
+                            prop.Value = viewport;
                         }
                     }
-                    tr.Commit();
                 }
+                tr.Commit();
             }
         }
     }
