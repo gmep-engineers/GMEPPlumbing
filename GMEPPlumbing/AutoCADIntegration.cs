@@ -39,7 +39,7 @@ namespace GMEPPlumbing
     public string ProjectId { get; private set; } = string.Empty;
 
     [CommandMethod("SETPLUMBINGBASEPOINT")]
-    public async void setPlumbingBasePoint()
+    public async void SetPlumbingBasePoint()
     {
         doc = Application.DocumentManager.MdiActiveDocument;
         db = doc.Database;
