@@ -161,7 +161,7 @@ namespace GMEPPlumbing
                     }
                 }
             }
-
+            tr.Commit();
          }
     }
 
@@ -284,8 +284,8 @@ namespace GMEPPlumbing
                 (ext.MinPoint.X + ext.MaxPoint.X) / 2,
                 (ext.MinPoint.Y + ext.MaxPoint.Y) / 2
             );
-            view.Height = ext.MaxPoint.Y - ext.MinPoint.Y;
-            view.Width = ext.MaxPoint.X - ext.MinPoint.X;
+            view.Height = ext.MaxPoint.Y*50 - ext.MinPoint.Y*50;
+            view.Width = ext.MaxPoint.X*50 - ext.MinPoint.X*50;
             ed.SetCurrentView(view);
         }
     }
