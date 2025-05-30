@@ -190,11 +190,11 @@ namespace GMEPPlumbing
                 );
                 if (br != null)
                 {
-                    startPipeId = br.ObjectId;
                     br.Layer = "Defpoints";
                     BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
                     curSpace.AppendEntity(br);
                     tr.AddNewlyCreatedDBObject(br, true);
+                    startPipeId = br.ObjectId;
                 }
             }
 
@@ -235,15 +235,19 @@ namespace GMEPPlumbing
 
             if (endFloor > startFloor)
             {
-               // BlockReference startPipe = tr.GetObject(startPipeId, OpenMode.ForWrite) as BlockReference;
+                //delete previous start pipe
+                BlockReference startPipe = tr.GetObject(startPipeId, OpenMode.ForWrite) as BlockReference;
+                startPipe.Erase(true);
+
                 //start pipe
-                BlockTableRecord blockDef2 = tr.GetObject(bt["GMEP_PLUMBING_LINE_DOWN"], OpenMode.ForRead) as BlockTableRecord;
+                Point3d newUpPointLocation2 = BasePointRefs[startFloor].Position + upVector;
+                BlockTableRecord blockDef2 = tr.GetObject(bt["GMEP_PLUMBING_LINE_UP"], OpenMode.ForRead) as BlockTableRecord;
                 BlockTableRecord curSpace2 = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-                BlockReference upBlockRef2 = new BlockReference(BasePointRefs[startFloor].Position, blockDef2.ObjectId);
+                BlockReference upBlockRef2 = new BlockReference(newUpPointLocation2, blockDef2.ObjectId);
                 upBlockRef2.Layer = "Defpoints";
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
-                //startPipe.Erase(true);
+                
 
                 //Continue Pipe
                 for (int i = startFloor + 1; i < endFloor; i++)
