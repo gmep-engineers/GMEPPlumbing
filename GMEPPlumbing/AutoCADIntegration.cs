@@ -23,6 +23,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.GraphicsInterface;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -52,6 +53,11 @@ namespace GMEPPlumbing
         doc = Application.DocumentManager.MdiActiveDocument;
         db = doc.Database;
         ed = doc.Editor;
+
+        List<ObjectId> basePointIds = new List<ObjectId>();
+        int startFloor = 0;
+        Point3d StartBasePointLocation;
+        Point3d StartUpLocation;
 
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
@@ -135,7 +141,7 @@ namespace GMEPPlumbing
             string resultKeyword = pr.StringResult;
             int index = keywords.IndexOf(resultKeyword);
            // ed.WriteMessage("BasePoints: " + basePoints.Count().ToString() + "ketwords: " + keywords.Count().ToString() + "index: " + index.ToString() + "resultKeyword: " + resultKeyword);
-            List<ObjectId> basePointIds = basePoints.ElementAt(index).Value;
+            basePointIds = basePoints.ElementAt(index).Value;
 
             //Picking start and end floors
             PromptKeywordOptions floorOptions = new PromptKeywordOptions("\nStarting Floor: ");
@@ -143,12 +149,15 @@ namespace GMEPPlumbing
                 floorOptions.Keywords.Add(i.ToString());
             }
             PromptResult floorResult = ed.GetKeywords(floorOptions);
-            int startFloor = int.Parse(floorResult.StringResult);
+            startFloor = int.Parse(floorResult.StringResult);
+
+            BlockReference firstFloorBasePoint = null;
 
             foreach (ObjectId objId in basePointIds)
             {
                 var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                 var pc2 = entity2.DynamicBlockReferencePropertyCollection;
+                
                 foreach (DynamicBlockReferenceProperty prop in pc2)
                 {
                     if (prop.PropertyName == "Floor")
@@ -158,12 +167,39 @@ namespace GMEPPlumbing
                         {
                             ZoomToBlock(ed, entity2);
                         }
+                        if (firstFloorBasePoint == null && floor == startFloor)
+                        {
+                            firstFloorBasePoint = entity2;
+                            StartBasePointLocation = entity2.Position;
+                        }
                     }
                 }
+
             }
+           if (firstFloorBasePoint != null)
+           {
+
+                BlockTableRecord block = null;
+                BlockReference br = CADObjectCommands.CreateBlockReference(
+                tr,
+                bt,
+                "GMEP PLMG UP",
+                out block,
+                out StartUpLocation
+                );
+                if (br != null)
+                {
+                    BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+                    curSpace.AppendEntity(br);
+                    tr.AddNewlyCreatedDBObject(br, true);
+                }
+
+           }
+
             tr.Commit();
-         }
+        }
     }
+
 
 
     [CommandMethod("SETPLUMBINGBASEPOINT")]
@@ -226,8 +262,8 @@ namespace GMEPPlumbing
                 out block,
                 out point
                 );
-                    br.Layer = "Defpoints";
-                    if (br != null)
+                br.Layer = "Defpoints";
+                if (br != null)
                 {
                     curSpace.AppendEntity(br);
                     tr.AddNewlyCreatedDBObject(br, true);
