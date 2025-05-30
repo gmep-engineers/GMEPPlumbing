@@ -15,6 +15,15 @@ using System.Threading.Tasks;
 using System.Windows.Forms.Integration;
 using System.Windows.Media.Media3D;
 using Autodesk.AutoCAD.Geometry;
+using System.Windows.Documents;
+using System.Linq;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.GraphicsInterface;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -38,6 +47,228 @@ namespace GMEPPlumbing
     public Editor ed { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
 
+    [CommandMethod("PlumbingVerticalRoute")]
+    public async void PlumbingVerticalRoute()
+    {
+        doc = Application.DocumentManager.MdiActiveDocument;
+        db = doc.Database;
+        ed = doc.Editor;
+
+        List<ObjectId> basePointIds = new List<ObjectId>();
+        int startFloor = 0;
+        Point3d StartBasePointLocation = new Point3d(0, 0, 0);
+        Point3d StartUpLocation = new Point3d(0, 0, 0);
+
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            BlockTableRecord timeClockBlock = (BlockTableRecord)tr.GetObject(bt["GMEP PLMG Basepoint"], OpenMode.ForRead);
+            Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
+            foreach (ObjectId id in timeClockBlock.GetAnonymousBlockIds())
+            {
+               if (id.IsValid)
+               {
+                    using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord)
+                    {
+                        if (anonymousBtr != null)
+                        {
+                            foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                            {
+                                var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                                var pc = entity.DynamicBlockReferencePropertyCollection;
+                                foreach (DynamicBlockReferenceProperty prop in pc)
+                                {
+                                    if (prop.PropertyName == "Id")
+                                    {
+
+                                        string key = prop.Value.ToString();
+                                        if (key != "0")
+                                        {
+                                            if (!basePoints.ContainsKey(key))
+                                            {
+                                                basePoints[key] = new List<ObjectId>();
+                                            }
+                                            basePoints[key].Add(entity.ObjectId);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+               }
+            }
+            ed.WriteMessage("\nFound " + basePoints.Count + " base points in the drawing.");
+            //meow meow
+            List<string> keywords = new List<string>();
+            foreach (var key in basePoints.Keys)
+            {
+                var objId = basePoints[key][0];
+                var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                var pc = entity.DynamicBlockReferencePropertyCollection;
+                string planName = "";
+                string viewport = "";
+                foreach (DynamicBlockReferenceProperty prop in pc)
+                {
+                    if (prop.PropertyName == "Plan")
+                    {
+                            planName = prop.Value.ToString();
+                    }
+                    if (prop.PropertyName == "Type")
+                    {
+                        viewport = prop.Value.ToString();
+                    }
+                }
+                if (planName != "" && viewport != "")
+                {
+                    string keyword = planName + ":" + viewport;
+                    if (!keywords.Contains(keyword))
+                    {
+                        keywords.Add(keyword);
+                    }
+                    else
+                    {
+                        int count = keywords.Count(x => x == keyword || (x.StartsWith(keyword + "(") && x.EndsWith(")")));
+                        keywords.Add(keyword + "(" + (count + 1).ToString() + ")");
+                    }
+                }
+            }
+            PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nPick View: ");
+            foreach (var keyword in keywords)
+            {
+                promptOptions.Keywords.Add(keyword);
+            }
+            PromptResult pr = ed.GetKeywords(promptOptions);
+            string resultKeyword = pr.StringResult;
+            int index = keywords.IndexOf(resultKeyword);
+           // ed.WriteMessage("BasePoints: " + basePoints.Count().ToString() + "ketwords: " + keywords.Count().ToString() + "index: " + index.ToString() + "resultKeyword: " + resultKeyword);
+            basePointIds = basePoints.ElementAt(index).Value;
+
+            //Picking start floor
+            PromptKeywordOptions floorOptions = new PromptKeywordOptions("\nStarting Floor: ");
+            for (int i = 1; i <= basePointIds.Count; i++) {
+                floorOptions.Keywords.Add(i.ToString());
+            }
+            PromptResult floorResult = ed.GetKeywords(floorOptions);
+            startFloor = int.Parse(floorResult.StringResult);
+
+            BlockReference firstFloorBasePoint = null;
+
+            foreach (ObjectId objId in basePointIds)
+            {
+                var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                var pc2 = entity2.DynamicBlockReferencePropertyCollection;
+                
+                foreach (DynamicBlockReferenceProperty prop in pc2)
+                {
+                    if (prop.PropertyName == "Floor")
+                    {
+                        int floor = Convert.ToInt32(prop.Value);
+                        if (floor == startFloor)
+                        {
+                            ZoomToBlock(ed, entity2);
+                        }
+                        if (firstFloorBasePoint == null && floor == startFloor)
+                        {
+                            firstFloorBasePoint = entity2;
+                            StartBasePointLocation = entity2.Position;
+                        }
+                    }
+                }
+
+            }
+           if (firstFloorBasePoint != null)
+           {
+
+                BlockTableRecord block = null;
+                BlockReference br = CADObjectCommands.CreateBlockReference(
+                tr,
+                bt,
+                "GMEP PLMG UP",
+                out block,
+                out StartUpLocation
+                );
+                if (br != null)
+                {
+                    br.Layer = "Defpoints";
+                    BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+                    curSpace.AppendEntity(br);
+                    tr.AddNewlyCreatedDBObject(br, true);
+                }
+            }
+
+            tr.Commit();
+        }
+        //getting difference between start base point and up point
+        Vector3d upVector = StartUpLocation - StartBasePointLocation;
+
+        //picking end floor
+        PromptKeywordOptions endFloorOptions = new PromptKeywordOptions("\nEnding Floor: ");
+        for (int i = 1; i <= basePointIds.Count; i++)
+        {
+            if (i != startFloor)
+            {
+                endFloorOptions.Keywords.Add(i.ToString());
+            }
+        }
+        PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
+        int endFloor = int.Parse(endFloorResult.StringResult);
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+            Dictionary<int, BlockReference> BasePointRefs = new Dictionary<int, BlockReference>();
+            foreach (ObjectId objId in basePointIds)
+            {
+                var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                var pc2 = entity2.DynamicBlockReferencePropertyCollection;
+
+                foreach (DynamicBlockReferenceProperty prop in pc2)
+                {
+                    if (prop.PropertyName == "Floor")
+                    {
+                        int floor = Convert.ToInt32(prop.Value);
+                        BasePointRefs.Add(floor, entity2);
+                    }
+                }
+            }
+
+            if (endFloor > startFloor)
+            {
+                for (int i = startFloor + 1; i <= endFloor; i++)
+                {
+                    Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
+                    BlockTableRecord blockDef = tr.GetObject(bt["GMEP PLMG UP"], OpenMode.ForRead) as BlockTableRecord;
+                    BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                    // Create the BlockReference at the desired location
+                    BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
+                    upBlockRef.Layer = "Defpoints";
+                    curSpace.AppendEntity(upBlockRef);
+                    tr.AddNewlyCreatedDBObject(upBlockRef, true);
+                }
+            }
+            else if (endFloor < startFloor)
+            {
+                for (int i = startFloor - 1; i >= endFloor; i--)
+                {
+                    Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
+                    BlockTableRecord blockDef = tr.GetObject(bt["GMEP PLMG UP"], OpenMode.ForRead) as BlockTableRecord;
+                    BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                    // Create the BlockReference at the desired location
+                    BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
+                    upBlockRef.Layer = "Defpoints";
+                    curSpace.AppendEntity(upBlockRef);
+                    tr.AddNewlyCreatedDBObject(upBlockRef, true);
+                }
+            }
+            ZoomToBlock(ed, BasePointRefs[endFloor]);
+            tr.Commit();
+        }
+
+    }
+
+
+
     [CommandMethod("SETPLUMBINGBASEPOINT")]
     public async void SetPlumbingBasePoint()
     {
@@ -57,17 +288,18 @@ namespace GMEPPlumbing
         bool gas = prompt.Gas;
         bool sewerVent = prompt.SewerVent;
         bool storm = prompt.Storm;
-        string planName = prompt.PlanName;
+        string planName = prompt.PlanName.ToUpper();
         string floorQtyResult = prompt.FloorQty;
+        string Id = Guid.NewGuid().ToString();
 
 
         string viewport = "";
         if (water) viewport += "Water";
-        if (viewport != "" && gas) viewport += "/";
+        if (viewport != "" && gas) viewport += "-";
         if (gas) viewport += "Gas";
-        if (viewport != "" && sewerVent) viewport += "/";
-        if (sewerVent) viewport += "Sewer/Vent";
-        if (viewport != "" && storm) viewport += "/";
+        if (viewport != "" && sewerVent) viewport += "-";
+        if (sewerVent) viewport += "Sewer-Vent";
+        if (viewport != "" && storm) viewport += "-";
         if (storm) viewport += "Storm";
 
 
@@ -97,8 +329,8 @@ namespace GMEPPlumbing
                 out block,
                 out point
                 );
-                    br.Layer = "Defpoints";
-                    if (br != null)
+                br.Layer = "Defpoints";
+                if (br != null)
                 {
                     curSpace.AppendEntity(br);
                     tr.AddNewlyCreatedDBObject(br, true);
@@ -117,6 +349,10 @@ namespace GMEPPlumbing
                         else if (prop.PropertyName == "Type")
                         {
                             prop.Value = viewport;
+                        }
+                        else if (prop.PropertyName == "Id")
+                        {
+                            prop.Value = Id;
                         }
                     }
                 }
@@ -141,6 +377,20 @@ namespace GMEPPlumbing
       LoadDataAsync();
 
       pw.Focus();
+    }
+    public static void ZoomToBlock(Editor ed, BlockReference blockRef)
+    {
+        Extents3d ext = blockRef.GeometricExtents;
+        using (ViewTableRecord view = ed.GetCurrentView())
+        {
+            view.CenterPoint = new Point2d(
+                (ext.MinPoint.X + ext.MaxPoint.X) / 2,
+                (ext.MinPoint.Y + ext.MaxPoint.Y) / 2
+            );
+            view.Height = ext.MaxPoint.Y*50 - ext.MinPoint.Y*50;
+            view.Width = ext.MaxPoint.X*50 - ext.MinPoint.X*50;
+            ed.SetCurrentView(view);
+        }
     }
 
     public void WriteMessage(string message)
