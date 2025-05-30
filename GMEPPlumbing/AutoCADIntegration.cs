@@ -56,8 +56,8 @@ namespace GMEPPlumbing
 
         List<ObjectId> basePointIds = new List<ObjectId>();
         int startFloor = 0;
-        Point3d StartBasePointLocation;
-        Point3d StartUpLocation;
+        Point3d StartBasePointLocation = new Point3d(0, 0, 0);
+        Point3d StartUpLocation = new Point3d(0, 0, 0);
 
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
@@ -143,7 +143,7 @@ namespace GMEPPlumbing
            // ed.WriteMessage("BasePoints: " + basePoints.Count().ToString() + "ketwords: " + keywords.Count().ToString() + "index: " + index.ToString() + "resultKeyword: " + resultKeyword);
             basePointIds = basePoints.ElementAt(index).Value;
 
-            //Picking start and end floors
+            //Picking start floor
             PromptKeywordOptions floorOptions = new PromptKeywordOptions("\nStarting Floor: ");
             for (int i = 1; i <= basePointIds.Count; i++) {
                 floorOptions.Keywords.Add(i.ToString());
@@ -198,6 +198,46 @@ namespace GMEPPlumbing
 
             tr.Commit();
         }
+        //getting difference between start base point and up point
+        Vector3d upVector = StartUpLocation - StartBasePointLocation;
+
+        //picking end floor
+        PromptKeywordOptions endFloorOptions = new PromptKeywordOptions("\nEnding Floor: ");
+        for (int i = 1; i <= basePointIds.Count; i++)
+        {
+            if (i > startFloor)
+            {
+                endFloorOptions.Keywords.Add(i.ToString());
+            }
+        }
+        PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
+        int endFloor = int.Parse(endFloorResult.StringResult);
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+            Dictionary<int, BlockReference> BasePointRefs = new Dictionary<int, BlockReference>();
+            foreach (ObjectId objId in basePointIds)
+            {
+                var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                var pc2 = entity2.DynamicBlockReferencePropertyCollection;
+
+                foreach (DynamicBlockReferenceProperty prop in pc2)
+                {
+                    if (prop.PropertyName == "Floor")
+                    {
+                        int floor = Convert.ToInt32(prop.Value);
+                        BasePointRefs.Add(floor, entity2);
+                    }
+                }
+            }
+
+            for (int i = startFloor + 1; i <= endFloor; i++)
+            {
+                Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
+            }
+            ZoomToBlock(ed, BasePointRefs[endFloor]);
+            tr.Commit();
+        }
+
     }
 
 
