@@ -214,6 +214,7 @@ namespace GMEPPlumbing
         int endFloor = int.Parse(endFloorResult.StringResult);
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
+            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
             Dictionary<int, BlockReference> BasePointRefs = new Dictionary<int, BlockReference>();
             foreach (ObjectId objId in basePointIds)
             {
@@ -233,6 +234,14 @@ namespace GMEPPlumbing
             for (int i = startFloor + 1; i <= endFloor; i++)
             {
                 Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
+                BlockTableRecord blockDef = tr.GetObject(bt["GMEP PLMG UP"], OpenMode.ForRead) as BlockTableRecord;
+                BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                // Create the BlockReference at the desired location
+                BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
+                upBlockRef.Layer = "Defpoints";
+                curSpace.AppendEntity(upBlockRef);
+                tr.AddNewlyCreatedDBObject(upBlockRef, true);
             }
             ZoomToBlock(ed, BasePointRefs[endFloor]);
             tr.Commit();
