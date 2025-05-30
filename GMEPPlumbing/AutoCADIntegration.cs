@@ -189,12 +189,12 @@ namespace GMEPPlumbing
                 );
                 if (br != null)
                 {
+                    br.Layer = "Defpoints";
                     BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
                     curSpace.AppendEntity(br);
                     tr.AddNewlyCreatedDBObject(br, true);
                 }
-
-           }
+            }
 
             tr.Commit();
         }
