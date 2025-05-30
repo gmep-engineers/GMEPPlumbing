@@ -244,6 +244,12 @@ namespace GMEPPlumbing
                 BlockTableRecord blockDef2 = tr.GetObject(bt["GMEP_PLUMBING_LINE_UP"], OpenMode.ForRead) as BlockTableRecord;
                 BlockTableRecord curSpace2 = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
                 BlockReference upBlockRef2 = new BlockReference(newUpPointLocation2, blockDef2.ObjectId);
+                RotateJig rotateJig = new RotateJig(upBlockRef2);
+                PromptResult rotatePromptResult = ed.Drag(rotateJig);
+                if (rotatePromptResult.Status != PromptStatus.OK)
+                {
+                    return;
+                }
                 upBlockRef2.Layer = "Defpoints";
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
@@ -264,10 +270,17 @@ namespace GMEPPlumbing
                 }
 
                 //end pipe
+                ZoomToBlock(ed, BasePointRefs[endFloor]);
                 Point3d newUpPointLocation3 = BasePointRefs[endFloor].Position + upVector;
                 BlockTableRecord blockDef3 = tr.GetObject(bt["GMEP_PLUMBING_LINE_DOWN"], OpenMode.ForRead) as BlockTableRecord;
                 BlockTableRecord curSpace3 = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
                 BlockReference upBlockRef3 = new BlockReference(newUpPointLocation3, blockDef3.ObjectId);
+                RotateJig rotateJig2 = new RotateJig(upBlockRef3);
+                PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
+                if (rotatePromptResult2.Status != PromptStatus.OK)
+                {
+                    return;
+                }
                 upBlockRef3.Layer = "Defpoints";
                 curSpace3.AppendEntity(upBlockRef3);
                 tr.AddNewlyCreatedDBObject(upBlockRef3, true);
@@ -275,10 +288,30 @@ namespace GMEPPlumbing
             }
             else if (endFloor < startFloor)
             {
-                for (int i = startFloor - 1; i >= endFloor; i--)
+                //delete previous start pipe
+                BlockReference startPipe = tr.GetObject(startPipeId, OpenMode.ForWrite) as BlockReference;
+                startPipe.Erase(true);
+
+                //start pipe
+                Point3d newUpPointLocation2 = BasePointRefs[startFloor].Position + upVector;
+                BlockTableRecord blockDef2 = tr.GetObject(bt["GMEP_PLUMBING_LINE_DOWN"], OpenMode.ForRead) as BlockTableRecord;
+                BlockTableRecord curSpace2 = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+                BlockReference upBlockRef2 = new BlockReference(newUpPointLocation2, blockDef2.ObjectId);
+                RotateJig rotateJig = new RotateJig(upBlockRef2);
+                PromptResult rotatePromptResult = ed.Drag(rotateJig);
+                if (rotatePromptResult.Status != PromptStatus.OK)
+                {
+                    return;
+                }
+                upBlockRef2.Layer = "Defpoints";
+                curSpace2.AppendEntity(upBlockRef2);
+                tr.AddNewlyCreatedDBObject(upBlockRef2, true);
+
+                //Continue Pipe
+                for (int i = startFloor - 1; i > endFloor; i--)
                 {
                     Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
-                    BlockTableRecord blockDef = tr.GetObject(bt["GMEP PLMG UP"], OpenMode.ForRead) as BlockTableRecord;
+                    BlockTableRecord blockDef = tr.GetObject(bt["GMEP_PLUMBING_LINE_VERTICAL"], OpenMode.ForRead) as BlockTableRecord;
                     BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
                     // Create the BlockReference at the desired location
@@ -287,8 +320,24 @@ namespace GMEPPlumbing
                     curSpace.AppendEntity(upBlockRef);
                     tr.AddNewlyCreatedDBObject(upBlockRef, true);
                 }
+
+                //end pipe
+                ZoomToBlock(ed, BasePointRefs[endFloor]);
+                Point3d newUpPointLocation3 = BasePointRefs[endFloor].Position + upVector;
+                BlockTableRecord blockDef3 = tr.GetObject(bt["GMEP_PLUMBING_LINE_UP"], OpenMode.ForRead) as BlockTableRecord;
+                BlockTableRecord curSpace3 = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+                BlockReference upBlockRef3 = new BlockReference(newUpPointLocation3, blockDef3.ObjectId);
+                RotateJig rotateJig2 = new RotateJig(upBlockRef3);
+                PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
+                if (rotatePromptResult2.Status != PromptStatus.OK)
+                {
+                    return;
+                }
+                upBlockRef3.Layer = "Defpoints";
+                curSpace3.AppendEntity(upBlockRef3);
+                tr.AddNewlyCreatedDBObject(upBlockRef3, true);
             }
-            ZoomToBlock(ed, BasePointRefs[endFloor]);
+            
             tr.Commit();
         }
 
