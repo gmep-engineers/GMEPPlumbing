@@ -47,8 +47,8 @@ namespace GMEPPlumbing
     public Editor ed { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
 
-    [CommandMethod("UPWATER")]
-    public async void UpWater()
+    [CommandMethod("PlumbingVerticalRoute")]
+    public async void PlumbingVerticalRoute()
     {
         doc = Application.DocumentManager.MdiActiveDocument;
         db = doc.Database;
@@ -205,7 +205,7 @@ namespace GMEPPlumbing
         PromptKeywordOptions endFloorOptions = new PromptKeywordOptions("\nEnding Floor: ");
         for (int i = 1; i <= basePointIds.Count; i++)
         {
-            if (i > startFloor)
+            if (i != startFloor)
             {
                 endFloorOptions.Keywords.Add(i.ToString());
             }
@@ -231,17 +231,35 @@ namespace GMEPPlumbing
                 }
             }
 
-            for (int i = startFloor + 1; i <= endFloor; i++)
+            if (endFloor > startFloor)
             {
-                Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
-                BlockTableRecord blockDef = tr.GetObject(bt["GMEP PLMG UP"], OpenMode.ForRead) as BlockTableRecord;
-                BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+                for (int i = startFloor + 1; i <= endFloor; i++)
+                {
+                    Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
+                    BlockTableRecord blockDef = tr.GetObject(bt["GMEP PLMG UP"], OpenMode.ForRead) as BlockTableRecord;
+                    BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-                // Create the BlockReference at the desired location
-                BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
-                upBlockRef.Layer = "Defpoints";
-                curSpace.AppendEntity(upBlockRef);
-                tr.AddNewlyCreatedDBObject(upBlockRef, true);
+                    // Create the BlockReference at the desired location
+                    BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
+                    upBlockRef.Layer = "Defpoints";
+                    curSpace.AppendEntity(upBlockRef);
+                    tr.AddNewlyCreatedDBObject(upBlockRef, true);
+                }
+            }
+            else if (endFloor < startFloor)
+            {
+                for (int i = startFloor - 1; i >= endFloor; i--)
+                {
+                    Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
+                    BlockTableRecord blockDef = tr.GetObject(bt["GMEP PLMG UP"], OpenMode.ForRead) as BlockTableRecord;
+                    BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                    // Create the BlockReference at the desired location
+                    BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
+                    upBlockRef.Layer = "Defpoints";
+                    curSpace.AppendEntity(upBlockRef);
+                    tr.AddNewlyCreatedDBObject(upBlockRef, true);
+                }
             }
             ZoomToBlock(ed, BasePointRefs[endFloor]);
             tr.Commit();
