@@ -59,70 +59,73 @@ namespace GMEPPlumbing
         doc = Application.DocumentManager.MdiActiveDocument;
         db = doc.Database;
         ed = doc.Editor;
-        List<ObjectId> basePointIds = new List<ObjectId>();
-        //Select a starting point/object
-        PromptEntityOptions peo = new PromptEntityOptions("\nSelect a base point: ");
-        peo.SetRejectMessage("\nPlease select a base point.");
-        peo.AddAllowedClass(typeof(BlockReference), true);
-        peo.AddAllowedClass(typeof(Line), true);
-        PromptEntityResult per = ed.GetEntity(peo);
             
-        if (per.Status != PromptStatus.OK)
+        while (true)
         {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
-        }
-        ObjectId basePointId = per.ObjectId;
-        int pointX = 0;
-        int pointY = 0;
-        
-        Point3d connectionPointLocation = Point3d.Origin;
-        using (Transaction tr = db.TransactionManager.StartTransaction())
-        {
-            Entity basePoint = (Entity)tr.GetObject(basePointId, OpenMode.ForRead);
-            if (basePoint is BlockReference basePointRef)
+            //Select a starting point/object
+            PromptEntityOptions peo = new PromptEntityOptions("\nSelect a base point: ");
+            peo.SetRejectMessage("\nPlease select a base point.");
+            peo.AddAllowedClass(typeof(BlockReference), true);
+            peo.AddAllowedClass(typeof(Line), true);
+            PromptEntityResult per = ed.GetEntity(peo);
+            
+            if (per.Status != PromptStatus.OK)
             {
-                if (basePointRef != null)
+                ed.WriteMessage("\nCommand cancelled.");
+                return;
+            }
+            ObjectId basePointId = per.ObjectId;
+            int pointX = 0;
+            int pointY = 0;
+        
+            Point3d connectionPointLocation = Point3d.Origin;
+     
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                Entity basePoint = (Entity)tr.GetObject(basePointId, OpenMode.ForRead);
+                if (basePoint is BlockReference basePointRef)
                 {
-                    DynamicBlockReferencePropertyCollection properties = basePointRef.DynamicBlockReferencePropertyCollection;
-                    foreach (DynamicBlockReferenceProperty prop in properties)
+                    if (basePointRef != null)
                     {
-                        if (prop.PropertyName == "Connection X")
+                        DynamicBlockReferencePropertyCollection properties = basePointRef.DynamicBlockReferencePropertyCollection;
+                        foreach (DynamicBlockReferenceProperty prop in properties)
                         {
-                            pointX = Convert.ToInt32(prop.Value);
-                        }
-                        if (prop.PropertyName == "Connection Y")
-                        {
-                            pointY = Convert.ToInt32(prop.Value);
+                            if (prop.PropertyName == "Connection X")
+                            {
+                                pointX = Convert.ToInt32(prop.Value);
+                            }
+                            if (prop.PropertyName == "Connection Y")
+                            {
+                                pointY = Convert.ToInt32(prop.Value);
+                            }
                         }
                     }
+                    if (pointX != 0 || pointY != 0)
+                    {
+                        double rotation = basePointRef.Rotation;
+                        double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
+                        double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
+                        connectionPointLocation = new Point3d(basePointRef.Position.X + rotatedX, basePointRef.Position.Y + rotatedY, 0);
+                        PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for polyline: ");
+                        ppo.BasePoint = connectionPointLocation;
+                        ppo.UseBasePoint = true;
+                        PromptPointResult ppr = ed.GetPoint(ppo);
+                        if (ppr.Status != PromptStatus.OK)
+                            return;
+
+
+                        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                        BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                        Line line = new Line();
+                        line.StartPoint =  new Point3d(connectionPointLocation.X, connectionPointLocation.Y, 0);
+                        line.EndPoint = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
+                        btr.AppendEntity(line);
+                        tr.AddNewlyCreatedDBObject(line, true);
+                    }
                 }
-                if (pointX != 0 || pointY != 0)
+                if (basePoint is Line basePointLine)
                 {
-                    double rotation = basePointRef.Rotation;
-                    double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
-                    double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
-                    connectionPointLocation = new Point3d(basePointRef.Position.X + rotatedX, basePointRef.Position.Y + rotatedY, 0);
-                    PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for polyline: ");
-                    ppo.BasePoint = connectionPointLocation;
-                    ppo.UseBasePoint = true;
-                    PromptPointResult ppr = ed.GetPoint(ppo);
-                    if (ppr.Status != PromptStatus.OK)
-                        return;
-
-
-                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-
-                    Line line = new Line();
-                    line.StartPoint =  new Point3d(connectionPointLocation.X, connectionPointLocation.Y, 0);
-                    line.EndPoint = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
-                    btr.AppendEntity(line);
-                    tr.AddNewlyCreatedDBObject(line, true);
-                }
-            }
-            if (basePoint is Line basePointLine)
-            {
                     LineStartPointPreviewJig jig = new LineStartPointPreviewJig(basePointLine);
                     PromptResult jigResult = ed.Drag(jig);
                     Point3d startPoint = jig.ProjectedPoint;
@@ -145,9 +148,10 @@ namespace GMEPPlumbing
                     btr.AppendEntity(line);
                     tr.AddNewlyCreatedDBObject(line, true);
                 }
-            
 
-            tr.Commit();
+
+                tr.Commit();
+            }
         }
     }
 
