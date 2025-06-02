@@ -24,10 +24,12 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.GraphicsInterface;
+
 using System.ComponentModel;
 using Autodesk.AutoCAD.MacroRecorder;
 using MongoDB.Driver.Core.Connections;
 using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
+using Autodesk.Windows;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -62,6 +64,7 @@ namespace GMEPPlumbing
         PromptEntityOptions peo = new PromptEntityOptions("\nSelect a base point: ");
         peo.SetRejectMessage("\nPlease select a base point.");
         peo.AddAllowedClass(typeof(BlockReference), true);
+        peo.AddAllowedClass(typeof(Polyline), true);
         PromptEntityResult per = ed.GetEntity(peo);
         if (per.Status != PromptStatus.OK)
         {
@@ -71,6 +74,7 @@ namespace GMEPPlumbing
         ObjectId basePointId = per.ObjectId;
         int pointX = 0;
         int pointY = 0;
+        
         Point3d connectionPointLocation = Point3d.Origin;
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
@@ -104,14 +108,15 @@ namespace GMEPPlumbing
                 if (ppr.Status != PromptStatus.OK)
                     return;
 
+
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-                Polyline pline = new Polyline();
-                pline.AddVertexAt(0, new Point2d(connectionPointLocation.X, connectionPointLocation.Y), 0, 0, 0);
-                pline.AddVertexAt(1, new Point2d(ppr.Value.X, ppr.Value.Y), 0, 0, 0);
-                btr.AppendEntity(pline);
-                tr.AddNewlyCreatedDBObject(pline, true);
+                Line line = new Line();
+                line.StartPoint =  new Point3d(connectionPointLocation.X, connectionPointLocation.Y, 0);
+                line.EndPoint = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
+                btr.AppendEntity(line);
+                tr.AddNewlyCreatedDBObject(line, true);
             }
             
 
