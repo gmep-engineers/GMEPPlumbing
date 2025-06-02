@@ -80,7 +80,8 @@ namespace GMEPPlumbing
         protected override bool WorldDraw(WorldDraw draw)
         {
             // Draw a small circle at the projected point
-            Circle marker = new Circle(ProjectedPoint, Vector3d.ZAxis, 0.2);
+            Circle marker = new Circle(ProjectedPoint, Vector3d.ZAxis, 0.4);
+      
             draw.Geometry.Draw(marker);
             marker.Dispose();
             return true;
