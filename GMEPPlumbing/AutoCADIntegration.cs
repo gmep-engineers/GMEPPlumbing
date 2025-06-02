@@ -214,10 +214,11 @@ namespace GMEPPlumbing
         }
         PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
         int endFloor = int.Parse(endFloorResult.StringResult);
+        Dictionary<int, BlockReference> BasePointRefs = new Dictionary<int, BlockReference>();
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
             BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-            Dictionary<int, BlockReference> BasePointRefs = new Dictionary<int, BlockReference>();
+            
             foreach (ObjectId objId in basePointIds)
             {
                 var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
@@ -227,15 +228,20 @@ namespace GMEPPlumbing
                 {
                     if (prop.PropertyName == "Floor")
                     {
-                        int floor = Convert.ToInt32(prop.Value);
+                       int floor = Convert.ToInt32(prop.Value);
                         BasePointRefs.Add(floor, entity2);
                     }
                 }
             }
-
-            if (endFloor > startFloor)
+            tr.Commit();
+        }
+       
+        if (endFloor > startFloor)
+        {
+            using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 //delete previous start pipe
+                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockReference startPipe = tr.GetObject(startPipeId, OpenMode.ForWrite) as BlockReference;
                 startPipe.Erase(true);
 
@@ -253,9 +259,13 @@ namespace GMEPPlumbing
                 upBlockRef2.Layer = "Defpoints";
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
-                
+                tr.Commit();
+            }
 
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
                 //Continue Pipe
+                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 for (int i = startFloor + 1; i < endFloor; i++)
                 {
                     Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
@@ -284,11 +294,16 @@ namespace GMEPPlumbing
                 upBlockRef3.Layer = "Defpoints";
                 curSpace3.AppendEntity(upBlockRef3);
                 tr.AddNewlyCreatedDBObject(upBlockRef3, true);
-
+                tr.Commit();
             }
-            else if (endFloor < startFloor)
+
+        }
+        else if (endFloor < startFloor)
+        {
+            using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 //delete previous start pipe
+                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockReference startPipe = tr.GetObject(startPipeId, OpenMode.ForWrite) as BlockReference;
                 startPipe.Erase(true);
 
@@ -306,8 +321,13 @@ namespace GMEPPlumbing
                 upBlockRef2.Layer = "Defpoints";
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
+                tr.Commit();
+            }
 
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
                 //Continue Pipe
+                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 for (int i = startFloor - 1; i > endFloor; i--)
                 {
                     Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
@@ -336,11 +356,9 @@ namespace GMEPPlumbing
                 upBlockRef3.Layer = "Defpoints";
                 curSpace3.AppendEntity(upBlockRef3);
                 tr.AddNewlyCreatedDBObject(upBlockRef3, true);
+                tr.Commit();
             }
-            
-            tr.Commit();
         }
-
     }
 
 
