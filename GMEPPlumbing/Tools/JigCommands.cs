@@ -79,11 +79,27 @@ namespace GMEPPlumbing
 
         protected override bool WorldDraw(WorldDraw draw)
         {
-            // Draw a small circle at the projected point
-            Circle marker = new Circle(ProjectedPoint, Vector3d.ZAxis, 0.4);
-      
-            draw.Geometry.Draw(marker);
-            marker.Dispose();
+            Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+            ViewTableRecord view = ed.GetCurrentView();
+
+            double unitsPerPixel = view.Width / 6000;
+            double markerRadius = unitsPerPixel * 10;
+
+            // Draw an "X" at the projected point
+            Point3d p1 = ProjectedPoint + new Vector3d(-markerRadius, -markerRadius, 0);
+            Point3d p2 = ProjectedPoint + new Vector3d(markerRadius, markerRadius, 0);
+            Point3d p3 = ProjectedPoint + new Vector3d(-markerRadius, markerRadius, 0);
+            Point3d p4 = ProjectedPoint + new Vector3d(markerRadius, -markerRadius, 0);
+
+            Line line1 = new Line(p1, p2);
+            Line line2 = new Line(p3, p4);
+
+            draw.Geometry.Draw(line1);
+            draw.Geometry.Draw(line2);
+
+            line1.Dispose();
+            line2.Dispose();
+
             return true;
         }
 
