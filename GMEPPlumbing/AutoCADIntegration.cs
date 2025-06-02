@@ -24,6 +24,10 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.GraphicsInterface;
+using System.ComponentModel;
+using Autodesk.AutoCAD.MacroRecorder;
+using MongoDB.Driver.Core.Connections;
+using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -46,6 +50,74 @@ namespace GMEPPlumbing
     public Database db { get; private set; }
     public Editor ed { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
+
+    [CommandMethod("PlumbingHorizontalRoute")]
+    public async void PlumbingHorizontalRoute()
+    {
+        doc = Application.DocumentManager.MdiActiveDocument;
+        db = doc.Database;
+        ed = doc.Editor;
+        List<ObjectId> basePointIds = new List<ObjectId>();
+        //Select a starting point/object
+        PromptEntityOptions peo = new PromptEntityOptions("\nSelect a base point: ");
+        peo.SetRejectMessage("\nPlease select a base point.");
+        peo.AddAllowedClass(typeof(BlockReference), true);
+        PromptEntityResult per = ed.GetEntity(peo);
+        if (per.Status != PromptStatus.OK)
+        {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+        }
+        ObjectId basePointId = per.ObjectId;
+        int pointX = 0;
+        int pointY = 0;
+        Point3d connectionPointLocation = Point3d.Origin;
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+            BlockReference basePointRef = (BlockReference)tr.GetObject(basePointId, OpenMode.ForRead);
+
+            if (basePointRef != null)
+            {
+                DynamicBlockReferencePropertyCollection properties = basePointRef.DynamicBlockReferencePropertyCollection;
+                foreach (DynamicBlockReferenceProperty prop in properties)
+                {
+                    if (prop.PropertyName == "Connection X")
+                    {
+                        pointX = Convert.ToInt32(prop.Value);
+                    }
+                    if (prop.PropertyName == "Connection Y")
+                    {
+                        pointY = Convert.ToInt32(prop.Value);
+                    }
+                }
+            }
+            if (pointX != 0 || pointY != 0)
+            {
+                double rotation = basePointRef.Rotation;
+                double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
+                double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
+                connectionPointLocation = new Point3d(basePointRef.Position.X + rotatedX,  basePointRef.Position.Y + rotatedY, 0);
+                PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for polyline: ");
+                ppo.BasePoint = connectionPointLocation;
+                ppo.UseBasePoint = true;
+                PromptPointResult ppr = ed.GetPoint(ppo);
+                if (ppr.Status != PromptStatus.OK)
+                    return;
+
+                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                Polyline pline = new Polyline();
+                pline.AddVertexAt(0, new Point2d(connectionPointLocation.X, connectionPointLocation.Y), 0, 0, 0);
+                pline.AddVertexAt(1, new Point2d(ppr.Value.X, ppr.Value.Y), 0, 0, 0);
+                btr.AppendEntity(pline);
+                tr.AddNewlyCreatedDBObject(pline, true);
+            }
+            
+
+            tr.Commit();
+        }
+    }
 
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute()
