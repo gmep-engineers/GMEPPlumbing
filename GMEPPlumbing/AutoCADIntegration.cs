@@ -120,6 +120,7 @@ namespace GMEPPlumbing
                         Line line = new Line();
                         line.StartPoint =  new Point3d(connectionPointLocation.X, connectionPointLocation.Y, 0);
                         line.EndPoint = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
+                        line.Layer = basePointRef.Layer;
                         btr.AppendEntity(line);
                         tr.AddNewlyCreatedDBObject(line, true);
                     }
@@ -145,10 +146,10 @@ namespace GMEPPlumbing
                     Line line = new Line();
                     line.StartPoint =  startPoint;
                     line.EndPoint = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
+                    line.Layer = basePointLine.Layer;
                     btr.AppendEntity(line);
                     tr.AddNewlyCreatedDBObject(line, true);
                 }
-
 
                 tr.Commit();
             }
