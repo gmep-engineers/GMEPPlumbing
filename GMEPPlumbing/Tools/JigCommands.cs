@@ -64,6 +64,53 @@ namespace GMEPPlumbing
             return SamplerStatus.OK;
         }
     }
+    public class LineStartPointPreviewJig : DrawJig
+    {
+        private Line _baseLine;
+        private Point3d _mousePoint;
+        public Point3d ProjectedPoint { get; private set; }
+
+        public LineStartPointPreviewJig(Line baseLine)
+        {
+            _baseLine = baseLine;
+            _mousePoint = baseLine.StartPoint;
+            ProjectedPoint = baseLine.StartPoint;
+        }
+
+        protected override bool WorldDraw(WorldDraw draw)
+        {
+            // Draw a small circle at the projected point
+            Circle marker = new Circle(ProjectedPoint, Vector3d.ZAxis, 0.2);
+            draw.Geometry.Draw(marker);
+            marker.Dispose();
+            return true;
+        }
+
+        protected override SamplerStatus Sampler(JigPrompts prompts)
+        {
+            JigPromptPointOptions opts = new JigPromptPointOptions("\nMove cursor to preview start point, click to select:");
+            opts.UserInputControls = UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+            PromptPointResult res = prompts.AcquirePoint(opts);
+
+            if (res.Status != PromptStatus.OK)
+                return SamplerStatus.Cancel;
+
+            if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+                return SamplerStatus.NoChange;
+
+            _mousePoint = res.Value;
+            ProjectedPoint = ProjectPointToLineSegment(_baseLine.StartPoint, _baseLine.EndPoint, _mousePoint);
+            return SamplerStatus.OK;
+        }
+        public static Point3d ProjectPointToLineSegment(Point3d a, Point3d b, Point3d p)
+        {
+            Vector3d ab = b - a;
+            Vector3d ap = p - a;
+            double t = ab.DotProduct(ap) / ab.LengthSqrd;
+            t = Math.Max(0, Math.Min(1, t)); // Clamp to segment
+            return a + ab * t;
+        }
+    }
 
     public class PolyLineJig : DrawJig
     {
