@@ -425,7 +425,7 @@ namespace GMEPPlumbing
         protected override SamplerStatus Sampler(JigPrompts prompts)
         {
             var prompt = "\nSpecify rotation reference point: ";
-            var pointOptions = new JigPromptPointOptions(prompt)
+            var pointOptions = new JigPromptPointOptions(prompt)//
             {
                 BasePoint = _blockRef.Position,
                 UseBasePoint = true,
