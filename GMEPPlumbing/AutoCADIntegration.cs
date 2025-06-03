@@ -163,7 +163,7 @@ namespace GMEPPlumbing
                 }
                 tr.Commit();
             }
-            AttachRouteXData(addedRouteId, basePointId.ToString(), 1);
+            AttachRouteXData(addedRouteId, "meowmixxs", 1);
         }
     }
 
@@ -677,10 +677,11 @@ namespace GMEPPlumbing
             }
             ResultBuffer rb = new ResultBuffer(
                 new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
-                new TypedValue((int)DxfCode.Text, routeId),
-                new TypedValue((int)DxfCode.Int16, isForward)
+                new TypedValue(1000, routeId),
+                new TypedValue(1070, isForward)
             );
             line.XData = rb;
+            rb.Dispose();
             tr.Commit();
         }
     }
