@@ -80,7 +80,7 @@ namespace GMEPPlumbing
             int pointY = 0;
         
             Point3d connectionPointLocation = Point3d.Origin;
-            ObjectId addedRouteId = ObjectId.Null;
+            ObjectId addedLineId = ObjectId.Null;
             int isForward = 1;
             string routeId = "";
 
@@ -135,10 +135,7 @@ namespace GMEPPlumbing
                         line.Layer = basePointRef.Layer;
                         btr.AppendEntity(line);
                         tr.AddNewlyCreatedDBObject(line, true);
-                      
-                        AddArrowsToLine(line, tr, isForward);
-
-                        addedRouteId = line.ObjectId;
+                        addedLineId = line.ObjectId;
                     }
                 }
                 if (basePoint is Line basePointLine)
@@ -178,12 +175,12 @@ namespace GMEPPlumbing
                     line.Layer = basePointLine.Layer;
                     btr.AppendEntity(line);
                     tr.AddNewlyCreatedDBObject(line, true);
-                    AddArrowsToLine(line, tr, isForward);
-                    addedRouteId =line.ObjectId;
+                    addedLineId =line.ObjectId;
                 }
                 tr.Commit();
             }
-            AttachRouteXData(addedRouteId, routeId, isForward);
+            AttachRouteXData(addedLineId, routeId, isForward);
+            AddArrowsToLine(addedLineId, isForward);
         }
     }
 
@@ -631,45 +628,48 @@ namespace GMEPPlumbing
     {
       ed.WriteMessage(message);
     }
-    private void AddArrowsToLine(Line line, Transaction tr, int isForward)
+    private void AddArrowsToLine(ObjectId lineId, int isForward)
     {
-        int arrowCount = 2;
-        if (line.Length < 6.0)
-                arrowCount = 1;
-        double arrowLength = 5.0;
-        double arrowSize = 3.0;
-        string blockName = "GMEP_PLUMBING_LINE_ARROW";
-
-        Vector3d dir = (line.EndPoint - line.StartPoint).GetNormal();
-        double angle = dir.AngleOnPlane(new Plane(Point3d.Origin, Vector3d.ZAxis));
-        if (isForward == 0)
-            angle += Math.PI;
-
-        double lineLength = line.Length;
-        double spacing = lineLength / (arrowCount + 1);
-
-        // Get the BlockTable and BlockTableRecord
-        BlockTable bt = (BlockTable)tr.GetObject(line.Database.BlockTableId, OpenMode.ForRead);
-        if (!bt.Has(blockName))
+        while (true)
         {
-            ed.WriteMessage($"\nBlock '{blockName}' not found in drawing.");
-            return;
-        }
-        ObjectId blockDefId = bt[blockName];
-        BlockTableRecord btr = (BlockTableRecord)tr.GetObject(line.OwnerId, OpenMode.ForWrite);
-
-        for (int i = 1; i <= arrowCount; i++)
-        {
-            double t = (spacing * i) / lineLength;
-            Point3d arrowPos = line.StartPoint + (dir * (lineLength * t));
-      
-            BlockReference arrowRef = new BlockReference(arrowPos, blockDefId)
+            using (Transaction tr = db.TransactionManager.StartTransaction())
             {
-                Rotation = angle,
-                Layer = line.Layer
-            };
-            btr.AppendEntity(arrowRef);
-            tr.AddNewlyCreatedDBObject(arrowRef, true);
+                Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
+                double arrowLength = 5.0;
+                double arrowSize = 3.0;
+                string blockName = "GMEP_PLUMBING_LINE_ARROW";
+
+                Vector3d dir = (line.EndPoint - line.StartPoint).GetNormal();
+                double angle = dir.AngleOnPlane(new Plane(Point3d.Origin, Vector3d.ZAxis));
+                if (isForward == 0)
+                    angle += Math.PI;
+
+
+                // Get the BlockTable and BlockTableRecord
+                BlockTable bt = (BlockTable)tr.GetObject(line.Database.BlockTableId, OpenMode.ForRead);
+                if (!bt.Has(blockName))
+                {
+                    ed.WriteMessage($"\nBlock '{blockName}' not found in drawing.");
+                    return;
+                }
+                ObjectId blockDefId = bt[blockName];
+                BlockTableRecord btr = (BlockTableRecord)tr.GetObject(line.OwnerId, OpenMode.ForWrite);
+
+                LineArrowJig lineArrowJig = new LineArrowJig(line, blockDefId, 1, angle);
+                PromptResult jigResult = ed.Drag(lineArrowJig);
+                // Break if user presses Escape or Enter
+                if (jigResult.Status != PromptStatus.OK)
+                    break;
+                Point3d arrowPos = lineArrowJig.InsertionPoint;
+                BlockReference arrowRef = new BlockReference(arrowPos, blockDefId)
+                {
+                    Rotation = angle,
+                    Layer = line.Layer
+                };
+                btr.AppendEntity(arrowRef);
+                tr.AddNewlyCreatedDBObject(arrowRef, true);
+                tr.Commit();
+            }
         }
     }
 

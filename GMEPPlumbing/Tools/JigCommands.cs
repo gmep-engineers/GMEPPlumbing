@@ -472,7 +472,55 @@ namespace GMEPPlumbing
             return true;
         }
     }
+    public class LineArrowJig : DrawJig
+    {
+        private readonly Line _baseLine;
+        private readonly ObjectId _blockDefId;
+        private Point3d _mousePoint;
+        public Point3d InsertionPoint { get; private set; }
+        private double _blockScale;
+        private double _blockRotation;
 
+        public LineArrowJig(Line baseLine, ObjectId blockDefId, double blockScale = 1.0, double blockRotation = 0.0)
+        {
+            _baseLine = baseLine;
+            _blockDefId = blockDefId;
+            _mousePoint = baseLine.StartPoint;
+            InsertionPoint = baseLine.StartPoint;
+            _blockScale = blockScale;
+            _blockRotation = blockRotation;
+        }
+
+        protected override bool WorldDraw(WorldDraw draw)
+        {
+            // Preview the block at the projected point
+            BlockReference previewBlock = new BlockReference(InsertionPoint, _blockDefId)
+            {
+                ScaleFactors = new Scale3d(_blockScale),
+                Rotation = _blockRotation
+            };
+            draw.Geometry.Draw(previewBlock);
+            previewBlock.Dispose();
+            return true;
+        }
+
+        protected override SamplerStatus Sampler(JigPrompts prompts)
+        {
+            JigPromptPointOptions opts = new JigPromptPointOptions("\nPlace Line Arrow:");
+            opts.UserInputControls = UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+            PromptPointResult res = prompts.AcquirePoint(opts);
+
+            if (res.Status != PromptStatus.OK)
+                return SamplerStatus.Cancel;
+
+            if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+                return SamplerStatus.NoChange;
+
+            _mousePoint = res.Value;
+            InsertionPoint = LineStartPointPreviewJig.ProjectPointToLineSegment(_baseLine.StartPoint, _baseLine.EndPoint, _mousePoint);
+            return SamplerStatus.OK;
+        }
+    }
     public class RotateJig : EntityJig
     {
         private Vector3d _direction;
