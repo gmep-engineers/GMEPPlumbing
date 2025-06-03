@@ -63,8 +63,8 @@ namespace GMEPPlumbing
         while (true)
         {
             //Select a starting point/object
-            PromptEntityOptions peo = new PromptEntityOptions("\nSelect a base point: ");
-            peo.SetRejectMessage("\nPlease select a base point.");
+            PromptEntityOptions peo = new PromptEntityOptions("\nSelect a route or source to start from ");
+            peo.SetRejectMessage("\nSelect a route or source to start from ");
             peo.AddAllowedClass(typeof(BlockReference), true);
             peo.AddAllowedClass(typeof(Line), true);
             PromptEntityResult per = ed.GetEntity(peo);
@@ -106,7 +106,7 @@ namespace GMEPPlumbing
                         double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
                         double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
                         connectionPointLocation = new Point3d(basePointRef.Position.X + rotatedX, basePointRef.Position.Y + rotatedY, 0);
-                        PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for polyline: ");
+                        PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for route: ");
                         ppo.BasePoint = connectionPointLocation;
                         ppo.UseBasePoint = true;
                         PromptPointResult ppr = ed.GetPoint(ppo);
@@ -131,7 +131,7 @@ namespace GMEPPlumbing
                     PromptResult jigResult = ed.Drag(jig);
                     Point3d startPoint = jig.ProjectedPoint;
 
-                    PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for line: ");
+                    PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for route: ");
                     ppo.BasePoint = startPoint;
                     ppo.UseBasePoint = true;
 
