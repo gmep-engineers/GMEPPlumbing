@@ -662,7 +662,7 @@ namespace GMEPPlumbing
         {
             double t = (spacing * i) / lineLength;
             Point3d arrowPos = line.StartPoint + (dir * (lineLength * t));
-                if 
+      
             BlockReference arrowRef = new BlockReference(arrowPos, blockDefId)
             {
                 Rotation = angle,
