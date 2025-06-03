@@ -375,6 +375,7 @@ namespace GMEPPlumbing
        
         if (endFloor > startFloor)
         {
+            string sourceId = Guid.NewGuid().ToString();
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 //delete previous start pipe
@@ -396,6 +397,25 @@ namespace GMEPPlumbing
                 upBlockRef2.Layer = "Defpoints";
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
+
+                var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
+
+                foreach (DynamicBlockReferenceProperty prop in pc2)
+                {
+                    if (prop.PropertyName == "source_id")
+                    {
+                        prop.Value = sourceId;
+                    }
+                    if (prop.PropertyName == "id")
+                    {
+                        prop.Value = Guid.NewGuid().ToString();
+                    
+                     }
+                    if (prop.PropertyName == "from_source_index")
+                    {
+                        prop.Value = 0;
+                    }
+                }
                 tr.Commit();
             }
 
@@ -414,6 +434,24 @@ namespace GMEPPlumbing
                     upBlockRef.Layer = "Defpoints";
                     curSpace.AppendEntity(upBlockRef);
                     tr.AddNewlyCreatedDBObject(upBlockRef, true);
+                    var pc = upBlockRef.DynamicBlockReferencePropertyCollection;
+
+                    foreach (DynamicBlockReferenceProperty prop in pc)
+                    {
+                        if (prop.PropertyName == "source_id")
+                        {
+                            prop.Value = sourceId;
+                        }
+                        if (prop.PropertyName == "id")
+                        {
+                            prop.Value = Guid.NewGuid().ToString();
+
+                        }
+                        if (prop.PropertyName == "from_source_index")
+                        {
+                            prop.Value = 0;
+                        }
+                    }
                 }
 
                 //end pipe
@@ -431,12 +469,31 @@ namespace GMEPPlumbing
                 upBlockRef3.Layer = "Defpoints";
                 curSpace3.AppendEntity(upBlockRef3);
                 tr.AddNewlyCreatedDBObject(upBlockRef3, true);
-                tr.Commit();
+                var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
+
+                foreach (DynamicBlockReferenceProperty prop in pc3)
+                {
+                    if (prop.PropertyName == "source_id")
+                    {
+                        prop.Value = sourceId;
+                    }
+                    if (prop.PropertyName == "id")
+                    {
+                        prop.Value = Guid.NewGuid().ToString();
+
+                    }
+                    if (prop.PropertyName == "from_source_index")
+                    {
+                        prop.Value = 0;
+                    }
+                }
+                    tr.Commit();
             }
 
         }
         else if (endFloor < startFloor)
         {
+            string sourceId = Guid.NewGuid().ToString();
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 //delete previous start pipe
@@ -458,7 +515,25 @@ namespace GMEPPlumbing
                 upBlockRef2.Layer = "Defpoints";
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
-                tr.Commit();
+                var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
+
+                foreach (DynamicBlockReferenceProperty prop in pc2)
+                {
+                    if (prop.PropertyName == "source_id")
+                    {
+                        prop.Value = sourceId;
+                    }
+                    if (prop.PropertyName == "id")
+                    {
+                        prop.Value = Guid.NewGuid().ToString();
+
+                    }
+                    if (prop.PropertyName == "from_source_index")
+                    {
+                        prop.Value = 0;
+                    }
+                }
+                    tr.Commit();
             }
 
             using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -476,7 +551,25 @@ namespace GMEPPlumbing
                     upBlockRef.Layer = "Defpoints";
                     curSpace.AppendEntity(upBlockRef);
                     tr.AddNewlyCreatedDBObject(upBlockRef, true);
-                }
+                    var pc = upBlockRef.DynamicBlockReferencePropertyCollection;
+
+                    foreach (DynamicBlockReferenceProperty prop in pc)
+                    {
+                        if (prop.PropertyName == "source_id")
+                        {
+                            prop.Value = sourceId;
+                        }
+                        if (prop.PropertyName == "id")
+                        {
+                            prop.Value = Guid.NewGuid().ToString();
+
+                        }
+                        if (prop.PropertyName == "from_source_index")
+                        {
+                            prop.Value = 0;
+                        }
+                    }
+                    }
 
                 //end pipe
                 ZoomToBlock(ed, BasePointRefs[endFloor]);
@@ -493,6 +586,24 @@ namespace GMEPPlumbing
                 upBlockRef3.Layer = "Defpoints";
                 curSpace3.AppendEntity(upBlockRef3);
                 tr.AddNewlyCreatedDBObject(upBlockRef3, true);
+                var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
+
+                foreach (DynamicBlockReferenceProperty prop in pc3)
+                {
+                    if (prop.PropertyName == "source_id")
+                    {
+                        prop.Value = sourceId;
+                    }
+                    if (prop.PropertyName == "id")
+                    {
+                        prop.Value = Guid.NewGuid().ToString();
+
+                    }
+                    if (prop.PropertyName == "from_source_index")
+                    {
+                        prop.Value = 0;
+                    }
+                }
                 tr.Commit();
             }
         }
