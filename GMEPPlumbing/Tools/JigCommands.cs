@@ -64,6 +64,70 @@ namespace GMEPPlumbing
             return SamplerStatus.OK;
         }
     }
+    public class LineStartPointPreviewJig : DrawJig
+    {
+        private Line _baseLine;
+        private Point3d _mousePoint;
+        public Point3d ProjectedPoint { get; private set; }
+
+        public LineStartPointPreviewJig(Line baseLine)
+        {
+            _baseLine = baseLine;
+            _mousePoint = baseLine.StartPoint;
+            ProjectedPoint = baseLine.StartPoint;
+        }
+
+        protected override bool WorldDraw(WorldDraw draw)
+        {
+            Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+            ViewTableRecord view = ed.GetCurrentView();
+
+            double unitsPerPixel = view.Width / 6000;
+            double markerRadius = unitsPerPixel * 10;
+
+            // Draw an "X" at the projected point
+            Point3d p1 = ProjectedPoint + new Vector3d(-markerRadius, -markerRadius, 0);
+            Point3d p2 = ProjectedPoint + new Vector3d(markerRadius, markerRadius, 0);
+            Point3d p3 = ProjectedPoint + new Vector3d(-markerRadius, markerRadius, 0);
+            Point3d p4 = ProjectedPoint + new Vector3d(markerRadius, -markerRadius, 0);
+
+            Line line1 = new Line(p1, p2);
+            Line line2 = new Line(p3, p4);
+
+            draw.Geometry.Draw(line1);
+            draw.Geometry.Draw(line2);
+
+            line1.Dispose();
+            line2.Dispose();
+
+            return true;
+        }
+
+        protected override SamplerStatus Sampler(JigPrompts prompts)
+        {
+            JigPromptPointOptions opts = new JigPromptPointOptions("\nMove cursor to preview start point, click to select:");
+            opts.UserInputControls = UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+            PromptPointResult res = prompts.AcquirePoint(opts);
+
+            if (res.Status != PromptStatus.OK)
+                return SamplerStatus.Cancel;
+
+            if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+                return SamplerStatus.NoChange;
+
+            _mousePoint = res.Value;
+            ProjectedPoint = ProjectPointToLineSegment(_baseLine.StartPoint, _baseLine.EndPoint, _mousePoint);
+            return SamplerStatus.OK;
+        }
+        public static Point3d ProjectPointToLineSegment(Point3d a, Point3d b, Point3d p)
+        {
+            Vector3d ab = b - a;
+            Vector3d ap = p - a;
+            double t = ab.DotProduct(ap) / ab.LengthSqrd;
+            t = Math.Max(0, Math.Min(1, t)); // Clamp to segment
+            return a + ab * t;
+        }
+    }
 
     public class PolyLineJig : DrawJig
     {
