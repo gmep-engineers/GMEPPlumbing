@@ -30,6 +30,7 @@ using Autodesk.AutoCAD.MacroRecorder;
 using MongoDB.Driver.Core.Connections;
 using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
 using Autodesk.Windows;
+using System.Windows.Markup;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -79,7 +80,8 @@ namespace GMEPPlumbing
             int pointY = 0;
         
             Point3d connectionPointLocation = Point3d.Origin;
-     
+            ObjectId addedRouteId = ObjectId.Null;
+
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 Entity basePoint = (Entity)tr.GetObject(basePointId, OpenMode.ForRead);
@@ -114,7 +116,7 @@ namespace GMEPPlumbing
                             return;
 
 
-                        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
                         BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
                         Line line = new Line();
@@ -123,10 +125,18 @@ namespace GMEPPlumbing
                         line.Layer = basePointRef.Layer;
                         btr.AppendEntity(line);
                         tr.AddNewlyCreatedDBObject(line, true);
+                        addedRouteId = line.ObjectId;
                     }
                 }
                 if (basePoint is Line basePointLine)
                 {
+                    //retrieving the lines xdata
+                    ResultBuffer xData = basePointLine.XData;
+                    foreach (TypedValue tv in xData)
+                    {
+                        // Example: print type code and value
+                        ed.WriteMessage($"\nType: {tv.TypeCode}, Value: {tv.Value}");
+                    }
                     LineStartPointPreviewJig jig = new LineStartPointPreviewJig(basePointLine);
                     PromptResult jigResult = ed.Drag(jig);
                     Point3d startPoint = jig.ProjectedPoint;
@@ -140,7 +150,7 @@ namespace GMEPPlumbing
                         return;
 
 
-                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
                     BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
                     Line line = new Line();
@@ -149,10 +159,11 @@ namespace GMEPPlumbing
                     line.Layer = basePointLine.Layer;
                     btr.AppendEntity(line);
                     tr.AddNewlyCreatedDBObject(line, true);
+                    addedRouteId =line.ObjectId;
                 }
-
                 tr.Commit();
             }
+            AttachRouteXData(addedRouteId, basePointId.ToString(), 1);
         }
     }
 
@@ -646,6 +657,33 @@ namespace GMEPPlumbing
         }
       }
     }
+    private void AttachRouteXData(ObjectId lineId, string routeId, int isForward)
+    {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+            Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
+            if (line == null || string.IsNullOrEmpty(routeId))
+                return;
+
+            RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForWrite);
+            if (!regAppTable.Has(XRecordKey))
+            {
+                RegAppTableRecord regAppTableRecord = new RegAppTableRecord
+                {
+                    Name = XRecordKey
+                };
+                regAppTable.Add(regAppTableRecord);
+                tr.AddNewlyCreatedDBObject(regAppTableRecord, true);
+            }
+            ResultBuffer rb = new ResultBuffer(
+                new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
+                new TypedValue((int)DxfCode.Text, routeId),
+                new TypedValue((int)DxfCode.Int16, isForward)
+            );
+            line.XData = rb;
+            tr.Commit();
+        }
+    }
 
     private void UpdateXRecordId(Transaction tr, string newId, DateTime newCreationTime)
     {
@@ -847,5 +885,6 @@ namespace GMEPPlumbing
         return DateTime.UtcNow;
       }
     }
+
   }
 }
