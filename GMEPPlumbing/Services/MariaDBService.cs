@@ -4,16 +4,16 @@ using System.Collections.ObjectModel;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using GMEPPlumbing.ViewModels;
-using MySql.Data.MySqlClient;
 using System.Text.Json;
-using Mysqlx.Crud;
-using static Mysqlx.Notice.Frame.Types;
+using System.Threading.Tasks;
 using System.Windows.Controls;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.ApplicationServices;
+using GMEPPlumbing.ViewModels;
+using MySql.Data.MySqlClient;
+using Mysqlx.Crud;
+using static Mysqlx.Notice.Frame.Types;
 
 namespace GMEPPlumbing.Services
 {
@@ -35,6 +35,63 @@ namespace GMEPPlumbing.Services
             db = doc.Database;
             ed = doc.Editor;
         }
+
+        string GetSafeString(MySqlDataReader reader, string fieldName)
+        {
+            int index = reader.GetOrdinal(fieldName);
+            if (!reader.IsDBNull(index))
+            {
+                return reader.GetString(index);
+            }
+            return string.Empty;
+        }
+
+        int GetSafeInt(MySqlDataReader reader, string fieldName)
+        {
+            int index = reader.GetOrdinal(fieldName);
+            if (!reader.IsDBNull(index))
+            {
+                return reader.GetInt32(index);
+            }
+            return 0;
+        }
+
+        float GetSafeFloat(MySqlDataReader reader, string fieldName)
+        {
+            int index = reader.GetOrdinal(fieldName);
+            if (!reader.IsDBNull(index))
+            {
+                return reader.GetFloat(index);
+            }
+            return 0;
+        }
+
+        bool GetSafeBoolean(MySqlDataReader reader, string fieldName)
+        {
+            int index = reader.GetOrdinal(fieldName);
+            if (!reader.IsDBNull(index))
+            {
+                return reader.GetBoolean(index);
+            }
+            return false;
+        }
+
+        public void OpenConnectionSync()
+        {
+            if (Connection.State == System.Data.ConnectionState.Closed)
+            {
+                Connection.Open();
+            }
+        }
+
+        public void CloseConnectionSync()
+        {
+            if (Connection.State == System.Data.ConnectionState.Open)
+            {
+                Connection.Close();
+            }
+        }
+
         public async Task OpenConnectionAsync()
         {
             if (Connection.State == System.Data.ConnectionState.Closed)
@@ -50,6 +107,7 @@ namespace GMEPPlumbing.Services
                 await Connection.CloseAsync();
             }
         }
+
         public async Task<string> GetProjectId(string projectNo)
         {
             if (projectNo == null || projectNo == string.Empty)
@@ -73,9 +131,8 @@ namespace GMEPPlumbing.Services
             await CloseConnectionAsync();
             return id;
         }
-        public async Task<WaterSystemData> GetWaterSystemData(
-            string projectId
-        )
+
+        public async Task<WaterSystemData> GetWaterSystemData(string projectId)
         {
             await OpenConnectionAsync();
             //get the additional losses
@@ -84,7 +141,8 @@ namespace GMEPPlumbing.Services
             waterSystemData.AdditionalLosses = new ObservableCollection<AdditionalLoss>();
             waterSystemData.AdditionalLosses2 = new ObservableCollection<AdditionalLoss>();
 
-            string query = @"SELECT * FROM plumbing_additional_losses WHERE project_id = @projectId";
+            string query =
+                @"SELECT * FROM plumbing_additional_losses WHERE project_id = @projectId";
             MySqlCommand command = new MySqlCommand(query, Connection);
             command.Parameters.AddWithValue("@projectId", projectId);
             MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
@@ -95,7 +153,7 @@ namespace GMEPPlumbing.Services
                 {
                     Id = reader.GetString("id"),
                     Title = reader.GetString("title"),
-                    Amount = reader.GetString("amount")
+                    Amount = reader.GetString("amount"),
                 };
                 if (is2)
                 {
@@ -108,12 +166,10 @@ namespace GMEPPlumbing.Services
             }
             reader.Close();
 
-
-
             // Get the lighting data from the database
 
             query = @"SELECT * FROM plumbing_water_systems WHERE project_id = @projectId";
-          
+
             command = new MySqlCommand(query, Connection);
             command.Parameters.AddWithValue("@projectId", projectId);
             reader = (MySqlDataReader)await command.ExecuteReaderAsync();
@@ -125,14 +181,18 @@ namespace GMEPPlumbing.Services
                 waterSystemData.SectionHeader1 = reader.GetString("section_header_1");
                 waterSystemData.StreetLowPressure = reader.GetDouble("street_low_pressure");
                 waterSystemData.StreetHighPressure = reader.GetDouble("street_high_pressure");
-                waterSystemData.MeterSize = reader.GetString("meter_size");    
+                waterSystemData.MeterSize = reader.GetString("meter_size");
                 waterSystemData.FixtureCalculation = reader.GetDouble("fixture_calculation");
                 waterSystemData.Elevation = reader.GetDouble("elevation");
                 waterSystemData.BackflowPressureLoss = reader.GetDouble("backflow_pressure_loss");
-                waterSystemData.OldBackflowPressureLoss = reader.GetDouble("old_backflow_pressure_loss");
+                waterSystemData.OldBackflowPressureLoss = reader.GetDouble(
+                    "old_backflow_pressure_loss"
+                );
                 waterSystemData.PrvPressureLoss = reader.GetDouble("prv_pressure_loss");
                 waterSystemData.OldPrvPressureLoss = reader.GetDouble("old_prv_pressure_loss");
-                waterSystemData.PressureRequiredOrAtUnit = reader.GetDouble("pressure_required_or_at_unit");
+                waterSystemData.PressureRequiredOrAtUnit = reader.GetDouble(
+                    "pressure_required_or_at_unit"
+                );
                 waterSystemData.SystemLength = reader.GetDouble("system_length");
                 waterSystemData.MeterLoss = reader.GetDouble("meter_loss");
                 waterSystemData.StaticLoss = reader.GetDouble("static_loss");
@@ -145,7 +205,9 @@ namespace GMEPPlumbing.Services
                 waterSystemData.PipeMaterial = reader.GetString("pipe_material");
                 waterSystemData.ColdWaterMaxVelocity = reader.GetInt32("cold_water_max_velocity");
                 waterSystemData.HotWaterMaxVelocity = reader.GetInt32("hot_water_max_velocity");
-                waterSystemData.DevelopedLengthPercentage = reader.GetInt32("developed_length_percentage");
+                waterSystemData.DevelopedLengthPercentage = reader.GetInt32(
+                    "developed_length_percentage"
+                );
 
                 // Section 2
                 waterSystemData.SectionHeader2 = reader.GetString("section_header_2");
@@ -158,16 +220,16 @@ namespace GMEPPlumbing.Services
                 waterSystemData.PressureAvailable2 = reader.GetDouble("pressure_available_2");
                 waterSystemData.DevelopedLength2 = reader.GetDouble("developed_length_2");
                 waterSystemData.AveragePressureDrop2 = reader.GetDouble("average_pressure_drop_2");
-                waterSystemData.AdditionalLossesTotal2 = reader.GetDouble("additional_losses_total_2");
-
-
+                waterSystemData.AdditionalLossesTotal2 = reader.GetDouble(
+                    "additional_losses_total_2"
+                );
             }
             reader.Close();
-
 
             await CloseConnectionAsync();
             return waterSystemData;
         }
+
         private object SanitizeDouble(double value)
         {
             if (double.IsNaN(value) || double.IsInfinity(value))
@@ -183,13 +245,19 @@ namespace GMEPPlumbing.Services
 
                 // First, delete existing additional losses that are not in additionalosses or additionallosses2 for the project
 
-                string deleteQuery = @"
+                string deleteQuery =
+                    @"
                 DELETE FROM plumbing_additional_losses
                 WHERE project_id = @projectId
                 AND id NOT IN (@ids)";
 
-                var ids = string.Join(",", waterSystemData.AdditionalLosses.Select(a => $"'{a.Id}'").Concat(waterSystemData.AdditionalLosses2.Select(a => $"'{a.Id}'")));
-                
+                var ids = string.Join(
+                    ",",
+                    waterSystemData
+                        .AdditionalLosses.Select(a => $"'{a.Id}'")
+                        .Concat(waterSystemData.AdditionalLosses2.Select(a => $"'{a.Id}'"))
+                );
+
                 if (!string.IsNullOrEmpty(ids))
                 {
                     MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, Connection);
@@ -199,7 +267,8 @@ namespace GMEPPlumbing.Services
                 }
                 else
                 {
-                    deleteQuery = @"
+                    deleteQuery =
+                        @"
                     DELETE FROM plumbing_additional_losses
                     WHERE project_id = @projectId";
                     MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, Connection);
@@ -207,9 +276,10 @@ namespace GMEPPlumbing.Services
                     await deleteCommand.ExecuteNonQueryAsync();
                 }
 
-                foreach(var loss in waterSystemData.AdditionalLosses)
+                foreach (var loss in waterSystemData.AdditionalLosses)
                 {
-                    string insertQuery = @"
+                    string insertQuery =
+                        @"
                     INSERT INTO plumbing_additional_losses (
                         id,
                         project_id,
@@ -233,9 +303,10 @@ namespace GMEPPlumbing.Services
                     insertCommand.Parameters.AddWithValue("@amount", loss.Amount);
                     await insertCommand.ExecuteNonQueryAsync();
                 }
-                foreach(var loss in waterSystemData.AdditionalLosses2)
+                foreach (var loss in waterSystemData.AdditionalLosses2)
                 {
-                    string insertQuery = @"
+                    string insertQuery =
+                        @"
                     INSERT INTO plumbing_additional_losses (
                         id,
                         project_id,
@@ -260,10 +331,8 @@ namespace GMEPPlumbing.Services
                     await insertCommand.ExecuteNonQueryAsync();
                 }
 
-
-
-
-                string query = @"
+                string query =
+                    @"
                 INSERT INTO plumbing_water_systems (
                     project_id,
                     section_header_1,
@@ -379,41 +448,143 @@ namespace GMEPPlumbing.Services
 
                 MySqlCommand command = new MySqlCommand(query, Connection);
                 command.Parameters.AddWithValue("@projectId", projectId);
-                command.Parameters.AddWithValue("@sectionHeader1", waterSystemData.SectionHeader1 ?? string.Empty);
-                command.Parameters.AddWithValue("@streetLowPressure", SanitizeDouble(waterSystemData.StreetLowPressure));
-                command.Parameters.AddWithValue("@streetHighPressure", SanitizeDouble(waterSystemData.StreetHighPressure));
-                command.Parameters.AddWithValue("@meterSize", waterSystemData.MeterSize ?? string.Empty);
-                command.Parameters.AddWithValue("@fixtureCalculation", SanitizeDouble(waterSystemData.FixtureCalculation));
-                command.Parameters.AddWithValue("@elevation", SanitizeDouble(waterSystemData.Elevation));
-                command.Parameters.AddWithValue("@backflowPressureLoss", SanitizeDouble(waterSystemData.BackflowPressureLoss));
-                command.Parameters.AddWithValue("@oldBackflowPressureLoss", SanitizeDouble(waterSystemData.OldBackflowPressureLoss));
-                command.Parameters.AddWithValue("@prvPressureLoss", SanitizeDouble(waterSystemData.PrvPressureLoss));
-                command.Parameters.AddWithValue("@oldPrvPressureLoss", SanitizeDouble(waterSystemData.OldPrvPressureLoss));
-                command.Parameters.AddWithValue("@pressureRequiredOrAtUnit", SanitizeDouble(waterSystemData.PressureRequiredOrAtUnit));
-                command.Parameters.AddWithValue("@systemLength", SanitizeDouble(waterSystemData.SystemLength));
-                command.Parameters.AddWithValue("@meterLoss", SanitizeDouble(waterSystemData.MeterLoss));
-                command.Parameters.AddWithValue("@staticLoss", SanitizeDouble(waterSystemData.StaticLoss));
-                command.Parameters.AddWithValue("@totalLoss", SanitizeDouble(waterSystemData.TotalLoss));
-                command.Parameters.AddWithValue("@pressureAvailable", SanitizeDouble(waterSystemData.PressureAvailable));
-                command.Parameters.AddWithValue("@developedLength", SanitizeDouble(waterSystemData.DevelopedLength));
-                command.Parameters.AddWithValue("@averagePressureDrop", SanitizeDouble(waterSystemData.AveragePressureDrop));
-                command.Parameters.AddWithValue("@additionalLossesTotal", SanitizeDouble(waterSystemData.AdditionalLossesTotal));
+                command.Parameters.AddWithValue(
+                    "@sectionHeader1",
+                    waterSystemData.SectionHeader1 ?? string.Empty
+                );
+                command.Parameters.AddWithValue(
+                    "@streetLowPressure",
+                    SanitizeDouble(waterSystemData.StreetLowPressure)
+                );
+                command.Parameters.AddWithValue(
+                    "@streetHighPressure",
+                    SanitizeDouble(waterSystemData.StreetHighPressure)
+                );
+                command.Parameters.AddWithValue(
+                    "@meterSize",
+                    waterSystemData.MeterSize ?? string.Empty
+                );
+                command.Parameters.AddWithValue(
+                    "@fixtureCalculation",
+                    SanitizeDouble(waterSystemData.FixtureCalculation)
+                );
+                command.Parameters.AddWithValue(
+                    "@elevation",
+                    SanitizeDouble(waterSystemData.Elevation)
+                );
+                command.Parameters.AddWithValue(
+                    "@backflowPressureLoss",
+                    SanitizeDouble(waterSystemData.BackflowPressureLoss)
+                );
+                command.Parameters.AddWithValue(
+                    "@oldBackflowPressureLoss",
+                    SanitizeDouble(waterSystemData.OldBackflowPressureLoss)
+                );
+                command.Parameters.AddWithValue(
+                    "@prvPressureLoss",
+                    SanitizeDouble(waterSystemData.PrvPressureLoss)
+                );
+                command.Parameters.AddWithValue(
+                    "@oldPrvPressureLoss",
+                    SanitizeDouble(waterSystemData.OldPrvPressureLoss)
+                );
+                command.Parameters.AddWithValue(
+                    "@pressureRequiredOrAtUnit",
+                    SanitizeDouble(waterSystemData.PressureRequiredOrAtUnit)
+                );
+                command.Parameters.AddWithValue(
+                    "@systemLength",
+                    SanitizeDouble(waterSystemData.SystemLength)
+                );
+                command.Parameters.AddWithValue(
+                    "@meterLoss",
+                    SanitizeDouble(waterSystemData.MeterLoss)
+                );
+                command.Parameters.AddWithValue(
+                    "@staticLoss",
+                    SanitizeDouble(waterSystemData.StaticLoss)
+                );
+                command.Parameters.AddWithValue(
+                    "@totalLoss",
+                    SanitizeDouble(waterSystemData.TotalLoss)
+                );
+                command.Parameters.AddWithValue(
+                    "@pressureAvailable",
+                    SanitizeDouble(waterSystemData.PressureAvailable)
+                );
+                command.Parameters.AddWithValue(
+                    "@developedLength",
+                    SanitizeDouble(waterSystemData.DevelopedLength)
+                );
+                command.Parameters.AddWithValue(
+                    "@averagePressureDrop",
+                    SanitizeDouble(waterSystemData.AveragePressureDrop)
+                );
+                command.Parameters.AddWithValue(
+                    "@additionalLossesTotal",
+                    SanitizeDouble(waterSystemData.AdditionalLossesTotal)
+                );
                 command.Parameters.AddWithValue("@existingMeter", waterSystemData.ExistingMeter);
-                command.Parameters.AddWithValue("@pipeMaterial", waterSystemData.PipeMaterial ?? string.Empty);
-                command.Parameters.AddWithValue("@coldWaterMaxVelocity", waterSystemData.ColdWaterMaxVelocity);
-                command.Parameters.AddWithValue("@hotWaterMaxVelocity", waterSystemData.HotWaterMaxVelocity);
-                command.Parameters.AddWithValue("@developedLengthPercentage", waterSystemData.DevelopedLengthPercentage);
-                command.Parameters.AddWithValue("@sectionHeader2", waterSystemData.SectionHeader2 ?? string.Empty);
-                command.Parameters.AddWithValue("@pressureRequired2", SanitizeDouble(waterSystemData.PressureRequired2));
-                command.Parameters.AddWithValue("@meterSize2", waterSystemData.MeterSize2 ?? string.Empty);
-                command.Parameters.AddWithValue("@fixtureCalculation2", SanitizeDouble(waterSystemData.FixtureCalculation2));
-                command.Parameters.AddWithValue("@systemLength2", SanitizeDouble(waterSystemData.SystemLength2));
-                command.Parameters.AddWithValue("@meterLoss2", SanitizeDouble(waterSystemData.MeterLoss2));
-                command.Parameters.AddWithValue("@totalLoss2", SanitizeDouble(waterSystemData.TotalLoss2));
-                command.Parameters.AddWithValue("@pressureAvailable2", SanitizeDouble(waterSystemData.PressureAvailable2));
-                command.Parameters.AddWithValue("@developedLength2", SanitizeDouble(waterSystemData.DevelopedLength2));
-                command.Parameters.AddWithValue("@averagePressureDrop2", SanitizeDouble(waterSystemData.AveragePressureDrop2));
-                command.Parameters.AddWithValue("@additionalLossesTotal2", SanitizeDouble(waterSystemData.AdditionalLossesTotal2));
+                command.Parameters.AddWithValue(
+                    "@pipeMaterial",
+                    waterSystemData.PipeMaterial ?? string.Empty
+                );
+                command.Parameters.AddWithValue(
+                    "@coldWaterMaxVelocity",
+                    waterSystemData.ColdWaterMaxVelocity
+                );
+                command.Parameters.AddWithValue(
+                    "@hotWaterMaxVelocity",
+                    waterSystemData.HotWaterMaxVelocity
+                );
+                command.Parameters.AddWithValue(
+                    "@developedLengthPercentage",
+                    waterSystemData.DevelopedLengthPercentage
+                );
+                command.Parameters.AddWithValue(
+                    "@sectionHeader2",
+                    waterSystemData.SectionHeader2 ?? string.Empty
+                );
+                command.Parameters.AddWithValue(
+                    "@pressureRequired2",
+                    SanitizeDouble(waterSystemData.PressureRequired2)
+                );
+                command.Parameters.AddWithValue(
+                    "@meterSize2",
+                    waterSystemData.MeterSize2 ?? string.Empty
+                );
+                command.Parameters.AddWithValue(
+                    "@fixtureCalculation2",
+                    SanitizeDouble(waterSystemData.FixtureCalculation2)
+                );
+                command.Parameters.AddWithValue(
+                    "@systemLength2",
+                    SanitizeDouble(waterSystemData.SystemLength2)
+                );
+                command.Parameters.AddWithValue(
+                    "@meterLoss2",
+                    SanitizeDouble(waterSystemData.MeterLoss2)
+                );
+                command.Parameters.AddWithValue(
+                    "@totalLoss2",
+                    SanitizeDouble(waterSystemData.TotalLoss2)
+                );
+                command.Parameters.AddWithValue(
+                    "@pressureAvailable2",
+                    SanitizeDouble(waterSystemData.PressureAvailable2)
+                );
+                command.Parameters.AddWithValue(
+                    "@developedLength2",
+                    SanitizeDouble(waterSystemData.DevelopedLength2)
+                );
+                command.Parameters.AddWithValue(
+                    "@averagePressureDrop2",
+                    SanitizeDouble(waterSystemData.AveragePressureDrop2)
+                );
+                command.Parameters.AddWithValue(
+                    "@additionalLossesTotal2",
+                    SanitizeDouble(waterSystemData.AdditionalLossesTotal2)
+                );
 
                 await command.ExecuteNonQueryAsync();
                 await CloseConnectionAsync();
@@ -427,5 +598,27 @@ namespace GMEPPlumbing.Services
             return true;
         }
 
+        public List<PlumbingFixtureType> GetPlumbingFixtureTypes()
+        {
+            List<PlumbingFixtureType> fixtureTypes = new List<PlumbingFixtureType>();
+            OpenConnectionSync();
+            string query = "SELECT * FROM plumbing_fixture_types ORDER BY abbreviation";
+            MySqlCommand command = new MySqlCommand(query, Connection);
+            MySqlDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                fixtureTypes.Add(
+                    new PlumbingFixtureType(
+                        GetSafeString(reader, "name"),
+                        GetSafeString(reader, "abbreviation"),
+                        GetSafeString(reader, "water_gas_block_name"),
+                        GetSafeString(reader, "waste_vent_block_name")
+                    )
+                );
+            }
+            reader.Close();
+            CloseConnectionSync();
+            return fixtureTypes;
+        }
     }
 }
