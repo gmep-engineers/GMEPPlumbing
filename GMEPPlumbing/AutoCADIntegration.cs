@@ -82,7 +82,7 @@ namespace GMEPPlumbing
             Point3d connectionPointLocation = Point3d.Origin;
             ObjectId addedLineId = ObjectId.Null;
             int isForward = 1;
-            string routeId = "";
+            string sourceId = "";
 
             // Check if the selected object is a BlockReference or Line
             using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -103,9 +103,9 @@ namespace GMEPPlumbing
                             {
                                 pointY = Convert.ToInt32(prop.Value);
                             }
-                            if (prop.PropertyName == "route_id")
+                            if (prop.PropertyName == "source_id")
                             {
-                                routeId = prop.Value.ToString();
+                                sourceId = prop.Value.ToString();
                             }
                             if (prop.PropertyName == "is_forward")
                             {
@@ -148,7 +148,7 @@ namespace GMEPPlumbing
                         return;
                     }
                     TypedValue[] values = xData.AsArray();
-                    routeId = values[1].Value as string;
+                    sourceId = values[1].Value as string;
                     isForward = (short)values[2].Value;
 
                     //Placing Line
@@ -179,7 +179,7 @@ namespace GMEPPlumbing
                 }
                 tr.Commit();
             }
-            AttachRouteXData(addedLineId, routeId, isForward);
+            AttachRouteXData(addedLineId, sourceId, isForward);
             AddArrowsToLine(addedLineId, isForward);
         }
     }
@@ -718,13 +718,13 @@ namespace GMEPPlumbing
         }
       }
     }
-    private void AttachRouteXData(ObjectId lineId, string routeId, int isForward)
+    private void AttachRouteXData(ObjectId lineId, string sourceId, int isForward)
     {
-        ed.WriteMessage("RouteId: " + routeId + ", isForward: " + isForward);
+        ed.WriteMessage("SourceId: " + sourceId + ", isForward: " + isForward);
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
             Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
-            if (line == null || string.IsNullOrEmpty(routeId))
+            if (line == null || string.IsNullOrEmpty(sourceId))
                 return;
 
             RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForWrite);
@@ -739,7 +739,7 @@ namespace GMEPPlumbing
             }
             ResultBuffer rb = new ResultBuffer(
                 new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
-                new TypedValue(1000, routeId),
+                new TypedValue(1000, sourceId),
                 new TypedValue(1070, isForward)
             );
             line.XData = rb;
