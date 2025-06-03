@@ -126,7 +126,6 @@ namespace GMEPPlumbing
                         if (ppr.Status != PromptStatus.OK)
                             return;
 
-
                         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
                         BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
