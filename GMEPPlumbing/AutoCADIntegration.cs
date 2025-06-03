@@ -81,7 +81,10 @@ namespace GMEPPlumbing
         
             Point3d connectionPointLocation = Point3d.Origin;
             ObjectId addedRouteId = ObjectId.Null;
+            int isForward = 1;
+            string routeId = "";
 
+            // Check if the selected object is a BlockReference or Line
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 Entity basePoint = (Entity)tr.GetObject(basePointId, OpenMode.ForRead);
@@ -99,6 +102,14 @@ namespace GMEPPlumbing
                             if (prop.PropertyName == "Connection Y")
                             {
                                 pointY = Convert.ToInt32(prop.Value);
+                            }
+                            if (prop.PropertyName == "route_id")
+                            {
+                                routeId = prop.Value.ToString();
+                            }
+                            if (prop.PropertyName == "is_forward")
+                            {
+                                isForward = Convert.ToInt32(prop.Value);
                             }
                         }
                     }
@@ -131,12 +142,18 @@ namespace GMEPPlumbing
                 if (basePoint is Line basePointLine)
                 {
                     //retrieving the lines xdata
-                    ResultBuffer xData = basePointLine.XData;
-                    foreach (TypedValue tv in xData)
+                    ResultBuffer xData = basePointLine.GetXDataForApplication(XRecordKey);
+                    if (xData == null || xData.AsArray().Length < 3)
                     {
-                        // Example: print type code and value
-                        ed.WriteMessage($"\nType: {tv.TypeCode}, Value: {tv.Value}");
+                        ed.WriteMessage("\nSelected line does not have the required XData.");
+                        return;
                     }
+                    TypedValue[] values = xData.AsArray();
+                    routeId = values[1].Value as string;
+                    isForward = (short)values[2].Value;
+
+                    //Placing Line
+
                     LineStartPointPreviewJig jig = new LineStartPointPreviewJig(basePointLine);
                     PromptResult jigResult = ed.Drag(jig);
                     Point3d startPoint = jig.ProjectedPoint;
@@ -163,7 +180,7 @@ namespace GMEPPlumbing
                 }
                 tr.Commit();
             }
-            AttachRouteXData(addedRouteId, "meowmixxs", 1);
+            AttachRouteXData(addedRouteId, routeId, isForward);
         }
     }
 
@@ -659,6 +676,7 @@ namespace GMEPPlumbing
     }
     private void AttachRouteXData(ObjectId lineId, string routeId, int isForward)
     {
+        ed.WriteMessage("RouteId: " + routeId + ", isForward: " + isForward);
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
             Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
