@@ -278,6 +278,7 @@ namespace GMEPPlumbing
             PromptResult pr = ed.GetKeywords(promptOptions);
             string resultKeyword = pr.StringResult;
             int index = keywords.IndexOf(resultKeyword);
+                
            // ed.WriteMessage("BasePoints: " + basePoints.Count().ToString() + "ketwords: " + keywords.Count().ToString() + "index: " + index.ToString() + "resultKeyword: " + resultKeyword);
             basePointIds = basePoints.ElementAt(index).Value;
 
@@ -351,6 +352,7 @@ namespace GMEPPlumbing
         }
         PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
         int endFloor = int.Parse(endFloorResult.StringResult);
+        Dictionary<int, string> basePointGUIDs = new Dictionary<int, string>();
         Dictionary<int, BlockReference> BasePointRefs = new Dictionary<int, BlockReference>();
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
@@ -360,14 +362,24 @@ namespace GMEPPlumbing
             {
                 var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                 var pc2 = entity2.DynamicBlockReferencePropertyCollection;
-
+                
+                int floor = 0;
+                string guid = "";
                 foreach (DynamicBlockReferenceProperty prop in pc2)
                 {
                     if (prop.PropertyName == "Floor")
                     {
-                       int floor = Convert.ToInt32(prop.Value);
+                       floor = Convert.ToInt32(prop.Value);
                         BasePointRefs.Add(floor, entity2);
                     }
+                    if (prop.PropertyName == "Id")
+                    {
+                         guid = prop.Value.ToString();
+                    }
+                }
+                if (floor != 0 && guid != "")
+                {
+                    basePointGUIDs.Add(floor, guid);
                 }
             }
             tr.Commit();
@@ -415,6 +427,10 @@ namespace GMEPPlumbing
                     {
                         prop.Value = 0;
                     }
+                    if (prop.PropertyName == "base_point_id")
+                    {
+                        prop.Value = basePointGUIDs[startFloor];
+                    }
                 }
                 tr.Commit();
             }
@@ -451,6 +467,10 @@ namespace GMEPPlumbing
                         {
                             prop.Value = 0;
                         }
+                        if (prop.PropertyName == "base_point_id")
+                        {
+                            prop.Value = basePointGUIDs[i];
+                        }
                     }
                 }
 
@@ -486,8 +506,12 @@ namespace GMEPPlumbing
                     {
                         prop.Value = 0;
                     }
+                    if (prop.PropertyName == "base_point_id")
+                    {
+                        prop.Value = basePointGUIDs[endFloor];
+                    }
                 }
-                    tr.Commit();
+                tr.Commit();
             }
 
         }
@@ -532,6 +556,10 @@ namespace GMEPPlumbing
                     {
                         prop.Value = 0;
                     }
+                    if (prop.PropertyName == "base_point_id")
+                    {
+                        prop.Value = basePointGUIDs[startFloor];
+                    }
                 }
                     tr.Commit();
             }
@@ -568,8 +596,12 @@ namespace GMEPPlumbing
                         {
                             prop.Value = 0;
                         }
+                        if (prop.PropertyName == "base_point_id")
+                        {
+                            prop.Value = basePointGUIDs[i];
+                        }
                     }
-                    }
+                }
 
                 //end pipe
                 ZoomToBlock(ed, BasePointRefs[endFloor]);
@@ -602,6 +634,10 @@ namespace GMEPPlumbing
                     if (prop.PropertyName == "from_source_index")
                     {
                         prop.Value = 0;
+                    }
+                    if (prop.PropertyName == "base_point_id")
+                    {
+                        prop.Value = basePointGUIDs[endFloor];
                     }
                 }
                 tr.Commit();
