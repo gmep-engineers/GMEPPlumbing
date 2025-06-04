@@ -215,7 +215,6 @@ namespace GMEPPlumbing
                                 {
                                     if (prop.PropertyName == "View_Id")
                                     {
-
                                         string key = prop.Value.ToString();
                                         if (key != "0")
                                         {
@@ -348,7 +347,9 @@ namespace GMEPPlumbing
         }
         PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
         int endFloor = int.Parse(endFloorResult.StringResult);
+
         Dictionary<int, BlockReference> BasePointRefs = new Dictionary<int, BlockReference>();
+        Dictionary<int, string> BasePointGUIDs = new Dictionary<int, string>();
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
             BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -358,13 +359,23 @@ namespace GMEPPlumbing
                 var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                 var pc2 = entity2.DynamicBlockReferencePropertyCollection;
 
+                int floor = 0;
+                string guid = "";
                 foreach (DynamicBlockReferenceProperty prop in pc2)
                 {
                     if (prop.PropertyName == "Floor")
                     {
-                       int floor = Convert.ToInt32(prop.Value);
+                        floor = Convert.ToInt32(prop.Value);
                         BasePointRefs.Add(floor, entity2);
                     }
+                    if (prop.PropertyName == "Id")
+                    {
+                        guid = prop.Value.ToString();
+                    }
+                }
+                if (floor != 0 && guid != "")
+                {
+                    BasePointGUIDs.Add(floor, guid);
                 }
             }
             tr.Commit();
