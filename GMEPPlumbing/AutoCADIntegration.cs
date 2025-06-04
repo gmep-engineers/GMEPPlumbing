@@ -397,6 +397,7 @@ namespace GMEPPlumbing
                 BlockReference upBlockRef2 = new BlockReference(newUpPointLocation2, blockDef2.ObjectId);
                 RotateJig rotateJig = new RotateJig(upBlockRef2);
                 PromptResult rotatePromptResult = ed.Drag(rotateJig);
+                
                 if (rotatePromptResult.Status != PromptStatus.OK)
                 {
                     return;
