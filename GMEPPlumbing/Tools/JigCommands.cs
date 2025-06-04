@@ -499,6 +499,7 @@ namespace GMEPPlumbing
                 ScaleFactors = new Scale3d(_blockScale),
                 Rotation = _blockRotation
             };
+            previewBlock.Layer = _baseLine.Layer; 
             draw.Geometry.Draw(previewBlock);
             previewBlock.Dispose();
             return true;
