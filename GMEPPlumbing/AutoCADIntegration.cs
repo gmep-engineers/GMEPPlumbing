@@ -126,13 +126,7 @@ namespace GMEPPlumbing
                         peo1.AddAllowedClass(typeof(BlockReference), true);
                         PromptEntityResult per1 = ed.GetEntity(peo1);
 
-                        if (per1.Status == PromptStatus.OK)
-                        {
-                            // User selected an object
-                            ObjectId selectedId = per.ObjectId;
-                            // Handle object selection
-                        }
-                        else if (per1.Status == PromptStatus.Keyword && per1.StringResult == "Point")
+                        if (per1.Status == PromptStatus.Keyword && per1.StringResult == "Point")
                         {
                             PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for route: ");
                             ppo.BasePoint = connectionPointLocation;
@@ -151,6 +145,16 @@ namespace GMEPPlumbing
                             btr.AppendEntity(line);
                             tr.AddNewlyCreatedDBObject(line, true);
                             addedLineId = line.ObjectId;
+                        }
+
+                        else if (per1.Status == PromptStatus.OK)
+                        {
+                            // User selected an object
+                            ObjectId selectedId = per1.ObjectId;
+                            Entity selectedEntity = (Entity)tr.GetObject(selectedId, OpenMode.ForRead);
+                             
+
+                                // Handle object selection
                         }
                     }
                 }
