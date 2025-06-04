@@ -404,7 +404,7 @@ namespace GMEPPlumbing
                 upBlockRef2.Layer = "Defpoints";
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
-            // Set the vertical route ID
+                // Set the vertical route ID
                 tr.Commit();
             }
 
