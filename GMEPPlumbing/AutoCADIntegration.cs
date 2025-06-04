@@ -238,6 +238,7 @@ namespace GMEPPlumbing
                }
             }
             ed.WriteMessage("\nFound " + basePoints.Count + " base points in the drawing.");
+
             //meow meow
             List<string> keywords = new List<string>();
             foreach (var key in basePoints.Keys)
@@ -893,13 +894,13 @@ namespace GMEPPlumbing
         }
       }
     }
-    private void AttachRouteXData(ObjectId lineId, string sourceId, int isForward)
+    private void AttachRouteXData(ObjectId lineId, string fedFromId, int isForward)
     {
-        ed.WriteMessage("SourceId: " + sourceId + ", isForward: " + isForward);
+        ed.WriteMessage("SourceId: " + fedFromId + ", isForward: " + isForward);
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
             Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
-            if (line == null || string.IsNullOrEmpty(sourceId))
+            if (line == null || string.IsNullOrEmpty(sfedFromId))
                 return;
 
             RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForWrite);
@@ -914,7 +915,7 @@ namespace GMEPPlumbing
             }
             ResultBuffer rb = new ResultBuffer(
                 new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
-                new TypedValue(1000, sourceId),
+                new TypedValue(1000, fedFromId),
                 new TypedValue(1070, isForward)
             );
             line.XData = rb;
