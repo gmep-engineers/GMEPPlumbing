@@ -31,6 +31,8 @@ using MongoDB.Driver.Core.Connections;
 using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
 using Autodesk.Windows;
 using System.Windows.Markup;
+using System.Windows.Shapes;
+using Line = Autodesk.AutoCAD.DatabaseServices.Line;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -115,23 +117,41 @@ namespace GMEPPlumbing
                         double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
                         double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
                         connectionPointLocation = new Point3d(basePointRef.Position.X + rotatedX, basePointRef.Position.Y + rotatedY, 0);
-                        PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for route: ");
-                        ppo.BasePoint = connectionPointLocation;
-                        ppo.UseBasePoint = true;
-                        PromptPointResult ppr = ed.GetPoint(ppo);
-                        if (ppr.Status != PromptStatus.OK)
-                            return;
 
-                        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
-                        BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+                        PromptEntityOptions peo1 = new PromptEntityOptions("\nSelect object or [Point]: ");
+                        peo1.Keywords.Add("Point");
+                        peo1.AllowNone = false; // Allow clicking in empty space
+                        peo1.SetRejectMessage("\nSelect a valid object or pick a point.");
+                        peo1.AddAllowedClass(typeof(Line), true);
+                        peo1.AddAllowedClass(typeof(BlockReference), true);
+                        PromptEntityResult per1 = ed.GetEntity(peo1);
 
-                        Line line = new Line();
-                        line.StartPoint =  new Point3d(connectionPointLocation.X, connectionPointLocation.Y, 0);
-                        line.EndPoint = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
-                        line.Layer = basePointRef.Layer;
-                        btr.AppendEntity(line);
-                        tr.AddNewlyCreatedDBObject(line, true);
-                        addedLineId = line.ObjectId;
+                        if (per1.Status == PromptStatus.OK)
+                        {
+                            // User selected an object
+                            ObjectId selectedId = per.ObjectId;
+                            // Handle object selection
+                        }
+                        else if (per1.Status == PromptStatus.Keyword && per1.StringResult == "Point")
+                        {
+                            PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for route: ");
+                            ppo.BasePoint = connectionPointLocation;
+                            ppo.UseBasePoint = true;
+                            PromptPointResult ppr = ed.GetPoint(ppo);
+                            if (ppr.Status != PromptStatus.OK)
+                                return;
+
+                            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+                            BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                            Line line = new Line();
+                            line.StartPoint =  new Point3d(connectionPointLocation.X, connectionPointLocation.Y, 0);
+                            line.EndPoint = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
+                            line.Layer = basePointRef.Layer;
+                            btr.AppendEntity(line);
+                            tr.AddNewlyCreatedDBObject(line, true);
+                            addedLineId = line.ObjectId;
+                        }
                     }
                 }
                 if (basePoint is Line basePointLine)
@@ -152,25 +172,41 @@ namespace GMEPPlumbing
                     PromptResult jigResult = ed.Drag(jig);
                     Point3d startPoint = jig.ProjectedPoint;
 
-                    PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for route: ");
-                    ppo.BasePoint = startPoint;
-                    ppo.UseBasePoint = true;
+                    PromptEntityOptions peo1 = new PromptEntityOptions("\nSelect object or [Point]: ");
+                    peo1.Keywords.Add("Point"); 
+                    peo1.AllowNone = false; // Allow clicking in empty space
+                    peo1.SetRejectMessage("\nSelect a valid object or pick a point.");
+                    peo1.AddAllowedClass(typeof(Line), true);
+                    peo1.AddAllowedClass(typeof(BlockReference), true);
+                    PromptEntityResult per1 = ed.GetEntity(peo1);
 
-                    PromptPointResult ppr = ed.GetPoint(ppo);
-                    if (ppr.Status != PromptStatus.OK)
-                        return;
+                    if (per1.Status == PromptStatus.OK)
+                    {
+                        // User selected an object
+                        ObjectId selectedId = per.ObjectId;
+                        // Handle object selection
+                    }
+                    else if (per1.Status == PromptStatus.Keyword && per1.StringResult == "Point")
+                    {
+                        PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for route: ");
+                        ppo.BasePoint = startPoint;
+                        ppo.UseBasePoint = true;
 
+                        PromptPointResult ppr = ed.GetPoint(ppo);
+                        if (ppr.Status != PromptStatus.OK)
+                            return;
 
-                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
-                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+                        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+                        BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-                    Line line = new Line();
-                    line.StartPoint =  startPoint;
-                    line.EndPoint = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
-                    line.Layer = basePointLine.Layer;
-                    btr.AppendEntity(line);
-                    tr.AddNewlyCreatedDBObject(line, true);
-                    addedLineId =line.ObjectId;
+                        Line line = new Line();
+                        line.StartPoint =  startPoint;
+                        line.EndPoint = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
+                        line.Layer = basePointLine.Layer;
+                        btr.AppendEntity(line);
+                        tr.AddNewlyCreatedDBObject(line, true);
+                        addedLineId =line.ObjectId;
+                    }
                 }
                 tr.Commit();
             }
@@ -180,8 +216,8 @@ namespace GMEPPlumbing
         }
     }
 
-    [CommandMethod("ConnectPlumbing")]
-    public async void ConnectPlumbing()
+    /*[CommandMethod("ConnectPlumbingObjects")]
+    public async void ConnectPlumbingObjects()
     {
         doc = Application.DocumentManager.MdiActiveDocument;
         db = doc.Database;
@@ -190,6 +226,7 @@ namespace GMEPPlumbing
         PromptEntityOptions peo = new PromptEntityOptions("\nSelect a route or source to start from ");
         peo.SetRejectMessage("\nSelect a route ");
         peo.AddAllowedClass(typeof(Line), true);
+        string LineGUID = Guid.NewGuid().ToString();
         PromptEntityResult per = ed.GetEntity(peo);
 
         if (per.Status != PromptStatus.OK)
@@ -198,13 +235,14 @@ namespace GMEPPlumbing
             return;
         }
         ObjectId objectId = per.ObjectId;
-        //int pointX = 0;
-        //int pointY = 0;
+        int pointX = 0;
+        int pointY = 0;
 
-       // Point3d connectionPointLocation = Point3d.Origin;
-       // ObjectId addedLineId = ObjectId.Null;
+       //Point3d connectionPointLocation = Point3d.Origin;
+        ObjectId addedLineId = ObjectId.Null;
 
-        //string FedFromId = "";
+
+        string FedFromId = "";
 
         // Check if the selected object is a BlockReference or Line
         using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -212,10 +250,24 @@ namespace GMEPPlumbing
             Entity entity = (Entity)tr.GetObject(objectId, OpenMode.ForRead);
             if (entity is Line LineRef)
             {
-                Point3d lineEnd = LineRef.EndPoint;
-                PromptEntityOptions peo2 = new PromptEntityOptions("\nSelect a route or source to start from ");
+                //retrieving the lines xdata
+                ResultBuffer xData = LineRef.GetXDataForApplication(XRecordKey);
+
+                if (xData == null || xData.AsArray().Length < 3)
+                {
+                    ed.WriteMessage("\nSelected line does not have the required XData.");
+                    return;
+                }
+                TypedValue[] values = xData.AsArray();
+                FedFromId = values[1].Value as string;
+
+                LineStartPointPreviewJig jig = new LineStartPointPreviewJig(LineRef);
+                PromptResult jigResult = ed.Drag(jig);
+                Point3d startPoint = jig.ProjectedPoint;
+
+                PromptEntityOptions peo2 = new PromptEntityOptions("\nSelect a vertical route to connect to");
                 peo2.SetRejectMessage("\nSelect a vertical route or source to connect to ");
-                peo2.AddAllowedClass(typeof(Line), true);
+                peo2.AddAllowedClass(typeof(Blockr), true);
                 PromptEntityResult per2 = ed.GetEntity(peo2);
                 if (per2.Status != PromptStatus.OK)
                 {
@@ -226,30 +278,54 @@ namespace GMEPPlumbing
                 Entity entity2 = (Entity)tr.GetObject(objectId2, OpenMode.ForRead);
                 if (entity is BlockReference blockReference)
                 {
+                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
                     DynamicBlockReferencePropertyCollection properties = blockReference.DynamicBlockReferencePropertyCollection;
                     foreach (DynamicBlockReferenceProperty prop in properties)
                     {
                         if (prop.PropertyName == "Connection X")
                         {
-                            //pointX = Convert.ToInt32(prop.Value);
+                            pointX = Convert.ToInt32(prop.Value);
                         }
                         if (prop.PropertyName == "Connection Y")
                         {
-                            //pointY = Convert.ToInt32(prop.Value);
+                            pointY = Convert.ToInt32(prop.Value);
+                        }
+                        if (prop.PropertyName == "fed_from_id")
+                        {
+                            prop.Value = LineGUID;
                         }
                     }
-                    //if (pointX != 0 || pointY != 0)
-                    //{
-                    //    double rotation = blockReference.Rotation;
-                    //    double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
-                    //    double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
-                    //    connectionPointLocation = new Point3d(blockReference.Position.X + rotatedX, blockReference.Position.Y + rotatedY, 0);
-                    //}
+
+                    Point3d connectionPointLocation = Point3d.Origin;
+                    if (pointX != 0 || pointY != 0)
+                    {
+                        double rotation = blockReference.Rotation;
+                        double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
+                        double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
+                        connectionPointLocation = new Point3d(blockReference.Position.X + rotatedX, blockReference.Position.Y + rotatedY, 0);
+                    }
+
+                    Line line = new Line();
+                    line.StartPoint =  startPoint;
+                    line.EndPoint = new Point3d(connectionPointLocation.X, connectionPointLocation.Y, 0);
+                    line.Layer = LineRef.Layer;
+
+                    btr.AppendEntity(line);
+                    tr.AddNewlyCreatedDBObject(line, true);
+                    addedLineId = line.ObjectId;
+
 
                 }
             }
+            
+            AttachRouteXData(addedLineId, LineGUID, FedFromId);
+            AddArrowsToLine(addedLineId, LineGUID);
+            tr.Commit();
         }
-    }
+
+    }*/
 
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute()
