@@ -196,6 +196,8 @@ namespace GMEPPlumbing
         Point3d StartBasePointLocation = new Point3d(0, 0, 0);
         Point3d StartUpLocation = new Point3d(0, 0, 0);
         ObjectId startPipeId = ObjectId.Null;
+        string verticalRouteId = Guid.NewGuid().ToString();
+        string sourceId = Guid.NewGuid().ToString();
 
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
@@ -216,7 +218,7 @@ namespace GMEPPlumbing
                                 var pc = entity.DynamicBlockReferencePropertyCollection;
                                 foreach (DynamicBlockReferenceProperty prop in pc)
                                 {
-                                    if (prop.PropertyName == "Id")
+                                    if (prop.PropertyName == "View_Id")
                                     {
 
                                         string key = prop.Value.ToString();
@@ -387,7 +389,7 @@ namespace GMEPPlumbing
        
         if (endFloor > startFloor)
         {
-            string sourceId = Guid.NewGuid().ToString();
+           
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 //delete previous start pipe
@@ -431,6 +433,10 @@ namespace GMEPPlumbing
                     {
                         prop.Value = basePointGUIDs[startFloor];
                     }
+                    if (prop.PropertyName == "vertical_route_id")
+                    {
+                        prop.Value = verticalRouteId;
+                    }
                 }
                 tr.Commit();
             }
@@ -471,6 +477,10 @@ namespace GMEPPlumbing
                         {
                             prop.Value = basePointGUIDs[i];
                         }
+                        if (prop.PropertyName == "vertical_route_id")
+                        {
+                            prop.Value = verticalRouteId;
+                        }
                     }
                 }
 
@@ -510,6 +520,10 @@ namespace GMEPPlumbing
                     {
                         prop.Value = basePointGUIDs[endFloor];
                     }
+                    if (prop.PropertyName == "vertical_route_id")
+                    {
+                        prop.Value = verticalRouteId;
+                    }
                 }
                 tr.Commit();
             }
@@ -517,7 +531,6 @@ namespace GMEPPlumbing
         }
         else if (endFloor < startFloor)
         {
-            string sourceId = Guid.NewGuid().ToString();
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 //delete previous start pipe
@@ -560,8 +573,12 @@ namespace GMEPPlumbing
                     {
                         prop.Value = basePointGUIDs[startFloor];
                     }
+                    if (prop.PropertyName == "vertical_route_id")
+                    {
+                        prop.Value = verticalRouteId;
+                    }
                 }
-                    tr.Commit();
+                tr.Commit();
             }
 
             using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -599,6 +616,10 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "base_point_id")
                         {
                             prop.Value = basePointGUIDs[i];
+                        }
+                        if (prop.PropertyName == "vertical_route_id")
+                        {
+                            prop.Value = verticalRouteId;
                         }
                     }
                 }
@@ -639,12 +660,15 @@ namespace GMEPPlumbing
                     {
                         prop.Value = basePointGUIDs[endFloor];
                     }
+                    if (prop.PropertyName == "vertical_route_id")
+                    {
+                        prop.Value = verticalRouteId;
+                    }
                 }
                 tr.Commit();
             }
         }
     }
-
 
 
     [CommandMethod("SETPLUMBINGBASEPOINT")]
@@ -668,7 +692,7 @@ namespace GMEPPlumbing
         bool storm = prompt.Storm;
         string planName = prompt.PlanName.ToUpper();
         string floorQtyResult = prompt.FloorQty;
-        string Id = Guid.NewGuid().ToString();
+        string ViewId = Guid.NewGuid().ToString();
 
 
         string viewport = "";
@@ -730,7 +754,11 @@ namespace GMEPPlumbing
                         }
                         else if (prop.PropertyName == "Id")
                         {
-                            prop.Value = Id;
+                            prop.Value = Guid.NewGuid().ToString();
+                        }
+                        else if (prop.PropertyName == "View_Id")
+                        {
+                            prop.Value = ViewId;
                         }
                     }
                 }
