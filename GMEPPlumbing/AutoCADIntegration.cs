@@ -192,6 +192,7 @@ namespace GMEPPlumbing
         Point3d StartBasePointLocation = new Point3d(0, 0, 0);
         Point3d StartUpLocation = new Point3d(0, 0, 0);
         ObjectId startPipeId = ObjectId.Null;
+        string verticalRouteId = Guid.NewGuid().ToString();
 
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
@@ -212,7 +213,7 @@ namespace GMEPPlumbing
                                 var pc = entity.DynamicBlockReferencePropertyCollection;
                                 foreach (DynamicBlockReferenceProperty prop in pc)
                                 {
-                                    if (prop.PropertyName == "Id")
+                                    if (prop.PropertyName == "View_Id")
                                     {
 
                                         string key = prop.Value.ToString();
@@ -392,6 +393,7 @@ namespace GMEPPlumbing
                 upBlockRef2.Layer = "Defpoints";
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
+            // Set the vertical route ID
                 tr.Commit();
             }
 
@@ -517,7 +519,7 @@ namespace GMEPPlumbing
         bool storm = prompt.Storm;
         string planName = prompt.PlanName.ToUpper();
         string floorQtyResult = prompt.FloorQty;
-        string Id = Guid.NewGuid().ToString();
+        string ViewId = Guid.NewGuid().ToString();
 
 
         string viewport = "";
@@ -577,9 +579,13 @@ namespace GMEPPlumbing
                         {
                             prop.Value = viewport;
                         }
+                        else if (prop.PropertyName == "View_Id")
+                        {
+                            prop.Value = ViewId;
+                        }
                         else if (prop.PropertyName == "Id")
                         {
-                            prop.Value = Id;
+                            prop.Value = Guid.NewGuid().ToString();
                         }
                     }
                 }
