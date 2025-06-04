@@ -404,6 +404,25 @@ namespace GMEPPlumbing
                 upBlockRef2.Layer = "Defpoints";
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
+                // Attach the vertical route ID to the start pipe
+                var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
+
+                foreach (DynamicBlockReferenceProperty prop in pc2)
+                {
+                    if (prop.PropertyName == "id")
+                    {
+                        prop.Value = Guid.NewGuid().ToString();
+
+                    }
+                    if (prop.PropertyName == "base_point_id")
+                    {
+                        prop.Value = BasePointGUIDs[startFloor];
+                    }
+                    if (prop.PropertyName == "vertical_route_id")
+                    {
+                        prop.Value = verticalRouteId;
+                    }
+                }
                 // Set the vertical route ID
                 tr.Commit();
             }
@@ -423,6 +442,24 @@ namespace GMEPPlumbing
                     upBlockRef.Layer = "Defpoints";
                     curSpace.AppendEntity(upBlockRef);
                     tr.AddNewlyCreatedDBObject(upBlockRef, true);
+                    var pc2 = upBlockRef.DynamicBlockReferencePropertyCollection;
+
+                    foreach (DynamicBlockReferenceProperty prop in pc2)
+                    {
+                        if (prop.PropertyName == "id")
+                        {
+                            prop.Value = Guid.NewGuid().ToString();
+
+                        }
+                        if (prop.PropertyName == "base_point_id")
+                        {
+                            prop.Value = BasePointGUIDs[i];
+                        }
+                        if (prop.PropertyName == "vertical_route_id")
+                        {
+                            prop.Value = verticalRouteId;
+                        }
+                    }
                 }
 
                 //end pipe
@@ -440,6 +477,24 @@ namespace GMEPPlumbing
                 upBlockRef3.Layer = "Defpoints";
                 curSpace3.AppendEntity(upBlockRef3);
                 tr.AddNewlyCreatedDBObject(upBlockRef3, true);
+                var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
+
+                foreach (DynamicBlockReferenceProperty prop in pc3)
+                {
+                    if (prop.PropertyName == "id")
+                    {
+                        prop.Value = Guid.NewGuid().ToString();
+
+                    }
+                    if (prop.PropertyName == "base_point_id")
+                    {
+                        prop.Value = BasePointGUIDs[endFloor];
+                    }
+                    if (prop.PropertyName == "vertical_route_id")
+                    {
+                        prop.Value = verticalRouteId;
+                    }
+                }
                 tr.Commit();
             }
 
@@ -467,6 +522,24 @@ namespace GMEPPlumbing
                 upBlockRef2.Layer = "Defpoints";
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
+                var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
+
+                foreach (DynamicBlockReferenceProperty prop in pc2)
+                {
+                    if (prop.PropertyName == "id")
+                    {
+                        prop.Value = Guid.NewGuid().ToString();
+
+                    }
+                    if (prop.PropertyName == "base_point_id")
+                    {
+                        prop.Value = BasePointGUIDs[startFloor];
+                    }
+                    if (prop.PropertyName == "vertical_route_id")
+                    {
+                        prop.Value = verticalRouteId;
+                    }
+                }
                 tr.Commit();
             }
 
@@ -485,7 +558,25 @@ namespace GMEPPlumbing
                     upBlockRef.Layer = "Defpoints";
                     curSpace.AppendEntity(upBlockRef);
                     tr.AddNewlyCreatedDBObject(upBlockRef, true);
-                }
+                    var pc = upBlockRef.DynamicBlockReferencePropertyCollection;
+
+                    foreach (DynamicBlockReferenceProperty prop in pc)
+                    {
+                        if (prop.PropertyName == "id")
+                        {
+                            prop.Value = Guid.NewGuid().ToString();
+
+                        }
+                        if (prop.PropertyName == "base_point_id")
+                        {
+                            prop.Value = BasePointGUIDs[i];
+                        }
+                        if (prop.PropertyName == "vertical_route_id")
+                        {
+                            prop.Value = verticalRouteId;
+                        }
+                    }
+                    }
 
                 //end pipe
                 ZoomToBlock(ed, BasePointRefs[endFloor]);
@@ -502,7 +593,25 @@ namespace GMEPPlumbing
                 upBlockRef3.Layer = "Defpoints";
                 curSpace3.AppendEntity(upBlockRef3);
                 tr.AddNewlyCreatedDBObject(upBlockRef3, true);
-                tr.Commit();
+                    var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
+
+                    foreach (DynamicBlockReferenceProperty prop in pc3)
+                    {
+                        if (prop.PropertyName == "id")
+                        {
+                            prop.Value = Guid.NewGuid().ToString();
+
+                        }
+                        if (prop.PropertyName == "base_point_id")
+                        {
+                            prop.Value = BasePointGUIDs[endFloor];
+                        }
+                        if (prop.PropertyName == "vertical_route_id")
+                        {
+                            prop.Value = verticalRouteId;
+                        }
+                    }
+                    tr.Commit();
             }
         }
     }
