@@ -404,6 +404,7 @@ namespace GMEPPlumbing
                 upBlockRef2.Layer = "Defpoints";
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
+
                 // Attach the vertical route ID to the start pipe
                 var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
 
@@ -412,7 +413,6 @@ namespace GMEPPlumbing
                     if (prop.PropertyName == "id")
                     {
                         prop.Value = Guid.NewGuid().ToString();
-
                     }
                     if (prop.PropertyName == "base_point_id")
                     {
@@ -423,6 +423,7 @@ namespace GMEPPlumbing
                         prop.Value = verticalRouteId;
                     }
                 }
+
                 // Set the vertical route ID
                 tr.Commit();
             }
