@@ -81,8 +81,8 @@ namespace GMEPPlumbing
         
             Point3d connectionPointLocation = Point3d.Origin;
             ObjectId addedLineId = ObjectId.Null;
-            int isForward = 1;
-            string routeId = "";
+
+            string FedFromId = "";
 
             // Check if the selected object is a BlockReference or Line
             using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -103,14 +103,11 @@ namespace GMEPPlumbing
                             {
                                 pointY = Convert.ToInt32(prop.Value);
                             }
-                            if (prop.PropertyName == "route_id")
+                            if (prop.PropertyName == "id")
                             {
-                                routeId = prop.Value.ToString();
+                                FedFromId = prop.Value.ToString();
                             }
-                            if (prop.PropertyName == "is_forward")
-                            {
-                                isForward = Convert.ToInt32(prop.Value);
-                            }
+                      
                         }
                     }
                     if (pointX != 0 || pointY != 0)
@@ -148,8 +145,7 @@ namespace GMEPPlumbing
                         return;
                     }
                     TypedValue[] values = xData.AsArray();
-                    routeId = values[1].Value as string;
-                    isForward = (short)values[2].Value;
+                    FedFromId = values[1].Value as string;
 
                     //Placing Line
 
@@ -179,8 +175,8 @@ namespace GMEPPlumbing
                 }
                 tr.Commit();
             }
-            AttachRouteXData(addedLineId, routeId, isForward);
-            AddArrowsToLine(addedLineId, isForward);
+            AttachRouteXData(addedLineId, FedFromId);
+            AddArrowsToLine(addedLineId);
         }
     }
 
@@ -628,7 +624,7 @@ namespace GMEPPlumbing
     {
       ed.WriteMessage(message);
     }
-    private void AddArrowsToLine(ObjectId lineId, int isForward)
+    private void AddArrowsToLine(ObjectId lineId)
     {
         while (true)
         {
@@ -641,7 +637,7 @@ namespace GMEPPlumbing
 
                 Vector3d dir = (line.EndPoint - line.StartPoint).GetNormal();
                 double angle = dir.AngleOnPlane(new Plane(Point3d.Origin, Vector3d.ZAxis));
-                if (isForward == 0)
+                if (line.Layer == "meow")
                     angle += Math.PI;
 
 
@@ -718,13 +714,13 @@ namespace GMEPPlumbing
         }
       }
     }
-    private void AttachRouteXData(ObjectId lineId, string routeId, int isForward)
+    private void AttachRouteXData(ObjectId lineId, string FedFromId)
     {
-        ed.WriteMessage("RouteId: " + routeId + ", isForward: " + isForward);
+        ed.WriteMessage("FedFromId: " + FedFromId);
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
             Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
-            if (line == null || string.IsNullOrEmpty(routeId))
+            if (line == null || string.IsNullOrEmpty(FedFromId))
                 return;
 
             RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForWrite);
@@ -739,8 +735,8 @@ namespace GMEPPlumbing
             }
             ResultBuffer rb = new ResultBuffer(
                 new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
-                new TypedValue(1000, routeId),
-                new TypedValue(1070, isForward)
+                new TypedValue(1000, Guid.NewGuid().ToString()),
+                new TypedValue(1000, FedFromId)
             );
             line.XData = rb;
             rb.Dispose();
