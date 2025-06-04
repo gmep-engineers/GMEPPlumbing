@@ -81,7 +81,7 @@ namespace GMEPPlumbing
         
             Point3d connectionPointLocation = Point3d.Origin;
             ObjectId addedLineId = ObjectId.Null;
-
+            
             string FedFromId = "";
 
             // Check if the selected object is a BlockReference or Line
@@ -107,7 +107,6 @@ namespace GMEPPlumbing
                             {
                                 FedFromId = prop.Value.ToString();
                             }
-                      
                         }
                     }
                     if (pointX != 0 || pointY != 0)
@@ -175,8 +174,80 @@ namespace GMEPPlumbing
                 }
                 tr.Commit();
             }
-            AttachRouteXData(addedLineId, FedFromId);
-            AddArrowsToLine(addedLineId);
+            string LineGUID = Guid.NewGuid().ToString();
+            AttachRouteXData(addedLineId, LineGUID, FedFromId);
+            AddArrowsToLine(addedLineId, LineGUID);
+        }
+    }
+
+    [CommandMethod("ConnectPlumbing")]
+    public async void ConnectPlumbing()
+    {
+        doc = Application.DocumentManager.MdiActiveDocument;
+        db = doc.Database;
+        ed = doc.Editor;
+        //Select a starting point/object
+        PromptEntityOptions peo = new PromptEntityOptions("\nSelect a route or source to start from ");
+        peo.SetRejectMessage("\nSelect a route ");
+        peo.AddAllowedClass(typeof(Line), true);
+        PromptEntityResult per = ed.GetEntity(peo);
+
+        if (per.Status != PromptStatus.OK)
+        {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+        }
+        ObjectId objectId = per.ObjectId;
+        //int pointX = 0;
+        //int pointY = 0;
+
+       // Point3d connectionPointLocation = Point3d.Origin;
+       // ObjectId addedLineId = ObjectId.Null;
+
+        //string FedFromId = "";
+
+        // Check if the selected object is a BlockReference or Line
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+            Entity entity = (Entity)tr.GetObject(objectId, OpenMode.ForRead);
+            if (entity is Line LineRef)
+            {
+                Point3d lineEnd = LineRef.EndPoint;
+                PromptEntityOptions peo2 = new PromptEntityOptions("\nSelect a route or source to start from ");
+                peo2.SetRejectMessage("\nSelect a vertical route or source to connect to ");
+                peo2.AddAllowedClass(typeof(Line), true);
+                PromptEntityResult per2 = ed.GetEntity(peo2);
+                if (per2.Status != PromptStatus.OK)
+                {
+                    ed.WriteMessage("\nCommand cancelled.");
+                    return;
+                }
+                ObjectId objectId2 = per2.ObjectId;
+                Entity entity2 = (Entity)tr.GetObject(objectId2, OpenMode.ForRead);
+                if (entity is BlockReference blockReference)
+                {
+                    DynamicBlockReferencePropertyCollection properties = blockReference.DynamicBlockReferencePropertyCollection;
+                    foreach (DynamicBlockReferenceProperty prop in properties)
+                    {
+                        if (prop.PropertyName == "Connection X")
+                        {
+                            //pointX = Convert.ToInt32(prop.Value);
+                        }
+                        if (prop.PropertyName == "Connection Y")
+                        {
+                            //pointY = Convert.ToInt32(prop.Value);
+                        }
+                    }
+                    //if (pointX != 0 || pointY != 0)
+                    //{
+                    //    double rotation = blockReference.Rotation;
+                    //    double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
+                    //    double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
+                    //    connectionPointLocation = new Point3d(blockReference.Position.X + rotatedX, blockReference.Position.Y + rotatedY, 0);
+                    //}
+
+                }
+            }
         }
     }
 
@@ -752,7 +823,7 @@ namespace GMEPPlumbing
     {
       ed.WriteMessage(message);
     }
-    private void AddArrowsToLine(ObjectId lineId)
+    private void AddArrowsToLine(ObjectId lineId, string lineGUID)
     {
         while (true)
         {
@@ -792,6 +863,14 @@ namespace GMEPPlumbing
                 };
                 btr.AppendEntity(arrowRef);
                 tr.AddNewlyCreatedDBObject(arrowRef, true);
+                DynamicBlockReferencePropertyCollection properties = arrowRef.DynamicBlockReferencePropertyCollection;
+                foreach (DynamicBlockReferenceProperty prop in properties)
+                {
+                    if (prop.PropertyName == "line_id")
+                    {
+                        prop.Value = lineGUID;
+                    }
+                }
                 tr.Commit();
             }
         }
@@ -842,7 +921,7 @@ namespace GMEPPlumbing
         }
       }
     }
-    private void AttachRouteXData(ObjectId lineId, string FedFromId)
+    private void AttachRouteXData(ObjectId lineId, string id, string FedFromId)
     {
         ed.WriteMessage("FedFromId: " + FedFromId);
         using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -863,7 +942,7 @@ namespace GMEPPlumbing
             }
             ResultBuffer rb = new ResultBuffer(
                 new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
-                new TypedValue(1000, Guid.NewGuid().ToString()),
+                new TypedValue(1000, id),
                 new TypedValue(1000, FedFromId)
             );
             line.XData = rb;
