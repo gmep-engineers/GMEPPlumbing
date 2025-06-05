@@ -147,11 +147,10 @@ namespace GMEPPlumbing
 
 
                 //Choosing end object or point
-                PromptEntityOptions peo1 = new PromptEntityOptions("\nSelect object or [Point]: ");
+                PromptEntityOptions peo1 = new PromptEntityOptions("\nSelect Source, Vertical Route, Fixture or [Point]: ");
                 peo1.Keywords.Add("Point"); 
                 peo1.AllowNone = false; // Allow clicking in empty space
                 peo1.SetRejectMessage("\nSelect a valid object or pick a point.");
-                //peo1.AddAllowedClass(typeof(Line), true);
                 peo1.AddAllowedClass(typeof(BlockReference), true);
                 PromptEntityResult per1 = ed.GetEntity(peo1);
 
@@ -208,11 +207,6 @@ namespace GMEPPlumbing
                             endPointLocation = new Point3d(endBlockRef.Position.X + rotatedX, endBlockRef.Position.Y + rotatedY, 0);
                         }
                     }
-                    /* else if (endEntity is Line endLine)
-                        {
-                            startPointLocation = endLine.EndPoint;
-                        }*/
-
 
                     //adding line to the drawing
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
@@ -226,8 +220,9 @@ namespace GMEPPlumbing
                     tr.AddNewlyCreatedDBObject(line, true);
                     addedLineId =line.ObjectId;
 
-
-                    //backwards tracking logic here, need to set layers and arrow directions, setting fedfromid on 
+                    //backwards tracking logic here, need to set layers and arrow directions, setting fedfromid on
+                    
+                       
                 }
 
                 tr.Commit();
@@ -805,7 +800,59 @@ namespace GMEPPlumbing
             ed.SetCurrentView(view);
         }
     }
-
+    public void PropagateUpRouteInfo(Transaction tr, string layer, string RefId)
+    {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        List<string> blockNames = new List<string>
+        {
+            "GMEP_PLUMBING_LINE_UP",
+            "GMEP_PLUMBING_LINE_DOWN",
+            "GMEP_PLUMBING_LINE_VERTICAL"
+        };
+            foreach (var name in blockNames)
+            {
+                BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
+                //Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
+                foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+                {
+                    if (id.IsValid)
+                    {
+                        using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord)
+                        {
+                            if (anonymousBtr != null)
+                            {
+                                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                {
+                                    var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                                    var pc = entity.DynamicBlockReferencePropertyCollection;
+                                    bool match = false;
+                                    string newId = "";
+                                    foreach (DynamicBlockReferenceProperty prop in pc)
+                                    {
+                                        if (prop.PropertyName == "fed_from_id")
+                                        {
+                                            if (prop.Value.ToString() == RefId)
+                                            {
+                                                entity.Layer = layer;
+                                            }
+                                            match = true;
+                                        }
+                                        if (prop.PropertyName == "id")
+                                        {
+                                            newId = prop.Value.ToString();
+                                        }
+                                    }
+                                    if (match)
+                                    {
+                                        PropagateUpRouteInfo(tr, layer, newId);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    }
     public void WriteMessage(string message)
     {
       ed.WriteMessage(message);
@@ -910,7 +957,7 @@ namespace GMEPPlumbing
     }
     private void AttachRouteXData(ObjectId lineId, string id, string FedFromId)
     {
-        ed.WriteMessage("FedFromId: " + FedFromId);
+        ed.WriteMessage("Id: " + id + " FedFromId: " + FedFromId);
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
             Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
