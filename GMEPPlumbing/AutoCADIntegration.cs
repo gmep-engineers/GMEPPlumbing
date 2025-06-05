@@ -192,6 +192,7 @@ namespace GMEPPlumbing
                     Point3d endPointLocation = Point3d.Origin;
                     if (endEntity is BlockReference endBlockRef)
                     {
+                        string verticalRouteId = "";
                         DynamicBlockReferencePropertyCollection properties = endBlockRef.DynamicBlockReferencePropertyCollection;
                         foreach (DynamicBlockReferenceProperty prop in properties)
                         {
@@ -203,9 +204,9 @@ namespace GMEPPlumbing
                             {
                                 pointY = Convert.ToInt32(prop.Value);
                             }
-                            if (prop.PropertyName == "fed_from_id")
+                            if (prop.PropertyName == "vertical_route_id")
                             {
-                               prop.Value = LineGUID; 
+                                verticalRouteId = prop.Value.ToString();
                             }
                         }
                         if (pointX != 0 || pointY != 0)
@@ -215,7 +216,8 @@ namespace GMEPPlumbing
                             double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
                             endPointLocation = new Point3d(endBlockRef.Position.X + rotatedX, endBlockRef.Position.Y + rotatedY, 0);
                         }
-                    }
+                        ChangeVerticalRouteInfo(tr, verticalRouteId, layer, LineGUID);
+                     }
 
                     //adding line to the drawing
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
@@ -627,7 +629,6 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "id")
                         {
                             prop.Value = Guid.NewGuid().ToString();
-
                         }
                         if (prop.PropertyName == "base_point_id")
                         {
@@ -805,6 +806,63 @@ namespace GMEPPlumbing
             view.Height = ext.MaxPoint.Y*50 - ext.MinPoint.Y*50;
             view.Width = ext.MaxPoint.X*50 - ext.MinPoint.X*50;
             ed.SetCurrentView(view);
+        }
+    }
+    public void ChangeVerticalRouteInfo(Transaction tr, string VerticalRouteId, string layer, string RefId)
+    {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        List<string> blockNames = new List<string>
+        {
+            "GMEP_PLUMBING_LINE_UP",
+            "GMEP_PLUMBING_LINE_DOWN",
+            "GMEP_PLUMBING_LINE_VERTICAL"
+        };
+        foreach (var name in blockNames)
+        {
+            BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
+
+            foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+            {
+                if (id.IsValid)
+                {
+                    using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord)
+                    {
+                        if (anonymousBtr != null)
+                        {
+                            foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                            {
+                                var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+                                var pc = entity.DynamicBlockReferencePropertyCollection;
+                                
+                                bool match = false;
+
+                                foreach (DynamicBlockReferenceProperty prop in pc)
+                                {
+                                    if (prop.PropertyName == "vertical_route_id")
+                                    {
+                                        if (prop.Value.ToString() == VerticalRouteId)
+                                        {
+                                                match = true;
+                                                entity.Layer = layer; 
+                                         }
+                                    }
+                                }
+                                if (match)
+                                {
+                                    foreach (DynamicBlockReferenceProperty prop in pc)
+                                    {
+                                        if (prop.PropertyName == "fed_from_id")
+                                        {
+                                            prop.Value = RefId; 
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
