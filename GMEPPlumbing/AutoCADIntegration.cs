@@ -181,6 +181,7 @@ namespace GMEPPlumbing
                 {
                     ObjectId endObjectId = per1.ObjectId;
                     Entity endEntity = (Entity)tr.GetObject(endObjectId, OpenMode.ForRead);
+                    Point3d endPointLocation = Point3d.Origin;
                     if (endEntity is BlockReference endBlockRef)
                     {
                         DynamicBlockReferencePropertyCollection properties = endBlockRef.DynamicBlockReferencePropertyCollection;
@@ -204,13 +205,26 @@ namespace GMEPPlumbing
                             double rotation = endBlockRef.Rotation;
                             double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
                             double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
-                            startPointLocation = new Point3d(endBlockRef.Position.X + rotatedX, endBlockRef.Position.Y + rotatedY, 0);
+                            endPointLocation = new Point3d(endBlockRef.Position.X + rotatedX, endBlockRef.Position.Y + rotatedY, 0);
                         }
                     }
                     /* else if (endEntity is Line endLine)
                         {
                             startPointLocation = endLine.EndPoint;
                         }*/
+
+
+                    //adding line to the drawing
+                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                    Line line = new Line();
+                    line.StartPoint =  startPointLocation;
+                    line.EndPoint = endPointLocation;
+                    line.Layer = layer;
+                    btr.AppendEntity(line);
+                    tr.AddNewlyCreatedDBObject(line, true);
+                    addedLineId =line.ObjectId;
 
                     //backwards tracking logic here, need to set layers and arrow directions, setting fedfromid on 
                 }
