@@ -91,12 +91,17 @@ namespace GMEPPlumbing
             string layer = "";
             string LineGUID = Guid.NewGuid().ToString();
 
-                // Check if the selected object is a BlockReference or Line
+            // Check if the selected object is a BlockReference or Line
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 Entity basePoint = (Entity)tr.GetObject(basePointId, OpenMode.ForRead);
-                
-                //get blockreference choice
+                if (basePoint.Layer == "Defpoints")
+                {
+                    ed.WriteMessage("\nMust be connected to a source.");
+                    return;
+                }
+
+                    //get blockreference choice
                 if (basePoint is BlockReference basePointRef)
                 {
                     if (basePointRef != null)
@@ -216,7 +221,7 @@ namespace GMEPPlumbing
                     BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
                     Line line = new Line();
-                    line.StartPoint =  startPointLocation;
+                    line.StartPoint = startPointLocation;
                     line.EndPoint = endPointLocation;
                     line.Layer = layer;
                     btr.AppendEntity(line);
@@ -224,7 +229,7 @@ namespace GMEPPlumbing
                     addedLineId = line.ObjectId;
                 }
 
-                PropagateUpRouteInfo(tr, layer, LineGUID);
+                //PropagateUpRouteInfo(tr, layer, LineGUID);
 
                 tr.Commit();
             }
@@ -801,7 +806,8 @@ namespace GMEPPlumbing
             ed.SetCurrentView(view);
         }
     }
-    public void PropagateUpRouteInfo(Transaction tr, string layer, string RefId)
+
+    /*public void PropagateUpRouteInfo(Transaction tr, string layer, string RefId)
     {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
@@ -900,7 +906,8 @@ namespace GMEPPlumbing
                     }
                 }
             }
-    }
+    }*/
+
     public void WriteMessage(string message)
     {
       ed.WriteMessage(message);
