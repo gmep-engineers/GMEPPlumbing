@@ -95,13 +95,14 @@ namespace GMEPPlumbing
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 Entity basePoint = (Entity)tr.GetObject(basePointId, OpenMode.ForRead);
+
                 if (basePoint.Layer == "Defpoints")
                 {
                     ed.WriteMessage("\nMust be connected to a source.");
                     return;
                 }
 
-                    //get blockreference choice
+                //get blockreference choice
                 if (basePoint is BlockReference basePointRef)
                 {
                     if (basePointRef != null)
