@@ -33,6 +33,9 @@ using Autodesk.Windows;
 using System.Windows.Markup;
 using System.Windows.Shapes;
 using Line = Autodesk.AutoCAD.DatabaseServices.Line;
+using System.Xml.Linq;
+using SharpCompress.Common;
+using Google.Protobuf;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -218,12 +221,10 @@ namespace GMEPPlumbing
                     line.Layer = layer;
                     btr.AppendEntity(line);
                     tr.AddNewlyCreatedDBObject(line, true);
-                    addedLineId =line.ObjectId;
-
-                    //backwards tracking logic here, need to set layers and arrow directions, setting fedfromid on
-                    
-                       
+                    addedLineId = line.ObjectId;
                 }
+
+                PropagateUpRouteInfo(tr, layer, LineGUID);
 
                 tr.Commit();
             }
@@ -803,52 +804,99 @@ namespace GMEPPlumbing
     public void PropagateUpRouteInfo(Transaction tr, string layer, string RefId)
     {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
         List<string> blockNames = new List<string>
         {
             "GMEP_PLUMBING_LINE_UP",
             "GMEP_PLUMBING_LINE_DOWN",
             "GMEP_PLUMBING_LINE_VERTICAL"
         };
-            foreach (var name in blockNames)
+        Dictionary<string, List<ObjectId>> fedFromRefs = new Dictionary<string, List<ObjectId>>();
+        foreach (var name in blockNames)
+        {
+            BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
+
+            foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
             {
-                BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
-                //Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
-                foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+                if (id.IsValid)
                 {
-                    if (id.IsValid)
+                    using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord)
                     {
-                        using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord)
+                        if (anonymousBtr != null)
                         {
-                            if (anonymousBtr != null)
+                            foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
                             {
-                                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                                var pc = entity.DynamicBlockReferencePropertyCollection;
+                                bool match = false;
+                                string newId = "";
+                                foreach (DynamicBlockReferenceProperty prop in pc)
                                 {
-                                    var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-                                    var pc = entity.DynamicBlockReferencePropertyCollection;
-                                    bool match = false;
-                                    string newId = "";
-                                    foreach (DynamicBlockReferenceProperty prop in pc)
+                                    if (prop.PropertyName == "fed_from_id")
                                     {
-                                        if (prop.PropertyName == "fed_from_id")
+                                        if (fedFromRefs.ContainsKey(prop.Value.ToString()))
                                         {
-                                            if (prop.Value.ToString() == RefId)
-                                            {
-                                                entity.Layer = layer;
-                                            }
-                                            match = true;
+                                            fedFromRefs[prop.Value.ToString()].Add(entity.ObjectId);
                                         }
-                                        if (prop.PropertyName == "id")
+                                        else
                                         {
-                                            newId = prop.Value.ToString();
+                                            fedFromRefs.Add(prop.Value.ToString(), new List<ObjectId> { entity.ObjectId });
                                         }
-                                    }
-                                    if (match)
-                                    {
-                                        PropagateUpRouteInfo(tr, layer, newId);
                                     }
                                 }
                             }
                         }
+                    }
+                }
+            }
+        }
+        foreach (ObjectId entId in modelSpace)
+        {
+            Entity ent = tr.GetObject(entId, OpenMode.ForRead) as Entity;
+            if (ent is Line line)
+            {
+                if (line.XData != null)
+                {
+                    TypedValue[] values = line.XData.AsArray();
+                    string FedFromId = values[2].Value as string;
+                    if (fedFromRefs.ContainsKey(FedFromId))
+                    {
+                        fedFromRefs[FedFromId].Add(line.ObjectId);
+                    }
+                    else
+                    {
+                        fedFromRefs.Add(FedFromId, new List<ObjectId> { line.ObjectId });
+                    }
+                }
+            }
+        }
+        SetRouteInfo(tr, fedFromRefs, layer, RefId);
+
+    }
+    public void SetRouteInfo(Transaction tr, Dictionary<string, List<ObjectId>> FedFromRefs, string layer, string refId)
+    {
+        if (FedFromRefs.ContainsKey(refId))
+        {
+                foreach (ObjectId objId in FedFromRefs[refId])
+                {
+                    Entity entity = (Entity)tr.GetObject(objId, OpenMode.ForWrite);
+                    entity.Layer = layer;
+                    if (entity is BlockReference blockRef)
+                    {
+                        DynamicBlockReferencePropertyCollection properties = blockRef.DynamicBlockReferencePropertyCollection;
+                        foreach (DynamicBlockReferenceProperty prop in properties)
+                        {
+                            if (prop.PropertyName == "id")
+                            {
+                                SetRouteInfo(tr, FedFromRefs, layer, prop.Value.ToString());
+                            }
+                        }
+                    }
+                    else if (entity is Line line)
+                    {
+                        TypedValue[] values = line.XData.AsArray();
+                        string LineId = values[1].Value as string;
+                        SetRouteInfo(tr, FedFromRefs, layer, LineId);
                     }
                 }
             }
