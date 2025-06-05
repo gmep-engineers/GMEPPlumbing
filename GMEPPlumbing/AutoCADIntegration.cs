@@ -69,14 +69,15 @@ namespace GMEPPlumbing
         db = doc.Database;
         ed = doc.Editor;
         SettingObjects = false;
-        //db.ObjectErased += Db_ObjectErased;
+        db.ObjectErased -= Db_ObjectErased; 
+        db.ObjectErased += Db_ObjectErased;
+        // Initialize the MongoDB service
     }
 
 
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute()
     {
-        db.ObjectErased += Db_ObjectErased;
         while (true)
         {
             //Select a starting point/object
