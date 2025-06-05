@@ -36,6 +36,7 @@ using Line = Autodesk.AutoCAD.DatabaseServices.Line;
 using System.Xml.Linq;
 using SharpCompress.Common;
 using Google.Protobuf;
+using Org.BouncyCastle.Ocsp;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -52,6 +53,7 @@ namespace GMEPPlumbing
     private bool needsXRecordUpdate = false;
     private string newDrawingId;
     private DateTime newCreationTime;
+    public bool SettingObjects { get; set; }
     public MariaDBService MariaDBService { get; set; } = new MariaDBService();
 
     public Document doc { get; private set; }
@@ -59,13 +61,22 @@ namespace GMEPPlumbing
     public Editor ed { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
 
-    [CommandMethod("PlumbingHorizontalRoute")]
-    public async void PlumbingHorizontalRoute()
+
+
+    public AutoCADIntegration()
     {
         doc = Application.DocumentManager.MdiActiveDocument;
         db = doc.Database;
         ed = doc.Editor;
-            
+        SettingObjects = false;
+        //db.ObjectErased += Db_ObjectErased;
+    }
+
+
+    [CommandMethod("PlumbingHorizontalRoute")]
+    public async void PlumbingHorizontalRoute()
+    {
+        db.ObjectErased += Db_ObjectErased;
         while (true)
         {
             //Select a starting point/object
@@ -245,9 +256,6 @@ namespace GMEPPlumbing
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute()
     {
-        doc = Application.DocumentManager.MdiActiveDocument;
-        db = doc.Database;
-        ed = doc.Editor;
 
         List<ObjectId> basePointIds = new List<ObjectId>();
         int startFloor = 0;
@@ -684,9 +692,6 @@ namespace GMEPPlumbing
     [CommandMethod("SETPLUMBINGBASEPOINT")]
     public async void SetPlumbingBasePoint()
     {
-        doc = Application.DocumentManager.MdiActiveDocument;
-        db = doc.Database;
-        ed = doc.Editor;
 
 
         var prompt = new Views.BasePointPromptWindow();
@@ -784,10 +789,6 @@ namespace GMEPPlumbing
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       ProjectId = await MariaDBService.GetProjectId(projectNo);
 
-      doc = Application.DocumentManager.MdiActiveDocument;
-      db = doc.Database;
-      ed = doc.Editor;
-
       RetrieveOrCreateDrawingId();
       InitializeUserInterface();
       LoadDataAsync();
@@ -865,47 +866,128 @@ namespace GMEPPlumbing
             }
         }
     }
-
-    /*public void PropagateUpRouteInfo(Transaction tr, string layer, string RefId)
+    public void Db_ObjectErased(object sender, ObjectErasedEventArgs e)
     {
-        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
-        List<string> blockNames = new List<string>
+        try
         {
-            "GMEP_PLUMBING_LINE_UP",
-            "GMEP_PLUMBING_LINE_DOWN",
-            "GMEP_PLUMBING_LINE_VERTICAL"
-        };
-        Dictionary<string, List<ObjectId>> fedFromRefs = new Dictionary<string, List<ObjectId>>();
-        foreach (var name in blockNames)
-        {
-            BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
-
-            foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+            if (e.Erased && !SettingObjects)
             {
-                if (id.IsValid)
+                ed.WriteMessage($"\nObject {e.DBObject.ObjectId} was erased.");
+                Entity obj = e.DBObject as Entity;
+                if (obj is BlockReference blockRef)
                 {
-                    using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord)
+                    string VerticalRouteId = string.Empty;
+                    var properties = blockRef.DynamicBlockReferencePropertyCollection;
+                    foreach (DynamicBlockReferenceProperty prop in properties)
                     {
-                        if (anonymousBtr != null)
+                        if (prop.PropertyName == "vertical_route_id")
                         {
-                            foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                            VerticalRouteId = prop.Value?.ToString();
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(VerticalRouteId))
+                    {
+                        SettingObjects = true;
+                        using (Transaction tr = db.TransactionManager.StartTransaction())
+                        {
+                            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+                            List<string> blockNames = new List<string>
                             {
-                                var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-                                var pc = entity.DynamicBlockReferencePropertyCollection;
-                                bool match = false;
-                                string newId = "";
-                                foreach (DynamicBlockReferenceProperty prop in pc)
+                                "GMEP_PLUMBING_LINE_UP",
+                                "GMEP_PLUMBING_LINE_DOWN",
+                                "GMEP_PLUMBING_LINE_VERTICAL"
+                            };
+                            foreach (var name in blockNames)
+                            {
+                                BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
+                                foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
                                 {
-                                    if (prop.PropertyName == "fed_from_id")
+                                    if (id.IsValid)
                                     {
-                                        if (fedFromRefs.ContainsKey(prop.Value.ToString()))
+                                        using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord)
                                         {
-                                            fedFromRefs[prop.Value.ToString()].Add(entity.ObjectId);
+                                            if (anonymousBtr != null)
+                                            {
+                                                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                                {
+                                                    if (objId.IsValid)
+                                                    {
+                                                        var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+                                                    
+                                                        var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                                                        foreach (DynamicBlockReferenceProperty prop in pc)
+                                                        {
+                                                            if (prop.PropertyName == "vertical_route_id" &&
+                                                                prop.Value?.ToString() == VerticalRouteId)
+                                                            {
+
+                                                                entity.Erase();
+
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
-                                        else
+                                    }
+                                }
+                            }
+                            tr.Commit();
+                        }
+                        SettingObjects = false;
+                    }
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            ed.WriteMessage($"\nError in Db_ObjectErased: {ex.Message}");
+        }
+    }
+
+
+        /*public void PropagateUpRouteInfo(Transaction tr, string layer, string RefId)
+        {
+            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+            List<string> blockNames = new List<string>
+            {
+                "GMEP_PLUMBING_LINE_UP",
+                "GMEP_PLUMBING_LINE_DOWN",
+                "GMEP_PLUMBING_LINE_VERTICAL"
+            };
+            Dictionary<string, List<ObjectId>> fedFromRefs = new Dictionary<string, List<ObjectId>>();
+            foreach (var name in blockNames)
+            {
+                BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
+
+                foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+                {
+                    if (id.IsValid)
+                    {
+                        using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord)
+                        {
+                            if (anonymousBtr != null)
+                            {
+                                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                {
+                                    var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                                    var pc = entity.DynamicBlockReferencePropertyCollection;
+                                    bool match = false;
+                                    string newId = "";
+                                    foreach (DynamicBlockReferenceProperty prop in pc)
+                                    {
+                                        if (prop.PropertyName == "fed_from_id")
                                         {
-                                            fedFromRefs.Add(prop.Value.ToString(), new List<ObjectId> { entity.ObjectId });
+                                            if (fedFromRefs.ContainsKey(prop.Value.ToString()))
+                                            {
+                                                fedFromRefs[prop.Value.ToString()].Add(entity.ObjectId);
+                                            }
+                                            else
+                                            {
+                                                fedFromRefs.Add(prop.Value.ToString(), new List<ObjectId> { entity.ObjectId });
+                                            }
                                         }
                                     }
                                 }
@@ -914,60 +996,59 @@ namespace GMEPPlumbing
                     }
                 }
             }
-        }
-        foreach (ObjectId entId in modelSpace)
-        {
-            Entity ent = tr.GetObject(entId, OpenMode.ForRead) as Entity;
-            if (ent is Line line)
+            foreach (ObjectId entId in modelSpace)
             {
-                if (line.XData != null)
+                Entity ent = tr.GetObject(entId, OpenMode.ForRead) as Entity;
+                if (ent is Line line)
                 {
-                    TypedValue[] values = line.XData.AsArray();
-                    string FedFromId = values[2].Value as string;
-                    if (fedFromRefs.ContainsKey(FedFromId))
-                    {
-                        fedFromRefs[FedFromId].Add(line.ObjectId);
-                    }
-                    else
-                    {
-                        fedFromRefs.Add(FedFromId, new List<ObjectId> { line.ObjectId });
-                    }
-                }
-            }
-        }
-        SetRouteInfo(tr, fedFromRefs, layer, RefId);
-
-    }
-    public void SetRouteInfo(Transaction tr, Dictionary<string, List<ObjectId>> FedFromRefs, string layer, string refId)
-    {
-        if (FedFromRefs.ContainsKey(refId))
-        {
-                foreach (ObjectId objId in FedFromRefs[refId])
-                {
-                    Entity entity = (Entity)tr.GetObject(objId, OpenMode.ForWrite);
-                    entity.Layer = layer;
-                    if (entity is BlockReference blockRef)
-                    {
-                        DynamicBlockReferencePropertyCollection properties = blockRef.DynamicBlockReferencePropertyCollection;
-                        foreach (DynamicBlockReferenceProperty prop in properties)
-                        {
-                            if (prop.PropertyName == "id")
-                            {
-                                SetRouteInfo(tr, FedFromRefs, layer, prop.Value.ToString());
-                            }
-                        }
-                    }
-                    else if (entity is Line line)
+                    if (line.XData != null)
                     {
                         TypedValue[] values = line.XData.AsArray();
-                        string LineId = values[1].Value as string;
-                        SetRouteInfo(tr, FedFromRefs, layer, LineId);
+                        string FedFromId = values[2].Value as string;
+                        if (fedFromRefs.ContainsKey(FedFromId))
+                        {
+                            fedFromRefs[FedFromId].Add(line.ObjectId);
+                        }
+                        else
+                        {
+                            fedFromRefs.Add(FedFromId, new List<ObjectId> { line.ObjectId });
+                        }
                     }
                 }
             }
-    }*/
+            SetRouteInfo(tr, fedFromRefs, layer, RefId);
 
-    public void WriteMessage(string message)
+        }
+        public void SetRouteInfo(Transaction tr, Dictionary<string, List<ObjectId>> FedFromRefs, string layer, string refId)
+        {
+            if (FedFromRefs.ContainsKey(refId))
+            {
+                    foreach (ObjectId objId in FedFromRefs[refId])
+                    {
+                        Entity entity = (Entity)tr.GetObject(objId, OpenMode.ForWrite);
+                        entity.Layer = layer;
+                        if (entity is BlockReference blockRef)
+                        {
+                            DynamicBlockReferencePropertyCollection properties = blockRef.DynamicBlockReferencePropertyCollection;
+                            foreach (DynamicBlockReferenceProperty prop in properties)
+                            {
+                                if (prop.PropertyName == "id")
+                                {
+                                    SetRouteInfo(tr, FedFromRefs, layer, prop.Value.ToString());
+                                }
+                            }
+                        }
+                        else if (entity is Line line)
+                        {
+                            TypedValue[] values = line.XData.AsArray();
+                            string LineId = values[1].Value as string;
+                            SetRouteInfo(tr, FedFromRefs, layer, LineId);
+                        }
+                    }
+                }
+        }*/
+
+        public void WriteMessage(string message)
     {
       ed.WriteMessage(message);
     }
@@ -1122,7 +1203,6 @@ namespace GMEPPlumbing
 
     private void UpdateXRecordAfterDataLoad()
     {
-      Document doc = Application.DocumentManager.MdiActiveDocument;
       using (DocumentLock docLock = doc.LockDocument())
       {
         using (Transaction tr = db.TransactionManager.StartTransaction())
