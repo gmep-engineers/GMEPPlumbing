@@ -86,8 +86,9 @@ namespace GMEPPlumbing
             
             string FedFromId = "";
             string layer = "";
+            string LineGUID = Guid.NewGuid().ToString();
 
-            // Check if the selected object is a BlockReference or Line
+                // Check if the selected object is a BlockReference or Line
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 Entity basePoint = (Entity)tr.GetObject(basePointId, OpenMode.ForRead);
@@ -150,15 +151,12 @@ namespace GMEPPlumbing
                 peo1.Keywords.Add("Point"); 
                 peo1.AllowNone = false; // Allow clicking in empty space
                 peo1.SetRejectMessage("\nSelect a valid object or pick a point.");
-                peo1.AddAllowedClass(typeof(Line), true);
+                //peo1.AddAllowedClass(typeof(Line), true);
                 peo1.AddAllowedClass(typeof(BlockReference), true);
                 PromptEntityResult per1 = ed.GetEntity(peo1);
 
-                if (per1.Status == PromptStatus.OK)
-                {
-                        //:3
-                }
-                else if (per1.Status == PromptStatus.Keyword && per1.StringResult == "Point")
+                
+                if (per1.Status == PromptStatus.Keyword && per1.StringResult == "Point")
                 {
                     PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for route: ");
                     ppo.BasePoint = startPointLocation;
@@ -179,10 +177,47 @@ namespace GMEPPlumbing
                     tr.AddNewlyCreatedDBObject(line, true);
                     addedLineId =line.ObjectId;
                 }
+                else if (per1.Status == PromptStatus.OK)
+                {
+                    ObjectId endObjectId = per1.ObjectId;
+                    Entity endEntity = (Entity)tr.GetObject(endObjectId, OpenMode.ForRead);
+                    if (endEntity is BlockReference endBlockRef)
+                    {
+                        DynamicBlockReferencePropertyCollection properties = endBlockRef.DynamicBlockReferencePropertyCollection;
+                        foreach (DynamicBlockReferenceProperty prop in properties)
+                        {
+                            if (prop.PropertyName == "Connection X")
+                            {
+                                pointX = Convert.ToInt32(prop.Value);
+                            }
+                            if (prop.PropertyName == "Connection Y")
+                            {
+                                pointY = Convert.ToInt32(prop.Value);
+                            }
+                            if (prop.PropertyName == "fed_from_id")
+                            {
+                                FedFromId = prop.Value.ToString();
+                            }
+                        }
+                        if (pointX != 0 || pointY != 0)
+                        {
+                            double rotation = endBlockRef.Rotation;
+                            double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
+                            double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
+                            startPointLocation = new Point3d(endBlockRef.Position.X + rotatedX, endBlockRef.Position.Y + rotatedY, 0);
+                        }
+                    }
+                    /* else if (endEntity is Line endLine)
+                        {
+                            startPointLocation = endLine.EndPoint;
+                        }*/
+
+                    //backwards tracking logic here, need to set layers and arrow directions, setting fedfromid on 
+                }
 
                 tr.Commit();
             }
-            string LineGUID = Guid.NewGuid().ToString();
+           
             AttachRouteXData(addedLineId, LineGUID, FedFromId);
             AddArrowsToLine(addedLineId, LineGUID);
         }
