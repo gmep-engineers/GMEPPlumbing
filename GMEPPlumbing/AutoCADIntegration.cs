@@ -59,13 +59,16 @@ namespace GMEPPlumbing
     public Editor ed { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
 
-    [CommandMethod("PlumbingHorizontalRoute")]
-    public async void PlumbingHorizontalRoute()
+    public AutoCADIntegration()
     {
         doc = Application.DocumentManager.MdiActiveDocument;
         db = doc.Database;
         ed = doc.Editor;
-            
+    }
+
+    [CommandMethod("PlumbingHorizontalRoute")]
+    public async void PlumbingHorizontalRoute()
+    {
         while (true)
         {
             //Select a starting point/object
@@ -101,7 +104,7 @@ namespace GMEPPlumbing
                     return;
                 }
 
-                    //get blockreference choice
+                //get blockreference choice
                 if (basePoint is BlockReference basePointRef)
                 {
                     if (basePointRef != null)
@@ -242,10 +245,6 @@ namespace GMEPPlumbing
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute()
     {
-        doc = Application.DocumentManager.MdiActiveDocument;
-        db = doc.Database;
-        ed = doc.Editor;
-
         List<ObjectId> basePointIds = new List<ObjectId>();
         int startFloor = 0;
         Point3d StartBasePointLocation = new Point3d(0, 0, 0);
@@ -682,10 +681,6 @@ namespace GMEPPlumbing
     [CommandMethod("SETPLUMBINGBASEPOINT")]
     public async void SetPlumbingBasePoint()
     {
-        doc = Application.DocumentManager.MdiActiveDocument;
-        db = doc.Database;
-        ed = doc.Editor;
-
 
         var prompt = new Views.BasePointPromptWindow();
         bool? result = prompt.ShowDialog();
@@ -782,9 +777,6 @@ namespace GMEPPlumbing
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       ProjectId = await MariaDBService.GetProjectId(projectNo);
 
-      doc = Application.DocumentManager.MdiActiveDocument;
-      db = doc.Database;
-      ed = doc.Editor;
 
       RetrieveOrCreateDrawingId();
       InitializeUserInterface();
