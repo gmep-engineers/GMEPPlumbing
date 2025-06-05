@@ -197,7 +197,7 @@ namespace GMEPPlumbing
                             }
                             if (prop.PropertyName == "fed_from_id")
                             {
-                                FedFromId = prop.Value.ToString();
+                               prop.Value = LineGUID; 
                             }
                         }
                         if (pointX != 0 || pointY != 0)
@@ -225,6 +225,7 @@ namespace GMEPPlumbing
                     btr.AppendEntity(line);
                     tr.AddNewlyCreatedDBObject(line, true);
                     addedLineId =line.ObjectId;
+
 
                     //backwards tracking logic here, need to set layers and arrow directions, setting fedfromid on 
                 }
