@@ -101,7 +101,7 @@ namespace GMEPPlumbing
 
 
 
-            PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
+        PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
         ppo2.AllowNone = false;
         PromptPointResult ppr2 = ed.GetPoint(ppo2);
         if (ppr2.Status != PromptStatus.OK)
@@ -233,6 +233,39 @@ namespace GMEPPlumbing
         doc = Application.DocumentManager.MdiActiveDocument;
         db = doc.Database;
         ed = doc.Editor;
+
+        string layer = "Defpoints";
+
+        PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
+        pko.Keywords.Add("HotWater");
+        pko.Keywords.Add("ColdWater");
+        pko.Keywords.Add("Gas");
+        // pko.Keywords.Add("Sewer");
+        //pko.Keywords.Add("Storm");
+        PromptResult pr2 = ed.GetKeywords(pko);
+        string result = pr2.StringResult;
+
+        switch (result)
+        {
+            case "HotWater":
+                layer = "P-DOMW-HOTW";
+                break;
+            case "ColdWater":
+                layer = "P-DOMW-CWTR";
+                break;
+            case "Gas":
+                layer = "P-GAS";
+                break;
+            /* case "Sewer":
+                    layer = "GMEP_PLUMBING_SEWER";
+                    break;
+                case "Storm":
+                    layer = "GMEP_PLUMBING_STORM";
+                    break;*/
+            default:
+                ed.WriteMessage("\nInvalid route type selected.");
+                return;
+        }
 
         List<ObjectId> basePointIds = new List<ObjectId>();
         int startFloor = 0;
@@ -370,7 +403,7 @@ namespace GMEPPlumbing
                 );
                 if (br != null)
                 {
-                    br.Layer = "Defpoints";
+                    br.Layer = layer;
                     BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
                     curSpace.AppendEntity(br);
                     tr.AddNewlyCreatedDBObject(br, true);
@@ -449,7 +482,7 @@ namespace GMEPPlumbing
                 {
                     return;
                 }
-                upBlockRef2.Layer = "Defpoints";
+                upBlockRef2.Layer = layer;
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
 
@@ -488,7 +521,7 @@ namespace GMEPPlumbing
 
                     // Create the BlockReference at the desired location
                     BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
-                    upBlockRef.Layer = "Defpoints";
+                    upBlockRef.Layer = layer;
                     curSpace.AppendEntity(upBlockRef);
                     tr.AddNewlyCreatedDBObject(upBlockRef, true);
                     var pc2 = upBlockRef.DynamicBlockReferencePropertyCollection;
@@ -523,7 +556,7 @@ namespace GMEPPlumbing
                 {
                     return;
                 }
-                upBlockRef3.Layer = "Defpoints";
+                upBlockRef3.Layer = layer;
                 curSpace3.AppendEntity(upBlockRef3);
                 tr.AddNewlyCreatedDBObject(upBlockRef3, true);
                 var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
@@ -568,7 +601,7 @@ namespace GMEPPlumbing
                 {
                     return;
                 }
-                upBlockRef2.Layer = "Defpoints";
+                upBlockRef2.Layer = layer;
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
                 var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
@@ -604,7 +637,7 @@ namespace GMEPPlumbing
 
                     // Create the BlockReference at the desired location
                     BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
-                    upBlockRef.Layer = "Defpoints";
+                    upBlockRef.Layer = layer;
                     curSpace.AppendEntity(upBlockRef);
                     tr.AddNewlyCreatedDBObject(upBlockRef, true);
                     var pc = upBlockRef.DynamicBlockReferencePropertyCollection;
@@ -639,7 +672,7 @@ namespace GMEPPlumbing
                 {
                     return;
                 }
-                upBlockRef3.Layer = "Defpoints";
+                upBlockRef3.Layer = layer;
                 curSpace3.AppendEntity(upBlockRef3);
                 tr.AddNewlyCreatedDBObject(upBlockRef3, true);
                     var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
