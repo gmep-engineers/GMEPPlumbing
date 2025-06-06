@@ -41,12 +41,7 @@ using System.Windows.Controls;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
-
-
-
-
-
-
+[assembly: ExtensionApplication(typeof(GMEPPlumbing.PluginEntry))]
 
 
 namespace GMEPPlumbing
@@ -63,13 +58,11 @@ namespace GMEPPlumbing
     private DateTime newCreationTime;
     public MariaDBService MariaDBService { get; set; } = new MariaDBService();
     public static bool IsSaving { get; private set; } 
-    public bool SettingObjects { get; set; }
+    public static bool SettingObjects { get; set; }
     public Document doc { get; private set; }
     public Database db { get; private set; }
     public Editor ed { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
-
-    static bool handlerMounted = false;
 
     public AutoCADIntegration()
     {
@@ -78,17 +71,20 @@ namespace GMEPPlumbing
         ed = doc.Editor;
         SettingObjects = false;
         IsSaving = false;
+    }
+    public static void AttachHandlers(Document doc)
+    {
+        var db = doc.Database;
+        var ed = doc.Editor;
 
-        if (!handlerMounted)
-        {
-            db.BeginSave += (s, e) => IsSaving = true;
-            db.SaveComplete += (s, e) => IsSaving = false;
-            db.AbortSave += (s, e) => IsSaving = false;
+        // Prevent multiple attachments
 
-            db.ObjectErased -= Db_VerticalRouteErased;
-            db.ObjectErased += Db_VerticalRouteErased;
-            handlerMounted = true;
-        }
+        db.BeginSave += (s, e) => IsSaving = true;
+        db.SaveComplete += (s, e) => IsSaving = false;
+        db.AbortSave += (s, e) => IsSaving = false;
+        db.ObjectErased -= Db_VerticalRouteErased;
+        db.ObjectErased += Db_VerticalRouteErased;
+        // ... attach other handlers as needed ...
     }
 
     [CommandMethod("PlumbingHorizontalRoute")]
@@ -1278,9 +1274,12 @@ namespace GMEPPlumbing
         return DateTime.UtcNow;
       }
     }
-    public void Db_VerticalRouteErased(object sender, ObjectErasedEventArgs e)
+    public static void Db_VerticalRouteErased(object sender, ObjectErasedEventArgs e)
     {
-        try
+            var doc = Application.DocumentManager.MdiActiveDocument;
+            var db = doc.Database;
+            var ed = doc.Editor;
+            try
         {
             if (e.Erased && !SettingObjects && !IsSaving)
             {
@@ -1360,4 +1359,34 @@ namespace GMEPPlumbing
     }
 
   }
+    public class PluginEntry : IExtensionApplication
+    {
+        public void Initialize()
+        {
+            // Attach to document events
+            Application.DocumentManager.DocumentCreated += DocumentManager_DocumentCreated;
+            Application.DocumentManager.DocumentActivated += DocumentManager_DocumentActivated;
+
+            // Optionally, initialize for already open documents
+            foreach (Document doc in Application.DocumentManager)
+            {
+                AutoCADIntegration.AttachHandlers(doc);
+            }
+        }
+
+        public void Terminate()
+        {
+            // Clean up if needed
+        }
+
+        private void DocumentManager_DocumentCreated(object sender, DocumentCollectionEventArgs e)
+        {
+            AutoCADIntegration.AttachHandlers(e.Document);
+        }
+
+        private void DocumentManager_DocumentActivated(object sender, DocumentCollectionEventArgs e)
+        {
+            AutoCADIntegration.AttachHandlers(e.Document);
+        }
+    }
 }
