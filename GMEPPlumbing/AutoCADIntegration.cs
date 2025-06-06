@@ -1285,14 +1285,13 @@ namespace GMEPPlumbing
 
                         using (Transaction tr = db.TransactionManager.StartTransaction())
                         {
-                            Dictionary<string, List<ObjectId>> fedFromRefs = GetFedFromRefs(tr);
                             BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
                             List<string> blockNames = new List<string>
-                        {
-                            "GMEP_PLUMBING_LINE_UP",
-                            "GMEP_PLUMBING_LINE_DOWN",
-                            "GMEP_PLUMBING_LINE_VERTICAL"
-                        };
+                            {
+                                "GMEP_PLUMBING_LINE_UP",
+                                "GMEP_PLUMBING_LINE_DOWN",
+                                "GMEP_PLUMBING_LINE_VERTICAL"
+                            };
                             foreach (var name in blockNames)
                             {
                                 BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
@@ -1304,9 +1303,8 @@ namespace GMEPPlumbing
                                         {
                                             if (anonymousBtr != null)
                                             {
-                                                ObjectIdCollection blockIds = anonymousBtr.GetBlockReferenceIds(true, false);
-                                                blockIds.Add(e.DBObject.ObjectId);
-                                                foreach (ObjectId objId in blockIds)
+                                      
+                                                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
                                                 {
                                                     if (objId.IsValid)
                                                     {
@@ -1314,44 +1312,19 @@ namespace GMEPPlumbing
 
                                                         var pc = entity.DynamicBlockReferencePropertyCollection;
 
-                                                        string GUID = "";
-                                                        bool match = false;
-
                                                         foreach (DynamicBlockReferenceProperty prop in pc)
                                                         {
                                                             if (prop.PropertyName == "vertical_route_id" &&
                                                                 prop.Value?.ToString() == VerticalRouteId)
                                                             {
-
-                                                                match = true;
-
+                                                                    entity.Erase();
                                                             }
                                                             if (prop.PropertyName == "id")
                                                             {
                                                                 GUID = prop.Value?.ToString();
                                                             }
                                                         }
-                                                        if (match)
-                                                        {
-                                                            SetRouteInfo(tr, fedFromRefs, "Defpoints", GUID);
-                                                            entity.Erase();
-                                                            if (fedFromRefs.ContainsKey(GUID))
-                                                            {
-                                                                foreach (ObjectId lineId in fedFromRefs[GUID])
-                                                                {
-                                                                    if (lineId.IsValid)
-                                                                    {
-                                                                        Entity lineEntity = tr.GetObject(lineId, OpenMode.ForWrite) as Entity;
-                                                                        if (lineEntity != null)
-                                                                        {
-                                                                            lineEntity.Erase();
-                                                                            deleteLines(tr, fedFromRefs, GUID);
-                                                                        }
-                                                                    }
-                                                                }
-                                                                fedFromRefs.Remove(GUID);
-                                                            }
-                                                        }
+                                                       
                                                     }
                                                 }
                                             }
