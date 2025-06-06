@@ -65,9 +65,43 @@ namespace GMEPPlumbing
         doc = Application.DocumentManager.MdiActiveDocument;
         db = doc.Database;
         ed = doc.Editor;
+        List <string> routeGUIDS = new List<string>();
+        string layer = "Defpoints";
+
+        PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
+        pko.Keywords.Add("HotWater");
+        pko.Keywords.Add("ColdWater");
+        pko.Keywords.Add("Gas");
+       // pko.Keywords.Add("Sewer");
+       //pko.Keywords.Add("Storm");
+        PromptResult pr = ed.GetKeywords(pko);
+        string result = pr.StringResult;
+
+        switch (result)
+        {
+            case "HotWater":
+                layer = "P-DOMW-HOTW";
+                break;
+            case "ColdWater":
+                layer = "P-DOMW-CWTR";
+                break;
+            case "Gas":
+                layer = "P-GAS";
+                break;
+           /* case "Sewer":
+                layer = "GMEP_PLUMBING_SEWER";
+                break;
+            case "Storm":
+                layer = "GMEP_PLUMBING_STORM";
+                break;*/
+            default:
+                ed.WriteMessage("\nInvalid route type selected.");
+                return;
+        }
 
 
-        PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
+
+            PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
         ppo2.AllowNone = false;
         PromptPointResult ppr2 = ed.GetPoint(ppo2);
         if (ppr2.Status != PromptStatus.OK)
@@ -78,7 +112,6 @@ namespace GMEPPlumbing
 
         Point3d startPointLocation2 = ppr2.Value;
         ObjectId addedLineId2 = ObjectId.Null;
-        string layer2 = "Defpoints";
         string LineGUID2 = Guid.NewGuid().ToString();
 
         PromptPointOptions ppo3 = new PromptPointOptions("\nSpecify next point for route: ");
@@ -99,12 +132,13 @@ namespace GMEPPlumbing
                 Line line = new Line();
                 line.StartPoint =  startPointLocation2;
                 line.EndPoint = endPointLocation2;
-                line.Layer = layer2;
+                line.Layer = layer;
                 btr.AppendEntity(line);
                 tr2.AddNewlyCreatedDBObject(line, true);
                 addedLineId2 =line.ObjectId;
                 tr2.Commit();
         }
+        routeGUIDS.Add(LineGUID2);
         AttachRouteXData(addedLineId2, LineGUID2);
         AddArrowsToLine(addedLineId2, LineGUID2);
 
@@ -126,8 +160,7 @@ namespace GMEPPlumbing
             Point3d startPointLocation = Point3d.Origin;
             ObjectId addedLineId = ObjectId.Null;
             
-            string FedFromId = "";
-            string layer = "";
+        
             string LineGUID = Guid.NewGuid().ToString();
 
             // Check if the selected object is a BlockReference or Line
@@ -145,7 +178,15 @@ namespace GMEPPlumbing
                         ed.WriteMessage("\nSelected line does not have the required XData.");
                         return;
                     }
-                 
+                    TypedValue[] values = xData.AsArray();
+                    string Id = values[1].Value as string;
+                    if (!routeGUIDS.Contains(Id))
+                    {
+                        ed.WriteMessage("\nSelected line is not part of the active route.");
+                        continue;
+                    }
+
+
                     //Placing Line
                     LineStartPointPreviewJig jig = new LineStartPointPreviewJig(basePointLine);
                     PromptResult jigResult = ed.Drag(jig);
@@ -180,7 +221,7 @@ namespace GMEPPlumbing
 
                 tr.Commit();
             }
-           
+            routeGUIDS.Add(LineGUID);
             AttachRouteXData(addedLineId, LineGUID);
             AddArrowsToLine(addedLineId, LineGUID);
         }
