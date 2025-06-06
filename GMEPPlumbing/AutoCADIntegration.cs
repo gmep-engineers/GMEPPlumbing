@@ -56,7 +56,7 @@ namespace GMEPPlumbing
     private DateTime newCreationTime;
     public bool SettingObjects { get; set; }
     public MariaDBService MariaDBService { get; set; } = new MariaDBService();
-
+    public static bool IsSaving { get; private set; } = false;
     public Document doc { get; private set; }
     public Database db { get; private set; }
     public Editor ed { get; private set; }
@@ -71,9 +71,14 @@ namespace GMEPPlumbing
         ed = doc.Editor;
         SettingObjects = false;
 
+        db.BeginSave += (s, e) => IsSaving = true;
+        db.SaveComplete += (s, e) => IsSaving = false;
+        db.AbortSave += (s, e) => IsSaving = false;
+
         //db.ObjectErased += DB_LineErased; 
         db.ObjectErased -= Db_VerticalRouteErased; 
         db.ObjectErased += Db_VerticalRouteErased;
+
 
         // Initialize the MongoDB service
     }
@@ -875,7 +880,7 @@ namespace GMEPPlumbing
     {
         try
         {
-            if (e.Erased && !SettingObjects)
+            if (e.Erased && !SettingObjects && !IsSaving)
             {
                 ed.WriteMessage($"\nObject {e.DBObject.ObjectId} was erased.");
                 Entity obj = e.DBObject as Entity;
@@ -893,7 +898,6 @@ namespace GMEPPlumbing
                     if (!string.IsNullOrEmpty(VerticalRouteId))
                     {
                         SettingObjects = true;
-                      
 
                         using (Transaction tr = db.TransactionManager.StartTransaction())
                         {
@@ -1085,7 +1089,7 @@ namespace GMEPPlumbing
     }
     public void DB_LineErased(object sender, ObjectErasedEventArgs e)
     {
-        if (e.Erased && !SettingObjects)
+        if (e.Erased && !SettingObjects && !IsSaving)
         {
             SettingObjects = true;
           
