@@ -69,6 +69,8 @@ namespace GMEPPlumbing
     public Editor ed { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
 
+    static bool handlerMounted = false;
+
     public AutoCADIntegration()
     {
         doc = Application.DocumentManager.MdiActiveDocument;
@@ -77,12 +79,16 @@ namespace GMEPPlumbing
         SettingObjects = false;
         IsSaving = false;
 
-        db.BeginSave += (s, e) => IsSaving = true;
-        db.SaveComplete += (s, e) => IsSaving = false;
-        db.AbortSave += (s, e) => IsSaving = false;
+        if (!handlerMounted)
+        {
+            db.BeginSave += (s, e) => IsSaving = true;
+            db.SaveComplete += (s, e) => IsSaving = false;
+            db.AbortSave += (s, e) => IsSaving = false;
 
-        db.ObjectErased -= Db_VerticalRouteErased;
-        db.ObjectErased += Db_VerticalRouteErased;
+            db.ObjectErased -= Db_VerticalRouteErased;
+            db.ObjectErased += Db_VerticalRouteErased;
+            handlerMounted = true;
+        }
     }
 
     [CommandMethod("PlumbingHorizontalRoute")]
@@ -479,7 +485,7 @@ namespace GMEPPlumbing
             }
             tr.Commit();
         }
-       
+        SettingObjects = true;
         if (endFloor > startFloor)
         {
             using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -607,6 +613,8 @@ namespace GMEPPlumbing
                 //delete previous start pipe
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockReference startPipe = tr.GetObject(startPipeId, OpenMode.ForWrite) as BlockReference;
+                
+   
                 startPipe.Erase(true);
 
                 //start pipe
@@ -715,6 +723,7 @@ namespace GMEPPlumbing
                     tr.Commit();
             }
         }
+        SettingObjects = false;
     }
 
 
