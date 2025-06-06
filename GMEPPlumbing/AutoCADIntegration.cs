@@ -69,8 +69,10 @@ namespace GMEPPlumbing
         db = doc.Database;
         ed = doc.Editor;
         SettingObjects = false;
-        db.ObjectErased -= Db_ObjectErased; 
-        db.ObjectErased += Db_ObjectErased;
+
+        db.ObjectErased += DB_LineErased; 
+        db.ObjectErased += Db_VerticalRouteErased;
+
         // Initialize the MongoDB service
     }
 
@@ -867,7 +869,7 @@ namespace GMEPPlumbing
             }
         }
     }
-    public void Db_ObjectErased(object sender, ObjectErasedEventArgs e)
+    public void Db_VerticalRouteErased(object sender, ObjectErasedEventArgs e)
     {
         try
         {
@@ -891,7 +893,31 @@ namespace GMEPPlumbing
                         SettingObjects = true;
                         using (Transaction tr = db.TransactionManager.StartTransaction())
                         {
+                            Dictionary<string, List<ObjectId>> fedFromRefs = new Dictionary<string, List<ObjectId>>();
                             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+                            
+                            //getting lines
+                            BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+                            foreach (ObjectId entId in modelSpace)
+                            {
+                                Entity ent = tr.GetObject(entId, OpenMode.ForRead) as Entity;
+                                if (ent is Line line)
+                                {
+                                    if (line.XData != null)
+                                    {
+                                        TypedValue[] values = line.XData.AsArray();
+                                        string FedFromId = values[2].Value as string;
+                                        if (fedFromRefs.ContainsKey(FedFromId))
+                                        {
+                                            fedFromRefs[FedFromId].Add(line.ObjectId);
+                                        }
+                                        else
+                                        {
+                                            fedFromRefs.Add(FedFromId, new List<ObjectId> { line.ObjectId });
+                                        }
+                                    }
+                                }
+                            }
                             List<string> blockNames = new List<string>
                             {
                                 "GMEP_PLUMBING_LINE_UP",
@@ -917,15 +943,41 @@ namespace GMEPPlumbing
                                                     
                                                         var pc = entity.DynamicBlockReferencePropertyCollection;
 
+                                                        string GUID = "";
+                                                        bool match = false;
+                                                        
                                                         foreach (DynamicBlockReferenceProperty prop in pc)
                                                         {
                                                             if (prop.PropertyName == "vertical_route_id" &&
                                                                 prop.Value?.ToString() == VerticalRouteId)
                                                             {
 
-                                                                entity.Erase();
+                                                                match = true;
 
                                                             }
+                                                            if (prop.PropertyName == "id")
+                                                            {
+                                                                GUID = prop.Value?.ToString();
+                                                            }
+                                                        }
+                                                        if (match)
+                                                        {
+                                                            entity.Erase();
+                                                            if (fedFromRefs.ContainsKey(GUID))
+                                                            { 
+                                                                foreach (ObjectId lineId in fedFromRefs[GUID])
+                                                                {
+                                                                    if (lineId.IsValid)
+                                                                    {
+                                                                        Entity lineEntity = tr.GetObject(lineId, OpenMode.ForWrite) as Entity;
+                                                                        if (lineEntity != null)
+                                                                        {
+                                                                            lineEntity.Erase();
+                                                                        }
+                                                                    }
+                                                                }
+                                                                fedFromRefs.Remove(GUID);
+                                                            } 
                                                         }
                                                     }
                                                 }
@@ -946,6 +998,96 @@ namespace GMEPPlumbing
             ed.WriteMessage($"\nError in Db_ObjectErased: {ex.Message}");
         }
     }
+    public void DB_LineErased(object sender, ObjectErasedEventArgs e)
+    {
+        if (e.Erased)
+        {
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+                BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+                List<string> blockNames = new List<string>
+                {
+                    "GMEP_PLUMBING_LINE_UP",
+                    "GMEP_PLUMBING_LINE_DOWN",
+                    "GMEP_PLUMBING_LINE_VERTICAL"
+                };
+                Dictionary<string, List<ObjectId>> fedFromRefs = new Dictionary<string, List<ObjectId>>();
+                foreach (var name in blockNames)
+                {
+                    BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
+
+                    foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+                    {
+                        if (id.IsValid)
+                        {
+                            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord)
+                            {
+                                if (anonymousBtr != null)
+                                {
+                                    foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                    {
+                                        var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                                        var pc = entity.DynamicBlockReferencePropertyCollection;
+                                        bool match = false;
+                                        string newId = "";
+                                        foreach (DynamicBlockReferenceProperty prop in pc)
+                                        {
+                                            if (prop.PropertyName == "fed_from_id")
+                                            {
+                                                if (fedFromRefs.ContainsKey(prop.Value.ToString()))
+                                                {
+                                                    fedFromRefs[prop.Value.ToString()].Add(entity.ObjectId);
+                                                }
+                                                else
+                                                {
+                                                    fedFromRefs.Add(prop.Value.ToString(), new List<ObjectId> { entity.ObjectId });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                foreach (ObjectId entId in modelSpace)
+                {
+                    Entity ent = tr.GetObject(entId, OpenMode.ForRead) as Entity;
+                    if (ent is Line line)
+                    {
+                        if (line.XData != null)
+                        {
+                            TypedValue[] values = line.XData.AsArray();
+                            string FedFromId = values[2].Value as string;
+                            if (fedFromRefs.ContainsKey(FedFromId))
+                            {
+                                fedFromRefs[FedFromId].Add(line.ObjectId);
+                            }
+                            else
+                            {
+                                fedFromRefs.Add(FedFromId, new List<ObjectId> { line.ObjectId });
+                            }
+                        }
+                    }
+                }
+                if (e.DBObject is Entity objEntity)
+                {
+                    if (objEntity is Line line)
+                    {
+                        if (line.XData != null)
+                        {
+                            TypedValue[] values = line.XData.AsArray();
+                            string id = values[1].Value as string;
+                            SetRouteInfo(tr, fedFromRefs, "Defpoints", id);
+                        }
+                    }
+                }
+
+            }
+         }
+    }
+
 
 
         /*public void PropagateUpRouteInfo(Transaction tr, string layer, string RefId)
@@ -1019,7 +1161,7 @@ namespace GMEPPlumbing
             }
             SetRouteInfo(tr, fedFromRefs, layer, RefId);
 
-        }
+        }*/
         public void SetRouteInfo(Transaction tr, Dictionary<string, List<ObjectId>> FedFromRefs, string layer, string refId)
         {
             if (FedFromRefs.ContainsKey(refId))
@@ -1047,7 +1189,7 @@ namespace GMEPPlumbing
                         }
                     }
                 }
-        }*/
+        }
 
         public void WriteMessage(string message)
     {
