@@ -1260,6 +1260,117 @@ namespace GMEPPlumbing
         return DateTime.UtcNow;
       }
     }
+    public void Db_VerticalRouteErased(object sender, ObjectErasedEventArgs e)
+    {
+        try
+        {
+            if (e.Erased && !SettingObjects && !IsSaving)
+            {
+                ed.WriteMessage($"\nObject {e.DBObject.ObjectId} was erased.");
+                Entity obj = e.DBObject as Entity;
+                if (obj is BlockReference blockRef)
+                {
+                    string VerticalRouteId = string.Empty;
+                    var properties = blockRef.DynamicBlockReferencePropertyCollection;
+                    foreach (DynamicBlockReferenceProperty prop in properties)
+                    {
+                        if (prop.PropertyName == "vertical_route_id")
+                        {
+                            VerticalRouteId = prop.Value?.ToString();
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(VerticalRouteId))
+                    {
+                        SettingObjects = true;
+
+                        using (Transaction tr = db.TransactionManager.StartTransaction())
+                        {
+                            Dictionary<string, List<ObjectId>> fedFromRefs = GetFedFromRefs(tr);
+                            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+                            List<string> blockNames = new List<string>
+                        {
+                            "GMEP_PLUMBING_LINE_UP",
+                            "GMEP_PLUMBING_LINE_DOWN",
+                            "GMEP_PLUMBING_LINE_VERTICAL"
+                        };
+                            foreach (var name in blockNames)
+                            {
+                                BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
+                                foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+                                {
+                                    if (id.IsValid)
+                                    {
+                                        using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord)
+                                        {
+                                            if (anonymousBtr != null)
+                                            {
+                                                ObjectIdCollection blockIds = anonymousBtr.GetBlockReferenceIds(true, false);
+                                                blockIds.Add(e.DBObject.ObjectId);
+                                                foreach (ObjectId objId in blockIds)
+                                                {
+                                                    if (objId.IsValid)
+                                                    {
+                                                        var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+
+                                                        var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                                                        string GUID = "";
+                                                        bool match = false;
+
+                                                        foreach (DynamicBlockReferenceProperty prop in pc)
+                                                        {
+                                                            if (prop.PropertyName == "vertical_route_id" &&
+                                                                prop.Value?.ToString() == VerticalRouteId)
+                                                            {
+
+                                                                match = true;
+
+                                                            }
+                                                            if (prop.PropertyName == "id")
+                                                            {
+                                                                GUID = prop.Value?.ToString();
+                                                            }
+                                                        }
+                                                        if (match)
+                                                        {
+                                                            SetRouteInfo(tr, fedFromRefs, "Defpoints", GUID);
+                                                            entity.Erase();
+                                                            if (fedFromRefs.ContainsKey(GUID))
+                                                            {
+                                                                foreach (ObjectId lineId in fedFromRefs[GUID])
+                                                                {
+                                                                    if (lineId.IsValid)
+                                                                    {
+                                                                        Entity lineEntity = tr.GetObject(lineId, OpenMode.ForWrite) as Entity;
+                                                                        if (lineEntity != null)
+                                                                        {
+                                                                            lineEntity.Erase();
+                                                                            deleteLines(tr, fedFromRefs, GUID);
+                                                                        }
+                                                                    }
+                                                                }
+                                                                fedFromRefs.Remove(GUID);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            tr.Commit();
+                        }
+                        SettingObjects = false;
+                    }
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            ed.WriteMessage($"\nError in Db_ObjectErased: {ex.Message}");
+        }
+    }
 
   }
 }
