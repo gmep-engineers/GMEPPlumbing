@@ -75,9 +75,12 @@ namespace GMEPPlumbing
         db.SaveComplete += (s, e) => IsSaving = false;
         db.AbortSave += (s, e) => IsSaving = false;
 
+
+        //db.ObjectErased -= DB_LineErased;
         //db.ObjectErased += DB_LineErased; 
-        db.ObjectErased -= Db_VerticalRouteErased; 
-        db.ObjectErased += Db_VerticalRouteErased;
+        //db.ObjectErased -= Db_VerticalRouteErased; 
+        //db.ObjectErased -= Db_VerticalRouteErased; 
+        //db.ObjectErased += Db_VerticalRouteErased;
 
 
         // Initialize the MongoDB service
@@ -1083,6 +1086,17 @@ namespace GMEPPlumbing
                         {
                             lineEntity.Erase();
                             deleteLines(tr, fedFromRefs, Id);
+                        }
+                    }
+                    else if (lineEntity is BlockReference blockRef)
+                    {
+                        var pc = blockRef.DynamicBlockReferencePropertyCollection;
+                        foreach (DynamicBlockReferenceProperty prop in pc)
+                        {
+                            if (prop.PropertyName == "fed_from_id")
+                            {
+                                prop.Value = "0";
+                            }
                         }
                     }
                 }
