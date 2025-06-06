@@ -920,7 +920,9 @@ namespace GMEPPlumbing
                                         {
                                             if (anonymousBtr != null)
                                             {
-                                                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                                ObjectIdCollection blockIds = anonymousBtr.GetBlockReferenceIds(true, false);
+                                                blockIds.Add(e.DBObject.ObjectId);
+                                                foreach (ObjectId objId in blockIds)
                                                 {
                                                     if (objId.IsValid)
                                                     {
