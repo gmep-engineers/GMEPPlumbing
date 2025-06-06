@@ -37,6 +37,7 @@ using System.Xml.Linq;
 using SharpCompress.Common;
 using Google.Protobuf;
 using Org.BouncyCastle.Ocsp;
+using static System.Windows.Forms.LinkLabel;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -70,7 +71,7 @@ namespace GMEPPlumbing
         ed = doc.Editor;
         SettingObjects = false;
 
-        db.ObjectErased += DB_LineErased; 
+        //db.ObjectErased += DB_LineErased; 
         db.ObjectErased += Db_VerticalRouteErased;
 
         // Initialize the MongoDB service
@@ -973,6 +974,7 @@ namespace GMEPPlumbing
                                                                         if (lineEntity != null)
                                                                         {
                                                                             lineEntity.Erase();
+                                                                            deleteLines(tr, fedFromRefs, GUID);
                                                                         }
                                                                     }
                                                                 }
@@ -996,6 +998,31 @@ namespace GMEPPlumbing
         catch (System.Exception ex)
         {
             ed.WriteMessage($"\nError in Db_ObjectErased: {ex.Message}");
+        }
+    }
+    public void deleteLines(Transaction tr, Dictionary<string, List<ObjectId>> fedFromRefs, string RefId)
+    {
+        if (fedFromRefs.ContainsKey(RefId))
+        {
+            foreach (ObjectId lineId in fedFromRefs[RefId])
+            {
+                if (lineId.IsValid)
+                {
+                    Entity lineEntity = tr.GetObject(lineId, OpenMode.ForWrite) as Entity;
+                    string Id = "";
+                    if (lineEntity.XData != null)
+                    {
+                        TypedValue[] values = lineEntity.XData.AsArray();
+                        Id = values[1].Value as string;
+                    }
+
+                    if (Id != "")
+                    {
+                        lineEntity.Erase();
+                        deleteLines(tr, fedFromRefs, Id);
+                    }
+                }
+            }
         }
     }
     public void DB_LineErased(object sender, ObjectErasedEventArgs e)
