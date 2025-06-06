@@ -14,6 +14,7 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.DatabaseServices.Filters;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
@@ -1107,7 +1108,6 @@ namespace GMEPPlumbing
       keywordOptions.AllowNone = false;
       PromptResult keywordResult = ed.GetKeywords(keywordOptions);
       string keywordResultString = keywordResult.StringResult;
-
       PlumbingFixtureType selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t =>
         keywordResultString.StartsWith(t.Abbreviation)
       );
@@ -1126,6 +1126,7 @@ namespace GMEPPlumbing
           i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model
         );
       });
+
       keywordOptions.Keywords.Default =
         plumbingFixtureCatalogItems[0].Id.ToString()
         + " - "
@@ -1284,9 +1285,35 @@ namespace GMEPPlumbing
           {
             string[] wasteVentBlockNames = selectedFixtureType.WasteVentBlockName.Split(',');
             int index = 0;
+            Point3d ventPosition = new Point3d();
             foreach (string wasteVentBlockName in wasteVentBlockNames)
             {
-              CreateWasteVentBlock(wasteVentBlockName, plumbingFixture, selectedCatalogItem, index);
+              if (wasteVentBlockName == "GMEP VENT")
+              {
+                ventPosition = CreateVentBlock(
+                  selectedCatalogItem.FixtureDemand,
+                  plumbingFixture,
+                  index
+                );
+              }
+              else if (wasteVentBlockName == "GMEP DRAIN")
+              {
+                CreateDrainBlock(
+                  selectedCatalogItem.FixtureDemand,
+                  plumbingFixture,
+                  index,
+                  ventPosition
+                );
+              }
+              else
+              {
+                CreateWasteVentBlock(
+                  wasteVentBlockName,
+                  plumbingFixture,
+                  selectedCatalogItem,
+                  index
+                );
+              }
               index++;
             }
           }
@@ -1338,6 +1365,164 @@ namespace GMEPPlumbing
       }
     }
 
+    public Point3d CreateVentBlock(decimal fixtureDemand, PlumbingFixture fixture, int index)
+    {
+      ed.WriteMessage("\nSelect base point for vent");
+      ObjectId blockId;
+      Point3d point;
+      double rotation = 0;
+      string fixtureId = Guid.NewGuid().ToString();
+      string blockName = "GMEP VENT";
+      try
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord btr;
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            blockName,
+            out btr,
+            out point
+          );
+          if (br != null)
+          {
+            BlockTableRecord curSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+            RotateJig rotateJig = new RotateJig(br);
+            PromptResult rotatePromptResult = ed.Drag(rotateJig);
+
+            if (rotatePromptResult.Status != PromptStatus.OK)
+            {
+              return new Point3d();
+            }
+            rotation = br.Rotation;
+            curSpace.AppendEntity(br);
+            tr.AddNewlyCreatedDBObject(br, true);
+          }
+          blockId = br.Id;
+          point = br.Position;
+          tr.Commit();
+        }
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+          var modelSpace = (BlockTableRecord)
+            tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+          BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+          DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in pc)
+          {
+            if (prop.PropertyName == "gmep_plumbing_fixture_id")
+            {
+              prop.Value = fixtureId;
+            }
+            if (prop.PropertyName == "gmep_plumbing_fixture_dfu")
+            {
+              prop.Value = (double)fixtureDemand;
+            }
+          }
+          tr.Commit();
+          MakePlumbingFixtureWasteVentLabel(fixture, br.Position, blockName, index);
+        }
+        return point;
+      }
+      catch (System.Exception ex)
+      {
+        ed.WriteMessage(ex.ToString());
+        Console.WriteLine(ex.ToString());
+        return new Point3d();
+      }
+    }
+
+    public Point3d CreateDrainBlock(
+      decimal fixtureDemand,
+      PlumbingFixture fixture,
+      int index,
+      Point3d ventPosition
+    )
+    {
+      ed.WriteMessage("\nSelect base point for drain");
+      ObjectId blockId;
+      Point3d point;
+      string fixtureId = Guid.NewGuid().ToString();
+      string blockName = "GMEP DRAIN";
+      try
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord btr;
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            blockName,
+            out btr,
+            out point
+          );
+          if (br != null)
+          {
+            BlockTableRecord curSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+            curSpace.AppendEntity(br);
+            tr.AddNewlyCreatedDBObject(br, true);
+            point = br.Position;
+            Vector3d direction = ventPosition - point;
+            double angle = Math.Atan2(direction.X, direction.Y);
+            Console.WriteLine(angle);
+            Point3d startPoint = new Point3d(
+              ventPosition.X - (1.5 * Math.Sin(angle)),
+              ventPosition.Y - (1.5 * Math.Cos(angle)),
+              0
+            );
+            Point3d endPoint = new Point3d(
+              point.X + (1.5 * Math.Sin(angle)),
+              point.Y + (1.5 * Math.Cos(angle)),
+              0
+            );
+            Line line = new Line();
+            line.StartPoint = startPoint;
+            line.EndPoint = endPoint;
+            line.Layer = "P-WV-W-BELOW";
+            curSpace.AppendEntity(line);
+            tr.AddNewlyCreatedDBObject(line, true);
+          }
+
+          blockId = br.Id;
+          tr.Commit();
+        }
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+          var modelSpace = (BlockTableRecord)
+            tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+          BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+          DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in pc)
+          {
+            if (prop.PropertyName == "gmep_plumbing_fixture_id")
+            {
+              prop.Value = fixtureId;
+            }
+            if (prop.PropertyName == "gmep_plumbing_fixture_dfu")
+            {
+              prop.Value = (double)fixtureDemand;
+            }
+          }
+          tr.Commit();
+          MakePlumbingFixtureWasteVentLabel(fixture, br.Position, blockName, index);
+        }
+        return point;
+      }
+      catch (System.Exception ex)
+      {
+        ed.WriteMessage(ex.ToString());
+        Console.WriteLine(ex.ToString());
+        return new Point3d();
+      }
+    }
+
     public void CreateWasteVentBlock(
       string blockName,
       PlumbingFixture fixture,
@@ -1385,7 +1570,7 @@ namespace GMEPPlumbing
             BlockTableRecord curSpace = (BlockTableRecord)
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-            if (blockName != "GMEP DRAIN")
+            if (blockName != "GMEP WCO FLOOR")
             {
               RotateJig rotateJig = new RotateJig(br);
               PromptResult rotatePromptResult = ed.Drag(rotateJig);
