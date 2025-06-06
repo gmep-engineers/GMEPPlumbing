@@ -1267,6 +1267,18 @@ namespace GMEPPlumbing
             0
           );
           MariaDBService.CreatePlumbingFixture(plumbingFixture);
+          if (selectedFixtureType.Abbreviation == "WH")
+          {
+            MariaDBService.CreatePlumbingSource(
+              new PlumbingSource(
+                Guid.NewGuid().ToString(),
+                projectId,
+                plumbingFixture.Position,
+                selectedFixtureType.Id,
+                plumbingFixture.Id
+              )
+            );
+          }
           MakePlumbingFixtureWaterGasLabel(plumbingFixture);
           if (!String.IsNullOrEmpty(selectedFixtureType.WasteVentBlockName))
           {
@@ -1274,7 +1286,7 @@ namespace GMEPPlumbing
             int index = 0;
             foreach (string wasteVentBlockName in wasteVentBlockNames)
             {
-              createWasteVentBlock(wasteVentBlockName, plumbingFixture, selectedCatalogItem, index);
+              CreateWasteVentBlock(wasteVentBlockName, plumbingFixture, selectedCatalogItem, index);
               index++;
             }
           }
@@ -1287,7 +1299,46 @@ namespace GMEPPlumbing
       }
     }
 
-    public void createWasteVentBlock(
+    [CommandMethod("PlumbingSource")]
+    public void CreatePlumbingSource()
+    {
+      string projectNo = CADObjectCommands.GetProjectNoFromFileName();
+      string projectId = MariaDBService.GetProjectIdSync(projectNo);
+      doc = Application.DocumentManager.MdiActiveDocument;
+      db = doc.Database;
+      ed = doc.Editor;
+
+      List<PlumbingSourceType> plumbingSourceTypes = MariaDBService.GetPlumbingSourceTypes();
+      PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
+
+      keywordOptions.Message = "\nSelect fixture type:";
+
+      plumbingSourceTypes.ForEach(t =>
+      {
+        keywordOptions.Keywords.Add(t.Id.ToString() + " " + t.Type);
+      });
+      keywordOptions.Keywords.Default = "1 Water Meter";
+      keywordOptions.AllowNone = false;
+      PromptResult keywordResult = ed.GetKeywords(keywordOptions);
+      string keywordResultString = keywordResult.StringResult;
+      Console.WriteLine(keywordResultString);
+
+      PlumbingSourceType selectedSourceType = plumbingSourceTypes.FirstOrDefault(t =>
+        keywordResultString == t.Id.ToString()
+      );
+      if (selectedSourceType == null)
+      {
+        selectedSourceType = plumbingSourceTypes.FirstOrDefault(t => t.Type == "Water Meter");
+      }
+
+      if (selectedSourceType.Type == "Water Heater")
+      {
+        ed.Command("PlumbingFixture", "WH");
+        return;
+      }
+    }
+
+    public void CreateWasteVentBlock(
       string blockName,
       PlumbingFixture fixture,
       PlumbingFixtureCatalogItem selectedCatalogItem,

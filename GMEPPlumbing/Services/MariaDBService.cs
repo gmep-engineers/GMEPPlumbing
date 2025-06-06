@@ -673,9 +673,10 @@ namespace GMEPPlumbing.Services
 
     public void CreatePlumbingFixture(PlumbingFixture fixture)
     {
+      // 1 get the count of different types of the same fixture
       string query =
         @"
-        SELECT COUNT(*) FROM plumbing_fixtures
+        SELECT DISTINCT plumbing_fixture_catalog.id, plumbing_fixtures.number FROM plumbing_fixtures
         LEFT JOIN plumbing_fixture_catalog ON plumbing_fixture_catalog.id = plumbing_fixtures.catalog_id
         LEFT JOIN plumbing_fixture_types ON plumbing_fixture_types.id = plumbing_fixture_catalog.type_id
         WHERE plumbing_fixtures.project_id = @projectId
@@ -687,12 +688,30 @@ namespace GMEPPlumbing.Services
       command.Parameters.AddWithValue("@projectId", fixture.ProjectId);
       command.Parameters.AddWithValue("@abbreviation", fixture.TypeAbbreviation);
       MySqlDataReader reader = command.ExecuteReader();
-      if (reader.Read())
+      List<int> addedCatalogIds = new List<int>();
+      List<int> addedFixtureNumbers = new List<int>();
+      while (reader.Read())
       {
-        count = GetSafeInt(reader, "COUNT(*)");
+        addedCatalogIds.Add(GetSafeInt(reader, "id"));
+        addedFixtureNumbers.Add(GetSafeInt(reader, "number"));
+      }
+      if (addedCatalogIds.Count == 0)
+      {
+        count = 1;
+      }
+      for (int i = 0; i < addedCatalogIds.Count; i++)
+      {
+        if (addedCatalogIds[i] == fixture.CatalogId)
+        {
+          count = addedFixtureNumbers[i];
+        }
+      }
+      if (count == 0)
+      {
+        count = addedCatalogIds.Count + 1;
       }
       reader.Close();
-      fixture.Number = count + 1;
+      fixture.Number = count;
       query =
         @"
         INSERT INTO plumbing_fixtures
@@ -709,6 +728,43 @@ namespace GMEPPlumbing.Services
       command.Parameters.AddWithValue("@number", fixture.Number);
       command.ExecuteNonQuery();
       CloseConnectionSync();
+    }
+
+    public List<PlumbingSourceType> GetPlumbingSourceTypes()
+    {
+      List<PlumbingSourceType> types = new List<PlumbingSourceType>();
+      string query = "SELECT * FROM plumbing_source_types";
+
+      OpenConnectionSync();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read())
+      {
+        types.Add(new PlumbingSourceType(GetSafeInt(reader, "id"), GetSafeString(reader, "type")));
+      }
+      reader.Close();
+      CloseConnectionSync();
+      return types;
+    }
+
+    public async Task CreatePlumbingSource(PlumbingSource source)
+    {
+      string query =
+        @"
+        INSERT INTO plumbing_sources
+        (id, project_id, pos_x, pos_y, type_id, fixture_id)
+        VALUES (@id, @projectId, @posX, @posY, @typeId, @fixtureId)
+        ";
+      await OpenConnectionAsync();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@id", source.Id);
+      command.Parameters.AddWithValue("@projectId", source.ProjectId);
+      command.Parameters.AddWithValue("@posX", source.Position.X);
+      command.Parameters.AddWithValue("@posY", source.Position.Y);
+      command.Parameters.AddWithValue("@typeId", source.TypeId);
+      command.Parameters.AddWithValue("@fixtureId", source.FixtureId);
+      await command.ExecuteNonQueryAsync();
+      await CloseConnectionAsync();
     }
   }
 }

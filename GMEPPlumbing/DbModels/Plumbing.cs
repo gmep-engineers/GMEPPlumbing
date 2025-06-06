@@ -117,4 +117,40 @@ namespace GMEPPlumbing
       WasteVentBlockName = wasteVentBlockName;
     }
   }
+
+  public class PlumbingSource
+  {
+    public string Id;
+    public string ProjectId;
+    public Point3d Position;
+    public int TypeId;
+    public string FixtureId;
+
+    public PlumbingSource(
+      string id,
+      string projectId,
+      Point3d position,
+      int typeId,
+      string fixtureId
+    )
+    {
+      Id = id;
+      ProjectId = projectId;
+      Position = position;
+      TypeId = typeId;
+      FixtureId = fixtureId;
+    }
+  }
+
+  public class PlumbingSourceType
+  {
+    public int Id;
+    public string Type;
+
+    public PlumbingSourceType(int id, string type)
+    {
+      Id = id;
+      Type = type;
+    }
+  }
 }
