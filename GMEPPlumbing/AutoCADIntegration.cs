@@ -36,9 +36,18 @@ using Line = Autodesk.AutoCAD.DatabaseServices.Line;
 using System.Xml.Linq;
 using SharpCompress.Common;
 using Google.Protobuf;
+using GMEPPlumbing;
+using System.Windows.Controls;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
+
+
+
+
+
+
+
 
 namespace GMEPPlumbing
 {
@@ -53,18 +62,32 @@ namespace GMEPPlumbing
     private string newDrawingId;
     private DateTime newCreationTime;
     public MariaDBService MariaDBService { get; set; } = new MariaDBService();
-
+    public static bool IsSaving { get; private set; } 
+    public bool SettingObjects { get; set; }
     public Document doc { get; private set; }
     public Database db { get; private set; }
     public Editor ed { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
 
-    [CommandMethod("PlumbingHorizontalRoute")]
-    public async void PlumbingHorizontalRoute()
+    public AutoCADIntegration()
     {
         doc = Application.DocumentManager.MdiActiveDocument;
         db = doc.Database;
         ed = doc.Editor;
+        SettingObjects = false;
+        IsSaving = false;
+
+        db.BeginSave += (s, e) => IsSaving = true;
+        db.SaveComplete += (s, e) => IsSaving = false;
+        db.AbortSave += (s, e) => IsSaving = false;
+
+        db.ObjectErased -= Db_VerticalRouteErased;
+        db.ObjectErased += Db_VerticalRouteErased;
+    }
+
+    [CommandMethod("PlumbingHorizontalRoute")]
+    public async void PlumbingHorizontalRoute()
+    {
         List <string> routeGUIDS = new List<string>();
         string layer = "Defpoints";
 
@@ -230,10 +253,6 @@ namespace GMEPPlumbing
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute()
     {
-        doc = Application.DocumentManager.MdiActiveDocument;
-        db = doc.Database;
-        ed = doc.Editor;
-
         string layer = "Defpoints";
 
         PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
@@ -703,11 +722,6 @@ namespace GMEPPlumbing
     [CommandMethod("SETPLUMBINGBASEPOINT")]
     public async void SetPlumbingBasePoint()
     {
-        doc = Application.DocumentManager.MdiActiveDocument;
-        db = doc.Database;
-        ed = doc.Editor;
-
-
         var prompt = new Views.BasePointPromptWindow();
         bool? result = prompt.ShowDialog();
         if (result != true)
@@ -802,10 +816,6 @@ namespace GMEPPlumbing
       //MongoDBService.Initialize();
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       ProjectId = await MariaDBService.GetProjectId(projectNo);
-
-      doc = Application.DocumentManager.MdiActiveDocument;
-      db = doc.Database;
-      ed = doc.Editor;
 
       RetrieveOrCreateDrawingId();
       InitializeUserInterface();
@@ -1083,7 +1093,6 @@ namespace GMEPPlumbing
 
     private void UpdateXRecordAfterDataLoad()
     {
-      Document doc = Application.DocumentManager.MdiActiveDocument;
       using (DocumentLock docLock = doc.LockDocument())
       {
         using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -1318,10 +1327,6 @@ namespace GMEPPlumbing
                                                                 prop.Value?.ToString() == VerticalRouteId)
                                                             {
                                                                     entity.Erase();
-                                                            }
-                                                            if (prop.PropertyName == "id")
-                                                            {
-                                                                GUID = prop.Value?.ToString();
                                                             }
                                                         }
                                                        
