@@ -994,6 +994,42 @@ namespace GMEPPlumbing
       }
     }
 
+    private void MakeCwDnLabel(Point3d dnPoint)
+    {
+      CADObjectCommands.CreateArrowJig("D0", dnPoint);
+      CADObjectCommands.CreateTextWithJig(
+        CADObjectCommands.TextLayer,
+        TextHorizontalMode.TextLeft,
+        "3/4\"CW DN"
+      );
+    }
+
+    private void MakeCwHwDnLabel(Point3d dnPoint, double rotation)
+    {
+      double distance = 3.9101;
+      double x1 = dnPoint.X - (distance * Math.Cos(rotation));
+      double y1 = dnPoint.Y - (distance * Math.Sin(rotation));
+      CADObjectCommands.CreateArrowJig("D0", new Point3d(x1, y1, 0));
+      double x2 = dnPoint.X + (distance * Math.Cos(rotation));
+      double y2 = dnPoint.Y + (distance * Math.Sin(rotation));
+      CADObjectCommands.CreateArrowJig("D0", new Point3d(x2, y2, 0), false);
+      CADObjectCommands.CreateTextWithJig(
+        CADObjectCommands.TextLayer,
+        TextHorizontalMode.TextLeft,
+        "3/4\"CW&HW DN"
+      );
+    }
+
+    public void MakeVentLabel(Point3d dnPoint)
+    {
+      CADObjectCommands.CreateArrowJig("D0", dnPoint);
+      CADObjectCommands.CreateTextWithJig(
+        CADObjectCommands.TextLayer,
+        TextHorizontalMode.TextLeft,
+        "2\" UP ABV. CLG."
+      );
+    }
+
     private void MakePlumbingFixtureWaterGasLabel(PlumbingFixture fixture)
     {
       double distance = 3;
@@ -1003,26 +1039,11 @@ namespace GMEPPlumbing
       switch (fixture.TypeAbbreviation)
       {
         case "WC":
-          CADObjectCommands.CreateArrowJig("D0", dnPoint);
-          CADObjectCommands.CreateTextWithJig(
-            CADObjectCommands.TextLayer,
-            TextHorizontalMode.TextLeft,
-            "3/4\"CW DN"
-          );
+          MakeCwDnLabel(dnPoint);
           break;
+        case "HS":
         case "S":
-          double distance2 = 3.9101;
-          double x2 = dnPoint.X - (distance2 * Math.Cos(fixture.Rotation));
-          double y2 = dnPoint.Y - (distance2 * Math.Sin(fixture.Rotation));
-          CADObjectCommands.CreateArrowJig("D0", new Point3d(x2, y2, 0));
-          double x3 = dnPoint.X + (distance2 * Math.Cos(fixture.Rotation));
-          double y3 = dnPoint.Y + (distance2 * Math.Sin(fixture.Rotation));
-          CADObjectCommands.CreateArrowJig("D0", new Point3d(x3, y3, 0), false);
-          CADObjectCommands.CreateTextWithJig(
-            CADObjectCommands.TextLayer,
-            TextHorizontalMode.TextLeft,
-            "3/4\"CW&HW DN"
-          );
+          MakeCwHwDnLabel(dnPoint, fixture.Rotation);
           break;
       }
       CADObjectCommands.CreateTextWithJig(
@@ -1032,6 +1053,39 @@ namespace GMEPPlumbing
       );
     }
 
+    private void MakePlumbingFixtureWasteVentLabel(
+      PlumbingFixture fixture,
+      Point3d position,
+      string blockName,
+      int index
+    )
+    {
+      switch (blockName)
+      {
+        case "GMEP VENT":
+          MakeVentLabel(position);
+          break;
+        case "GMEP WCO STRAIGHT":
+        case "GMEP WCO ANGLED":
+        case "GMEP WCO FLOOR":
+          CADObjectCommands.CreateTextWithJig(
+            CADObjectCommands.TextLayer,
+            TextHorizontalMode.TextLeft,
+            "2\" WCO"
+          );
+          break;
+      }
+      if (index == 0)
+      {
+        CADObjectCommands.CreateTextWithJig(
+          CADObjectCommands.TextLayer,
+          TextHorizontalMode.TextLeft,
+          fixture.TypeAbbreviation + "-" + fixture.Number.ToString()
+        );
+      }
+    }
+
+    [CommandMethod("PF")]
     [CommandMethod("PlumbingFixture")]
     public void PlumbingFixture()
     {
@@ -1114,6 +1168,29 @@ namespace GMEPPlumbing
         }
       }
 
+      if (selectedFixtureType.WasteVentBlockName.Contains("%FSSIZE%"))
+      {
+        if (selectedFixtureType.Abbreviation == "FS")
+        {
+          keywordOptions = new PromptKeywordOptions("");
+          keywordOptions.Message = "\nSelect FS size";
+          keywordOptions.Keywords.Add("12\"");
+          keywordOptions.Keywords.Add("6\"");
+          keywordOptions.Keywords.Default = "12\"";
+          keywordOptions.AllowNone = false;
+          keywordResult = ed.GetKeywords(keywordOptions);
+          string fsSize = keywordResult.StringResult.Replace("\"", "");
+          if (fsSize.Contains(' '))
+          {
+            fsSize = fsSize.Split(' ')[0];
+          }
+          selectedFixtureType.WasteVentBlockName = selectedFixtureType.WasteVentBlockName.Replace(
+            "%FSSIZE%",
+            fsSize
+          );
+        }
+      }
+
       if (!String.IsNullOrEmpty(selectedFixtureType.WaterGasBlockName))
       {
         ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
@@ -1191,12 +1268,118 @@ namespace GMEPPlumbing
           );
           MariaDBService.CreatePlumbingFixture(plumbingFixture);
           MakePlumbingFixtureWaterGasLabel(plumbingFixture);
+          if (!String.IsNullOrEmpty(selectedFixtureType.WasteVentBlockName))
+          {
+            string[] wasteVentBlockNames = selectedFixtureType.WasteVentBlockName.Split(',');
+            int index = 0;
+            foreach (string wasteVentBlockName in wasteVentBlockNames)
+            {
+              createWasteVentBlock(wasteVentBlockName, plumbingFixture, selectedCatalogItem, index);
+              index++;
+            }
+          }
         }
         catch (System.Exception ex)
         {
           ed.WriteMessage(ex.ToString());
           Console.WriteLine(ex.ToString());
         }
+      }
+    }
+
+    public void createWasteVentBlock(
+      string blockName,
+      PlumbingFixture fixture,
+      PlumbingFixtureCatalogItem selectedCatalogItem,
+      int index
+    )
+    {
+      ed.WriteMessage("\nSelect base point for " + fixture.TypeAbbreviation);
+      ObjectId blockId;
+      Point3d point;
+      double rotation = 0;
+      string fixtureId = Guid.NewGuid().ToString();
+      if (blockName.Contains("%WCOSTYLE%"))
+      {
+        PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
+        keywordOptions.Message = "\nSelect WCO style";
+        keywordOptions.Keywords.Add("STRAIGHT");
+        keywordOptions.Keywords.Add("ANGLED");
+        keywordOptions.Keywords.Add("FLOOR");
+        keywordOptions.Keywords.Default = "STRAIGHT";
+        keywordOptions.AllowNone = false;
+        PromptResult keywordResult = ed.GetKeywords(keywordOptions);
+        string wcoStyle = keywordResult.StringResult.Replace("\"", "");
+        if (wcoStyle.Contains(' '))
+        {
+          wcoStyle = wcoStyle.Split(' ')[0];
+        }
+        blockName = blockName.Replace("%WCOSTYLE%", wcoStyle);
+      }
+      try
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord btr;
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            blockName,
+            out btr,
+            out point
+          );
+          if (br != null)
+          {
+            BlockTableRecord curSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+            if (blockName != "GMEP DRAIN")
+            {
+              RotateJig rotateJig = new RotateJig(br);
+              PromptResult rotatePromptResult = ed.Drag(rotateJig);
+
+              if (rotatePromptResult.Status != PromptStatus.OK)
+              {
+                return;
+              }
+              rotation = br.Rotation;
+            }
+
+            curSpace.AppendEntity(br);
+
+            tr.AddNewlyCreatedDBObject(br, true);
+          }
+
+          blockId = br.Id;
+          tr.Commit();
+        }
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+          var modelSpace = (BlockTableRecord)
+            tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+          BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+          DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in pc)
+          {
+            if (prop.PropertyName == "gmep_plumbing_fixture_id")
+            {
+              prop.Value = fixtureId;
+            }
+            if (prop.PropertyName == "gmep_plumbing_fixture_dfu")
+            {
+              prop.Value = (double)selectedCatalogItem.FixtureDemand;
+            }
+          }
+          tr.Commit();
+          MakePlumbingFixtureWasteVentLabel(fixture, br.Position, blockName, index);
+        }
+      }
+      catch (System.Exception ex)
+      {
+        ed.WriteMessage(ex.ToString());
+        Console.WriteLine(ex.ToString());
       }
     }
   }
