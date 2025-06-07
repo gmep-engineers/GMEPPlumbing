@@ -84,6 +84,8 @@ namespace GMEPPlumbing
         db.AbortSave += (s, e) => IsSaving = false;
         db.ObjectErased -= Db_VerticalRouteErased;
         db.ObjectErased += Db_VerticalRouteErased;
+        db.ObjectModified -= Db_VerticalRouteModified;
+        db.ObjectModified += Db_VerticalRouteModified;
         // ... attach other handlers as needed ...
     }
 
@@ -1279,7 +1281,7 @@ namespace GMEPPlumbing
             var doc = Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
             var ed = doc.Editor;
-            try
+        try
         {
             if (e.Erased && !SettingObjects && !IsSaving)
             {
@@ -1357,7 +1359,126 @@ namespace GMEPPlumbing
             ed.WriteMessage($"\nError in Db_ObjectErased: {ex.Message}");
         }
     }
+    public static void Db_VerticalRouteModified(object sender, ObjectEventArgs e)
+    {
+        var doc = Application.DocumentManager.MdiActiveDocument;
+        var db = doc.Database;
 
+        Dictionary<string, ObjectId> basePoints = new Dictionary<string, ObjectId>();
+        if (!SettingObjects && !IsSaving)
+        {
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+                BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+                foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+                {
+                    if (id.IsValid)
+                    {
+                        using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord)
+                        {
+                            if (anonymousBtr != null)
+                            {
+                                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                {
+                                    var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                                    var pc = entity.DynamicBlockReferencePropertyCollection;
+                                    foreach (DynamicBlockReferenceProperty prop in pc)
+                                    {
+                                        if (prop.PropertyName == "Id")
+                                        {
+                                            string basePointId = prop.Value?.ToString();
+                                            if (!string.IsNullOrEmpty(basePointId) && basePointId != "0")
+                                            {
+                                                basePoints.Add(basePointId, entity.ObjectId);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                tr.Commit();
+            }
+
+            if (e.DBObject is BlockReference blockRef)
+            {
+                string VerticalRouteId = string.Empty;
+                string BasePointId = string.Empty;
+                var properties = blockRef.DynamicBlockReferencePropertyCollection;
+                foreach (DynamicBlockReferenceProperty prop in properties)
+                {
+                    if (prop.PropertyName == "vertical_route_id")
+                    {
+                        VerticalRouteId = prop.Value?.ToString();
+                    }
+                    if (prop.PropertyName == "base_point_id")
+                    {
+                        BasePointId = prop.Value?.ToString();
+                    }
+                }
+                if (BasePointId != "" && basePoints.ContainsKey(BasePointId))
+                {
+                    ObjectId basePointIdObj = basePoints[BasePointId];
+                    SettingObjects = true;
+                    using (Transaction tr = db.TransactionManager.StartTransaction())
+                    {
+                        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+                        BlockReference basePointRef = (BlockReference)tr.GetObject(basePointIdObj, OpenMode.ForWrite);
+                        Vector3d distanceVector = blockRef.Position - basePointRef.Position;
+
+                        List<string> blockNames = new List<string>
+                        {
+                            "GMEP_PLUMBING_LINE_UP",
+                            "GMEP_PLUMBING_LINE_DOWN",
+                            "GMEP_PLUMBING_LINE_VERTICAL"
+                        };
+                        
+                        foreach (var name in blockNames)
+                        {
+                            BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
+                            foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+                            {
+                                if (id.IsValid)
+                                {
+                                    using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord)
+                                    {
+                                        if (anonymousBtr != null)
+                                        {
+
+                                            foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                            {
+                                                if (objId.IsValid)
+                                                {
+                                                    var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+
+                                                    var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                                                    foreach (DynamicBlockReferenceProperty prop in pc)
+                                                    {
+                                                        if (prop.PropertyName == "vertical_route_id" &&
+                                                            prop.Value?.ToString() == VerticalRouteId)
+                                                        {
+                                                            entity.Position += distanceVector;
+                                                        }
+                                                    }
+
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                        tr.Commit();
+                    }
+                    SettingObjects = false;
+                }
+            }
+        }
+    }
   }
     public class PluginEntry : IExtensionApplication
     {
