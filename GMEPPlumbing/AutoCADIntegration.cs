@@ -1380,75 +1380,73 @@ namespace GMEPPlumbing
             var ed = doc.Editor;
         try
         {
-            if (e.Erased && !SettingObjects && !IsSaving)
+            if (e.Erased && !SettingObjects && !IsSaving && e.DBObject is BlockReference blockRef && IsVerticalRouteBlock(blockRef))
             {
                 ed.WriteMessage($"\nObject {e.DBObject.ObjectId} was erased.");
-                Entity obj = e.DBObject as Entity;
-                if (obj is BlockReference blockRef)
+            
+                string VerticalRouteId = string.Empty;
+                var properties = blockRef.DynamicBlockReferencePropertyCollection;
+                foreach (DynamicBlockReferenceProperty prop in properties)
                 {
-                    string VerticalRouteId = string.Empty;
-                    var properties = blockRef.DynamicBlockReferencePropertyCollection;
-                    foreach (DynamicBlockReferenceProperty prop in properties)
+                    if (prop.PropertyName == "vertical_route_id")
                     {
-                        if (prop.PropertyName == "vertical_route_id")
-                        {
-                            VerticalRouteId = prop.Value?.ToString();
-                        }
+                        VerticalRouteId = prop.Value?.ToString();
                     }
-                    if (!string.IsNullOrEmpty(VerticalRouteId))
+                }
+                if (!string.IsNullOrEmpty(VerticalRouteId))
+                {
+                    SettingObjects = true;
+
+                    using (Transaction tr = db.TransactionManager.StartTransaction())
                     {
-                        SettingObjects = true;
-
-                        using (Transaction tr = db.TransactionManager.StartTransaction())
+                        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+                        List<string> blockNames = new List<string>
                         {
-                            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
-                            List<string> blockNames = new List<string>
+                            "GMEP_PLUMBING_LINE_UP",
+                            "GMEP_PLUMBING_LINE_DOWN",
+                            "GMEP_PLUMBING_LINE_VERTICAL"
+                        };
+                        foreach (var name in blockNames)
+                        {
+                            BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
+                            foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
                             {
-                                "GMEP_PLUMBING_LINE_UP",
-                                "GMEP_PLUMBING_LINE_DOWN",
-                                "GMEP_PLUMBING_LINE_VERTICAL"
-                            };
-                            foreach (var name in blockNames)
-                            {
-                                BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
-                                foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+                                if (id.IsValid)
                                 {
-                                    if (id.IsValid)
+                                    using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord)
                                     {
-                                        using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord)
+                                        if (anonymousBtr != null)
                                         {
-                                            if (anonymousBtr != null)
-                                            {
                                       
-                                                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                            foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                            {
+                                                if (objId.IsValid)
                                                 {
-                                                    if (objId.IsValid)
+                                                    var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+
+                                                    var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                                                    foreach (DynamicBlockReferenceProperty prop in pc)
                                                     {
-                                                        var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
-
-                                                        var pc = entity.DynamicBlockReferencePropertyCollection;
-
-                                                        foreach (DynamicBlockReferenceProperty prop in pc)
+                                                        if (prop.PropertyName == "vertical_route_id" &&
+                                                            prop.Value?.ToString() == VerticalRouteId)
                                                         {
-                                                            if (prop.PropertyName == "vertical_route_id" &&
-                                                                prop.Value?.ToString() == VerticalRouteId)
-                                                            {
-                                                                    entity.Erase();
-                                                            }
+                                                                entity.Erase();
                                                         }
-                                                       
                                                     }
+                                                       
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
-                            tr.Commit();
                         }
-                        SettingObjects = false;
+                        tr.Commit();
                     }
+                    SettingObjects = false;
                 }
+                
             }
         }
         catch (System.Exception ex)
