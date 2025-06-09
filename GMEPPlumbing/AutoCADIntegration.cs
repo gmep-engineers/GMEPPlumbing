@@ -579,7 +579,7 @@ namespace GMEPPlumbing
 
                 tr.Commit();
             }
-            Point3d labelPoint2 = Point3d.Origin;
+
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 //Continue Pipe
@@ -655,6 +655,7 @@ namespace GMEPPlumbing
         }
         else if (endFloor < startFloor)
         {
+            Point3d labelPoint2 = Point3d.Origin;
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 //delete previous start pipe
@@ -678,6 +679,8 @@ namespace GMEPPlumbing
                 upBlockRef2.Layer = layer;
                 curSpace2.AppendEntity(upBlockRef2);
                 tr.AddNewlyCreatedDBObject(upBlockRef2, true);
+                labelPoint2 = upBlockRef2.Position;
+
                 var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
 
                 foreach (DynamicBlockReferenceProperty prop in pc2)
@@ -696,6 +699,51 @@ namespace GMEPPlumbing
                         prop.Value = verticalRouteId;
                     }
                 }
+                tr.Commit();
+            }
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+
+                BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+                BlockTableRecord blockDef2 = tr.GetObject(bt["GMEP_DIRECTIONAL_ARROW"], OpenMode.ForRead) as BlockTableRecord;
+                BlockReference BlockRef2 = new BlockReference(labelPoint2, blockDef2.ObjectId);
+                BlockRef2.Rotation += Math.PI / 2; // Rotate the arrow to point upwards
+
+
+                ArrowJig arrowJig = new ArrowJig(BlockRef2, labelPoint2);
+                PromptResult arrowPromptResult = ed.Drag(arrowJig);
+                if (arrowPromptResult.Status != PromptStatus.OK)
+                {
+                    return;
+                }
+                Point3d arrowTargetPoint = arrowJig.InsertionPoint;
+                Vector3d dir = (arrowTargetPoint - labelPoint2).GetNormal();
+
+
+                Point3d labelPointOffset = labelPoint2 + (dir * 1.5);
+
+                LabelJig labelJig = new LabelJig(labelPointOffset, "meow");
+                PromptResult labelPromptResult = ed.Drag(labelJig);
+                if (labelPromptResult.Status != PromptStatus.OK)
+                {
+                    return;
+                }
+
+
+                Line line = labelJig.line;
+                curSpace.AppendEntity(line);
+                tr.AddNewlyCreatedDBObject(line, true);
+
+                DBText text = new DBText();
+                text.Position = line.EndPoint;
+                text.TextString= "PLMG DOWN";
+                text.Layer = "E-TXT1";
+                curSpace.AppendEntity(text);
+                tr.AddNewlyCreatedDBObject(text, true);
+
+
                 tr.Commit();
             }
 
