@@ -852,7 +852,7 @@ namespace GMEPPlumbing {
     }
 
     private void AttachRouteXData(ObjectId lineId, string id, string sourceId) {
-      ed.WriteMessage("Id: " + id);
+      ed.WriteMessage("Id: " + id + " SourceId: " + sourceId);
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
         if (line == null)
