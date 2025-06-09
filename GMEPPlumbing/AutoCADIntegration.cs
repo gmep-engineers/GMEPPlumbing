@@ -1375,9 +1375,9 @@ namespace GMEPPlumbing
     }
     public static void Db_VerticalRouteErased(object sender, ObjectErasedEventArgs e)
     {
-            var doc = Application.DocumentManager.MdiActiveDocument;
-            var db = doc.Database;
-            var ed = doc.Editor;
+        var doc = Application.DocumentManager.MdiActiveDocument;
+        var db = doc.Database;
+        var ed = doc.Editor;
         try
         {
             if (e.Erased && !SettingObjects && !IsSaving && e.DBObject is BlockReference blockRef && IsVerticalRouteBlock(blockRef))
