@@ -1462,9 +1462,11 @@ namespace GMEPPlumbing
         var doc = Application.DocumentManager.MdiActiveDocument;
         var db = doc.Database;
 
+     
         Dictionary<string, ObjectId> basePoints = new Dictionary<string, ObjectId>();
-        if (!SettingObjects && !IsSaving)
+        if (!SettingObjects && !IsSaving && e.DBObject is BlockReference blockRef)
         {
+            SettingObjects = true;
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
                 BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -1500,95 +1502,96 @@ namespace GMEPPlumbing
                 tr.Commit();
             }
 
-            if (e.DBObject is BlockReference blockRef)
+            string VerticalRouteId = string.Empty;
+            string BasePointId = string.Empty;
+            var properties = blockRef.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in properties)
             {
-                string VerticalRouteId = string.Empty;
-                string BasePointId = string.Empty;
-                var properties = blockRef.DynamicBlockReferencePropertyCollection;
-                foreach (DynamicBlockReferenceProperty prop in properties)
+                if (prop.PropertyName == "vertical_route_id")
                 {
-                    if (prop.PropertyName == "vertical_route_id")
-                    {
-                        VerticalRouteId = prop.Value?.ToString();
-                    }
-                    if (prop.PropertyName == "base_point_id")
-                    {
-                        BasePointId = prop.Value?.ToString();
-                    }
+                    VerticalRouteId = prop.Value?.ToString();
                 }
-                if (BasePointId != "" && basePoints.ContainsKey(BasePointId))
+                if (prop.PropertyName == "base_point_id")
                 {
-                    ObjectId basePointIdObj = basePoints[BasePointId];
-                    SettingObjects = true;
-                    using (Transaction tr = db.TransactionManager.StartTransaction())
+                    BasePointId = prop.Value?.ToString();
+                }
+            }
+            if (BasePointId != "" && basePoints.ContainsKey(BasePointId))
+            {
+                ObjectId basePointIdObj = basePoints[BasePointId];
+                
+                using (Transaction tr = db.TransactionManager.StartTransaction())
+                {
+                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+                    BlockReference basePointRef = (BlockReference)tr.GetObject(basePointIdObj, OpenMode.ForWrite);
+                    Vector3d distanceVector = blockRef.Position - basePointRef.Position;
+
+                    List<string> blockNames = new List<string>
                     {
-                        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
-                        BlockReference basePointRef = (BlockReference)tr.GetObject(basePointIdObj, OpenMode.ForWrite);
-                        Vector3d distanceVector = blockRef.Position - basePointRef.Position;
-
-                        List<string> blockNames = new List<string>
-                        {
-                            "GMEP_PLUMBING_LINE_UP",
-                            "GMEP_PLUMBING_LINE_DOWN",
-                            "GMEP_PLUMBING_LINE_VERTICAL"
-                        };
+                        "GMEP_PLUMBING_LINE_UP",
+                        "GMEP_PLUMBING_LINE_DOWN",
+                        "GMEP_PLUMBING_LINE_VERTICAL"
+                    };
                         
-                        foreach (var name in blockNames)
+                    foreach (var name in blockNames)
+                    {
+                        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
+                        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
                         {
-                            BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
-                            foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+                            if (id.IsValid)
                             {
-                                if (id.IsValid)
+                                using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord)
                                 {
-                                    using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord)
+                                    if (anonymousBtr != null)
                                     {
-                                        if (anonymousBtr != null)
+
+                                        foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
                                         {
-
-                                            foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                            if (objId.IsValid)
                                             {
-                                                if (objId.IsValid)
+                                                var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+
+                                                var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                                                string BasePointId2 = string.Empty;
+                                                bool match = false;
+                                                foreach (DynamicBlockReferenceProperty prop in pc)
                                                 {
-                                                    var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
 
-                                                    var pc = entity.DynamicBlockReferencePropertyCollection;
-
-                                                    string BasePointId2 = string.Empty;
-                                                    bool match = false;
-                                                    foreach (DynamicBlockReferenceProperty prop in pc)
+                                                    if (prop.PropertyName == "vertical_route_id" &&
+                                                        prop.Value?.ToString() == VerticalRouteId)
                                                     {
-
-                                                        if (prop.PropertyName == "vertical_route_id" &&
-                                                            prop.Value?.ToString() == VerticalRouteId)
-                                                        {
-                                                            match = true;
-                                                        }
-                                                        if (prop.PropertyName == "base_point_id")
-                                                        {
-                                                            BasePointId2 = prop.Value?.ToString();
-                                                        }
+                                                        match = true;
                                                     }
-                                                    if (match)
+                                                    if (prop.PropertyName == "base_point_id")
                                                     {
-                                                        BlockReference basePointRef2 = tr.GetObject(basePoints[BasePointId2], OpenMode.ForRead) as BlockReference;
-                                                        entity.Position = basePointRef2.Position + distanceVector;
+                                                        BasePointId2 = prop.Value?.ToString();
                                                     }
-
                                                 }
+                                                if (match)
+                                                {
+                                                    BlockReference basePointRef2 = tr.GetObject(basePoints[BasePointId2], OpenMode.ForRead) as BlockReference;
+                                                    entity.Position = basePointRef2.Position + distanceVector;
+                                                }
+
                                             }
                                         }
                                     }
                                 }
                             }
-
                         }
-                        tr.Commit();
+
                     }
-                    SettingObjects = false;
+                    tr.Commit();
                 }
+              
             }
+            SettingObjects = false;
+
         }
+        
     }
+
   }
     public class PluginEntry : IExtensionApplication
     {
