@@ -35,6 +35,7 @@ using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
+[assembly: ExtensionApplication(typeof(GMEPPlumbing.PluginEntry))]
 
 namespace GMEPPlumbing {
   public class AutoCADIntegration {
@@ -822,10 +823,6 @@ namespace GMEPPlumbing {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       ProjectId = await MariaDBService.GetProjectId(projectNo);
 
-      doc = Application.DocumentManager.MdiActiveDocument;
-      db = doc.Database;
-      ed = doc.Editor;
-
       RetrieveOrCreateDrawingId();
       InitializeUserInterface();
       LoadDataAsync();
@@ -983,7 +980,6 @@ namespace GMEPPlumbing {
     }
 
     private void UpdateXRecordAfterDataLoad() {
-      Document doc = Application.DocumentManager.MdiActiveDocument;
       using (DocumentLock docLock = doc.LockDocument()) {
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           try {
@@ -1756,7 +1752,7 @@ namespace GMEPPlumbing {
         Console.WriteLine(ex.ToString());
       }
     }
-  
+
     public static void Db_VerticalRouteErased(object sender, ObjectErasedEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
@@ -1939,29 +1935,29 @@ namespace GMEPPlumbing {
     }
 
   }
-}
-  public class PluginEntry : IExtensionApplication {
-  public void Initialize() {
-    // Attach to document events
-    Application.DocumentManager.DocumentCreated += DocumentManager_DocumentCreated;
-    Application.DocumentManager.DocumentActivated += DocumentManager_DocumentActivated;
 
-    // Optionally, initialize for already open documents
-    foreach (Document doc in Application.DocumentManager) {
-      AutoCADIntegration.AttachHandlers(doc);
+  public class PluginEntry : IExtensionApplication {
+    public void Initialize() {
+      // Attach to document events
+      Application.DocumentManager.DocumentCreated += DocumentManager_DocumentCreated;
+      Application.DocumentManager.DocumentActivated += DocumentManager_DocumentActivated;
+
+      // Optionally, initialize for already open documents
+      foreach (Document doc in Application.DocumentManager) {
+        AutoCADIntegration.AttachHandlers(doc);
+      }
+    }
+
+    public void Terminate() {
+      // Clean up if needed
+    }
+
+    private void DocumentManager_DocumentCreated(object sender, DocumentCollectionEventArgs e) {
+      AutoCADIntegration.AttachHandlers(e.Document);
+    }
+
+    private void DocumentManager_DocumentActivated(object sender, DocumentCollectionEventArgs e) {
+      AutoCADIntegration.AttachHandlers(e.Document);
     }
   }
-
-  public void Terminate() {
-    // Clean up if needed
-  }
-
-  private void DocumentManager_DocumentCreated(object sender, DocumentCollectionEventArgs e) {
-    AutoCADIntegration.AttachHandlers(e.Document);
-  }
-
-  private void DocumentManager_DocumentActivated(object sender, DocumentCollectionEventArgs e) {
-    AutoCADIntegration.AttachHandlers(e.Document);
-  }
 }
-
