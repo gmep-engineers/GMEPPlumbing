@@ -1461,10 +1461,11 @@ namespace GMEPPlumbing
     {
         var doc = Application.DocumentManager.MdiActiveDocument;
         var db = doc.Database;
+        var ed = doc.Editor;
 
-     
+
         Dictionary<string, ObjectId> basePoints = new Dictionary<string, ObjectId>();
-        if (!SettingObjects && !IsSaving && e.DBObject is BlockReference blockRef)
+        if (!SettingObjects && !IsSaving && e.DBObject is BlockReference blockRef && IsVerticalRouteBlock(blockRef))
         {
             SettingObjects = true;
             using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -1591,8 +1592,17 @@ namespace GMEPPlumbing
         }
         
     }
+    private static bool IsVerticalRouteBlock(BlockReference blockRef)
+    {
+        foreach (DynamicBlockReferenceProperty prop in blockRef.DynamicBlockReferencePropertyCollection)
+        {
+            if (prop.PropertyName == "vertical_route_id")
+                return true;
+        }
+        return false;
+    }
 
-  }
+    }
     public class PluginEntry : IExtensionApplication
     {
         public void Initialize()
