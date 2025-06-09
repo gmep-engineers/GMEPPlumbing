@@ -1604,15 +1604,106 @@ namespace GMEPPlumbing
         }
         
     }
-    private static bool IsVerticalRouteBlock(BlockReference blockRef)
-    {
-        foreach (DynamicBlockReferenceProperty prop in blockRef.DynamicBlockReferencePropertyCollection)
+        public static void Db_BasePointErased(object sender, ObjectErasedEventArgs e)
         {
-            if (prop.PropertyName == "vertical_route_id")
-                return true;
+            var doc = Application.DocumentManager.MdiActiveDocument;
+            var db = doc.Database;
+            var ed = doc.Editor;
+            try
+            {
+                if (e.Erased && !SettingObjects && !IsSaving && e.DBObject is BlockReference blockRef && IsBasePointBlock(blockRef))
+                {
+                    ed.WriteMessage($"\nObject {e.DBObject.ObjectId} was erased.");
+
+                    string Id = string.Empty;
+                    var properties = blockRef.DynamicBlockReferencePropertyCollection;
+                    foreach (DynamicBlockReferenceProperty prop in properties)
+                    {
+                        if (prop.PropertyName == "id")
+                        {
+                            Id = prop.Value?.ToString();
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(Id))
+                    {
+                        SettingObjects = true;
+
+                        using (Transaction tr = db.TransactionManager.StartTransaction())
+                        {
+                            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+                            List<string> blockNames = new List<string>
+                        {
+                            "GMEP_PLUMBING_LINE_UP",
+                            "GMEP_PLUMBING_LINE_DOWN",
+                            "GMEP_PLUMBING_LINE_VERTICAL"
+                        };
+                            foreach (var name in blockNames)
+                            {
+                                BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
+                                foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+                                {
+                                    if (id.IsValid)
+                                    {
+                                        using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord)
+                                        {
+                                            if (anonymousBtr != null)
+                                            {
+
+                                                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                                                {
+                                                    if (objId.IsValid)
+                                                    {
+                                                        var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+
+                                                        var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                                                        foreach (DynamicBlockReferenceProperty prop in pc)
+                                                        {
+                                                            if (prop.PropertyName == "vertical_route_id" &&
+                                                                prop.Value?.ToString() == VerticalRouteId)
+                                                            {
+                                                                entity.Erase();
+                                                            }
+                                                        }
+
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            tr.Commit();
+                        }
+                        SettingObjects = false;
+                    }
+
+                }
+            }
+            catch (System.Exception ex)
+            {
+                ed.WriteMessage($"\nError in Db_ObjectErased: {ex.Message}");
+            }
         }
-        return false;
-    }
+
+        private static bool IsVerticalRouteBlock(BlockReference blockRef)
+        {
+            foreach (DynamicBlockReferenceProperty prop in blockRef.DynamicBlockReferencePropertyCollection)
+            {
+                if (prop.PropertyName == "vertical_route_id")
+                    return true;
+            }
+            return false;
+        }
+        private static bool IsBasePointBlock(BlockReference blockRef)
+        {
+            foreach (DynamicBlockReferenceProperty prop in blockRef.DynamicBlockReferencePropertyCollection)
+            {
+                if (prop.PropertyName == "Floor")
+                    return true;
+            }
+            return false;
+        }
 
     }
     public class PluginEntry : IExtensionApplication
