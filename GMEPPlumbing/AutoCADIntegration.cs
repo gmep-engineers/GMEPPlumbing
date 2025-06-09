@@ -296,12 +296,24 @@ namespace GMEPPlumbing
         Point3d StartUpLocation = new Point3d(0, 0, 0);
         ObjectId startPipeId = ObjectId.Null;
         string verticalRouteId = Guid.NewGuid().ToString();
+        ObjectId gmepTextStyleId;
 
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
             BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
             Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
+            TextStyleTable textStyleTable = (TextStyleTable) tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+            if (textStyleTable.Has("gmep"))
+            {
+                gmepTextStyleId = textStyleTable["gmep"];
+            }
+            else
+            {
+                ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+                gmepTextStyleId = doc.Database.Textstyle;
+            }
+
             foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
             {
                if (id.IsValid)
@@ -572,6 +584,7 @@ namespace GMEPPlumbing
                 DBText text = new DBText();
                 text.Position = line.EndPoint;
                 text.TextString= "PLMG UP";
+                text.TextStyleId = gmepTextStyleId;
                 text.Layer = "E-TXT1";
                 curSpace.AppendEntity(text);
                 tr.AddNewlyCreatedDBObject(text, true);
@@ -740,6 +753,7 @@ namespace GMEPPlumbing
                 text.Position = line.EndPoint;
                 text.TextString= "PLMG DOWN";
                 text.Layer = "E-TXT1";
+                text.TextStyleId = gmepTextStyleId;
                 curSpace.AppendEntity(text);
                 tr.AddNewlyCreatedDBObject(text, true);
 
