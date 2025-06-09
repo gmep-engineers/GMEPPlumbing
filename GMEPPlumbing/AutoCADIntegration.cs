@@ -1455,13 +1455,25 @@ namespace GMEPPlumbing
 
                                                     var pc = entity.DynamicBlockReferencePropertyCollection;
 
+                                                    string BasePointId2 = string.Empty;
+                                                    bool match = false;
                                                     foreach (DynamicBlockReferenceProperty prop in pc)
                                                     {
+
                                                         if (prop.PropertyName == "vertical_route_id" &&
                                                             prop.Value?.ToString() == VerticalRouteId)
                                                         {
-                                                            entity.Position += distanceVector;
+                                                            match = true;
                                                         }
+                                                        if (prop.PropertyName == "base_point_id")
+                                                        {
+                                                            BasePointId2 = prop.Value?.ToString();
+                                                        }
+                                                    }
+                                                    if (match)
+                                                    {
+                                                        BlockReference basePointRef2 = tr.GetObject(basePoints[BasePointId2], OpenMode.ForRead) as BlockReference;
+                                                        entity.Position = basePointRef2.Position + distanceVector;
                                                     }
 
                                                 }
