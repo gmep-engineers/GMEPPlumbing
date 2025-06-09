@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 
 namespace GMEPPlumbing
@@ -151,6 +152,22 @@ namespace GMEPPlumbing
     {
       Id = id;
       Type = type;
+    }
+  }
+
+  public class PlumbingPlanBasePoint
+  {
+    public string Id;
+    public string ProjectId;
+    public string ViewportName;
+    public int Floor;
+
+    public PlumbingPlanBasePoint(string id, string projectId, string viewportName, int floor)
+    {
+      Id = id;
+      ProjectId = projectId;
+      ViewportName = viewportName;
+      Floor = floor;
     }
   }
 }

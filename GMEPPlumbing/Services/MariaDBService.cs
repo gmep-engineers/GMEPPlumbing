@@ -119,6 +119,13 @@ namespace GMEPPlumbing.Services
       }
     }
 
+    public async Task<MySqlConnection> OpenNewConnectionAsync()
+    {
+      MySqlConnection conn = new MySqlConnection(ConnectionString);
+      await conn.OpenAsync();
+      return conn;
+    }
+
     public async Task<string> GetProjectId(string projectNo)
     {
       if (!string.IsNullOrEmpty(ProjectId))
@@ -765,6 +772,27 @@ namespace GMEPPlumbing.Services
       command.Parameters.AddWithValue("@fixtureId", source.FixtureId);
       await command.ExecuteNonQueryAsync();
       await CloseConnectionAsync();
+    }
+
+    public async Task CreatePlumbingPlanBasePoint(PlumbingPlanBasePoint point)
+    {
+      string query =
+        @"
+        INSERT INTO plumbing_plan_base_points
+        (id, project_id, viewportName, floor)
+        VALUES
+        (@id, @projectId, @viewportName, @floor
+        ";
+      // opening a new connection since we don't know how fast the user is going to click
+      // in comparison to how fast the database will responsd
+      MySqlConnection conn = await OpenNewConnectionAsync();
+      MySqlCommand command = new MySqlCommand(query, conn);
+      command.Parameters.AddWithValue("@id", point.Id);
+      command.Parameters.AddWithValue("@projectId", point.ProjectId);
+      command.Parameters.AddWithValue("@planTypeId", point.ViewportName);
+      command.Parameters.AddWithValue("@floor", point.Floor);
+      await command.ExecuteNonQueryAsync();
+      await conn.CloseAsync();
     }
   }
 }
