@@ -70,6 +70,10 @@ namespace GMEPPlumbing {
 
       // Prevent multiple attachments
 
+      db.BeginSave -= (s, e) => IsSaving = true;
+      db.SaveComplete -= (s, e) => IsSaving = false;
+      db.AbortSave -=(s, e) => IsSaving = false;
+
       db.BeginSave += (s, e) => IsSaving = true;
       db.SaveComplete += (s, e) => IsSaving = false;
       db.AbortSave += (s, e) => IsSaving = false;
@@ -77,6 +81,7 @@ namespace GMEPPlumbing {
       db.ObjectErased += Db_VerticalRouteErased;
       db.ObjectModified -= Db_VerticalRouteModified;
       db.ObjectModified += Db_VerticalRouteModified;
+      db.SaveComplete -= Db_DocumentSaved;  
       db.SaveComplete += Db_DocumentSaved;
       // ... attach other handlers as needed ...
     }
