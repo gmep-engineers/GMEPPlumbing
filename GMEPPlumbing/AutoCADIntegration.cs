@@ -11,6 +11,7 @@ using System.Windows.Forms.Integration;
 using System.Windows.Markup;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
+using System.Xml.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -76,6 +77,7 @@ namespace GMEPPlumbing {
       db.ObjectErased += Db_VerticalRouteErased;
       db.ObjectModified -= Db_VerticalRouteModified;
       db.ObjectModified += Db_VerticalRouteModified;
+      db.SaveComplete += Db_DocumentSaved;
       // ... attach other handlers as needed ...
     }
 
@@ -1857,6 +1859,54 @@ namespace GMEPPlumbing {
           return true;
       }
       return false;
+    }
+    public static async void Db_DocumentSaved(object sender, DatabaseIOEventArgs e) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      MariaDBService mariaDBService = new MariaDBService();
+
+      try {
+        string projectNo = CADObjectCommands.GetProjectNoFromFileName();
+        string ProjectId = await mariaDBService.GetProjectId(projectNo);
+        List<PlumbingHorizontalRoute> routes = await GetHorizontalRoutesFromCAD(ProjectId);
+        await mariaDBService.UpdatePlumbingHorizontalRoutes(routes, ProjectId);
+
+      }
+      catch (System.Exception ex) {
+        ed.WriteMessage("\nError getting ProjectId: " + ex.Message);
+        return;
+      }
+    }
+
+    public static async Task<List<PlumbingHorizontalRoute>> GetHorizontalRoutesFromCAD(string ProjectId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List<PlumbingHorizontalRoute> routes = new List<PlumbingHorizontalRoute>();
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+        foreach (ObjectId entId in modelSpace) {
+          if (entId.ObjectClass == RXClass.GetClass(typeof(Line))) {
+            Line line = tr.GetObject(entId, OpenMode.ForRead) as Line;
+            if (line != null) {
+              ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
+              if (xdata != null && xdata.AsArray().Length > 2) {
+                TypedValue[] values = xdata.AsArray();
+
+                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, line.StartPoint, line.EndPoint, values[2].Value.ToString());
+                routes.Add(route);
+              }
+            }
+          }
+        }
+        tr.Commit();
+      }
+      ed.WriteMessage(ProjectId + " - Found " + routes.Count + " horizontal routes in the drawing.");
+      return routes;
     }
 
   }

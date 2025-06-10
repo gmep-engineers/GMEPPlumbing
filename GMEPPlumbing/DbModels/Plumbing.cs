@@ -163,14 +163,12 @@ namespace GMEPPlumbing {
     public string ProjectId;
     public Point3d StartPoint;
     public Point3d EndPoint;
-    public int typeId;
     public string SourceId;
     public PlumbingHorizontalRoute(
       string id,
       string projectId,
       Point3d startPoint,
       Point3d endPoint,
-      int typeId,
       string sourceId
     ) {
       Id = id;
