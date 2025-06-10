@@ -1964,13 +1964,16 @@ namespace GMEPPlumbing {
                         if (prop.PropertyName == "source_id") {
                           SourceId = prop.Value?.ToString();
                         }
+                      
+                      }
+                      if (Id != "0") {
                         PlumbingVerticalRoute route = new PlumbingVerticalRoute(
                           Id,
                           ProjectId,
                           entity.Position,
                           SourceId,
                           VerticalRouteId,
-                          BasePointId
+                          name
                         );
                         routes.Add(route);
                       }
