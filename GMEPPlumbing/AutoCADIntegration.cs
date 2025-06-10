@@ -479,7 +479,7 @@ namespace GMEPPlumbing {
               prop.Value = verticalRouteId;
             }
           }
-          
+
           // Set the vertical route ID
           tr.Commit();
         }
@@ -1869,14 +1869,18 @@ namespace GMEPPlumbing {
       try {
         string projectNo = CADObjectCommands.GetProjectNoFromFileName();
         string ProjectId = await mariaDBService.GetProjectId(projectNo);
-        List<PlumbingHorizontalRoute> routes = await GetHorizontalRoutesFromCAD(ProjectId);
-        await mariaDBService.UpdatePlumbingHorizontalRoutes(routes, ProjectId);
 
+        List<PlumbingHorizontalRoute> horizontalRoutes = await GetHorizontalRoutesFromCAD(ProjectId);
+        //List<PlumbingVerticalRoute> verticalRoutes = await GetVerticalRoutesFromCAD(ProjectId);
+
+        await mariaDBService.UpdatePlumbingHorizontalRoutes(horizontalRoutes, ProjectId);
+        //await mariaDBService.UpdatePlumbingVerticalRoutes(verticalRoutes, ProjectId);
       }
       catch (System.Exception ex) {
         ed.WriteMessage("\nError getting ProjectId: " + ex.Message);
         return;
       }
+
     }
 
     public static async Task<List<PlumbingHorizontalRoute>> GetHorizontalRoutesFromCAD(string ProjectId) {
@@ -1909,7 +1913,80 @@ namespace GMEPPlumbing {
       return routes;
     }
 
+
+    public static async Task<List<PlumbingVerticalRoute>> GetVerticalRoutesFromCAD(string ProjectId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List<PlumbingVerticalRoute> routes = new List<PlumbingVerticalRoute>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+        List<string> blockNames = new List<string>
+          {
+              "GMEP_PLUMBING_LINE_UP",
+              "GMEP_PLUMBING_LINE_DOWN",
+              "GMEP_PLUMBING_LINE_VERTICAL"
+          };
+
+        foreach (var name in blockNames) {
+          BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
+          foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+            if (id.IsValid) {
+              using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord) {
+                if (anonymousBtr != null) {
+
+                  foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                    if (objId.IsValid) {
+                      var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+
+                      var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                      string Id = string.Empty;
+                      string VerticalRouteId = string.Empty;
+                      string BasePointId = string.Empty;
+                      string SourceId = string.Empty;
+
+                      foreach (DynamicBlockReferenceProperty prop in pc) {
+
+                        if (prop.PropertyName == "vertical_route_id") {
+                          VerticalRouteId = prop.Value.ToString();
+                        }
+                        if (prop.PropertyName == "base_point_id") {
+                          BasePointId = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "id") {
+                          Id = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "source_id") {
+                          SourceId = prop.Value?.ToString();
+                        }
+                        PlumbingVerticalRoute route = new PlumbingVerticalRoute(
+                          Id,
+                          ProjectId,
+                          entity.Position,
+                          SourceId,
+                          VerticalRouteId,
+                          BasePointId
+                        );
+                        routes.Add(route);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        tr.Commit();
+      }
+      return routes;
+    }
   }
+                  
 
   public class PluginEntry : IExtensionApplication {
     public void Initialize() {

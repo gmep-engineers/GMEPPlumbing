@@ -827,6 +827,62 @@ namespace GMEPPlumbing.Services
 
         await conn.CloseAsync();
     }
+    public async Task UpdatePlumbingVerticalRoutes(List<PlumbingVerticalRoute> routes, string projectId) {
+      if (routes == null) {
+        return;
+      }
+      var idsToKeep = routes.Select(r => r.Id).ToList();
+      MySqlConnection conn = await OpenNewConnectionAsync();
+
+      if (idsToKeep.Count > 0) {
+        var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
+        string deleteQuery = $@"
+              DELETE FROM plumbing_vertical_routes
+              WHERE project_id = @projectId
+              AND id NOT IN ({string.Join(",", paramNames)})
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", projectId);
+        for (int i = 0; i < idsToKeep.Count; i++) {
+          deleteCommand.Parameters.AddWithValue(paramNames[i], idsToKeep[i]);
+        }
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      else {
+        string deleteQuery = @"
+              DELETE FROM plumbing_vertical_routes
+              WHERE project_id = @projectId
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", projectId);
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      if (routes.Count > 0) {
+        string upsertQuery = @"
+              INSERT INTO plumbing_vertical_routes
+              (id, project_id, pos_x, pos_y, vertical_route_id, base_point_id, source_id)
+              VALUES (@id, @projectId, @posX, @posY, @verticalRouteId, @basePointId, @sourceId)
+              ON DUPLICATE KEY UPDATE
+              pos_x = @posX,
+              pos_y = @posy,
+              source_id = @sourceId,
+              vertical_route_id = @verticalRouteId,
+              base_point_id = @basePointId
+            
+          ";
+        foreach (var route in routes) {
+          MySqlCommand command = new MySqlCommand(upsertQuery, conn);
+          command.Parameters.AddWithValue("@id", route.Id);
+          command.Parameters.AddWithValue("@projectId", projectId);
+          command.Parameters.AddWithValue("@posX", route.Position.X);
+          command.Parameters.AddWithValue("@posY", route.Position.Y);
+          command.Parameters.AddWithValue("@sourceId", route.SourceId);
+          command.Parameters.AddWithValue("@verticalRouteId", route.VerticalRouteId);
+          command.Parameters.AddWithValue("@basePointId", route.BasePointId);
+          await command.ExecuteNonQueryAsync();
+        }
+      }
+    }
    
 
   }

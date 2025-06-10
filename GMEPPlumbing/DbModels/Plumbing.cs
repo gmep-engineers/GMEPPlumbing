@@ -182,32 +182,24 @@ namespace GMEPPlumbing {
     public string Id;
     public string ProjectId;
     public Point3d Position;
-    public int StartFloor;
-    public int EndFloor;
-    public int TypeId;
     public string SourceId;
-    public float StartFloorHeight;
-    public float EndFloorHeight;
+    public string VerticalRouteId;
+    public string BasePointId;
+
     public PlumbingVerticalRoute(
       string id,
       string projectId,
       Point3d position,
-      int startFloor,
-      int endFloor,
-      int typeId,
       string sourceId,
-      float startFloorHeight,
-      float endFloorHeight
+      string verticalRouteId,
+      string basePointId
     ) {
       Id = id;
       ProjectId = projectId;
       Position = position;
-      StartFloor = startFloor;
-      EndFloor = endFloor;
-      TypeId = typeId;
       SourceId = sourceId;
-      StartFloorHeight = startFloorHeight;
-      EndFloorHeight = endFloorHeight;
+      VerticalRouteId = verticalRouteId;
+      BasePointId = basePointId;
     }
   }
 }
