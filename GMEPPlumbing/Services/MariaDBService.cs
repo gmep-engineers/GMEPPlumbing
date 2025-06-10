@@ -718,7 +718,7 @@ namespace GMEPPlumbing.Services
       await CloseConnectionAsync();
     }
 
-    public async Task CreatePlumbingPlanBasePoint(PlumbingPlanBasePoint point) {
+    /*public async Task CreatePlumbingPlanBasePoint(PlumbingPlanBasePoint point) {
       string query =
         @"
         INSERT INTO plumbing_plan_base_points
@@ -736,7 +736,7 @@ namespace GMEPPlumbing.Services
       command.Parameters.AddWithValue("@floor", point.Floor);
       await command.ExecuteNonQueryAsync();
       await conn.CloseAsync();
-    }
+    }*/
 
 
 
@@ -882,6 +882,63 @@ namespace GMEPPlumbing.Services
           await command.ExecuteNonQueryAsync();
         }
       }
+    }
+    public async Task UpdatePlumbingPlanBasePoints(List<PlumbingPlanBasePoint> points, string ProjectId) {
+      if (points == null) {
+        return;
+      }
+      var idsToKeep = points.Select(p => p.Id).ToList();
+      MySqlConnection conn = await OpenNewConnectionAsync();
+      if (idsToKeep.Count > 0) {
+        var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
+        string deleteQuery = $@"
+              DELETE FROM plumbing_plan_base_points
+              WHERE project_id = @projectId
+              AND id NOT IN ({string.Join(",", paramNames)})
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        for (int i = 0; i < idsToKeep.Count; i++) {
+          deleteCommand.Parameters.AddWithValue(paramNames[i], idsToKeep[i]);
+        }
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      else {
+        string deleteQuery = @"
+              DELETE FROM plumbing_plan_base_points
+              WHERE project_id = @projectId
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      if (points.Count > 0) {
+        string upsertQuery = @"
+              INSERT INTO plumbing_plan_base_points
+              (id, project_id, viewport_id, floor, plan, type, pos_x, pos_y)
+              VALUES (@id, @projectId, @viewportId, @floor, @plan, @type, @posX, @posY)
+              ON DUPLICATE KEY UPDATE
+                  viewport_name = @viewportName,
+                  floor = @floor,
+                  plan = @plan,
+                  type = @type,
+                  pos_x = @posX,
+                  pos_y = @posY
+          ";
+        foreach (var point in points) {
+          MySqlCommand command = new MySqlCommand(upsertQuery, conn);
+          command.Parameters.AddWithValue("@id", point.Id);
+          command.Parameters.AddWithValue("@projectId", ProjectId);
+          command.Parameters.AddWithValue("@viewportId", point.ViewportId);
+          command.Parameters.AddWithValue("@floor", point.Floor);
+          command.Parameters.AddWithValue("@plan", point.Plan);
+          command.Parameters.AddWithValue("@type", point.Type);
+          command.Parameters.AddWithValue("@posX", point.Point.X);
+          command.Parameters.AddWithValue("@posY", point.Point.X);
+          await command.ExecuteNonQueryAsync();
+        }
+      }
+      await conn.CloseAsync();
     }
    
 

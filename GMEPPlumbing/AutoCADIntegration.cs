@@ -1872,9 +1872,11 @@ namespace GMEPPlumbing {
 
         List<PlumbingHorizontalRoute> horizontalRoutes = GetHorizontalRoutesFromCAD(ProjectId);
         List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
+        List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
 
         await mariaDBService.UpdatePlumbingHorizontalRoutes(horizontalRoutes, ProjectId);
         await mariaDBService.UpdatePlumbingVerticalRoutes(verticalRoutes, ProjectId);
+        //await mariaDBService.UpdatePlumbingPlanBasePoints(basePoints, ProjectId);
       }
       catch (System.Exception ex) {
         ed.WriteMessage("\nError getting ProjectId: " + ex.Message);
@@ -1988,10 +1990,82 @@ namespace GMEPPlumbing {
       }
       return routes;
     }
-  }
-                  
+    public static List<PlumbingPlanBasePoint> GetPlumbingBasePointsFromCAD(string ProjectId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
 
-  public class PluginEntry : IExtensionApplication {
+      List<PlumbingPlanBasePoint> points = new List<PlumbingPlanBasePoint>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  if (objId.IsValid) {
+                    var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+
+                    var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                    string Id = string.Empty;
+                    string Plan = string.Empty;
+                    string ViewId = string.Empty;
+                    string Type = string.Empty;
+                    int Floor = 0;
+
+                    foreach (DynamicBlockReferenceProperty prop in pc) {
+                        if (prop.PropertyName == "Floor") {
+                          Floor = Convert.ToInt32(prop.Value);
+                        }
+                        if (prop.PropertyName == "Plan") {
+                          Plan = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "Id") {
+                          Id = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "Type") {
+                          Type = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "View_Id") {
+                          ViewId = prop.Value?.ToString();
+                        }
+
+                    }
+                    if (Id != "0") {
+                      PlumbingPlanBasePoint BasePoint = new PlumbingPlanBasePoint(
+                        Id,
+                        ProjectId,
+                        entity.Position,
+                        Plan,
+                        Type,
+                        ViewId,
+                        Floor
+                      );
+                      points.Add(BasePoint);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        tr.Commit();
+      }
+      ed.WriteMessage(ProjectId + " - Found " + points.Count + " basepoints in the drawing.");
+      return points;
+    }
+  }
+
+
+
+
+public class PluginEntry : IExtensionApplication {
     public void Initialize() {
       // Attach to document events
       Application.DocumentManager.DocumentCreated += DocumentManager_DocumentCreated;

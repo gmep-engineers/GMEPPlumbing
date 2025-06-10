@@ -148,14 +148,20 @@ namespace GMEPPlumbing {
   public class PlumbingPlanBasePoint {
     public string Id;
     public string ProjectId;
-    public string ViewportName;
+    public string ViewportId;
     public int Floor;
+    public string Plan;
+    public string Type;
+    public Point3d Point;
 
-    public PlumbingPlanBasePoint(string id, string projectId, string viewportName, int floor) {
+    public PlumbingPlanBasePoint(string id, string projectId, Point3d point, string plan, string type, string viewportId, int floor) {
       Id = id;
       ProjectId = projectId;
-      ViewportName = viewportName;
+      ViewportId = viewportId;
       Floor = floor;
+      Type = type;
+      Plan = plan;
+      Point = point;
     }
   }
   public class PlumbingHorizontalRoute {
