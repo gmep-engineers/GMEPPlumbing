@@ -32,6 +32,8 @@ using GMEPPlumbing.Views;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver.Core.Connections;
 using MongoDB.Driver.Core.Misc;
+using Org.BouncyCastle.Bcpg.OpenPgp;
+using SharpCompress.Common;
 using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
@@ -87,6 +89,8 @@ namespace GMEPPlumbing
       db.ObjectErased += Db_VerticalRouteErased;
       db.ObjectModified -= Db_VerticalRouteModified;
       db.ObjectModified += Db_VerticalRouteModified;
+      db.ObjectModified -= Db_BasePointModified;
+      db.ObjectModified += Db_BasePointModified;
       db.SaveComplete -= Db_DocumentSaved;  
       db.SaveComplete += Db_DocumentSaved;
       // ... attach other handlers as needed ...
@@ -765,6 +769,7 @@ namespace GMEPPlumbing
     [CommandMethod("SETPLUMBINGBASEPOINT")]
     public async void SetPlumbingBasePoint()
     {
+      SettingObjects = true;
       var prompt = new Views.BasePointPromptWindow();
       bool? result = prompt.ShowDialog();
       if (result != true)
@@ -852,11 +857,18 @@ namespace GMEPPlumbing
               {
                 prop.Value = Guid.NewGuid().ToString();
               }
+              else if (prop.PropertyName == "pos_x") {
+                prop.Value = point.X;
+              }
+              else if (prop.PropertyName == "pos_y") {
+                prop.Value = point.Y;
+              }
             }
           }
           tr.Commit();
         }
       }
+      SettingObjects = false;
     }
 
     [CommandMethod("Water")]
@@ -2251,6 +2263,101 @@ namespace GMEPPlumbing
       }
     }
 
+    public static void Db_BasePointModified(object sender, ObjectEventArgs e) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      Dictionary<string, ObjectId> viewBasePoints = new Dictionary<string, ObjectId>();
+      if (
+        !SettingObjects
+        && !IsSaving
+        && e.DBObject is BlockReference blockRef
+        && IsPlumbingBasePointBlock(blockRef)
+      ) {
+        SettingObjects = true;
+
+        string Id = string.Empty;
+        Vector3d distanceVector = new Vector3d(0, 0, 0);
+
+
+        var pc = blockRef.DynamicBlockReferencePropertyCollection;
+        if (pc != null) {
+          double pos_x = 0;
+          double pos_y = 0;
+          foreach (DynamicBlockReferenceProperty prop in pc) {
+            if (prop.PropertyName == "Id") {
+              Id = prop.Value?.ToString();
+            }
+            if (prop.PropertyName == "pos_x") {
+              pos_x = Convert.ToDouble(prop.Value);
+              prop.Value = blockRef.Position.X;
+            }
+            if (prop.PropertyName == "pos_y") {
+              pos_y = Convert.ToDouble(prop.Value);
+              prop.Value = blockRef.Position.Y;
+            }
+          }
+          Point3d position = new Point3d(pos_x, pos_y, 0);
+          distanceVector = blockRef.Position - position;
+
+
+        }
+        Dictionary<string, BlockReference> verticalRoutes = new Dictionary<string, BlockReference>();
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+  
+
+          List<string> blockNames = new List<string>
+          {
+              "GMEP_PLUMBING_LINE_UP",
+              "GMEP_PLUMBING_LINE_DOWN",
+              "GMEP_PLUMBING_LINE_VERTICAL",
+            };
+
+          foreach (var name in blockNames) {
+            BlockTableRecord basePointBlock = (BlockTableRecord)
+              tr.GetObject(bt[name], OpenMode.ForWrite);
+            foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+              if (id.IsValid) {
+                using (
+                  BlockTableRecord anonymousBtr =
+                    tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord
+                ) {
+                  if (anonymousBtr != null) {
+                    foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                      if (objId.IsValid) {
+                        var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+
+                        var pc2 = entity.DynamicBlockReferencePropertyCollection;
+
+                        string BasePointId = string.Empty;
+
+                        foreach (DynamicBlockReferenceProperty prop in pc2) {
+                         
+                          if (prop.PropertyName == "base_point_id") {
+                            BasePointId = prop.Value?.ToString();
+                            if (BasePointId == Id) {
+                              entity.Position += distanceVector;
+                            }
+
+                          }
+                        }
+                      
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          tr.Commit();
+        }
+        SettingObjects = false;
+      }
+    }
+
+
     private static bool IsVerticalRouteBlock(BlockReference blockRef)
     {
       foreach (
@@ -2258,6 +2365,15 @@ namespace GMEPPlumbing
       )
       {
         if (prop.PropertyName == "vertical_route_id")
+          return true;
+      }
+      return false;
+    }
+    private static bool IsPlumbingBasePointBlock(BlockReference blockRef) {
+      foreach (
+        DynamicBlockReferenceProperty prop in blockRef.DynamicBlockReferencePropertyCollection
+      ) {
+        if (prop.PropertyName == "View_Id")
           return true;
       }
       return false;
