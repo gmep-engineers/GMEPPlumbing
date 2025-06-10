@@ -83,38 +83,37 @@ namespace GMEPPlumbing {
     public async void PlumbingHorizontalRoute() {
       List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
+      string sourceId = "";
 
-      PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
-      pko.Keywords.Add("HotWater");
-      pko.Keywords.Add("ColdWater");
-      pko.Keywords.Add("Gas");
-      // pko.Keywords.Add("Sewer");
-      //pko.Keywords.Add("Storm");
-      PromptResult pr = ed.GetKeywords(pko);
-      string result = pr.StringResult;
+      PromptEntityOptions sourcePeo = new PromptEntityOptions("\nSelect where the route is being sourced from (source or vertical route)");
+      sourcePeo.SetRejectMessage("\nSelect where the route is being sourced from");
+      sourcePeo.AddAllowedClass(typeof(BlockReference), true);
+      PromptEntityResult sourcePer = ed.GetEntity(sourcePeo);
 
-      switch (result) {
-        case "HotWater":
-          layer = "P-DOMW-HOTW";
-          break;
-        case "ColdWater":
-          layer = "P-DOMW-CWTR";
-          break;
-        case "Gas":
-          layer = "P-GAS";
-          break;
-        /* case "Sewer":
-             layer = "GMEP_PLUMBING_SEWER";
-             break;
-         case "Storm":
-             layer = "GMEP_PLUMBING_STORM";
-             break;*/
-        default:
-          ed.WriteMessage("\nInvalid route type selected.");
-          return;
+      if (sourcePer.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        return;
       }
+      ObjectId sourceObjectId = sourcePer.ObjectId;
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockReference sourceBlockRef = (BlockReference)tr.GetObject(sourceObjectId, OpenMode.ForRead);
+        var pc = sourceBlockRef.DynamicBlockReferencePropertyCollection;
+        bool match = false;
+        foreach (DynamicBlockReferenceProperty prop in pc) {
+          if (prop.PropertyName == "id") {
+            sourceId = prop.Value.ToString();
+          }
+          if (prop.PropertyName == "vertical_route_id") {
+            match = true;
+          }
+        }
+        if (!match) {
+          return;
+        }
+        layer = sourceBlockRef.Layer;
 
-
+        tr.Commit();
+      }
 
       PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
       ppo2.AllowNone = false;
@@ -152,7 +151,7 @@ namespace GMEPPlumbing {
         tr2.Commit();
       }
       routeGUIDS.Add(LineGUID2);
-      AttachRouteXData(addedLineId2, LineGUID2);
+      AttachRouteXData(addedLineId2, LineGUID2, sourceId);
       AddArrowsToLine(addedLineId2, LineGUID2);
 
       while (true) {
@@ -229,7 +228,7 @@ namespace GMEPPlumbing {
           tr.Commit();
         }
         routeGUIDS.Add(LineGUID);
-        AttachRouteXData(addedLineId, LineGUID);
+        AttachRouteXData(addedLineId, LineGUID, sourceId);
         AddArrowsToLine(addedLineId, LineGUID);
       }
     }
@@ -478,53 +477,12 @@ namespace GMEPPlumbing {
               prop.Value = verticalRouteId;
             }
           }
-
+          
           // Set the vertical route ID
           tr.Commit();
         }
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
-          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        MakeVerticalRouteLabel(labelPoint, "UP");
 
-
-          BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-          BlockTableRecord blockDef2 = tr.GetObject(bt["GMEP_DIRECTIONAL_ARROW"], OpenMode.ForRead) as BlockTableRecord;
-          BlockReference BlockRef2 = new BlockReference(labelPoint, blockDef2.ObjectId);
-          BlockRef2.Rotation += Math.PI / 2; // Rotate the arrow to point upwards
-
-
-          ArrowJig arrowJig = new ArrowJig(BlockRef2, labelPoint);
-          PromptResult arrowPromptResult = ed.Drag(arrowJig);
-          if (arrowPromptResult.Status != PromptStatus.OK) {
-            return;
-          }
-          Point3d arrowTargetPoint = arrowJig.InsertionPoint;
-          Vector3d dir = (arrowTargetPoint - labelPoint).GetNormal();
-
-
-          Point3d labelPointOffset = labelPoint + (dir * 1.5);
-
-          LabelJig labelJig = new LabelJig(labelPointOffset);
-          PromptResult labelPromptResult = ed.Drag(labelJig);
-          if (labelPromptResult.Status != PromptStatus.OK) {
-            return;
-          }
-
-
-          Line line = labelJig.line;
-          curSpace.AppendEntity(line);
-          tr.AddNewlyCreatedDBObject(line, true);
-
-          DBText text = new DBText();
-          text.Position = line.EndPoint;
-          text.TextString = "PLMG UP";
-          text.TextStyleId = gmepTextStyleId;
-          text.Layer = "E-TXT1";
-          curSpace.AppendEntity(text);
-          tr.AddNewlyCreatedDBObject(text, true);
-
-
-          tr.Commit();
-        }
 
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           //Continue Pipe
@@ -629,49 +587,7 @@ namespace GMEPPlumbing {
           }
           tr.Commit();
         }
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
-          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-
-
-          BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-          BlockTableRecord blockDef2 = tr.GetObject(bt["GMEP_DIRECTIONAL_ARROW"], OpenMode.ForRead) as BlockTableRecord;
-          BlockReference BlockRef2 = new BlockReference(labelPoint2, blockDef2.ObjectId);
-          BlockRef2.Rotation += Math.PI / 2; // Rotate the arrow to point upwards
-
-
-          ArrowJig arrowJig = new ArrowJig(BlockRef2, labelPoint2);
-          PromptResult arrowPromptResult = ed.Drag(arrowJig);
-          if (arrowPromptResult.Status != PromptStatus.OK) {
-            return;
-          }
-          Point3d arrowTargetPoint = arrowJig.InsertionPoint;
-          Vector3d dir = (arrowTargetPoint - labelPoint2).GetNormal();
-
-
-          Point3d labelPointOffset = labelPoint2 + (dir * 1.5);
-
-          LabelJig labelJig = new LabelJig(labelPointOffset);
-          PromptResult labelPromptResult = ed.Drag(labelJig);
-          if (labelPromptResult.Status != PromptStatus.OK) {
-            return;
-          }
-
-
-          Line line = labelJig.line;
-          curSpace.AppendEntity(line);
-          tr.AddNewlyCreatedDBObject(line, true);
-
-          DBText text = new DBText();
-          text.Position = line.EndPoint;
-          text.TextString = "PLMG DOWN";
-          text.Layer = "E-TXT1";
-          text.TextStyleId = gmepTextStyleId;
-          curSpace.AppendEntity(text);
-          tr.AddNewlyCreatedDBObject(text, true);
-
-
-          tr.Commit();
-        }
+        MakeVerticalRouteLabel(labelPoint2, "DOWN");
 
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           //Continue Pipe
@@ -935,8 +851,8 @@ namespace GMEPPlumbing {
       }
     }
 
-    private void AttachRouteXData(ObjectId lineId, string id) {
-      ed.WriteMessage("Id: " + id);
+    private void AttachRouteXData(ObjectId lineId, string id, string sourceId) {
+      ed.WriteMessage("Id: " + id + " SourceId: " + sourceId);
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
         if (line == null)
@@ -952,7 +868,8 @@ namespace GMEPPlumbing {
         }
         ResultBuffer rb = new ResultBuffer(
             new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
-            new TypedValue(1000, id)
+            new TypedValue(1000, id),
+            new TypedValue(1000, sourceId)
         );
         line.XData = rb;
         rb.Dispose();
@@ -1177,6 +1094,14 @@ namespace GMEPPlumbing {
         CADObjectCommands.TextLayer,
         TextHorizontalMode.TextLeft,
         "2\" UP ABV. CLG."
+      );
+    }
+    public void MakeVerticalRouteLabel(Point3d dnPoint, string direction) {
+      CADObjectCommands.CreateArrowJig("D0", dnPoint);
+      CADObjectCommands.CreateTextWithJig(
+        CADObjectCommands.TextLayer,
+        TextHorizontalMode.TextLeft,
+        "PLMG " + direction
       );
     }
 
