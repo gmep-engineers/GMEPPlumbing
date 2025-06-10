@@ -37,8 +37,10 @@ using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
 [assembly: ExtensionApplication(typeof(GMEPPlumbing.PluginEntry))]
 
-namespace GMEPPlumbing {
-  public class AutoCADIntegration {
+namespace GMEPPlumbing
+{
+  public class AutoCADIntegration
+  {
     private const string XRecordKey = "GMEPPlumbingID";
     private PaletteSet pw;
     private UserInterface myControl;
@@ -56,14 +58,18 @@ namespace GMEPPlumbing {
     public string ProjectId { get; private set; } = string.Empty;
     public static bool IsSaving { get; private set; }
     public static bool SettingObjects { get; set; }
-    public AutoCADIntegration() {
+
+    public AutoCADIntegration()
+    {
       doc = Application.DocumentManager.MdiActiveDocument;
       db = doc.Database;
       ed = doc.Editor;
       SettingObjects = false;
       IsSaving = false;
     }
-    public static void AttachHandlers(Document doc) {
+
+    public static void AttachHandlers(Document doc)
+    {
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -80,34 +86,44 @@ namespace GMEPPlumbing {
     }
 
     [CommandMethod("PlumbingHorizontalRoute")]
-    public async void PlumbingHorizontalRoute() {
+    public async void PlumbingHorizontalRoute()
+    {
       List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
       string sourceId = "";
 
-      PromptEntityOptions sourcePeo = new PromptEntityOptions("\nSelect where the route is being sourced from (source or vertical route)");
+      PromptEntityOptions sourcePeo = new PromptEntityOptions(
+        "\nSelect where the route is being sourced from (source or vertical route)"
+      );
       sourcePeo.SetRejectMessage("\nSelect where the route is being sourced from");
       sourcePeo.AddAllowedClass(typeof(BlockReference), true);
       PromptEntityResult sourcePer = ed.GetEntity(sourcePeo);
 
-      if (sourcePer.Status != PromptStatus.OK) {
+      if (sourcePer.Status != PromptStatus.OK)
+      {
         ed.WriteMessage("\nCommand cancelled.");
         return;
       }
       ObjectId sourceObjectId = sourcePer.ObjectId;
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        BlockReference sourceBlockRef = (BlockReference)tr.GetObject(sourceObjectId, OpenMode.ForRead);
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockReference sourceBlockRef = (BlockReference)
+          tr.GetObject(sourceObjectId, OpenMode.ForRead);
         var pc = sourceBlockRef.DynamicBlockReferencePropertyCollection;
         bool match = false;
-        foreach (DynamicBlockReferenceProperty prop in pc) {
-          if (prop.PropertyName == "id") {
+        foreach (DynamicBlockReferenceProperty prop in pc)
+        {
+          if (prop.PropertyName == "id")
+          {
             sourceId = prop.Value.ToString();
           }
-          if (prop.PropertyName == "vertical_route_id") {
+          if (prop.PropertyName == "vertical_route_id")
+          {
             match = true;
           }
         }
-        if (!match) {
+        if (!match)
+        {
           return;
         }
         layer = sourceBlockRef.Layer;
@@ -118,7 +134,8 @@ namespace GMEPPlumbing {
       PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
       ppo2.AllowNone = false;
       PromptPointResult ppr2 = ed.GetPoint(ppo2);
-      if (ppr2.Status != PromptStatus.OK) {
+      if (ppr2.Status != PromptStatus.OK)
+      {
         ed.WriteMessage("\nCommand cancelled.");
         return;
       }
@@ -137,9 +154,11 @@ namespace GMEPPlumbing {
 
       Point3d endPointLocation2 = ppr3.Value;
 
-      using (Transaction tr2 = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr2 = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = (BlockTable)tr2.GetObject(db.BlockTableId, OpenMode.ForWrite);
-        BlockTableRecord btr = (BlockTableRecord)tr2.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+        BlockTableRecord btr = (BlockTableRecord)
+          tr2.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
         Line line = new Line();
         line.StartPoint = startPointLocation2;
@@ -154,14 +173,16 @@ namespace GMEPPlumbing {
       AttachRouteXData(addedLineId2, LineGUID2, sourceId);
       AddArrowsToLine(addedLineId2, LineGUID2);
 
-      while (true) {
+      while (true)
+      {
         //Select a starting point/object
         PromptEntityOptions peo = new PromptEntityOptions("\nSelect a line");
         peo.SetRejectMessage("\nSelect a line");
         peo.AddAllowedClass(typeof(Line), true);
         PromptEntityResult per = ed.GetEntity(peo);
 
-        if (per.Status != PromptStatus.OK) {
+        if (per.Status != PromptStatus.OK)
+        {
           ed.WriteMessage("\nCommand cancelled.");
           return;
         }
@@ -170,28 +191,30 @@ namespace GMEPPlumbing {
         Point3d startPointLocation = Point3d.Origin;
         ObjectId addedLineId = ObjectId.Null;
 
-
         string LineGUID = Guid.NewGuid().ToString();
 
         // Check if the selected object is a BlockReference or Line
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           Entity basePoint = (Entity)tr.GetObject(basePointId, OpenMode.ForRead);
 
           //get line choice
-          if (basePoint is Line basePointLine) {
+          if (basePoint is Line basePointLine)
+          {
             //retrieving the lines xdata
             ResultBuffer xData = basePointLine.GetXDataForApplication(XRecordKey);
-            if (xData == null || xData.AsArray().Length < 2) {
+            if (xData == null || xData.AsArray().Length < 2)
+            {
               ed.WriteMessage("\nSelected line does not have the required XData.");
               return;
             }
             TypedValue[] values = xData.AsArray();
             string Id = values[1].Value as string;
-            if (!routeGUIDS.Contains(Id)) {
+            if (!routeGUIDS.Contains(Id))
+            {
               ed.WriteMessage("\nSelected line is not part of the active route.");
               continue;
             }
-
 
             //Placing Line
             LineStartPointPreviewJig jig = new LineStartPointPreviewJig(basePointLine);
@@ -199,9 +222,6 @@ namespace GMEPPlumbing {
             startPointLocation = jig.ProjectedPoint;
             layer = basePointLine.Layer;
           }
-
-
-
 
           PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for route: ");
           ppo.BasePoint = startPointLocation;
@@ -212,7 +232,8 @@ namespace GMEPPlumbing {
             return;
 
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
-          BlockTableRecord btr = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          BlockTableRecord btr = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
           Line line = new Line();
           line.StartPoint = startPointLocation;
@@ -221,7 +242,6 @@ namespace GMEPPlumbing {
           btr.AppendEntity(line);
           tr.AddNewlyCreatedDBObject(line, true);
           addedLineId = line.ObjectId;
-
 
           //PropagateUpRouteInfo(tr, layer, LineGUID);
 
@@ -234,7 +254,8 @@ namespace GMEPPlumbing {
     }
 
     [CommandMethod("PlumbingVerticalRoute")]
-    public async void PlumbingVerticalRoute() {
+    public async void PlumbingVerticalRoute()
+    {
       SettingObjects = true;
       string layer = "Defpoints";
       PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
@@ -246,7 +267,8 @@ namespace GMEPPlumbing {
       PromptResult pr2 = ed.GetKeywords(pko);
       string result = pr2.StringResult;
 
-      switch (result) {
+      switch (result)
+      {
         case "HotWater":
           layer = "P-DOMW-HOTW";
           break;
@@ -275,31 +297,47 @@ namespace GMEPPlumbing {
       string verticalRouteId = Guid.NewGuid().ToString();
       ObjectId gmepTextStyleId;
 
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        BlockTableRecord basePointBlock = (BlockTableRecord)
+          tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
         Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
-        TextStyleTable textStyleTable = (TextStyleTable)tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
-        if (textStyleTable.Has("gmep")) {
+        TextStyleTable textStyleTable = (TextStyleTable)
+          tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+        if (textStyleTable.Has("gmep"))
+        {
           gmepTextStyleId = textStyleTable["gmep"];
         }
-        else {
+        else
+        {
           ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
           gmepTextStyleId = doc.Database.Textstyle;
         }
 
-        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
-          if (id.IsValid) {
-            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
-              if (anonymousBtr != null) {
-                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+        {
+          if (id.IsValid)
+          {
+            using (
+              BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord
+            )
+            {
+              if (anonymousBtr != null)
+              {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                {
                   var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                   var pc = entity.DynamicBlockReferencePropertyCollection;
-                  foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "View_Id") {
+                  foreach (DynamicBlockReferenceProperty prop in pc)
+                  {
+                    if (prop.PropertyName == "View_Id")
+                    {
                       string key = prop.Value.ToString();
-                      if (key != "0") {
-                        if (!basePoints.ContainsKey(key)) {
+                      if (key != "0")
+                      {
+                        if (!basePoints.ContainsKey(key))
+                        {
                           basePoints[key] = new List<ObjectId>();
                         }
                         basePoints[key].Add(entity.ObjectId);
@@ -314,33 +352,43 @@ namespace GMEPPlumbing {
         ed.WriteMessage("\nFound " + basePoints.Count + " base points in the drawing.");
         //meow meow
         List<string> keywords = new List<string>();
-        foreach (var key in basePoints.Keys) {
+        foreach (var key in basePoints.Keys)
+        {
           var objId = basePoints[key][0];
           var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
           var pc = entity.DynamicBlockReferencePropertyCollection;
           string planName = "";
           string viewport = "";
-          foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "Plan") {
+          foreach (DynamicBlockReferenceProperty prop in pc)
+          {
+            if (prop.PropertyName == "Plan")
+            {
               planName = prop.Value.ToString();
             }
-            if (prop.PropertyName == "Type") {
+            if (prop.PropertyName == "Type")
+            {
               viewport = prop.Value.ToString();
             }
           }
-          if (planName != "" && viewport != "") {
+          if (planName != "" && viewport != "")
+          {
             string keyword = planName + ":" + viewport;
-            if (!keywords.Contains(keyword)) {
+            if (!keywords.Contains(keyword))
+            {
               keywords.Add(keyword);
             }
-            else {
-              int count = keywords.Count(x => x == keyword || (x.StartsWith(keyword + "(") && x.EndsWith(")")));
+            else
+            {
+              int count = keywords.Count(x =>
+                x == keyword || (x.StartsWith(keyword + "(") && x.EndsWith(")"))
+              );
               keywords.Add(keyword + "(" + (count + 1).ToString() + ")");
             }
           }
         }
         PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nPick View: ");
-        foreach (var keyword in keywords) {
+        foreach (var keyword in keywords)
+        {
           promptOptions.Keywords.Add(keyword);
         }
         PromptResult pr = ed.GetKeywords(promptOptions);
@@ -351,7 +399,8 @@ namespace GMEPPlumbing {
 
         //Picking start floor
         PromptKeywordOptions floorOptions = new PromptKeywordOptions("\nStarting Floor: ");
-        for (int i = 1; i <= basePointIds.Count; i++) {
+        for (int i = 1; i <= basePointIds.Count; i++)
+        {
           floorOptions.Keywords.Add(i.ToString());
         }
         PromptResult floorResult = ed.GetKeywords(floorOptions);
@@ -359,37 +408,43 @@ namespace GMEPPlumbing {
 
         BlockReference firstFloorBasePoint = null;
 
-        foreach (ObjectId objId in basePointIds) {
+        foreach (ObjectId objId in basePointIds)
+        {
           var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
           var pc2 = entity2.DynamicBlockReferencePropertyCollection;
 
-          foreach (DynamicBlockReferenceProperty prop in pc2) {
-            if (prop.PropertyName == "Floor") {
+          foreach (DynamicBlockReferenceProperty prop in pc2)
+          {
+            if (prop.PropertyName == "Floor")
+            {
               int floor = Convert.ToInt32(prop.Value);
-              if (floor == startFloor) {
+              if (floor == startFloor)
+              {
                 ZoomToBlock(ed, entity2);
               }
-              if (firstFloorBasePoint == null && floor == startFloor) {
+              if (firstFloorBasePoint == null && floor == startFloor)
+              {
                 firstFloorBasePoint = entity2;
                 StartBasePointLocation = entity2.Position;
               }
             }
           }
-
         }
-        if (firstFloorBasePoint != null) {
-
+        if (firstFloorBasePoint != null)
+        {
           BlockTableRecord block = null;
           BlockReference br = CADObjectCommands.CreateBlockReference(
-          tr,
-          bt,
-          "GMEP_PLUMBING_LINE_VERTICAL",
-          out block,
-          out StartUpLocation
+            tr,
+            bt,
+            "GMEP_PLUMBING_LINE_VERTICAL",
+            out block,
+            out StartUpLocation
           );
-          if (br != null) {
+          if (br != null)
+          {
             br.Layer = layer;
-            BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+            BlockTableRecord curSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
             curSpace.AppendEntity(br);
             tr.AddNewlyCreatedDBObject(br, true);
             startPipeId = br.ObjectId;
@@ -403,8 +458,10 @@ namespace GMEPPlumbing {
 
       //picking end floor
       PromptKeywordOptions endFloorOptions = new PromptKeywordOptions("\nEnding Floor: ");
-      for (int i = 1; i <= basePointIds.Count; i++) {
-        if (i != startFloor) {
+      for (int i = 1; i <= basePointIds.Count; i++)
+      {
+        if (i != startFloor)
+        {
           endFloorOptions.Keywords.Add(i.ToString());
         }
       }
@@ -413,34 +470,42 @@ namespace GMEPPlumbing {
 
       Dictionary<int, BlockReference> BasePointRefs = new Dictionary<int, BlockReference>();
       Dictionary<int, string> BasePointGUIDs = new Dictionary<int, string>();
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-        foreach (ObjectId objId in basePointIds) {
+        foreach (ObjectId objId in basePointIds)
+        {
           var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
           var pc2 = entity2.DynamicBlockReferencePropertyCollection;
 
           int floor = 0;
           string guid = "";
-          foreach (DynamicBlockReferenceProperty prop in pc2) {
-            if (prop.PropertyName == "Floor") {
+          foreach (DynamicBlockReferenceProperty prop in pc2)
+          {
+            if (prop.PropertyName == "Floor")
+            {
               floor = Convert.ToInt32(prop.Value);
               BasePointRefs.Add(floor, entity2);
             }
-            if (prop.PropertyName == "Id") {
+            if (prop.PropertyName == "Id")
+            {
               guid = prop.Value.ToString();
             }
           }
-          if (floor != 0 && guid != "") {
+          if (floor != 0 && guid != "")
+          {
             BasePointGUIDs.Add(floor, guid);
           }
         }
         tr.Commit();
       }
 
-      if (endFloor > startFloor) {
+      if (endFloor > startFloor)
+      {
         Point3d labelPoint = Point3d.Origin;
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           //delete previous start pipe
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
           BlockReference startPipe = tr.GetObject(startPipeId, OpenMode.ForWrite) as BlockReference;
@@ -448,13 +513,16 @@ namespace GMEPPlumbing {
 
           //start pipe
           Point3d newUpPointLocation2 = BasePointRefs[startFloor].Position + upVector;
-          BlockTableRecord blockDef2 = tr.GetObject(bt["GMEP_PLUMBING_LINE_UP"], OpenMode.ForRead) as BlockTableRecord;
-          BlockTableRecord curSpace2 = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          BlockTableRecord blockDef2 =
+            tr.GetObject(bt["GMEP_PLUMBING_LINE_UP"], OpenMode.ForRead) as BlockTableRecord;
+          BlockTableRecord curSpace2 = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
           BlockReference upBlockRef2 = new BlockReference(newUpPointLocation2, blockDef2.ObjectId);
           RotateJig rotateJig = new RotateJig(upBlockRef2);
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
-          if (rotatePromptResult.Status != PromptStatus.OK) {
+          if (rotatePromptResult.Status != PromptStatus.OK)
+          {
             return;
           }
           labelPoint = upBlockRef2.Position;
@@ -466,31 +534,38 @@ namespace GMEPPlumbing {
           // Attach the vertical route ID to the start pipe
           var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
 
-          foreach (DynamicBlockReferenceProperty prop in pc2) {
-            if (prop.PropertyName == "id") {
+          foreach (DynamicBlockReferenceProperty prop in pc2)
+          {
+            if (prop.PropertyName == "id")
+            {
               prop.Value = Guid.NewGuid().ToString();
             }
-            if (prop.PropertyName == "base_point_id") {
+            if (prop.PropertyName == "base_point_id")
+            {
               prop.Value = BasePointGUIDs[startFloor];
             }
-            if (prop.PropertyName == "vertical_route_id") {
+            if (prop.PropertyName == "vertical_route_id")
+            {
               prop.Value = verticalRouteId;
             }
           }
-          
+
           // Set the vertical route ID
           tr.Commit();
         }
         MakeVerticalRouteLabel(labelPoint, "UP");
 
-
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           //Continue Pipe
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-          for (int i = startFloor + 1; i < endFloor; i++) {
+          for (int i = startFloor + 1; i < endFloor; i++)
+          {
             Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
-            BlockTableRecord blockDef = tr.GetObject(bt["GMEP_PLUMBING_LINE_VERTICAL"], OpenMode.ForRead) as BlockTableRecord;
-            BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+            BlockTableRecord blockDef =
+              tr.GetObject(bt["GMEP_PLUMBING_LINE_VERTICAL"], OpenMode.ForRead) as BlockTableRecord;
+            BlockTableRecord curSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
             // Create the BlockReference at the desired location
             BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
@@ -499,15 +574,18 @@ namespace GMEPPlumbing {
             tr.AddNewlyCreatedDBObject(upBlockRef, true);
             var pc2 = upBlockRef.DynamicBlockReferencePropertyCollection;
 
-            foreach (DynamicBlockReferenceProperty prop in pc2) {
-              if (prop.PropertyName == "id") {
+            foreach (DynamicBlockReferenceProperty prop in pc2)
+            {
+              if (prop.PropertyName == "id")
+              {
                 prop.Value = Guid.NewGuid().ToString();
-
               }
-              if (prop.PropertyName == "base_point_id") {
+              if (prop.PropertyName == "base_point_id")
+              {
                 prop.Value = BasePointGUIDs[i];
               }
-              if (prop.PropertyName == "vertical_route_id") {
+              if (prop.PropertyName == "vertical_route_id")
+              {
                 prop.Value = verticalRouteId;
               }
             }
@@ -516,12 +594,15 @@ namespace GMEPPlumbing {
           //end pipe
           ZoomToBlock(ed, BasePointRefs[endFloor]);
           Point3d newUpPointLocation3 = BasePointRefs[endFloor].Position + upVector;
-          BlockTableRecord blockDef3 = tr.GetObject(bt["GMEP_PLUMBING_LINE_DOWN"], OpenMode.ForRead) as BlockTableRecord;
-          BlockTableRecord curSpace3 = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          BlockTableRecord blockDef3 =
+            tr.GetObject(bt["GMEP_PLUMBING_LINE_DOWN"], OpenMode.ForRead) as BlockTableRecord;
+          BlockTableRecord curSpace3 = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
           BlockReference upBlockRef3 = new BlockReference(newUpPointLocation3, blockDef3.ObjectId);
           RotateJig rotateJig2 = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
-          if (rotatePromptResult2.Status != PromptStatus.OK) {
+          if (rotatePromptResult2.Status != PromptStatus.OK)
+          {
             return;
           }
 
@@ -530,40 +611,46 @@ namespace GMEPPlumbing {
           tr.AddNewlyCreatedDBObject(upBlockRef3, true);
           var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
 
-          foreach (DynamicBlockReferenceProperty prop in pc3) {
-            if (prop.PropertyName == "id") {
+          foreach (DynamicBlockReferenceProperty prop in pc3)
+          {
+            if (prop.PropertyName == "id")
+            {
               prop.Value = Guid.NewGuid().ToString();
-
             }
-            if (prop.PropertyName == "base_point_id") {
+            if (prop.PropertyName == "base_point_id")
+            {
               prop.Value = BasePointGUIDs[endFloor];
             }
-            if (prop.PropertyName == "vertical_route_id") {
+            if (prop.PropertyName == "vertical_route_id")
+            {
               prop.Value = verticalRouteId;
             }
           }
           tr.Commit();
         }
-
       }
-      else if (endFloor < startFloor) {
+      else if (endFloor < startFloor)
+      {
         Point3d labelPoint2 = Point3d.Origin;
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           //delete previous start pipe
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
           BlockReference startPipe = tr.GetObject(startPipeId, OpenMode.ForWrite) as BlockReference;
-
 
           startPipe.Erase(true);
 
           //start pipe
           Point3d newUpPointLocation2 = BasePointRefs[startFloor].Position + upVector;
-          BlockTableRecord blockDef2 = tr.GetObject(bt["GMEP_PLUMBING_LINE_DOWN"], OpenMode.ForRead) as BlockTableRecord;
-          BlockTableRecord curSpace2 = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          BlockTableRecord blockDef2 =
+            tr.GetObject(bt["GMEP_PLUMBING_LINE_DOWN"], OpenMode.ForRead) as BlockTableRecord;
+          BlockTableRecord curSpace2 = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
           BlockReference upBlockRef2 = new BlockReference(newUpPointLocation2, blockDef2.ObjectId);
           RotateJig rotateJig = new RotateJig(upBlockRef2);
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
-          if (rotatePromptResult.Status != PromptStatus.OK) {
+          if (rotatePromptResult.Status != PromptStatus.OK)
+          {
             return;
           }
           upBlockRef2.Layer = layer;
@@ -573,15 +660,18 @@ namespace GMEPPlumbing {
 
           var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
 
-          foreach (DynamicBlockReferenceProperty prop in pc2) {
-            if (prop.PropertyName == "id") {
+          foreach (DynamicBlockReferenceProperty prop in pc2)
+          {
+            if (prop.PropertyName == "id")
+            {
               prop.Value = Guid.NewGuid().ToString();
-
             }
-            if (prop.PropertyName == "base_point_id") {
+            if (prop.PropertyName == "base_point_id")
+            {
               prop.Value = BasePointGUIDs[startFloor];
             }
-            if (prop.PropertyName == "vertical_route_id") {
+            if (prop.PropertyName == "vertical_route_id")
+            {
               prop.Value = verticalRouteId;
             }
           }
@@ -589,13 +679,17 @@ namespace GMEPPlumbing {
         }
         MakeVerticalRouteLabel(labelPoint2, "DOWN");
 
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           //Continue Pipe
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-          for (int i = startFloor - 1; i > endFloor; i--) {
+          for (int i = startFloor - 1; i > endFloor; i--)
+          {
             Point3d newUpPointLocation = BasePointRefs[i].Position + upVector;
-            BlockTableRecord blockDef = tr.GetObject(bt["GMEP_PLUMBING_LINE_VERTICAL"], OpenMode.ForRead) as BlockTableRecord;
-            BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+            BlockTableRecord blockDef =
+              tr.GetObject(bt["GMEP_PLUMBING_LINE_VERTICAL"], OpenMode.ForRead) as BlockTableRecord;
+            BlockTableRecord curSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
             // Create the BlockReference at the desired location
             BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
@@ -604,15 +698,18 @@ namespace GMEPPlumbing {
             tr.AddNewlyCreatedDBObject(upBlockRef, true);
             var pc = upBlockRef.DynamicBlockReferencePropertyCollection;
 
-            foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "id") {
+            foreach (DynamicBlockReferenceProperty prop in pc)
+            {
+              if (prop.PropertyName == "id")
+              {
                 prop.Value = Guid.NewGuid().ToString();
-
               }
-              if (prop.PropertyName == "base_point_id") {
+              if (prop.PropertyName == "base_point_id")
+              {
                 prop.Value = BasePointGUIDs[i];
               }
-              if (prop.PropertyName == "vertical_route_id") {
+              if (prop.PropertyName == "vertical_route_id")
+              {
                 prop.Value = verticalRouteId;
               }
             }
@@ -621,12 +718,15 @@ namespace GMEPPlumbing {
           //end pipe
           ZoomToBlock(ed, BasePointRefs[endFloor]);
           Point3d newUpPointLocation3 = BasePointRefs[endFloor].Position + upVector;
-          BlockTableRecord blockDef3 = tr.GetObject(bt["GMEP_PLUMBING_LINE_UP"], OpenMode.ForRead) as BlockTableRecord;
-          BlockTableRecord curSpace3 = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          BlockTableRecord blockDef3 =
+            tr.GetObject(bt["GMEP_PLUMBING_LINE_UP"], OpenMode.ForRead) as BlockTableRecord;
+          BlockTableRecord curSpace3 = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
           BlockReference upBlockRef3 = new BlockReference(newUpPointLocation3, blockDef3.ObjectId);
           RotateJig rotateJig2 = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
-          if (rotatePromptResult2.Status != PromptStatus.OK) {
+          if (rotatePromptResult2.Status != PromptStatus.OK)
+          {
             return;
           }
           upBlockRef3.Layer = layer;
@@ -634,15 +734,18 @@ namespace GMEPPlumbing {
           tr.AddNewlyCreatedDBObject(upBlockRef3, true);
           var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
 
-          foreach (DynamicBlockReferenceProperty prop in pc3) {
-            if (prop.PropertyName == "id") {
+          foreach (DynamicBlockReferenceProperty prop in pc3)
+          {
+            if (prop.PropertyName == "id")
+            {
               prop.Value = Guid.NewGuid().ToString();
-
             }
-            if (prop.PropertyName == "base_point_id") {
+            if (prop.PropertyName == "base_point_id")
+            {
               prop.Value = BasePointGUIDs[endFloor];
             }
-            if (prop.PropertyName == "vertical_route_id") {
+            if (prop.PropertyName == "vertical_route_id")
+            {
               prop.Value = verticalRouteId;
             }
           }
@@ -652,13 +755,13 @@ namespace GMEPPlumbing {
       SettingObjects = false;
     }
 
-
-
     [CommandMethod("SETPLUMBINGBASEPOINT")]
-    public async void SetPlumbingBasePoint() {
+    public async void SetPlumbingBasePoint()
+    {
       var prompt = new Views.BasePointPromptWindow();
       bool? result = prompt.ShowDialog();
-      if (result != true) {
+      if (result != true)
+      {
         ed.WriteMessage("\nOperation cancelled.");
         return;
       }
@@ -670,60 +773,76 @@ namespace GMEPPlumbing {
       string floorQtyResult = prompt.FloorQty;
       string ViewId = Guid.NewGuid().ToString();
 
-
       string viewport = "";
-      if (water) viewport += "Water";
-      if (viewport != "" && gas) viewport += "-";
-      if (gas) viewport += "Gas";
-      if (viewport != "" && sewerVent) viewport += "-";
-      if (sewerVent) viewport += "Sewer-Vent";
-      if (viewport != "" && storm) viewport += "-";
-      if (storm) viewport += "Storm";
+      if (water)
+        viewport += "Water";
+      if (viewport != "" && gas)
+        viewport += "-";
+      if (gas)
+        viewport += "Gas";
+      if (viewport != "" && sewerVent)
+        viewport += "-";
+      if (sewerVent)
+        viewport += "Sewer-Vent";
+      if (viewport != "" && storm)
+        viewport += "-";
+      if (storm)
+        viewport += "Storm";
 
-
-
-      if (!int.TryParse(floorQtyResult, out int floorQty)) {
+      if (!int.TryParse(floorQtyResult, out int floorQty))
+      {
         ed.WriteMessage("\nInvalid floor quantity. Please enter a valid integer.");
         return;
       }
 
-      for (int i = 0; i < floorQty; i++) {
+      for (int i = 0; i < floorQty; i++)
+      {
         Point3d point;
         ObjectId blockId;
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-          BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-
+          BlockTableRecord curSpace = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
           BlockTableRecord block;
-          string message = "\nCreating Plumbing Base Point for " + planName + " on floor " + (i + 1);
+          string message =
+            "\nCreating Plumbing Base Point for " + planName + " on floor " + (i + 1);
           BlockReference br = CADObjectCommands.CreateBlockReference(
-          tr,
-          bt,
-          "GMEP_PLUMBING_BASEPOINT",
-          out block,
-          out point
+            tr,
+            bt,
+            "GMEP_PLUMBING_BASEPOINT",
+            out block,
+            out point
           );
           br.Layer = "Defpoints";
-          if (br != null) {
+          if (br != null)
+          {
             curSpace.AppendEntity(br);
             tr.AddNewlyCreatedDBObject(br, true);
             blockId = br.ObjectId;
-            DynamicBlockReferencePropertyCollection properties = br.DynamicBlockReferencePropertyCollection;
-            foreach (DynamicBlockReferenceProperty prop in properties) {
-              if (prop.PropertyName == "Plan") {
+            DynamicBlockReferencePropertyCollection properties =
+              br.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in properties)
+            {
+              if (prop.PropertyName == "Plan")
+              {
                 prop.Value = planName;
               }
-              else if (prop.PropertyName == "Floor") {
+              else if (prop.PropertyName == "Floor")
+              {
                 prop.Value = i + 1;
               }
-              else if (prop.PropertyName == "Type") {
+              else if (prop.PropertyName == "Type")
+              {
                 prop.Value = viewport;
               }
-              else if (prop.PropertyName == "View_Id") {
+              else if (prop.PropertyName == "View_Id")
+              {
                 prop.Value = ViewId;
               }
-              else if (prop.PropertyName == "Id") {
+              else if (prop.PropertyName == "Id")
+              {
                 prop.Value = Guid.NewGuid().ToString();
               }
             }
@@ -734,7 +853,8 @@ namespace GMEPPlumbing {
     }
 
     [CommandMethod("Water")]
-    public async void Water() {
+    public async void Water()
+    {
       //MongoDBService.Initialize();
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       ProjectId = await MariaDBService.GetProjectId(projectNo);
@@ -746,9 +866,11 @@ namespace GMEPPlumbing {
       pw.Focus();
     }
 
-    public static void ZoomToBlock(Editor ed, BlockReference blockRef) {
+    public static void ZoomToBlock(Editor ed, BlockReference blockRef)
+    {
       Extents3d ext = blockRef.GeometricExtents;
-      using (ViewTableRecord view = ed.GetCurrentView()) {
+      using (ViewTableRecord view = ed.GetCurrentView())
+      {
         view.CenterPoint = new Point2d(
           (ext.MinPoint.X + ext.MaxPoint.X) / 2,
           (ext.MinPoint.Y + ext.MaxPoint.Y) / 2
@@ -759,13 +881,17 @@ namespace GMEPPlumbing {
       }
     }
 
-    public void WriteMessage(string message) {
+    public void WriteMessage(string message)
+    {
       ed.WriteMessage(message);
     }
 
-    private void AddArrowsToLine(ObjectId lineId, string lineGUID) {
-      while (true) {
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+    private void AddArrowsToLine(ObjectId lineId, string lineGUID)
+    {
+      while (true)
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
           double arrowLength = 5.0;
           double arrowSize = 3.0;
@@ -776,10 +902,10 @@ namespace GMEPPlumbing {
           if (line.Layer == "meow")
             angle += Math.PI;
 
-
           // Get the BlockTable and BlockTableRecord
           BlockTable bt = (BlockTable)tr.GetObject(line.Database.BlockTableId, OpenMode.ForRead);
-          if (!bt.Has(blockName)) {
+          if (!bt.Has(blockName))
+          {
             ed.WriteMessage($"\nBlock '{blockName}' not found in drawing.");
             return;
           }
@@ -792,15 +918,19 @@ namespace GMEPPlumbing {
           if (jigResult.Status != PromptStatus.OK)
             break;
           Point3d arrowPos = lineArrowJig.InsertionPoint;
-          BlockReference arrowRef = new BlockReference(arrowPos, blockDefId) {
+          BlockReference arrowRef = new BlockReference(arrowPos, blockDefId)
+          {
             Rotation = angle,
-            Layer = line.Layer
+            Layer = line.Layer,
           };
           btr.AppendEntity(arrowRef);
           tr.AddNewlyCreatedDBObject(arrowRef, true);
-          DynamicBlockReferencePropertyCollection properties = arrowRef.DynamicBlockReferencePropertyCollection;
-          foreach (DynamicBlockReferenceProperty prop in properties) {
-            if (prop.PropertyName == "line_id") {
+          DynamicBlockReferencePropertyCollection properties =
+            arrowRef.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in properties)
+          {
+            if (prop.PropertyName == "line_id")
+            {
               prop.Value = lineGUID;
             }
           }
@@ -809,12 +939,16 @@ namespace GMEPPlumbing {
       }
     }
 
-    public void RetrieveOrCreateDrawingId() {
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        try {
+    public void RetrieveOrCreateDrawingId()
+    {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        try
+        {
           DateTime creationTime = RetrieveXRecordId(db, tr);
 
-          if (string.IsNullOrEmpty(currentDrawingId)) {
+          if (string.IsNullOrEmpty(currentDrawingId))
+          {
             currentDrawingId = Guid.NewGuid().ToString();
             creationTime = GetFileCreationTime();
             CreateXRecordId(db, tr, currentDrawingId);
@@ -822,14 +956,16 @@ namespace GMEPPlumbing {
               $"\nCreated new Drawing ID: {currentDrawingId}, Creation Time: {creationTime}"
             );
           }
-          else {
+          else
+          {
             ed.WriteMessage(
               $"\nRetrieved existing Drawing ID: {currentDrawingId}, Creation Time: {creationTime}"
             );
             var newCreationTime = GetFileCreationTime();
             ed.WriteMessage($"\nNew Creation Time: {newCreationTime}");
 
-            if (Math.Abs((newCreationTime - creationTime).TotalSeconds) > 1) {
+            if (Math.Abs((newCreationTime - creationTime).TotalSeconds) > 1)
+            {
               needsXRecordUpdate = true;
               this.newDrawingId = Guid.NewGuid().ToString();
               this.newCreationTime = newCreationTime;
@@ -837,39 +973,42 @@ namespace GMEPPlumbing {
               ed.WriteMessage($"\nOld Creation Time: {creationTime}");
               ed.WriteMessage($"\nNew Creation Time: {newCreationTime}");
             }
-            else {
+            else
+            {
               ed.WriteMessage("\nCreation time has not changed. No update needed.");
             }
           }
 
           tr.Commit();
         }
-        catch (System.Exception ex) {
+        catch (System.Exception ex)
+        {
           ed.WriteMessage($"\nError handling Drawing ID: {ex.Message}");
           tr.Abort();
         }
       }
     }
 
-    private void AttachRouteXData(ObjectId lineId, string id, string sourceId) {
+    private void AttachRouteXData(ObjectId lineId, string id, string sourceId)
+    {
       ed.WriteMessage("Id: " + id + " SourceId: " + sourceId);
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
         if (line == null)
           return;
 
         RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForWrite);
-        if (!regAppTable.Has(XRecordKey)) {
-          RegAppTableRecord regAppTableRecord = new RegAppTableRecord {
-            Name = XRecordKey
-          };
+        if (!regAppTable.Has(XRecordKey))
+        {
+          RegAppTableRecord regAppTableRecord = new RegAppTableRecord { Name = XRecordKey };
           regAppTable.Add(regAppTableRecord);
           tr.AddNewlyCreatedDBObject(regAppTableRecord, true);
         }
         ResultBuffer rb = new ResultBuffer(
-            new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
-            new TypedValue(1000, id),
-            new TypedValue(1000, sourceId)
+          new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
+          new TypedValue(1000, id),
+          new TypedValue(1000, sourceId)
         );
         line.XData = rb;
         rb.Dispose();
@@ -877,10 +1016,12 @@ namespace GMEPPlumbing {
       }
     }
 
-    private void UpdateXRecordId(Transaction tr, string newId, DateTime newCreationTime) {
+    private void UpdateXRecordId(Transaction tr, string newId, DateTime newCreationTime)
+    {
       DBDictionary namedObjDict = (DBDictionary)
         tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForWrite);
-      if (namedObjDict.Contains(XRecordKey)) {
+      if (namedObjDict.Contains(XRecordKey))
+      {
         Xrecord xRec = (Xrecord)tr.GetObject(namedObjDict.GetAt(XRecordKey), OpenMode.ForWrite);
         // Convert DateTime to AutoCAD date (number of days since December 30, 1899)
         double acadDate = (newCreationTime - new DateTime(1899, 12, 30)).TotalDays;
@@ -890,16 +1031,21 @@ namespace GMEPPlumbing {
           new TypedValue((int)DxfCode.Real, acadDate)
         );
       }
-      else {
+      else
+      {
         // If the XRecord doesn't exist, create a new one
         CreateXRecordId(db, tr, newId);
       }
     }
 
-    private void UpdateXRecordAfterDataLoad() {
-      using (DocumentLock docLock = doc.LockDocument()) {
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
-          try {
+    private void UpdateXRecordAfterDataLoad()
+    {
+      using (DocumentLock docLock = doc.LockDocument())
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          try
+          {
             UpdateXRecordId(tr, newDrawingId, newCreationTime);
             currentDrawingId = newDrawingId;
             ed.WriteMessage(
@@ -907,7 +1053,8 @@ namespace GMEPPlumbing {
             );
             tr.Commit();
           }
-          catch (System.Exception ex) {
+          catch (System.Exception ex)
+          {
             ed.WriteMessage($"\nError updating XRecord after data load: {ex.Message}");
             tr.Abort();
           }
@@ -916,7 +1063,8 @@ namespace GMEPPlumbing {
       needsXRecordUpdate = false;
     }
 
-    public DateTime RetrieveXRecordId(Database db, Transaction tr) {
+    public DateTime RetrieveXRecordId(Database db, Transaction tr)
+    {
       RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);
       if (!regAppTable.Has(XRecordKey))
         return DateTime.MinValue;
@@ -940,9 +1088,11 @@ namespace GMEPPlumbing {
       return creationTime;
     }
 
-    public void CreateXRecordId(Database db, Transaction tr, string drawingId) {
+    public void CreateXRecordId(Database db, Transaction tr, string drawingId)
+    {
       RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForWrite);
-      if (!regAppTable.Has(XRecordKey)) {
+      if (!regAppTable.Has(XRecordKey))
+      {
         RegAppTableRecord regAppTableRecord = new RegAppTableRecord { Name = XRecordKey };
         regAppTable.Add(regAppTableRecord);
         tr.AddNewlyCreatedDBObject(regAppTableRecord, true);
@@ -968,7 +1118,8 @@ namespace GMEPPlumbing {
       tr.AddNewlyCreatedDBObject(xRec, true);
     }
 
-    private void InitializeUserInterface() {
+    private void InitializeUserInterface()
+    {
       // Create the viewModel & get the data off mongoDB
       viewModel = new WaterSystemViewModel(
         new WaterMeterLossCalculationService(),
@@ -1004,16 +1155,21 @@ namespace GMEPPlumbing {
       pw.StateChanged += Pw_StateChanged;
     }
 
-    private async void LoadDataAsync() {
-      try {
+    private async void LoadDataAsync()
+    {
+      try
+      {
         //var data = await MongoDBService.GetDrawingDataAsync(currentDrawingId);
         var data = await MariaDBService.GetWaterSystemData(ProjectId);
-        if (data != null) {
-          myControl.Dispatcher.Invoke(() => {
+        if (data != null)
+        {
+          myControl.Dispatcher.Invoke(() =>
+          {
             viewModel.UpdatePropertiesFromData(data);
           });
 
-          if (needsXRecordUpdate) {
+          if (needsXRecordUpdate)
+          {
             UpdateXRecordAfterDataLoad();
           }
 
@@ -1022,31 +1178,38 @@ namespace GMEPPlumbing {
           );
         }
       }
-      catch (System.Exception ex) {
+      catch (System.Exception ex)
+      {
         Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
           $"\nError loading data from MongoDB: {ex.Message}\n"
         );
       }
     }
 
-    private async void Pw_StateChanged(object sender, PaletteSetStateEventArgs e) {
-      if (e.NewState == StateEventIndex.Hide) {
-        try {
+    private async void Pw_StateChanged(object sender, PaletteSetStateEventArgs e)
+    {
+      if (e.NewState == StateEventIndex.Hide)
+      {
+        try
+        {
           WaterSystemData data = viewModel.GetWaterSystemData();
           //bool updateResult = await MongoDBService.UpdateDrawingDataAsync(data, currentDrawingId);
           bool updateResult = await MariaDBService.UpdateWaterSystem(data, ProjectId);
-          if (updateResult) {
+          if (updateResult)
+          {
             Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
               "\nSuccessfully updated drawing data in MongoDB.\n"
             );
           }
-          else {
+          else
+          {
             Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
               "\nFailed to update drawing data in MongoDB. (possibly no data has changed since the last update)\n"
             );
           }
         }
-        catch (System.Exception ex) {
+        catch (System.Exception ex)
+        {
           Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
             $"\nError updating drawing data: {ex.Message}\n"
           );
@@ -1054,17 +1217,21 @@ namespace GMEPPlumbing {
       }
     }
 
-    private DateTime GetFileCreationTime() {
-      if (doc != null && !string.IsNullOrEmpty(doc.Name)) {
+    private DateTime GetFileCreationTime()
+    {
+      if (doc != null && !string.IsNullOrEmpty(doc.Name))
+      {
         FileInfo fileInfo = new FileInfo(doc.Name);
         return fileInfo.CreationTime.ToUniversalTime();
       }
-      else {
+      else
+      {
         return DateTime.UtcNow;
       }
     }
 
-    private void MakeCwDnLabel(Point3d dnPoint) {
+    private void MakeCwDnLabel(Point3d dnPoint)
+    {
       CADObjectCommands.CreateArrowJig("D0", dnPoint);
       CADObjectCommands.CreateTextWithJig(
         CADObjectCommands.TextLayer,
@@ -1073,7 +1240,8 @@ namespace GMEPPlumbing {
       );
     }
 
-    private void MakeCwHwDnLabel(Point3d dnPoint, double rotation) {
+    private void MakeCwHwDnLabel(Point3d dnPoint, double rotation)
+    {
       double distance = 3.9101;
       double x1 = dnPoint.X - (distance * Math.Cos(rotation));
       double y1 = dnPoint.Y - (distance * Math.Sin(rotation));
@@ -1088,7 +1256,8 @@ namespace GMEPPlumbing {
       );
     }
 
-    public void MakeVentLabel(Point3d dnPoint) {
+    public void MakeVentLabel(Point3d dnPoint)
+    {
       CADObjectCommands.CreateArrowJig("D0", dnPoint);
       CADObjectCommands.CreateTextWithJig(
         CADObjectCommands.TextLayer,
@@ -1096,7 +1265,9 @@ namespace GMEPPlumbing {
         "2\" UP ABV. CLG."
       );
     }
-    public void MakeVerticalRouteLabel(Point3d dnPoint, string direction) {
+
+    public void MakeVerticalRouteLabel(Point3d dnPoint, string direction)
+    {
       CADObjectCommands.CreateArrowJig("D0", dnPoint);
       CADObjectCommands.CreateTextWithJig(
         CADObjectCommands.TextLayer,
@@ -1105,12 +1276,14 @@ namespace GMEPPlumbing {
       );
     }
 
-    private void MakePlumbingFixtureWaterGasLabel(PlumbingFixture fixture, PlumbingFixtureType type) {
+    private void MakePlumbingFixtureWaterGasLabel(PlumbingFixture fixture, PlumbingFixtureType type)
+    {
       double distance = 3;
       double x = fixture.Position.X + (distance * Math.Sin(fixture.Rotation));
       double y = fixture.Position.Y - (distance * Math.Cos(fixture.Rotation));
       Point3d dnPoint = new Point3d(x, y, 0);
-      switch (type.WaterGasBlockName) {
+      switch (type.WaterGasBlockName)
+      {
         case "GMEP CW DN":
           MakeCwDnLabel(dnPoint);
           break;
@@ -1125,27 +1298,45 @@ namespace GMEPPlumbing {
       );
     }
 
+    private void MakePlumbingSourceLabel(PlumbingSource source, PlumbingSourceType type)
+    {
+      CADObjectCommands.CreateTextWithJig(
+        CADObjectCommands.TextLayer,
+        TextHorizontalMode.TextLeft,
+        type.Type.ToUpper()
+      );
+    }
+
     private void MakePlumbingFixtureWasteVentLabel(
       PlumbingFixture fixture,
       Point3d position,
       string blockName,
       int index
-    ) {
-      switch (blockName) {
+    )
+    {
+      switch (blockName)
+      {
         case "GMEP VENT":
           MakeVentLabel(position);
           break;
         case "GMEP WCO STRAIGHT":
         case "GMEP WCO ANGLED":
-        case "GMEP WCO FLOOR":
           CADObjectCommands.CreateTextWithJig(
             CADObjectCommands.TextLayer,
             TextHorizontalMode.TextLeft,
             "2\" WCO"
           );
           break;
+        case "GMEP WCO FLOOR":
+          CADObjectCommands.CreateTextWithJig(
+            CADObjectCommands.TextLayer,
+            TextHorizontalMode.TextLeft,
+            "2\" GCO"
+          );
+          break;
       }
-      if (index == 0) {
+      if (index == 0)
+      {
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
           TextHorizontalMode.TextLeft,
@@ -1156,7 +1347,8 @@ namespace GMEPPlumbing {
 
     [CommandMethod("PF")]
     [CommandMethod("PlumbingFixture")]
-    public void PlumbingFixture() {
+    public void PlumbingFixture()
+    {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
       doc = Application.DocumentManager.MdiActiveDocument;
@@ -1167,7 +1359,8 @@ namespace GMEPPlumbing {
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
       keywordOptions.Message = "\nSelect fixture type:";
 
-      plumbingFixtureTypes.ForEach(t => {
+      plumbingFixtureTypes.ForEach(t =>
+      {
         keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
       });
       keywordOptions.Keywords.Default = "WC - Water Closet";
@@ -1177,7 +1370,8 @@ namespace GMEPPlumbing {
       PlumbingFixtureType selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t =>
         keywordResultString.StartsWith(t.Abbreviation)
       );
-      if (selectedFixtureType == null) {
+      if (selectedFixtureType == null)
+      {
         selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t => t.Abbreviation == "WC");
       }
       List<PlumbingFixtureCatalogItem> plumbingFixtureCatalogItems =
@@ -1185,7 +1379,8 @@ namespace GMEPPlumbing {
 
       keywordOptions = new PromptKeywordOptions("");
       keywordOptions.Message = "\nSelect catalog item:";
-      plumbingFixtureCatalogItems.ForEach(i => {
+      plumbingFixtureCatalogItems.ForEach(i =>
+      {
         keywordOptions.Keywords.Add(
           i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model
         );
@@ -1202,15 +1397,18 @@ namespace GMEPPlumbing {
       keywordResult = ed.GetKeywords(keywordOptions);
 
       keywordResultString = keywordResult.StringResult;
-      if (keywordResultString.Contains(' ')) {
+      if (keywordResultString.Contains(' '))
+      {
         keywordResultString = keywordResultString.Split(' ')[0];
       }
       PlumbingFixtureCatalogItem selectedCatalogItem = plumbingFixtureCatalogItems.FirstOrDefault(
         i => i.Id.ToString() == keywordResultString
       );
 
-      if (selectedFixtureType.WaterGasBlockName.Contains("%WHSIZE%")) {
-        if (selectedFixtureType.Abbreviation == "WH") {
+      if (selectedFixtureType.WaterGasBlockName.Contains("%WHSIZE%"))
+      {
+        if (selectedFixtureType.Abbreviation == "WH")
+        {
           keywordOptions = new PromptKeywordOptions("");
           keywordOptions.Message = "\nSelect WH size";
           keywordOptions.Keywords.Add("50 gal.");
@@ -1219,7 +1417,8 @@ namespace GMEPPlumbing {
           keywordOptions.AllowNone = false;
           keywordResult = ed.GetKeywords(keywordOptions);
           string whSize = keywordResult.StringResult;
-          if (whSize.Contains(' ')) {
+          if (whSize.Contains(' '))
+          {
             whSize = whSize.Split(' ')[0];
           }
           selectedFixtureType.WaterGasBlockName = selectedFixtureType.WaterGasBlockName.Replace(
@@ -1229,8 +1428,10 @@ namespace GMEPPlumbing {
         }
       }
 
-      if (selectedFixtureType.WasteVentBlockName.Contains("%FSSIZE%")) {
-        if (selectedFixtureType.Abbreviation == "FS") {
+      if (selectedFixtureType.WasteVentBlockName.Contains("%FSSIZE%"))
+      {
+        if (selectedFixtureType.Abbreviation == "FS")
+        {
           keywordOptions = new PromptKeywordOptions("");
           keywordOptions.Message = "\nSelect FS size";
           keywordOptions.Keywords.Add("12\"");
@@ -1239,7 +1440,8 @@ namespace GMEPPlumbing {
           keywordOptions.AllowNone = false;
           keywordResult = ed.GetKeywords(keywordOptions);
           string fsSize = keywordResult.StringResult.Replace("\"", "");
-          if (fsSize.Contains(' ')) {
+          if (fsSize.Contains(' '))
+          {
             fsSize = fsSize.Split(' ')[0];
           }
           selectedFixtureType.WasteVentBlockName = selectedFixtureType.WasteVentBlockName.Replace(
@@ -1249,15 +1451,18 @@ namespace GMEPPlumbing {
         }
       }
 
-      if (!String.IsNullOrEmpty(selectedFixtureType.WaterGasBlockName)) {
+      if (!String.IsNullOrEmpty(selectedFixtureType.WaterGasBlockName))
+      {
         ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
         ObjectId blockId;
         string blockName = selectedFixtureType.WaterGasBlockName;
         Point3d point;
         double rotation = 0;
         string fixtureId = Guid.NewGuid().ToString();
-        try {
-          using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        try
+        {
+          using (Transaction tr = db.TransactionManager.StartTransaction())
+          {
             BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
             BlockTableRecord btr;
             BlockReference br = CADObjectCommands.CreateBlockReference(
@@ -1267,13 +1472,15 @@ namespace GMEPPlumbing {
               out btr,
               out point
             );
-            if (br != null) {
+            if (br != null)
+            {
               BlockTableRecord curSpace = (BlockTableRecord)
                 tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
               RotateJig rotateJig = new RotateJig(br);
               PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
-              if (rotatePromptResult.Status != PromptStatus.OK) {
+              if (rotatePromptResult.Status != PromptStatus.OK)
+              {
                 return;
               }
               rotation = br.Rotation;
@@ -1286,20 +1493,25 @@ namespace GMEPPlumbing {
             blockId = br.Id;
             tr.Commit();
           }
-          using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          using (Transaction tr = db.TransactionManager.StartTransaction())
+          {
             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
             var modelSpace = (BlockTableRecord)
               tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
             BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
             DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
-            foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+            foreach (DynamicBlockReferenceProperty prop in pc)
+            {
+              if (prop.PropertyName == "gmep_plumbing_fixture_id")
+              {
                 prop.Value = fixtureId;
               }
-              if (prop.PropertyName == "gmep_plumbing_fixture_demand") {
+              if (prop.PropertyName == "gmep_plumbing_fixture_demand")
+              {
                 prop.Value = (double)selectedCatalogItem.FixtureDemand;
               }
-              if (prop.PropertyName == "gmep_plumbing_fixture_hot_demand") {
+              if (prop.PropertyName == "gmep_plumbing_fixture_hot_demand")
+              {
                 prop.Value = (double)selectedCatalogItem.HotDemand;
               }
             }
@@ -1315,7 +1527,8 @@ namespace GMEPPlumbing {
             0
           );
           MariaDBService.CreatePlumbingFixture(plumbingFixture);
-          if (selectedFixtureType.Abbreviation == "WH") {
+          if (selectedFixtureType.Abbreviation == "WH")
+          {
             MariaDBService.CreatePlumbingSource(
               new PlumbingSource(
                 Guid.NewGuid().ToString(),
@@ -1328,22 +1541,27 @@ namespace GMEPPlumbing {
           }
           MakePlumbingFixtureWaterGasLabel(plumbingFixture, selectedFixtureType);
         }
-        catch (System.Exception ex) {
+        catch (System.Exception ex)
+        {
           ed.WriteMessage(ex.ToString());
           Console.WriteLine(ex.ToString());
         }
       }
-      if (!String.IsNullOrEmpty(selectedFixtureType.WasteVentBlockName)) {
+      if (!String.IsNullOrEmpty(selectedFixtureType.WasteVentBlockName))
+      {
         string[] wasteVentBlockNames = selectedFixtureType.WasteVentBlockName.Split(',');
         int index = 0;
         Point3d ventPosition = new Point3d();
-        foreach (string wasteVentBlockName in wasteVentBlockNames) {
+        foreach (string wasteVentBlockName in wasteVentBlockNames)
+        {
           ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
           string blockName = wasteVentBlockName;
           double rotation = 0;
           string fixtureId = Guid.NewGuid().ToString();
-          try {
-            if (wasteVentBlockName == "GMEP VENT") {
+          try
+          {
+            if (wasteVentBlockName == "GMEP VENT")
+            {
               ventPosition = CreateVentBlock(
                 selectedCatalogItem.FixtureDemand,
                 projectId,
@@ -1352,7 +1570,8 @@ namespace GMEPPlumbing {
                 index
               );
             }
-            else if (wasteVentBlockName == "GMEP DRAIN") {
+            else if (wasteVentBlockName == "GMEP DRAIN")
+            {
               CreateDrainBlock(
                 selectedCatalogItem.FixtureDemand,
                 projectId,
@@ -1362,7 +1581,8 @@ namespace GMEPPlumbing {
                 ventPosition
               );
             }
-            else {
+            else
+            {
               CreateWasteVentBlock(
                 wasteVentBlockName,
                 selectedCatalogItem.FixtureDemand,
@@ -1374,7 +1594,8 @@ namespace GMEPPlumbing {
             }
             index++;
           }
-          catch (System.Exception ex) {
+          catch (System.Exception ex)
+          {
             ed.WriteMessage(ex.ToString());
             Console.WriteLine(ex.ToString());
           }
@@ -1383,7 +1604,8 @@ namespace GMEPPlumbing {
     }
 
     [CommandMethod("PlumbingSource")]
-    public void CreatePlumbingSource() {
+    public void CreatePlumbingSource()
+    {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
       doc = Application.DocumentManager.MdiActiveDocument;
@@ -1395,7 +1617,8 @@ namespace GMEPPlumbing {
 
       keywordOptions.Message = "\nSelect fixture type:";
 
-      plumbingSourceTypes.ForEach(t => {
+      plumbingSourceTypes.ForEach(t =>
+      {
         keywordOptions.Keywords.Add(t.Id.ToString() + " " + t.Type);
       });
       keywordOptions.Keywords.Default = "1 Water Meter";
@@ -1406,31 +1629,27 @@ namespace GMEPPlumbing {
       PlumbingSourceType selectedSourceType = plumbingSourceTypes.FirstOrDefault(t =>
         keywordResultString == t.Id.ToString()
       );
-      if (selectedSourceType == null) {
+      if (selectedSourceType == null)
+      {
         selectedSourceType = plumbingSourceTypes.FirstOrDefault(t => t.Type == "Water Meter");
       }
 
-      if (selectedSourceType.Type == "Water Heater") {
+      if (selectedSourceType.Type == "Water Heater")
+      {
         ed.Command("PlumbingFixture", "WH");
         return;
       }
-    }
 
-    public Point3d CreateVentBlock(
-      decimal fixtureDemand,
-      string projectId,
-      int selectedCatalogItemId,
-      string selectedFixtureTypeAbbr,
-      int index
-    ) {
-      ed.WriteMessage("\nSelect base point for vent");
+      ed.WriteMessage("\nSelect base point for plumbing source");
       ObjectId blockId;
+      string blockName = "GMEP SOURCE";
       Point3d point;
       double rotation = 0;
-      string fixtureId = Guid.NewGuid().ToString();
-      string blockName = "GMEP VENT";
-      try {
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      string sourceId = Guid.NewGuid().ToString();
+      try
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
           BlockTableRecord btr;
           BlockReference br = CADObjectCommands.CreateBlockReference(
@@ -1440,13 +1659,96 @@ namespace GMEPPlumbing {
             out btr,
             out point
           );
-          if (br != null) {
+          if (br != null)
+          {
             BlockTableRecord curSpace = (BlockTableRecord)
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
             RotateJig rotateJig = new RotateJig(br);
             PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
-            if (rotatePromptResult.Status != PromptStatus.OK) {
+            if (rotatePromptResult.Status != PromptStatus.OK)
+            {
+              return;
+            }
+            rotation = br.Rotation;
+
+            curSpace.AppendEntity(br);
+
+            tr.AddNewlyCreatedDBObject(br, true);
+          }
+
+          blockId = br.Id;
+          tr.Commit();
+        }
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+          var modelSpace = (BlockTableRecord)
+            tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+          BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+          DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in pc)
+          {
+            if (prop.PropertyName == "gmep_plumbing_source_id")
+            {
+              prop.Value = sourceId;
+            }
+          }
+          tr.Commit();
+        }
+        PlumbingSource plumbingSource = new PlumbingSource(
+          sourceId,
+          projectId,
+          point,
+          selectedSourceType.Id,
+          string.Empty
+        );
+        MariaDBService.CreatePlumbingSource(plumbingSource);
+        MakePlumbingSourceLabel(plumbingSource, selectedSourceType);
+      }
+      catch (System.Exception ex)
+      {
+        ed.WriteMessage(ex.ToString());
+        Console.WriteLine(ex.ToString());
+      }
+    }
+
+    public Point3d CreateVentBlock(
+      decimal fixtureDemand,
+      string projectId,
+      int selectedCatalogItemId,
+      string selectedFixtureTypeAbbr,
+      int index
+    )
+    {
+      ed.WriteMessage("\nSelect base point for vent");
+      ObjectId blockId;
+      Point3d point;
+      double rotation = 0;
+      string fixtureId = Guid.NewGuid().ToString();
+      string blockName = "GMEP VENT";
+      try
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord btr;
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            blockName,
+            out btr,
+            out point
+          );
+          if (br != null)
+          {
+            BlockTableRecord curSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+            RotateJig rotateJig = new RotateJig(br);
+            PromptResult rotatePromptResult = ed.Drag(rotateJig);
+
+            if (rotatePromptResult.Status != PromptStatus.OK)
+            {
               return new Point3d();
             }
             rotation = br.Rotation;
@@ -1457,17 +1759,21 @@ namespace GMEPPlumbing {
           point = br.Position;
           tr.Commit();
         }
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
           var modelSpace = (BlockTableRecord)
             tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
           BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
           DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
-          foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+          foreach (DynamicBlockReferenceProperty prop in pc)
+          {
+            if (prop.PropertyName == "gmep_plumbing_fixture_id")
+            {
               prop.Value = fixtureId;
             }
-            if (prop.PropertyName == "gmep_plumbing_fixture_dfu") {
+            if (prop.PropertyName == "gmep_plumbing_fixture_dfu")
+            {
               prop.Value = (double)fixtureDemand;
             }
           }
@@ -1486,7 +1792,8 @@ namespace GMEPPlumbing {
         }
         return point;
       }
-      catch (System.Exception ex) {
+      catch (System.Exception ex)
+      {
         ed.WriteMessage(ex.ToString());
         Console.WriteLine(ex.ToString());
         return new Point3d();
@@ -1500,14 +1807,17 @@ namespace GMEPPlumbing {
       string selectedFixtureTypeAbbr,
       int index,
       Point3d ventPosition
-    ) {
+    )
+    {
       ed.WriteMessage("\nSelect base point for drain");
       ObjectId blockId;
       Point3d point;
       string fixtureId = Guid.NewGuid().ToString();
       string blockName = "GMEP DRAIN";
-      try {
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      try
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
           BlockTableRecord btr;
           BlockReference br = CADObjectCommands.CreateBlockReference(
@@ -1517,7 +1827,8 @@ namespace GMEPPlumbing {
             out btr,
             out point
           );
-          if (br != null) {
+          if (br != null)
+          {
             BlockTableRecord curSpace = (BlockTableRecord)
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
             curSpace.AppendEntity(br);
@@ -1546,17 +1857,21 @@ namespace GMEPPlumbing {
           blockId = br.Id;
           tr.Commit();
         }
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
           var modelSpace = (BlockTableRecord)
             tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
           BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
           DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
-          foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+          foreach (DynamicBlockReferenceProperty prop in pc)
+          {
+            if (prop.PropertyName == "gmep_plumbing_fixture_id")
+            {
               prop.Value = fixtureId;
             }
-            if (prop.PropertyName == "gmep_plumbing_fixture_dfu") {
+            if (prop.PropertyName == "gmep_plumbing_fixture_dfu")
+            {
               prop.Value = (double)fixtureDemand;
             }
           }
@@ -1575,7 +1890,8 @@ namespace GMEPPlumbing {
         }
         return point;
       }
-      catch (System.Exception ex) {
+      catch (System.Exception ex)
+      {
         ed.WriteMessage(ex.ToString());
         Console.WriteLine(ex.ToString());
         return new Point3d();
@@ -1589,13 +1905,15 @@ namespace GMEPPlumbing {
       int selectedCatalogItemId,
       string selectedFixtureTypeAbbr,
       int index
-    ) {
+    )
+    {
       ed.WriteMessage("\nSelect base point for " + selectedFixtureTypeAbbr);
       ObjectId blockId;
       Point3d point;
       double rotation = 0;
       string fixtureId = Guid.NewGuid().ToString();
-      if (blockName.Contains("%WCOSTYLE%")) {
+      if (blockName.Contains("%WCOSTYLE%"))
+      {
         PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
         keywordOptions.Message = "\nSelect WCO style";
         keywordOptions.Keywords.Add("STRAIGHT");
@@ -1605,13 +1923,16 @@ namespace GMEPPlumbing {
         keywordOptions.AllowNone = false;
         PromptResult keywordResult = ed.GetKeywords(keywordOptions);
         string wcoStyle = keywordResult.StringResult.Replace("\"", "");
-        if (wcoStyle.Contains(' ')) {
+        if (wcoStyle.Contains(' '))
+        {
           wcoStyle = wcoStyle.Split(' ')[0];
         }
         blockName = blockName.Replace("%WCOSTYLE%", wcoStyle);
       }
-      try {
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      try
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
           BlockTableRecord btr;
           BlockReference br = CADObjectCommands.CreateBlockReference(
@@ -1621,15 +1942,18 @@ namespace GMEPPlumbing {
             out btr,
             out point
           );
-          if (br != null) {
+          if (br != null)
+          {
             BlockTableRecord curSpace = (BlockTableRecord)
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-            if (blockName != "GMEP WCO FLOOR") {
+            if (blockName != "GMEP WCO FLOOR")
+            {
               RotateJig rotateJig = new RotateJig(br);
               PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
-              if (rotatePromptResult.Status != PromptStatus.OK) {
+              if (rotatePromptResult.Status != PromptStatus.OK)
+              {
                 return;
               }
               rotation = br.Rotation;
@@ -1643,17 +1967,21 @@ namespace GMEPPlumbing {
           blockId = br.Id;
           tr.Commit();
         }
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
           var modelSpace = (BlockTableRecord)
             tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
           BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
           DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
-          foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+          foreach (DynamicBlockReferenceProperty prop in pc)
+          {
+            if (prop.PropertyName == "gmep_plumbing_fixture_id")
+            {
               prop.Value = fixtureId;
             }
-            if (prop.PropertyName == "gmep_plumbing_fixture_dfu") {
+            if (prop.PropertyName == "gmep_plumbing_fixture_dfu")
+            {
               prop.Value = (double)fixtureDemand;
             }
           }
@@ -1672,58 +2000,85 @@ namespace GMEPPlumbing {
           MakePlumbingFixtureWasteVentLabel(plumbingFixture, br.Position, blockName, index);
         }
       }
-      catch (System.Exception ex) {
+      catch (System.Exception ex)
+      {
         ed.WriteMessage(ex.ToString());
         Console.WriteLine(ex.ToString());
       }
     }
 
-    public static void Db_VerticalRouteErased(object sender, ObjectErasedEventArgs e) {
+    public static void Db_VerticalRouteErased(object sender, ObjectErasedEventArgs e)
+    {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
-      try {
-        if (e.Erased && !SettingObjects && !IsSaving && e.DBObject is BlockReference blockRef && IsVerticalRouteBlock(blockRef)) {
+      try
+      {
+        if (
+          e.Erased
+          && !SettingObjects
+          && !IsSaving
+          && e.DBObject is BlockReference blockRef
+          && IsVerticalRouteBlock(blockRef)
+        )
+        {
           ed.WriteMessage($"\nObject {e.DBObject.ObjectId} was erased.");
 
           string VerticalRouteId = string.Empty;
           var properties = blockRef.DynamicBlockReferencePropertyCollection;
-          foreach (DynamicBlockReferenceProperty prop in properties) {
-            if (prop.PropertyName == "vertical_route_id") {
+          foreach (DynamicBlockReferenceProperty prop in properties)
+          {
+            if (prop.PropertyName == "vertical_route_id")
+            {
               VerticalRouteId = prop.Value?.ToString();
             }
           }
-          if (!string.IsNullOrEmpty(VerticalRouteId)) {
+          if (!string.IsNullOrEmpty(VerticalRouteId))
+          {
             SettingObjects = true;
 
-            using (Transaction tr = db.TransactionManager.StartTransaction()) {
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
               BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
               List<string> blockNames = new List<string>
               {
-                            "GMEP_PLUMBING_LINE_UP",
-                            "GMEP_PLUMBING_LINE_DOWN",
-                            "GMEP_PLUMBING_LINE_VERTICAL"
-                        };
-              foreach (var name in blockNames) {
-                BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
-                foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
-                  if (id.IsValid) {
-                    using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord) {
-                      if (anonymousBtr != null) {
-
-                        foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
-                          if (objId.IsValid) {
+                "GMEP_PLUMBING_LINE_UP",
+                "GMEP_PLUMBING_LINE_DOWN",
+                "GMEP_PLUMBING_LINE_VERTICAL",
+              };
+              foreach (var name in blockNames)
+              {
+                BlockTableRecord basePointBlock = (BlockTableRecord)
+                  tr.GetObject(bt[name], OpenMode.ForWrite);
+                foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+                {
+                  if (id.IsValid)
+                  {
+                    using (
+                      BlockTableRecord anonymousBtr =
+                        tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord
+                    )
+                    {
+                      if (anonymousBtr != null)
+                      {
+                        foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                        {
+                          if (objId.IsValid)
+                          {
                             var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
 
                             var pc = entity.DynamicBlockReferencePropertyCollection;
 
-                            foreach (DynamicBlockReferenceProperty prop in pc) {
-                              if (prop.PropertyName == "vertical_route_id" &&
-                                  prop.Value?.ToString() == VerticalRouteId) {
+                            foreach (DynamicBlockReferenceProperty prop in pc)
+                            {
+                              if (
+                                prop.PropertyName == "vertical_route_id"
+                                && prop.Value?.ToString() == VerticalRouteId
+                              )
+                              {
                                 entity.Erase();
                               }
                             }
-
                           }
                         }
                       }
@@ -1735,37 +2090,56 @@ namespace GMEPPlumbing {
             }
             SettingObjects = false;
           }
-
         }
       }
-      catch (System.Exception ex) {
+      catch (System.Exception ex)
+      {
         ed.WriteMessage($"\nError in Db_ObjectErased: {ex.Message}");
       }
     }
 
-    public static void Db_VerticalRouteModified(object sender, ObjectEventArgs e) {
+    public static void Db_VerticalRouteModified(object sender, ObjectEventArgs e)
+    {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
 
-
       Dictionary<string, ObjectId> basePoints = new Dictionary<string, ObjectId>();
-      if (!SettingObjects && !IsSaving && e.DBObject is BlockReference blockRef && IsVerticalRouteBlock(blockRef)) {
+      if (
+        !SettingObjects
+        && !IsSaving
+        && e.DBObject is BlockReference blockRef
+        && IsVerticalRouteBlock(blockRef)
+      )
+      {
         SettingObjects = true;
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
           BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-          BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
-          foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
-            if (id.IsValid) {
-              using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
-                if (anonymousBtr != null) {
-                  foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+          BlockTableRecord basePointBlock = (BlockTableRecord)
+            tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+          foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+          {
+            if (id.IsValid)
+            {
+              using (
+                BlockTableRecord anonymousBtr =
+                  tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord
+              )
+              {
+                if (anonymousBtr != null)
+                {
+                  foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                  {
                     var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                     var pc = entity.DynamicBlockReferencePropertyCollection;
-                    foreach (DynamicBlockReferenceProperty prop in pc) {
-                      if (prop.PropertyName == "Id") {
+                    foreach (DynamicBlockReferenceProperty prop in pc)
+                    {
+                      if (prop.PropertyName == "Id")
+                      {
                         string basePointId = prop.Value?.ToString();
-                        if (!string.IsNullOrEmpty(basePointId) && basePointId != "0") {
+                        if (!string.IsNullOrEmpty(basePointId) && basePointId != "0")
+                        {
                           basePoints.Add(basePointId, entity.ObjectId);
                         }
                       }
@@ -1781,107 +2155,135 @@ namespace GMEPPlumbing {
         string VerticalRouteId = string.Empty;
         string BasePointId = string.Empty;
         var properties = blockRef.DynamicBlockReferencePropertyCollection;
-        foreach (DynamicBlockReferenceProperty prop in properties) {
-          if (prop.PropertyName == "vertical_route_id") {
+        foreach (DynamicBlockReferenceProperty prop in properties)
+        {
+          if (prop.PropertyName == "vertical_route_id")
+          {
             VerticalRouteId = prop.Value?.ToString();
           }
-          if (prop.PropertyName == "base_point_id") {
+          if (prop.PropertyName == "base_point_id")
+          {
             BasePointId = prop.Value?.ToString();
           }
         }
-        if (BasePointId != "" && basePoints.ContainsKey(BasePointId)) {
+        if (BasePointId != "" && basePoints.ContainsKey(BasePointId))
+        {
           ObjectId basePointIdObj = basePoints[BasePointId];
 
-          using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          using (Transaction tr = db.TransactionManager.StartTransaction())
+          {
             BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
-            BlockReference basePointRef = (BlockReference)tr.GetObject(basePointIdObj, OpenMode.ForWrite);
+            BlockReference basePointRef = (BlockReference)
+              tr.GetObject(basePointIdObj, OpenMode.ForWrite);
             Vector3d distanceVector = blockRef.Position - basePointRef.Position;
 
             List<string> blockNames = new List<string>
             {
-                        "GMEP_PLUMBING_LINE_UP",
-                        "GMEP_PLUMBING_LINE_DOWN",
-                        "GMEP_PLUMBING_LINE_VERTICAL"
-                    };
+              "GMEP_PLUMBING_LINE_UP",
+              "GMEP_PLUMBING_LINE_DOWN",
+              "GMEP_PLUMBING_LINE_VERTICAL",
+            };
 
-            foreach (var name in blockNames) {
-              BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
-              foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
-                if (id.IsValid) {
-                  using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord) {
-                    if (anonymousBtr != null) {
-
-                      foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
-                        if (objId.IsValid) {
+            foreach (var name in blockNames)
+            {
+              BlockTableRecord basePointBlock = (BlockTableRecord)
+                tr.GetObject(bt[name], OpenMode.ForWrite);
+              foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+              {
+                if (id.IsValid)
+                {
+                  using (
+                    BlockTableRecord anonymousBtr =
+                      tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord
+                  )
+                  {
+                    if (anonymousBtr != null)
+                    {
+                      foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                      {
+                        if (objId.IsValid)
+                        {
                           var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
 
                           var pc = entity.DynamicBlockReferencePropertyCollection;
 
                           string BasePointId2 = string.Empty;
                           bool match = false;
-                          foreach (DynamicBlockReferenceProperty prop in pc) {
-
-                            if (prop.PropertyName == "vertical_route_id" &&
-                                prop.Value?.ToString() == VerticalRouteId) {
+                          foreach (DynamicBlockReferenceProperty prop in pc)
+                          {
+                            if (
+                              prop.PropertyName == "vertical_route_id"
+                              && prop.Value?.ToString() == VerticalRouteId
+                            )
+                            {
                               match = true;
                             }
-                            if (prop.PropertyName == "base_point_id") {
+                            if (prop.PropertyName == "base_point_id")
+                            {
                               BasePointId2 = prop.Value?.ToString();
                             }
                           }
-                          if (match) {
-                            BlockReference basePointRef2 = tr.GetObject(basePoints[BasePointId2], OpenMode.ForRead) as BlockReference;
+                          if (match)
+                          {
+                            BlockReference basePointRef2 =
+                              tr.GetObject(basePoints[BasePointId2], OpenMode.ForRead)
+                              as BlockReference;
                             entity.Position = basePointRef2.Position + distanceVector;
                           }
-
                         }
                       }
                     }
                   }
                 }
               }
-
             }
             tr.Commit();
           }
-
         }
         SettingObjects = false;
-
       }
-
     }
-    private static bool IsVerticalRouteBlock(BlockReference blockRef) {
-      foreach (DynamicBlockReferenceProperty prop in blockRef.DynamicBlockReferencePropertyCollection) {
+
+    private static bool IsVerticalRouteBlock(BlockReference blockRef)
+    {
+      foreach (
+        DynamicBlockReferenceProperty prop in blockRef.DynamicBlockReferencePropertyCollection
+      )
+      {
         if (prop.PropertyName == "vertical_route_id")
           return true;
       }
       return false;
     }
-
   }
 
-  public class PluginEntry : IExtensionApplication {
-    public void Initialize() {
+  public class PluginEntry : IExtensionApplication
+  {
+    public void Initialize()
+    {
       // Attach to document events
       Application.DocumentManager.DocumentCreated += DocumentManager_DocumentCreated;
       Application.DocumentManager.DocumentActivated += DocumentManager_DocumentActivated;
 
       // Optionally, initialize for already open documents
-      foreach (Document doc in Application.DocumentManager) {
+      foreach (Document doc in Application.DocumentManager)
+      {
         AutoCADIntegration.AttachHandlers(doc);
       }
     }
 
-    public void Terminate() {
+    public void Terminate()
+    {
       // Clean up if needed
     }
 
-    private void DocumentManager_DocumentCreated(object sender, DocumentCollectionEventArgs e) {
+    private void DocumentManager_DocumentCreated(object sender, DocumentCollectionEventArgs e)
+    {
       AutoCADIntegration.AttachHandlers(e.Document);
     }
 
-    private void DocumentManager_DocumentActivated(object sender, DocumentCollectionEventArgs e) {
+    private void DocumentManager_DocumentActivated(object sender, DocumentCollectionEventArgs e)
+    {
       AutoCADIntegration.AttachHandlers(e.Document);
     }
   }
