@@ -18,8 +18,7 @@ using static Mysqlx.Notice.Frame.Types;
 
 namespace GMEPPlumbing.Services
 {
-  public class MariaDBService
-  {
+  public class MariaDBService {
     public string ConnectionString { get; set; }
     public MySqlConnection Connection { get; set; }
     public Document doc { get; private set; }
@@ -27,8 +26,7 @@ namespace GMEPPlumbing.Services
     public Editor ed { get; private set; }
     public string ProjectId { get; private set; }
 
-    public MariaDBService()
-    {
+    public MariaDBService() {
       ConnectionString = Properties.Settings.Default.ConnectionString;
       Connection = new MySqlConnection(ConnectionString);
 
@@ -37,103 +35,81 @@ namespace GMEPPlumbing.Services
       ed = doc.Editor;
     }
 
-    string GetSafeString(MySqlDataReader reader, string fieldName)
-    {
+    string GetSafeString(MySqlDataReader reader, string fieldName) {
       int index = reader.GetOrdinal(fieldName);
-      if (!reader.IsDBNull(index))
-      {
+      if (!reader.IsDBNull(index)) {
         return reader.GetString(index);
       }
       return string.Empty;
     }
 
-    int GetSafeInt(MySqlDataReader reader, string fieldName)
-    {
+    int GetSafeInt(MySqlDataReader reader, string fieldName) {
       int index = reader.GetOrdinal(fieldName);
-      if (!reader.IsDBNull(index))
-      {
+      if (!reader.IsDBNull(index)) {
         return reader.GetInt32(index);
       }
       return 0;
     }
 
-    float GetSafeFloat(MySqlDataReader reader, string fieldName)
-    {
+    float GetSafeFloat(MySqlDataReader reader, string fieldName) {
       int index = reader.GetOrdinal(fieldName);
-      if (!reader.IsDBNull(index))
-      {
+      if (!reader.IsDBNull(index)) {
         return reader.GetFloat(index);
       }
       return 0;
     }
 
-    bool GetSafeBoolean(MySqlDataReader reader, string fieldName)
-    {
+    bool GetSafeBoolean(MySqlDataReader reader, string fieldName) {
       int index = reader.GetOrdinal(fieldName);
-      if (!reader.IsDBNull(index))
-      {
+      if (!reader.IsDBNull(index)) {
         return reader.GetBoolean(index);
       }
       return false;
     }
 
-    decimal GetSafeDecimal(MySqlDataReader reader, string fieldName)
-    {
+    decimal GetSafeDecimal(MySqlDataReader reader, string fieldName) {
       int index = reader.GetOrdinal(fieldName);
-      if (!reader.IsDBNull(index))
-      {
+      if (!reader.IsDBNull(index)) {
         return reader.GetDecimal(index);
       }
       return 0;
     }
 
-    public void OpenConnectionSync()
-    {
-      if (Connection.State == System.Data.ConnectionState.Closed)
-      {
+    public void OpenConnectionSync() {
+      if (Connection.State == System.Data.ConnectionState.Closed) {
         Connection.Open();
       }
     }
 
-    public void CloseConnectionSync()
-    {
-      if (Connection.State == System.Data.ConnectionState.Open)
-      {
+    public void CloseConnectionSync() {
+      if (Connection.State == System.Data.ConnectionState.Open) {
         Connection.Close();
       }
     }
 
-    public async Task OpenConnectionAsync()
-    {
-      if (Connection.State == System.Data.ConnectionState.Closed)
-      {
+    public async Task OpenConnectionAsync() {
+      if (Connection.State == System.Data.ConnectionState.Closed) {
         await Connection.OpenAsync();
       }
     }
 
-    public async Task CloseConnectionAsync()
-    {
-      if (Connection.State == System.Data.ConnectionState.Open)
-      {
+    public async Task CloseConnectionAsync() {
+      if (Connection.State == System.Data.ConnectionState.Open) {
         await Connection.CloseAsync();
       }
     }
 
-    public async Task<MySqlConnection> OpenNewConnectionAsync()
-    {
+    public async Task<MySqlConnection> OpenNewConnectionAsync() {
       MySqlConnection conn = new MySqlConnection(ConnectionString);
       await conn.OpenAsync();
       return conn;
     }
 
-    public async Task<string> GetProjectId(string projectNo)
-    {
-      if (!string.IsNullOrEmpty(ProjectId))
-      {
+    public async Task<string> GetProjectId(string projectNo) {
+      if (!string.IsNullOrEmpty(ProjectId)) {
         return ProjectId;
       }
-      if (projectNo == null || projectNo == string.Empty)
-      {
+      if (projectNo == null || projectNo == string.Empty) {
         return string.Empty;
       }
       string query = "SELECT id FROM projects WHERE gmep_project_no = @projectNo";
@@ -144,8 +120,7 @@ namespace GMEPPlumbing.Services
 
       Dictionary<int, string> projectIds = new Dictionary<int, string>();
       string id = "";
-      if (reader.Read())
-      {
+      if (reader.Read()) {
         id = reader.GetString("id");
       }
       reader.Close();
@@ -155,14 +130,11 @@ namespace GMEPPlumbing.Services
       return id;
     }
 
-    public string GetProjectIdSync(string projectNo)
-    {
-      if (!string.IsNullOrEmpty(ProjectId))
-      {
+    public string GetProjectIdSync(string projectNo) {
+      if (!string.IsNullOrEmpty(ProjectId)) {
         return ProjectId;
       }
-      if (projectNo == null || projectNo == string.Empty)
-      {
+      if (projectNo == null || projectNo == string.Empty) {
         return string.Empty;
       }
       string query = "SELECT id FROM projects WHERE gmep_project_no = @projectNo";
@@ -173,8 +145,7 @@ namespace GMEPPlumbing.Services
 
       Dictionary<int, string> projectIds = new Dictionary<int, string>();
       string id = "";
-      if (reader.Read())
-      {
+      if (reader.Read()) {
         id = reader.GetString("id");
       }
       reader.Close();
@@ -184,8 +155,7 @@ namespace GMEPPlumbing.Services
       return id;
     }
 
-    public async Task<WaterSystemData> GetWaterSystemData(string projectId)
-    {
+    public async Task<WaterSystemData> GetWaterSystemData(string projectId) {
       await OpenConnectionAsync();
       //get the additional losses
 
@@ -197,21 +167,17 @@ namespace GMEPPlumbing.Services
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("@projectId", projectId);
       MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
-      while (await reader.ReadAsync())
-      {
+      while (await reader.ReadAsync()) {
         bool is2 = reader.GetBoolean("is_2");
-        AdditionalLoss additionalLoss = new AdditionalLoss
-        {
+        AdditionalLoss additionalLoss = new AdditionalLoss {
           Id = reader.GetString("id"),
           Title = reader.GetString("title"),
           Amount = reader.GetString("amount"),
         };
-        if (is2)
-        {
+        if (is2) {
           waterSystemData.AdditionalLosses2.Add(additionalLoss);
         }
-        else
-        {
+        else {
           waterSystemData.AdditionalLosses.Add(additionalLoss);
         }
       }
@@ -227,8 +193,7 @@ namespace GMEPPlumbing.Services
 
       List<string> newLuminaireIds = new List<string>();
 
-      while (await reader.ReadAsync())
-      {
+      while (await reader.ReadAsync()) {
         waterSystemData.SectionHeader1 = reader.GetString("section_header_1");
         waterSystemData.StreetLowPressure = reader.GetDouble("street_low_pressure");
         waterSystemData.StreetHighPressure = reader.GetDouble("street_high_pressure");
@@ -273,17 +238,14 @@ namespace GMEPPlumbing.Services
       return waterSystemData;
     }
 
-    private object SanitizeDouble(double value)
-    {
+    private object SanitizeDouble(double value) {
       if (double.IsNaN(value) || double.IsInfinity(value))
         return 0;
       return value;
     }
 
-    public async Task<bool> UpdateWaterSystem(WaterSystemData waterSystemData, string projectId)
-    {
-      try
-      {
+    public async Task<bool> UpdateWaterSystem(WaterSystemData waterSystemData, string projectId) {
+      try {
         await OpenConnectionAsync();
 
         // First, delete existing additional losses that are not in additionalosses or additionallosses2 for the project
@@ -301,15 +263,13 @@ namespace GMEPPlumbing.Services
             .Concat(waterSystemData.AdditionalLosses2.Select(a => $"'{a.Id}'"))
         );
 
-        if (!string.IsNullOrEmpty(ids))
-        {
+        if (!string.IsNullOrEmpty(ids)) {
           MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, Connection);
           deleteCommand.Parameters.AddWithValue("@projectId", projectId);
           deleteCommand.Parameters.AddWithValue("@ids", ids);
           await deleteCommand.ExecuteNonQueryAsync();
         }
-        else
-        {
+        else {
           deleteQuery =
             @"
                     DELETE FROM plumbing_additional_losses
@@ -319,8 +279,7 @@ namespace GMEPPlumbing.Services
           await deleteCommand.ExecuteNonQueryAsync();
         }
 
-        foreach (var loss in waterSystemData.AdditionalLosses)
-        {
+        foreach (var loss in waterSystemData.AdditionalLosses) {
           string insertQuery =
             @"
                     INSERT INTO plumbing_additional_losses (
@@ -346,8 +305,7 @@ namespace GMEPPlumbing.Services
           insertCommand.Parameters.AddWithValue("@amount", loss.Amount);
           await insertCommand.ExecuteNonQueryAsync();
         }
-        foreach (var loss in waterSystemData.AdditionalLosses2)
-        {
+        foreach (var loss in waterSystemData.AdditionalLosses2) {
           string insertQuery =
             @"
                     INSERT INTO plumbing_additional_losses (
@@ -608,8 +566,7 @@ namespace GMEPPlumbing.Services
         await command.ExecuteNonQueryAsync();
         await CloseConnectionAsync();
       }
-      catch (Exception ex)
-      {
+      catch (Exception ex) {
         ed.WriteMessage("database error: " + ex.Message);
         await CloseConnectionAsync();
         return false;
@@ -617,15 +574,13 @@ namespace GMEPPlumbing.Services
       return true;
     }
 
-    public List<PlumbingFixtureType> GetPlumbingFixtureTypes()
-    {
+    public List<PlumbingFixtureType> GetPlumbingFixtureTypes() {
       List<PlumbingFixtureType> fixtureTypes = new List<PlumbingFixtureType>();
       OpenConnectionSync();
       string query = "SELECT * FROM plumbing_fixture_types ORDER BY abbreviation";
       MySqlCommand command = new MySqlCommand(query, Connection);
       MySqlDataReader reader = command.ExecuteReader();
-      while (reader.Read())
-      {
+      while (reader.Read()) {
         fixtureTypes.Add(
           new PlumbingFixtureType(
             GetSafeInt(reader, "id"),
@@ -641,8 +596,7 @@ namespace GMEPPlumbing.Services
       return fixtureTypes;
     }
 
-    public List<PlumbingFixtureCatalogItem> GetPlumbingFixtureCatalogItemsByType(int typeId)
-    {
+    public List<PlumbingFixtureCatalogItem> GetPlumbingFixtureCatalogItemsByType(int typeId) {
       List<PlumbingFixtureCatalogItem> items = new List<PlumbingFixtureCatalogItem>();
       OpenConnectionSync();
       string query =
@@ -650,8 +604,7 @@ namespace GMEPPlumbing.Services
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("@typeId", typeId);
       MySqlDataReader reader = command.ExecuteReader();
-      while (reader.Read())
-      {
+      while (reader.Read()) {
         items.Add(
           new PlumbingFixtureCatalogItem(
             GetSafeInt(reader, "id"),
@@ -678,8 +631,7 @@ namespace GMEPPlumbing.Services
       return items;
     }
 
-    public void CreatePlumbingFixture(PlumbingFixture fixture)
-    {
+    public void CreatePlumbingFixture(PlumbingFixture fixture) {
       // 1 get the count of different types of the same fixture
       string query =
         @"
@@ -697,24 +649,19 @@ namespace GMEPPlumbing.Services
       MySqlDataReader reader = command.ExecuteReader();
       List<int> addedCatalogIds = new List<int>();
       List<int> addedFixtureNumbers = new List<int>();
-      while (reader.Read())
-      {
+      while (reader.Read()) {
         addedCatalogIds.Add(GetSafeInt(reader, "id"));
         addedFixtureNumbers.Add(GetSafeInt(reader, "number"));
       }
-      if (addedCatalogIds.Count == 0)
-      {
+      if (addedCatalogIds.Count == 0) {
         count = 1;
       }
-      for (int i = 0; i < addedCatalogIds.Count; i++)
-      {
-        if (addedCatalogIds[i] == fixture.CatalogId)
-        {
+      for (int i = 0; i < addedCatalogIds.Count; i++) {
+        if (addedCatalogIds[i] == fixture.CatalogId) {
           count = addedFixtureNumbers[i];
         }
       }
-      if (count == 0)
-      {
+      if (count == 0) {
         count = addedCatalogIds.Count + 1;
       }
       reader.Close();
@@ -737,16 +684,14 @@ namespace GMEPPlumbing.Services
       CloseConnectionSync();
     }
 
-    public List<PlumbingSourceType> GetPlumbingSourceTypes()
-    {
+    public List<PlumbingSourceType> GetPlumbingSourceTypes() {
       List<PlumbingSourceType> types = new List<PlumbingSourceType>();
       string query = "SELECT * FROM plumbing_source_types";
 
       OpenConnectionSync();
       MySqlCommand command = new MySqlCommand(query, Connection);
       MySqlDataReader reader = command.ExecuteReader();
-      while (reader.Read())
-      {
+      while (reader.Read()) {
         types.Add(new PlumbingSourceType(GetSafeInt(reader, "id"), GetSafeString(reader, "type")));
       }
       reader.Close();
@@ -754,8 +699,7 @@ namespace GMEPPlumbing.Services
       return types;
     }
 
-    public async Task CreatePlumbingSource(PlumbingSource source)
-    {
+    public async Task CreatePlumbingSource(PlumbingSource source) {
       string query =
         @"
         INSERT INTO plumbing_sources
@@ -774,8 +718,7 @@ namespace GMEPPlumbing.Services
       await CloseConnectionAsync();
     }
 
-    public async Task CreatePlumbingPlanBasePoint(PlumbingPlanBasePoint point)
-    {
+    /*public async Task CreatePlumbingPlanBasePoint(PlumbingPlanBasePoint point) {
       string query =
         @"
         INSERT INTO plumbing_plan_base_points
@@ -793,6 +736,211 @@ namespace GMEPPlumbing.Services
       command.Parameters.AddWithValue("@floor", point.Floor);
       await command.ExecuteNonQueryAsync();
       await conn.CloseAsync();
+    }*/
+
+
+
+    
+    /*public async Task CreatePlumbingHorizontalRoute(PlumbingHorizontalRoute route) {
+      string query =
+        @"
+        INSERT INTO plumbing_horizontal_routes
+        (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, source_id)
+        VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @sourceId)
+        ";
+
+      MySqlConnection conn = await OpenNewConnectionAsync();
+      MySqlCommand command = new MySqlCommand(query, conn);
+      command.Parameters.AddWithValue("@id", route.Id);
+      command.Parameters.AddWithValue("@projectId", route.ProjectId);
+      command.Parameters.AddWithValue("@startPosX", route.StartPoint.X);
+      command.Parameters.AddWithValue("@startPosY", route.StartPoint.Y);
+      command.Parameters.AddWithValue("@endPosX", route.EndPoint.X);
+      command.Parameters.AddWithValue("@endPosY", route.EndPoint.Y);
+      command.Parameters.AddWithValue("@sourceId", route.SourceId);
+      await command.ExecuteNonQueryAsync();
+      await conn.CloseAsync();
+    }*/
+
+    public async Task UpdatePlumbingHorizontalRoutes(
+      List<PlumbingHorizontalRoute> routes,
+      string projectId
+    ) {
+        if (routes == null)
+          return;
+
+        var idsToKeep = routes.Select(r => r.Id).ToList();
+
+        MySqlConnection conn = await OpenNewConnectionAsync();
+
+        if (idsToKeep.Count > 0) {
+
+          var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
+          string deleteQuery = $@"
+              DELETE FROM plumbing_horizontal_routes
+              WHERE project_id = @projectId
+              AND id NOT IN ({string.Join(",", paramNames)})
+          ";
+          MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+          deleteCommand.Parameters.AddWithValue("@projectId", projectId);
+          for (int i = 0; i < idsToKeep.Count; i++) {
+            deleteCommand.Parameters.AddWithValue(paramNames[i], idsToKeep[i]);
+          }
+          await deleteCommand.ExecuteNonQueryAsync();
+        }
+        else {
+
+          string deleteQuery = @"
+              DELETE FROM plumbing_horizontal_routes
+              WHERE project_id = @projectId
+          ";
+          MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+          deleteCommand.Parameters.AddWithValue("@projectId", projectId);
+          await deleteCommand.ExecuteNonQueryAsync();
+        }
+
+
+        if (routes.Count > 0) {
+          string upsertQuery = @"
+              INSERT INTO plumbing_horizontal_routes
+              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, source_id)
+              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @sourceId)
+              ON DUPLICATE KEY UPDATE
+                  start_pos_x = @startPosX,
+                  end_pos_x = @endPosX,
+                  start_pos_y = @startPosY,
+                  end_pos_y = @endPosY,
+                  source_id = @sourceId
+          ";
+          foreach (var route in routes) {
+            MySqlCommand command = new MySqlCommand(upsertQuery, conn);
+            command.Parameters.AddWithValue("@id", route.Id);
+            command.Parameters.AddWithValue("@projectId", projectId);
+            command.Parameters.AddWithValue("@startPosX", route.StartPoint.X);
+            command.Parameters.AddWithValue("@startPosY", route.StartPoint.Y);
+            command.Parameters.AddWithValue("@endPosX", route.EndPoint.X);
+            command.Parameters.AddWithValue("@endPosY", route.EndPoint.Y);
+            command.Parameters.AddWithValue("@sourceId", route.SourceId);
+            await command.ExecuteNonQueryAsync();
+          }
+        }
+
+        await conn.CloseAsync();
     }
+    public async Task UpdatePlumbingVerticalRoutes(List<PlumbingVerticalRoute> routes, string projectId) {
+      if (routes == null) {
+        return;
+      }
+      var idsToKeep = routes.Select(r => r.Id).ToList();
+      MySqlConnection conn = await OpenNewConnectionAsync();
+
+      if (idsToKeep.Count > 0) {
+        var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
+        string deleteQuery = $@"
+              DELETE FROM plumbing_vertical_routes
+              WHERE project_id = @projectId
+              AND id NOT IN ({string.Join(",", paramNames)})
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", projectId);
+        for (int i = 0; i < idsToKeep.Count; i++) {
+          deleteCommand.Parameters.AddWithValue(paramNames[i], idsToKeep[i]);
+        }
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      else {
+        string deleteQuery = @"
+              DELETE FROM plumbing_vertical_routes
+              WHERE project_id = @projectId
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", projectId);
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      if (routes.Count > 0) {
+        string upsertQuery = @"
+              INSERT INTO plumbing_vertical_routes
+              (id, project_id, pos_x, pos_y, vertical_route_id, base_point_id, source_id)
+              VALUES (@id, @projectId, @posX, @posY, @verticalRouteId, @basePointId, @sourceId)
+              ON DUPLICATE KEY UPDATE
+              pos_x = @posX,
+              pos_y = @posy,
+              source_id = @sourceId,
+              vertical_route_id = @verticalRouteId,
+              base_point_id = @basePointId
+            
+          ";
+        foreach (var route in routes) {
+          MySqlCommand command = new MySqlCommand(upsertQuery, conn);
+          command.Parameters.AddWithValue("@id", route.Id);
+          command.Parameters.AddWithValue("@projectId", projectId);
+          command.Parameters.AddWithValue("@posX", route.Position.X);
+          command.Parameters.AddWithValue("@posY", route.Position.Y);
+          command.Parameters.AddWithValue("@sourceId", route.SourceId);
+          command.Parameters.AddWithValue("@verticalRouteId", route.VerticalRouteId);
+          command.Parameters.AddWithValue("@basePointId", route.BasePointId);
+          await command.ExecuteNonQueryAsync();
+        }
+      }
+    }
+    public async Task UpdatePlumbingPlanBasePoints(List<PlumbingPlanBasePoint> points, string ProjectId) {
+      if (points == null) {
+        return;
+      }
+      var idsToKeep = points.Select(p => p.Id).ToList();
+      MySqlConnection conn = await OpenNewConnectionAsync();
+      if (idsToKeep.Count > 0) {
+        var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
+        string deleteQuery = $@"
+              DELETE FROM plumbing_plan_base_points
+              WHERE project_id = @projectId
+              AND id NOT IN ({string.Join(",", paramNames)})
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        for (int i = 0; i < idsToKeep.Count; i++) {
+          deleteCommand.Parameters.AddWithValue(paramNames[i], idsToKeep[i]);
+        }
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      else {
+        string deleteQuery = @"
+              DELETE FROM plumbing_plan_base_points
+              WHERE project_id = @projectId
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      if (points.Count > 0) {
+        string upsertQuery = @"
+              INSERT INTO plumbing_plan_base_points
+              (id, project_id, viewport_id, floor, plan, type, pos_x, pos_y)
+              VALUES (@id, @projectId, @viewportId, @floor, @plan, @type, @posX, @posY)
+              ON DUPLICATE KEY UPDATE
+                  viewport_id = @viewportId,
+                  floor = @floor,
+                  plan = @plan,
+                  type = @type,
+                  pos_x = @posX,
+                  pos_y = @posY
+          ";
+        foreach (var point in points) {
+          MySqlCommand command = new MySqlCommand(upsertQuery, conn);
+          command.Parameters.AddWithValue("@id", point.Id);
+          command.Parameters.AddWithValue("@projectId", ProjectId);
+          command.Parameters.AddWithValue("@viewportId", point.ViewportId);
+          command.Parameters.AddWithValue("@floor", point.Floor);
+          command.Parameters.AddWithValue("@plan", point.Plan);
+          command.Parameters.AddWithValue("@type", point.Type);
+          command.Parameters.AddWithValue("@posX", point.Point.X);
+          command.Parameters.AddWithValue("@posY", point.Point.Y);
+          await command.ExecuteNonQueryAsync();
+        }
+      }
+      await conn.CloseAsync();
+    }
+   
+
   }
 }
