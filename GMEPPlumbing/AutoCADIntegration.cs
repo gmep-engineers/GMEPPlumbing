@@ -2311,13 +2311,12 @@ namespace GMEPPlumbing
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
 
-
           List<string> blockNames = new List<string>
           {
               "GMEP_PLUMBING_LINE_UP",
               "GMEP_PLUMBING_LINE_DOWN",
               "GMEP_PLUMBING_LINE_VERTICAL",
-            };
+          };
 
           foreach (var name in blockNames) {
             BlockTableRecord basePointBlock = (BlockTableRecord)
