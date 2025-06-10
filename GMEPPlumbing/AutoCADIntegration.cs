@@ -35,6 +35,7 @@ using MongoDB.Driver.Core.Misc;
 using Org.BouncyCastle.Bcpg.OpenPgp;
 using SharpCompress.Common;
 using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
+using Line = Autodesk.AutoCAD.DatabaseServices.Line;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
@@ -2263,12 +2264,16 @@ namespace GMEPPlumbing
       }
     }
 
+    /*public static void Db_BasePointErased(object sender, ObjectEventArgs e) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+    }*/
     public static void Db_BasePointModified(object sender, ObjectEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
 
-      Dictionary<string, ObjectId> viewBasePoints = new Dictionary<string, ObjectId>();
       if (
         !SettingObjects
         && !IsSaving
@@ -2280,6 +2285,7 @@ namespace GMEPPlumbing
         string Id = string.Empty;
         Vector3d distanceVector = new Vector3d(0, 0, 0);
 
+        Dictionary <string, List<Line>> sourceHorizontalRoutes = new Dictionary<string, List<Line>>();
 
         var pc = blockRef.DynamicBlockReferencePropertyCollection;
         if (pc != null) {
@@ -2300,13 +2306,34 @@ namespace GMEPPlumbing
           }
           Point3d position = new Point3d(pos_x, pos_y, 0);
           distanceVector = blockRef.Position - position;
-
-
         }
-        Dictionary<string, BlockReference> verticalRoutes = new Dictionary<string, BlockReference>();
+
+
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
-  
+
+          //getting lines
+          BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+
+          foreach (ObjectId entId in modelSpace) {
+            if (entId.ObjectClass == RXClass.GetClass(typeof(Line))) {
+              Line line = tr.GetObject(entId, OpenMode.ForWrite) as Line;
+              if (line != null) {
+                ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
+                if (xdata != null && xdata.AsArray().Length > 2) {
+                  TypedValue[] values = xdata.AsArray();
+                  string sourceId = values[2].Value.ToString();
+                  if (sourceHorizontalRoutes.ContainsKey(sourceId)) {
+                    sourceHorizontalRoutes[sourceId].Add(line);
+                  }
+                  else {
+                    sourceHorizontalRoutes.Add(sourceId, new List<Line> { line });
+                  }
+                }
+              }
+            }
+          }
+
 
           List<string> blockNames = new List<string>
           {
@@ -2331,18 +2358,32 @@ namespace GMEPPlumbing
 
                         var pc2 = entity.DynamicBlockReferencePropertyCollection;
 
-                        string BasePointId = string.Empty;
+                
+                        string id2 = string.Empty;
+                        bool match = false;
 
                         foreach (DynamicBlockReferenceProperty prop in pc2) {
                          
                           if (prop.PropertyName == "base_point_id") {
-                            BasePointId = prop.Value?.ToString();
+                            string BasePointId = prop.Value?.ToString();
                             if (BasePointId == Id) {
-                              entity.Position += distanceVector;
+                              match = true;
                             }
-
+                          }
+                          if (prop.PropertyName == "id") {
+                            id2 = prop.Value.ToString();
                           }
                         }
+                        if (match) {
+                          entity.Position += distanceVector;
+                          if (sourceHorizontalRoutes.ContainsKey(id2)) {
+                            foreach (var route in sourceHorizontalRoutes[id2]) {
+                              route.StartPoint += distanceVector;
+                              route.EndPoint += distanceVector;
+                            }
+                          }
+                        }
+
                       
                       }
                     }
