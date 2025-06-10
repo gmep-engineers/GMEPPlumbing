@@ -2285,7 +2285,6 @@ namespace GMEPPlumbing
         string Id = string.Empty;
         Vector3d distanceVector = new Vector3d(0, 0, 0);
 
-        Dictionary <string, List<Line>> sourceHorizontalRoutes = new Dictionary<string, List<Line>>();
 
         var pc = blockRef.DynamicBlockReferencePropertyCollection;
         if (pc != null) {
@@ -2312,28 +2311,6 @@ namespace GMEPPlumbing
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
 
-          //getting lines
-          BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-
-          foreach (ObjectId entId in modelSpace) {
-            if (entId.ObjectClass == RXClass.GetClass(typeof(Line))) {
-              Line line = tr.GetObject(entId, OpenMode.ForWrite) as Line;
-              if (line != null) {
-                ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
-                if (xdata != null && xdata.AsArray().Length > 2) {
-                  TypedValue[] values = xdata.AsArray();
-                  string sourceId = values[2].Value.ToString();
-                  if (sourceHorizontalRoutes.ContainsKey(sourceId)) {
-                    sourceHorizontalRoutes[sourceId].Add(line);
-                  }
-                  else {
-                    sourceHorizontalRoutes.Add(sourceId, new List<Line> { line });
-                  }
-                }
-              }
-            }
-          }
-
 
           List<string> blockNames = new List<string>
           {
@@ -2358,33 +2335,15 @@ namespace GMEPPlumbing
 
                         var pc2 = entity.DynamicBlockReferencePropertyCollection;
 
-                
-                        string id2 = string.Empty;
-                        bool match = false;
-
                         foreach (DynamicBlockReferenceProperty prop in pc2) {
                          
                           if (prop.PropertyName == "base_point_id") {
                             string BasePointId = prop.Value?.ToString();
                             if (BasePointId == Id) {
-                              match = true;
-                            }
-                          }
-                          if (prop.PropertyName == "id") {
-                            id2 = prop.Value.ToString();
-                          }
-                        }
-                        if (match) {
-                          entity.Position += distanceVector;
-                          if (sourceHorizontalRoutes.ContainsKey(id2)) {
-                            foreach (var route in sourceHorizontalRoutes[id2]) {
-                              route.StartPoint += distanceVector;
-                              route.EndPoint += distanceVector;
+                              entity.Position += distanceVector;
                             }
                           }
                         }
-
-                      
                       }
                     }
                   }
