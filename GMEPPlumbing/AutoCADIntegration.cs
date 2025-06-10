@@ -1870,11 +1870,11 @@ namespace GMEPPlumbing {
         string projectNo = CADObjectCommands.GetProjectNoFromFileName();
         string ProjectId = await mariaDBService.GetProjectId(projectNo);
 
-        List<PlumbingHorizontalRoute> horizontalRoutes = await GetHorizontalRoutesFromCAD(ProjectId);
-        //List<PlumbingVerticalRoute> verticalRoutes = await GetVerticalRoutesFromCAD(ProjectId);
+        List<PlumbingHorizontalRoute> horizontalRoutes = GetHorizontalRoutesFromCAD(ProjectId);
+        List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
 
         await mariaDBService.UpdatePlumbingHorizontalRoutes(horizontalRoutes, ProjectId);
-        //await mariaDBService.UpdatePlumbingVerticalRoutes(verticalRoutes, ProjectId);
+        await mariaDBService.UpdatePlumbingVerticalRoutes(verticalRoutes, ProjectId);
       }
       catch (System.Exception ex) {
         ed.WriteMessage("\nError getting ProjectId: " + ex.Message);
@@ -1883,7 +1883,7 @@ namespace GMEPPlumbing {
 
     }
 
-    public static async Task<List<PlumbingHorizontalRoute>> GetHorizontalRoutesFromCAD(string ProjectId) {
+    public static List<PlumbingHorizontalRoute> GetHorizontalRoutesFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
@@ -1914,7 +1914,7 @@ namespace GMEPPlumbing {
     }
 
 
-    public static async Task<List<PlumbingVerticalRoute>> GetVerticalRoutesFromCAD(string ProjectId) {
+    public static List<PlumbingVerticalRoute> GetVerticalRoutesFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
@@ -1933,15 +1933,15 @@ namespace GMEPPlumbing {
           };
 
         foreach (var name in blockNames) {
-          BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForWrite);
+          BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
           foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
             if (id.IsValid) {
-              using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord) {
+              using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
                 if (anonymousBtr != null) {
 
                   foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
                     if (objId.IsValid) {
-                      var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+                      var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
 
                       var pc = entity.DynamicBlockReferencePropertyCollection;
 
