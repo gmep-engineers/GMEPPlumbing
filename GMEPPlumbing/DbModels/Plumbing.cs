@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 
-namespace GMEPPlumbing
-{
-  public class PlumbingFixture
-  {
+namespace GMEPPlumbing {
+  public class PlumbingFixture {
     public string Id;
     public string ProjectId;
     public Point3d Position;
@@ -26,8 +25,7 @@ namespace GMEPPlumbing
       int catalogId,
       string typeAbbreviation,
       int number
-    )
-    {
+    ) {
       Id = id;
       ProjectId = projectId;
       Position = position;
@@ -38,8 +36,7 @@ namespace GMEPPlumbing
     }
   }
 
-  public class PlumbingFixtureType
-  {
+  public class PlumbingFixtureType {
     public int Id;
     public string Name;
     public string Abbreviation;
@@ -52,8 +49,7 @@ namespace GMEPPlumbing
       string abbreviation,
       string waterGasBlockName,
       string wasteVentBlockName
-    )
-    {
+    ) {
       Id = id;
       Name = name;
       Abbreviation = abbreviation;
@@ -62,8 +58,7 @@ namespace GMEPPlumbing
     }
   }
 
-  public class PlumbingFixtureCatalogItem
-  {
+  public class PlumbingFixtureCatalogItem {
     public int Id;
     public int TypeId;
     public string Description;
@@ -98,8 +93,7 @@ namespace GMEPPlumbing
       int dfu,
       string waterGasBlockName,
       string wasteVentBlockName
-    )
-    {
+    ) {
       Id = id;
       TypeId = typeId;
       Description = description;
@@ -119,8 +113,7 @@ namespace GMEPPlumbing
     }
   }
 
-  public class PlumbingSource
-  {
+  public class PlumbingSource {
     public string Id;
     public string ProjectId;
     public Point3d Position;
@@ -133,8 +126,7 @@ namespace GMEPPlumbing
       Point3d position,
       int typeId,
       string fixtureId
-    )
-    {
+    ) {
       Id = id;
       ProjectId = projectId;
       Position = position;
@@ -143,31 +135,81 @@ namespace GMEPPlumbing
     }
   }
 
-  public class PlumbingSourceType
-  {
+  public class PlumbingSourceType {
     public int Id;
     public string Type;
 
-    public PlumbingSourceType(int id, string type)
-    {
+    public PlumbingSourceType(int id, string type) {
       Id = id;
       Type = type;
     }
   }
 
-  public class PlumbingPlanBasePoint
-  {
+  public class PlumbingPlanBasePoint {
     public string Id;
     public string ProjectId;
     public string ViewportName;
     public int Floor;
 
-    public PlumbingPlanBasePoint(string id, string projectId, string viewportName, int floor)
-    {
+    public PlumbingPlanBasePoint(string id, string projectId, string viewportName, int floor) {
       Id = id;
       ProjectId = projectId;
       ViewportName = viewportName;
       Floor = floor;
+    }
+  }
+  public class PlumbingHorizontalRoute {
+    public string Id;
+    public string ProjectId;
+    public Point3d StartPoint;
+    public Point3d EndPoint;
+    public int typeId;
+    public string SourceId;
+    public PlumbingHorizontalRoute(
+      string id,
+      string projectId,
+      Point3d startPoint,
+      Point3d endPoint,
+      int typeId,
+      string sourceId
+    ) {
+      Id = id;
+      ProjectId = projectId;
+      StartPoint = startPoint;
+      EndPoint = endPoint;
+      SourceId = sourceId;
+    }
+  }
+  public class PlumbingVerticalRoute {
+    public string Id;
+    public string ProjectId;
+    public Point3d Position;
+    public int StartFloor;
+    public int EndFloor;
+    public int TypeId;
+    public string SourceId;
+    public float StartFloorHeight;
+    public float EndFloorHeight;
+    public PlumbingVerticalRoute(
+      string id,
+      string projectId,
+      Point3d position,
+      int startFloor,
+      int endFloor,
+      int typeId,
+      string sourceId,
+      float startFloorHeight,
+      float endFloorHeight
+    ) {
+      Id = id;
+      ProjectId = projectId;
+      Position = position;
+      StartFloor = startFloor;
+      EndFloor = endFloor;
+      TypeId = typeId;
+      SourceId = sourceId;
+      StartFloorHeight = startFloorHeight;
+      EndFloorHeight = endFloorHeight;
     }
   }
 }
