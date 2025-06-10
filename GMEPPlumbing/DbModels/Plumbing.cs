@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 
-namespace GMEPPlumbing
-{
-  public class PlumbingFixture
-  {
+namespace GMEPPlumbing {
+  public class PlumbingFixture {
     public string Id;
     public string ProjectId;
     public Point3d Position;
@@ -26,8 +25,7 @@ namespace GMEPPlumbing
       int catalogId,
       string typeAbbreviation,
       int number
-    )
-    {
+    ) {
       Id = id;
       ProjectId = projectId;
       Position = position;
@@ -38,8 +36,7 @@ namespace GMEPPlumbing
     }
   }
 
-  public class PlumbingFixtureType
-  {
+  public class PlumbingFixtureType {
     public int Id;
     public string Name;
     public string Abbreviation;
@@ -52,8 +49,7 @@ namespace GMEPPlumbing
       string abbreviation,
       string waterGasBlockName,
       string wasteVentBlockName
-    )
-    {
+    ) {
       Id = id;
       Name = name;
       Abbreviation = abbreviation;
@@ -62,8 +58,7 @@ namespace GMEPPlumbing
     }
   }
 
-  public class PlumbingFixtureCatalogItem
-  {
+  public class PlumbingFixtureCatalogItem {
     public int Id;
     public int TypeId;
     public string Description;
@@ -98,8 +93,7 @@ namespace GMEPPlumbing
       int dfu,
       string waterGasBlockName,
       string wasteVentBlockName
-    )
-    {
+    ) {
       Id = id;
       TypeId = typeId;
       Description = description;
@@ -119,8 +113,7 @@ namespace GMEPPlumbing
     }
   }
 
-  public class PlumbingSource
-  {
+  public class PlumbingSource {
     public string Id;
     public string ProjectId;
     public Point3d Position;
@@ -133,8 +126,7 @@ namespace GMEPPlumbing
       Point3d position,
       int typeId,
       string fixtureId
-    )
-    {
+    ) {
       Id = id;
       ProjectId = projectId;
       Position = position;
@@ -143,31 +135,77 @@ namespace GMEPPlumbing
     }
   }
 
-  public class PlumbingSourceType
-  {
+  public class PlumbingSourceType {
     public int Id;
     public string Type;
 
-    public PlumbingSourceType(int id, string type)
-    {
+    public PlumbingSourceType(int id, string type) {
       Id = id;
       Type = type;
     }
   }
 
-  public class PlumbingPlanBasePoint
-  {
+  public class PlumbingPlanBasePoint {
     public string Id;
     public string ProjectId;
-    public string ViewportName;
+    public string ViewportId;
     public int Floor;
+    public string Plan;
+    public string Type;
+    public Point3d Point;
 
-    public PlumbingPlanBasePoint(string id, string projectId, string viewportName, int floor)
-    {
+    public PlumbingPlanBasePoint(string id, string projectId, Point3d point, string plan, string type, string viewportId, int floor) {
       Id = id;
       ProjectId = projectId;
-      ViewportName = viewportName;
+      ViewportId = viewportId;
       Floor = floor;
+      Type = type;
+      Plan = plan;
+      Point = point;
+    }
+  }
+  public class PlumbingHorizontalRoute {
+    public string Id;
+    public string ProjectId;
+    public Point3d StartPoint;
+    public Point3d EndPoint;
+    public string SourceId;
+    public PlumbingHorizontalRoute(
+      string id,
+      string projectId,
+      Point3d startPoint,
+      Point3d endPoint,
+      string sourceId
+    ) {
+      Id = id;
+      ProjectId = projectId;
+      StartPoint = startPoint;
+      EndPoint = endPoint;
+      SourceId = sourceId;
+    }
+  }
+  public class PlumbingVerticalRoute {
+    public string Id;
+    public string ProjectId;
+    public Point3d Position;
+    public string SourceId;
+    public string VerticalRouteId;
+    public string BasePointId;
+
+    public PlumbingVerticalRoute(
+      string id,
+      string projectId,
+      Point3d position,
+      string sourceId,
+      string verticalRouteId,
+      string basePointId
+    ) {
+      Id = id;
+      ProjectId = projectId;
+      Position = position;
+      SourceId = sourceId;
+      VerticalRouteId = verticalRouteId;
+      BasePointId = basePointId;
     }
   }
 }

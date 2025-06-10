@@ -11,6 +11,7 @@ using System.Windows.Forms.Integration;
 using System.Windows.Markup;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
+using System.Xml.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -75,6 +76,10 @@ namespace GMEPPlumbing
 
       // Prevent multiple attachments
 
+      db.BeginSave -= (s, e) => IsSaving = true;
+      db.SaveComplete -= (s, e) => IsSaving = false;
+      db.AbortSave -=(s, e) => IsSaving = false;
+
       db.BeginSave += (s, e) => IsSaving = true;
       db.SaveComplete += (s, e) => IsSaving = false;
       db.AbortSave += (s, e) => IsSaving = false;
@@ -82,6 +87,8 @@ namespace GMEPPlumbing
       db.ObjectErased += Db_VerticalRouteErased;
       db.ObjectModified -= Db_VerticalRouteModified;
       db.ObjectModified += Db_VerticalRouteModified;
+      db.SaveComplete -= Db_DocumentSaved;  
+      db.SaveComplete += Db_DocumentSaved;
       // ... attach other handlers as needed ...
     }
 
@@ -2255,7 +2262,213 @@ namespace GMEPPlumbing
       }
       return false;
     }
+
+    public static async void Db_DocumentSaved(object sender, DatabaseIOEventArgs e) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      MariaDBService mariaDBService = new MariaDBService();
+
+      try {
+        string projectNo = CADObjectCommands.GetProjectNoFromFileName();
+        string ProjectId = await mariaDBService.GetProjectId(projectNo);
+
+        List<PlumbingHorizontalRoute> horizontalRoutes = GetHorizontalRoutesFromCAD(ProjectId);
+        List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
+        List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
+
+        await mariaDBService.UpdatePlumbingHorizontalRoutes(horizontalRoutes, ProjectId);
+        await mariaDBService.UpdatePlumbingVerticalRoutes(verticalRoutes, ProjectId);
+        await mariaDBService.UpdatePlumbingPlanBasePoints(basePoints, ProjectId);
+      }
+      catch (System.Exception ex) {
+        ed.WriteMessage("\nError getting ProjectId: " + ex.Message);
+        return;
+      }
+
+    }
+
+    public static List<PlumbingHorizontalRoute> GetHorizontalRoutesFromCAD(string ProjectId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List<PlumbingHorizontalRoute> routes = new List<PlumbingHorizontalRoute>();
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+        foreach (ObjectId entId in modelSpace) {
+          if (entId.ObjectClass == RXClass.GetClass(typeof(Line))) {
+            Line line = tr.GetObject(entId, OpenMode.ForRead) as Line;
+            if (line != null) {
+              ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
+              if (xdata != null && xdata.AsArray().Length > 2) {
+                TypedValue[] values = xdata.AsArray();
+
+                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, line.StartPoint, line.EndPoint, values[2].Value.ToString());
+                routes.Add(route);
+              }
+            }
+          }
+        }
+        tr.Commit();
+      }
+      ed.WriteMessage(ProjectId + " - Found " + routes.Count + " horizontal routes in the drawing.");
+      return routes;
+    }
+
+
+    public static List<PlumbingVerticalRoute> GetVerticalRoutesFromCAD(string ProjectId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List<PlumbingVerticalRoute> routes = new List<PlumbingVerticalRoute>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+        List<string> blockNames = new List<string>
+          {
+              "GMEP_PLUMBING_LINE_UP",
+              "GMEP_PLUMBING_LINE_DOWN",
+              "GMEP_PLUMBING_LINE_VERTICAL"
+          };
+
+        foreach (var name in blockNames) {
+          BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
+          foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+            if (id.IsValid) {
+              using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+                if (anonymousBtr != null) {
+
+                  foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                    if (objId.IsValid) {
+                      var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+
+                      var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                      string Id = string.Empty;
+                      string VerticalRouteId = string.Empty;
+                      string BasePointId = string.Empty;
+                      string SourceId = string.Empty;
+
+                      foreach (DynamicBlockReferenceProperty prop in pc) {
+
+                        if (prop.PropertyName == "vertical_route_id") {
+                          VerticalRouteId = prop.Value.ToString();
+                        }
+                        if (prop.PropertyName == "base_point_id") {
+                          BasePointId = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "id") {
+                          Id = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "source_id") {
+                          SourceId = prop.Value?.ToString();
+                        }
+                      
+                      }
+                      if (Id != "0") {
+                        PlumbingVerticalRoute route = new PlumbingVerticalRoute(
+                          Id,
+                          ProjectId,
+                          entity.Position,
+                          SourceId,
+                          VerticalRouteId,
+                          name
+                        );
+                        routes.Add(route);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        tr.Commit();
+      }
+      return routes;
+    }
+    public static List<PlumbingPlanBasePoint> GetPlumbingBasePointsFromCAD(string ProjectId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List<PlumbingPlanBasePoint> points = new List<PlumbingPlanBasePoint>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  if (objId.IsValid) {
+                    var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+
+                    var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                    string Id = string.Empty;
+                    string Plan = string.Empty;
+                    string ViewId = string.Empty;
+                    string Type = string.Empty;
+                    int Floor = 0;
+
+                    foreach (DynamicBlockReferenceProperty prop in pc) {
+                        if (prop.PropertyName == "Floor") {
+                          Floor = Convert.ToInt32(prop.Value);
+                        }
+                        if (prop.PropertyName == "Plan") {
+                          Plan = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "Id") {
+                          Id = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "Type") {
+                          Type = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "View_Id") {
+                          ViewId = prop.Value?.ToString();
+                        }
+
+                    }
+                    if (Id != "0") {
+                      PlumbingPlanBasePoint BasePoint = new PlumbingPlanBasePoint(
+                        Id,
+                        ProjectId,
+                        entity.Position,
+                        Plan,
+                        Type,
+                        ViewId,
+                        Floor
+                      );
+                      points.Add(BasePoint);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        tr.Commit();
+      }
+      ed.WriteMessage(ProjectId + " - Found " + points.Count + " basepoints in the drawing.");
+      return points;
+    }
   }
+
+
+
+
+
 
   public class PluginEntry : IExtensionApplication
   {
