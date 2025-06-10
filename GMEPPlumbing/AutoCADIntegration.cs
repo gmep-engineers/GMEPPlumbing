@@ -1876,7 +1876,7 @@ namespace GMEPPlumbing {
 
         await mariaDBService.UpdatePlumbingHorizontalRoutes(horizontalRoutes, ProjectId);
         await mariaDBService.UpdatePlumbingVerticalRoutes(verticalRoutes, ProjectId);
-        //await mariaDBService.UpdatePlumbingPlanBasePoints(basePoints, ProjectId);
+        await mariaDBService.UpdatePlumbingPlanBasePoints(basePoints, ProjectId);
       }
       catch (System.Exception ex) {
         ed.WriteMessage("\nError getting ProjectId: " + ex.Message);

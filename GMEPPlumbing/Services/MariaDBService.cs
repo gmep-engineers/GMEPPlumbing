@@ -918,7 +918,7 @@ namespace GMEPPlumbing.Services
               (id, project_id, viewport_id, floor, plan, type, pos_x, pos_y)
               VALUES (@id, @projectId, @viewportId, @floor, @plan, @type, @posX, @posY)
               ON DUPLICATE KEY UPDATE
-                  viewport_name = @viewportName,
+                  viewport_id = @viewportId,
                   floor = @floor,
                   plan = @plan,
                   type = @type,
@@ -934,7 +934,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@plan", point.Plan);
           command.Parameters.AddWithValue("@type", point.Type);
           command.Parameters.AddWithValue("@posX", point.Point.X);
-          command.Parameters.AddWithValue("@posY", point.Point.X);
+          command.Parameters.AddWithValue("@posY", point.Point.Y);
           await command.ExecuteNonQueryAsync();
         }
       }
