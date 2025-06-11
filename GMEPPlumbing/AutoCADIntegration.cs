@@ -86,6 +86,7 @@ namespace GMEPPlumbing
       db.BeginSave += (s, e) => IsSaving = true;
       db.SaveComplete += (s, e) => IsSaving = false;
       db.AbortSave += (s, e) => IsSaving = false;
+
       db.ObjectErased -= Db_VerticalRouteErased;
       db.ObjectErased += Db_VerticalRouteErased;
       db.ObjectModified -= Db_VerticalRouteModified;
