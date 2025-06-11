@@ -282,6 +282,7 @@ namespace GMEPPlumbing
       string sourceGUID = "";
       string basePointGUID = "";
       string viewGUID = "";
+      int typeId = 0;
 
       PromptEntityOptions peo = new PromptEntityOptions(
         "\nSelect where the route is being sourced from (source or vertical route)"
@@ -294,7 +295,6 @@ namespace GMEPPlumbing
         return;
       }
       ObjectId sourceObjectId = per.ObjectId;
-
 
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -311,12 +311,31 @@ namespace GMEPPlumbing
           if (prop.PropertyName == "base_point_id") {
             basePointGUID = prop.Value.ToString();
           }
+          if (prop.PropertyName == "type_id") {
+            typeId = Convert.ToInt32(prop.Value);
+          }
         }
         if (string.IsNullOrEmpty(routeGUID) && string.IsNullOrEmpty(sourceGUID)) {
           ed.WriteMessage("\nSelected block does not have the required properties.");
           return;
         }
-        layer = blockReference.Layer;
+
+        switch (typeId) {
+          case 1: // Water
+            layer = "P-DOMW_CWTR";
+            break;
+          case 2: // Gas
+            layer = "P-DOMW_HOTW";
+            break;
+          case 3: // Sewer Vent
+            layer = "P-GAS";
+            break;
+          default:
+            layer = blockReference.Layer;
+            break;
+        }
+        
+
 
         //retrieving the view of the basepoint
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
