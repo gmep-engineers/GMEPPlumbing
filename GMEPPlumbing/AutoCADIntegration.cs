@@ -86,6 +86,7 @@ namespace GMEPPlumbing
       db.BeginSave += (s, e) => IsSaving = true;
       db.SaveComplete += (s, e) => IsSaving = false;
       db.AbortSave += (s, e) => IsSaving = false;
+
       db.ObjectErased -= Db_VerticalRouteErased;
       db.ObjectErased += Db_VerticalRouteErased;
       db.ObjectModified -= Db_VerticalRouteModified;
@@ -270,37 +271,6 @@ namespace GMEPPlumbing
     {
       SettingObjects = true;
       string layer = "Defpoints";
-      PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
-      pko.Keywords.Add("HotWater");
-      pko.Keywords.Add("ColdWater");
-      pko.Keywords.Add("Gas");
-      // pko.Keywords.Add("Sewer");
-      //pko.Keywords.Add("Storm");
-      PromptResult pr2 = ed.GetKeywords(pko);
-      string result = pr2.StringResult;
-
-      switch (result)
-      {
-        case "HotWater":
-          layer = "P-DOMW-HOTW";
-          break;
-        case "ColdWater":
-          layer = "P-DOMW-CWTR";
-          break;
-        case "Gas":
-          layer = "P-GAS";
-          break;
-        /* case "Sewer":
-                layer = "GMEP_PLUMBING_SEWER";
-                break;
-            case "Storm":
-                layer = "GMEP_PLUMBING_STORM";
-                break;*/
-        default:
-          ed.WriteMessage("\nInvalid route type selected.");
-          return;
-      }
-
       List<ObjectId> basePointIds = new List<ObjectId>();
       int startFloor = 0;
       Point3d StartBasePointLocation = new Point3d(0, 0, 0);
@@ -308,6 +278,82 @@ namespace GMEPPlumbing
       ObjectId startPipeId = ObjectId.Null;
       string verticalRouteId = Guid.NewGuid().ToString();
       ObjectId gmepTextStyleId;
+      string routeGUID = "";
+      string sourceGUID = "";
+      string basePointGUID = "";
+      string viewGUID = "";
+
+      PromptEntityOptions peo = new PromptEntityOptions(
+        "\nSelect where the route is being sourced from (source or vertical route)"
+      );
+      peo.SetRejectMessage("\nSelect where the route is being sourced from");
+      peo.AddAllowedClass(typeof(BlockReference), true);
+      PromptEntityResult per = ed.GetEntity(peo);
+      if (per.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        return;
+      }
+      ObjectId sourceObjectId = per.ObjectId;
+
+
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockReference blockReference = (BlockReference)
+          tr.GetObject(sourceObjectId, OpenMode.ForRead);
+        var pc = blockReference.DynamicBlockReferencePropertyCollection;
+        foreach (DynamicBlockReferenceProperty prop in pc) {
+          if (prop.PropertyName == "id") {
+            routeGUID = prop.Value.ToString();
+          }
+          if (prop.PropertyName == "gmep_plumbing_source_id") {
+            sourceGUID = prop.Value.ToString();
+          }
+          if (prop.PropertyName == "base_point_id") {
+            basePointGUID = prop.Value.ToString();
+          }
+        }
+        if (string.IsNullOrEmpty(routeGUID) && string.IsNullOrEmpty(sourceGUID)) {
+          ed.WriteMessage("\nSelected block does not have the required properties.");
+          return;
+        }
+        layer = blockReference.Layer;
+
+        //retrieving the view of the basepoint
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord basePointBlock = (BlockTableRecord)
+          tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (
+              BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord
+            ) {
+              if (anonymousBtr != null) {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                  var pc2 = entity.DynamicBlockReferencePropertyCollection;
+                  bool match = false;
+                  string tempViewGUID = "";
+                  foreach (DynamicBlockReferenceProperty prop in pc2) {
+                    if (prop.PropertyName == "View_Id") {
+                      tempViewGUID = prop.Value.ToString();
+                    }
+                    if (prop.PropertyName == "Id") {
+                      if (prop.Value.ToString() == basePointGUID) {
+                        match = true;
+                      }
+                    }
+                  }
+                  if (match) {
+                    viewGUID = tempViewGUID;
+                    break; // Exit the loop once we find a match
+                  }
+                }
+              }
+            }
+          }
+        }
+        tr.Commit();
+      }
 
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
@@ -362,61 +408,11 @@ namespace GMEPPlumbing
           }
         }
         ed.WriteMessage("\nFound " + basePoints.Count + " base points in the drawing.");
-        //meow meow
-        List<string> keywords = new List<string>();
-        foreach (var key in basePoints.Keys)
-        {
-          var objId = basePoints[key][0];
-          var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-          var pc = entity.DynamicBlockReferencePropertyCollection;
-          string planName = "";
-          string viewport = "";
-          foreach (DynamicBlockReferenceProperty prop in pc)
-          {
-            if (prop.PropertyName == "Plan")
-            {
-              planName = prop.Value.ToString();
-            }
-            if (prop.PropertyName == "Type")
-            {
-              viewport = prop.Value.ToString();
-            }
-          }
-          if (planName != "" && viewport != "")
-          {
-            string keyword = planName + ":" + viewport;
-            if (!keywords.Contains(keyword))
-            {
-              keywords.Add(keyword);
-            }
-            else
-            {
-              int count = keywords.Count(x =>
-                x == keyword || (x.StartsWith(keyword + "(") && x.EndsWith(")"))
-              );
-              keywords.Add(keyword + "(" + (count + 1).ToString() + ")");
-            }
-          }
-        }
-        PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nPick View: ");
-        foreach (var keyword in keywords)
-        {
-          promptOptions.Keywords.Add(keyword);
-        }
-        PromptResult pr = ed.GetKeywords(promptOptions);
-        string resultKeyword = pr.StringResult;
-        int index = keywords.IndexOf(resultKeyword);
-        // ed.WriteMessage("BasePoints: " + basePoints.Count().ToString() + "ketwords: " + keywords.Count().ToString() + "index: " + index.ToString() + "resultKeyword: " + resultKeyword);
-        basePointIds = basePoints.ElementAt(index).Value;
+       
+        basePointIds = basePoints[viewGUID];
 
-        //Picking start floor
-        PromptKeywordOptions floorOptions = new PromptKeywordOptions("\nStarting Floor: ");
-        for (int i = 1; i <= basePointIds.Count; i++)
-        {
-          floorOptions.Keywords.Add(i.ToString());
-        }
-        PromptResult floorResult = ed.GetKeywords(floorOptions);
-        startFloor = int.Parse(floorResult.StringResult);
+
+        //startFloor = int.Parse(floorResult.StringResult);
 
         BlockReference firstFloorBasePoint = null;
 
@@ -425,22 +421,26 @@ namespace GMEPPlumbing
           var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
           var pc2 = entity2.DynamicBlockReferencePropertyCollection;
 
+          bool selectedPoint = false;
+          int tempFloor = 0;
           foreach (DynamicBlockReferenceProperty prop in pc2)
           {
             if (prop.PropertyName == "Floor")
             {
-              int floor = Convert.ToInt32(prop.Value);
-              if (floor == startFloor)
-              {
-                ZoomToBlock(ed, entity2);
-              }
-              if (firstFloorBasePoint == null && floor == startFloor)
-              {
-                firstFloorBasePoint = entity2;
-                StartBasePointLocation = entity2.Position;
+              tempFloor = Convert.ToInt32(prop.Value);
+            }
+            if (prop.PropertyName == "Id") {
+              if (prop.Value.ToString() == basePointGUID) {
+                selectedPoint = true;
               }
             }
           }
+          if (selectedPoint) {
+            startFloor = tempFloor;
+            firstFloorBasePoint = entity2;
+            StartBasePointLocation = entity2.Position;
+          }
+
         }
         if (firstFloorBasePoint != null)
         {
@@ -560,6 +560,14 @@ namespace GMEPPlumbing
             {
               prop.Value = verticalRouteId;
             }
+            if (prop.PropertyName == "source_id") {
+              if (routeGUID != "") {
+                prop.Value = routeGUID;
+              }
+              if (sourceGUID != "") {
+                prop.Value = sourceGUID;
+              }
+            }
           }
 
           // Set the vertical route ID
@@ -600,6 +608,14 @@ namespace GMEPPlumbing
               {
                 prop.Value = verticalRouteId;
               }
+              if (prop.PropertyName == "source_id") {
+                if (routeGUID != "") {
+                  prop.Value = routeGUID;
+                }
+                if (sourceGUID != "") {
+                  prop.Value = sourceGUID;
+                }
+              }
             }
           }
 
@@ -636,6 +652,14 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "vertical_route_id")
             {
               prop.Value = verticalRouteId;
+            }
+            if (prop.PropertyName == "source_id") {
+              if (routeGUID != "") {
+                prop.Value = routeGUID;
+              }
+              if (sourceGUID != "") {
+                prop.Value = sourceGUID;
+              }
             }
           }
           tr.Commit();
@@ -686,6 +710,14 @@ namespace GMEPPlumbing
             {
               prop.Value = verticalRouteId;
             }
+            if (prop.PropertyName == "source_id") {
+              if (routeGUID != "") {
+                prop.Value = routeGUID;
+              }
+              if (sourceGUID != "") {
+                prop.Value = sourceGUID;
+              }
+            }
           }
           tr.Commit();
         }
@@ -724,6 +756,14 @@ namespace GMEPPlumbing
               {
                 prop.Value = verticalRouteId;
               }
+              if (prop.PropertyName == "source_id") {
+                if (routeGUID != "") {
+                  prop.Value = routeGUID;
+                }
+                if (sourceGUID != "") {
+                  prop.Value = sourceGUID;
+                }
+              }
             }
           }
 
@@ -759,6 +799,14 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "vertical_route_id")
             {
               prop.Value = verticalRouteId;
+            }
+            if (prop.PropertyName == "source_id") {
+              if (routeGUID != "") {
+                prop.Value = routeGUID;
+              }
+              if (sourceGUID != "") {
+                prop.Value = sourceGUID;
+              }
             }
           }
           tr.Commit();
@@ -1632,6 +1680,44 @@ namespace GMEPPlumbing
       db = doc.Database;
       ed = doc.Editor;
 
+      //getting the base point for the plumbing source
+      PromptEntityOptions promptOptions = new PromptEntityOptions(
+        "\nSelect a basepoint for the plumbing source"
+      );
+      promptOptions.SetRejectMessage("\nSelected object is not a block reference.");
+      promptOptions.AddAllowedClass(typeof(BlockReference), true);
+      PromptEntityResult promptResult = ed.GetEntity(promptOptions);
+      if (promptResult.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        return;
+      }
+      ObjectId basePointId = promptResult.ObjectId;
+
+      string basePointGUID = string.Empty;
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockReference basePointBlockRef = (BlockReference)tr.GetObject(basePointId, OpenMode.ForRead);
+        if (basePointBlockRef == null) {
+          ed.WriteMessage("\nInvalid object selected.");
+          return;
+        }
+
+        bool isBasePointBlock = false;
+        DynamicBlockReferencePropertyCollection pc = basePointBlockRef.DynamicBlockReferencePropertyCollection;
+        foreach (DynamicBlockReferenceProperty prop in pc) {
+          if (prop.PropertyName == "Id") {
+            basePointGUID = prop.Value.ToString();
+          }
+          if (prop.PropertyName == "View_Id") {
+            isBasePointBlock = true;
+          }
+        }
+        if (!isBasePointBlock) {
+          ed.WriteMessage("\nBlockreference is not a basepoint.");
+          return;
+        }
+        tr.Commit();
+      }
+
       List<PlumbingSourceType> plumbingSourceTypes = MariaDBService.GetPlumbingSourceTypes();
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
 
@@ -1712,6 +1798,12 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "gmep_plumbing_source_id")
             {
               prop.Value = sourceId;
+            }
+            if (prop.PropertyName == "type_id") {
+              prop.Value = selectedSourceType.Id;
+            }
+            if (prop.PropertyName == "base_point_id") {
+              prop.Value = basePointGUID;
             }
           }
           tr.Commit();
