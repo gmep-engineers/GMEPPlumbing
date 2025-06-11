@@ -2117,7 +2117,7 @@ namespace GMEPPlumbing
         ed.WriteMessage($"\nError in Db_ObjectErased: {ex.Message}");
       }
     }
-
+ 
     public static void Db_VerticalRouteModified(object sender, ObjectEventArgs e)
     {
       var doc = Application.DocumentManager.MdiActiveDocument;
@@ -2268,6 +2268,68 @@ namespace GMEPPlumbing
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
+      try {
+        if (
+          e.DBObject is BlockReference blockRef
+          && IsPlumbingBasePointBlock(blockRef)
+          && !SettingObjects
+          && !IsSaving
+        ) {
+          SettingObjects = true;
+          string Id = string.Empty;
+          var pc = blockRef.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in pc) {
+            if (prop.PropertyName == "Id") {
+              Id = prop.Value?.ToString();
+            }
+          }
+          using (Transaction tr = db.TransactionManager.StartTransaction()) {
+            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+            List<string> blockNames = new List<string>
+            {
+                "GMEP_PLUMBING_LINE_UP",
+                "GMEP_PLUMBING_LINE_DOWN",
+                "GMEP_PLUMBING_LINE_VERTICAL",
+            };
+            foreach (var name in blockNames) {
+              BlockTableRecord basePointBlock = (BlockTableRecord)
+                tr.GetObject(bt[name], OpenMode.ForWrite);
+              foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+                if (id.IsValid) {
+                  using (
+                    BlockTableRecord anonymousBtr =
+                      tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord
+                  ) {
+                    if (anonymousBtr != null) {
+                      foreach (
+                        ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)
+                      ) {
+                        if (objId.IsValid) {
+                          var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+                          var pc2 = entity.DynamicBlockReferencePropertyCollection;
+                          foreach (DynamicBlockReferenceProperty prop in pc2) {
+                            if (
+                              prop.PropertyName == "base_point_id"
+                              && prop.Value?.ToString() == Id
+                            ) {
+                              entity.Erase();
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            tr.Commit();
+          }
+          SettingObjects = false;
+        }
+      }
+      catch (System.Exception ex) {
+        ed.WriteMessage($"\nError in Db_BasePointErased: {ex.Message}");
+      }
     }*/
     public static void Db_BasePointModified(object sender, ObjectEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
