@@ -240,9 +240,27 @@ namespace GMEPPlumbing
           ppo.BasePoint = startPointLocation;
           ppo.UseBasePoint = true;
 
-          PromptPointResult ppr = ed.GetPoint(ppo);
-          if (ppr.Status != PromptStatus.OK)
-            return;
+          Point3d endPointLocation3 = Point3d.Origin;
+
+          while (true) {
+            PromptPointResult ppr = ed.GetPoint(ppo);
+            if (ppr.Status != PromptStatus.OK)
+              return;
+
+            if (layer == "P-GAS" && basePoint is Line basePointLine2) {
+              Vector3d prevDir = basePointLine2.EndPoint - basePointLine2.StartPoint;
+              Vector3d newDir = ppr.Value - startPointLocation;
+              double angle = prevDir.GetAngleTo(newDir);
+
+              if (angle > Math.PI / 4) {
+                ed.WriteMessage("\nAngle exceeds 45 degrees. Please pick a point closer to the previous direction.");
+                continue; 
+              }
+            }
+
+            endPointLocation3 = ppr.Value;
+            break;
+          }
 
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
           BlockTableRecord btr = (BlockTableRecord)
@@ -250,7 +268,7 @@ namespace GMEPPlumbing
 
           Line line = new Line();
           line.StartPoint = startPointLocation;
-          line.EndPoint = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
+          line.EndPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, 0);
           line.Layer = layer;
           btr.AppendEntity(line);
           tr.AddNewlyCreatedDBObject(line, true);
