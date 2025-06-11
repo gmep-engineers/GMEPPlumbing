@@ -1633,6 +1633,44 @@ namespace GMEPPlumbing
       db = doc.Database;
       ed = doc.Editor;
 
+      //getting the base point for the plumbing source
+      PromptEntityOptions promptOptions = new PromptEntityOptions(
+        "\nSelect a basepoint for the plumbing source"
+      );
+      promptOptions.SetRejectMessage("\nSelected object is not a block reference.");
+      promptOptions.AddAllowedClass(typeof(BlockReference), true);
+      PromptEntityResult promptResult = ed.GetEntity(promptOptions);
+      if (promptResult.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        return;
+      }
+      ObjectId basePointId = promptResult.ObjectId;
+
+      string basePointGUID = string.Empty;
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockReference basePointBlockRef = (BlockReference)tr.GetObject(basePointId, OpenMode.ForRead);
+        if (basePointBlockRef == null) {
+          ed.WriteMessage("\nInvalid object selected.");
+          return;
+        }
+
+        bool isBasePointBlock = false;
+        DynamicBlockReferencePropertyCollection pc = basePointBlockRef.DynamicBlockReferencePropertyCollection;
+        foreach (DynamicBlockReferenceProperty prop in pc) {
+          if (prop.PropertyName == "Id") {
+            basePointGUID = prop.Value.ToString();
+          }
+          if (prop.PropertyName == "View_Id") {
+            isBasePointBlock = true;
+          }
+        }
+        if (!isBasePointBlock) {
+          ed.WriteMessage("\nBlockreference is not a basepoint.");
+          return;
+        }
+        tr.Commit();
+      }
+
       List<PlumbingSourceType> plumbingSourceTypes = MariaDBService.GetPlumbingSourceTypes();
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
 
@@ -1713,6 +1751,12 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "gmep_plumbing_source_id")
             {
               prop.Value = sourceId;
+            }
+            if (prop.PropertyName == "type_id") {
+              prop.Value = selectedSourceType.Id;
+            }
+            if (prop.PropertyName == "base_point_id") {
+              prop.Value = basePointGUID;
             }
           }
           tr.Commit();
