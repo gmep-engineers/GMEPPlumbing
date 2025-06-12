@@ -2323,7 +2323,6 @@ namespace GMEPPlumbing
                       string Id = string.Empty;
                       string VerticalRouteId = string.Empty;
                       string BasePointId = string.Empty;
-                      string SourceId = string.Empty;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
 
@@ -2336,19 +2335,14 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "id") {
                           Id = prop.Value?.ToString();
                         }
-                        if (prop.PropertyName == "source_id") {
-                          SourceId = prop.Value?.ToString();
-                        }
-
                       }
                       if (Id != "0") {
                         PlumbingVerticalRoute route = new PlumbingVerticalRoute(
                           Id,
                           ProjectId,
                           entity.Position,
-                          SourceId,
                           VerticalRouteId,
-                          name
+                          BasePointId
                         );
                         routes.Add(route);
                       }

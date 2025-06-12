@@ -803,14 +803,14 @@ namespace GMEPPlumbing.Services
         if (routes.Count > 0) {
           string upsertQuery = @"
               INSERT INTO plumbing_horizontal_routes
-              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, source_id)
-              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @sourceId)
+              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, base_point_id)
+              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @basePointId)
               ON DUPLICATE KEY UPDATE
                   start_pos_x = @startPosX,
                   end_pos_x = @endPosX,
                   start_pos_y = @startPosY,
                   end_pos_y = @endPosY,
-                  source_id = @sourceId
+                  base_point_id = @basePointId
           ";
           foreach (var route in routes) {
             MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -820,7 +820,7 @@ namespace GMEPPlumbing.Services
             command.Parameters.AddWithValue("@startPosY", route.StartPoint.Y);
             command.Parameters.AddWithValue("@endPosX", route.EndPoint.X);
             command.Parameters.AddWithValue("@endPosY", route.EndPoint.Y);
-            command.Parameters.AddWithValue("@sourceId", route.SourceId);
+            command.Parameters.AddWithValue("@basePointId", route.BasePointId);
             await command.ExecuteNonQueryAsync();
           }
         }
@@ -860,12 +860,11 @@ namespace GMEPPlumbing.Services
       if (routes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_vertical_routes
-              (id, project_id, pos_x, pos_y, vertical_route_id, base_point_id, source_id)
-              VALUES (@id, @projectId, @posX, @posY, @verticalRouteId, @basePointId, @sourceId)
+              (id, project_id, pos_x, pos_y, vertical_route_id, base_point_id)
+              VALUES (@id, @projectId, @posX, @posY, @verticalRouteId, @basePointId)
               ON DUPLICATE KEY UPDATE
               pos_x = @posX,
               pos_y = @posy,
-              source_id = @sourceId,
               vertical_route_id = @verticalRouteId,
               base_point_id = @basePointId
             
@@ -876,7 +875,6 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@projectId", projectId);
           command.Parameters.AddWithValue("@posX", route.Position.X);
           command.Parameters.AddWithValue("@posY", route.Position.Y);
-          command.Parameters.AddWithValue("@sourceId", route.SourceId);
           command.Parameters.AddWithValue("@verticalRouteId", route.VerticalRouteId);
           command.Parameters.AddWithValue("@basePointId", route.BasePointId);
           await command.ExecuteNonQueryAsync();
