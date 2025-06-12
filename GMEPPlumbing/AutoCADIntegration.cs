@@ -38,6 +38,7 @@ using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
 using Line = Autodesk.AutoCAD.DatabaseServices.Line;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
+[assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
 [assembly: ExtensionApplication(typeof(GMEPPlumbing.PluginEntry))]
 
@@ -99,40 +100,37 @@ namespace GMEPPlumbing
     public async void PlumbingHorizontalRoute() {
       List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
-      string sourceId = "";
+  
+      PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
+      pko.Keywords.Add("HotWater");
+      pko.Keywords.Add("ColdWater");
+      pko.Keywords.Add("Gas");
+      // pko.Keywords.Add("Sewer");
+      //pko.Keywords.Add("Storm");
+      PromptResult pr = ed.GetKeywords(pko);
+      string result = pr.StringResult;
 
-      PromptEntityOptions sourcePeo = new PromptEntityOptions(
-        "\nSelect where the route is being sourced from (source or vertical route)"
-      );
-      sourcePeo.SetRejectMessage("\nSelect where the route is being sourced from");
-      sourcePeo.AddAllowedClass(typeof(BlockReference), true);
-      PromptEntityResult sourcePer = ed.GetEntity(sourcePeo);
-
-      if (sourcePer.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nCommand cancelled.");
-        return;
-      }
-      ObjectId sourceObjectId = sourcePer.ObjectId;
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        BlockReference sourceBlockRef = (BlockReference)
-          tr.GetObject(sourceObjectId, OpenMode.ForRead);
-        var pc = sourceBlockRef.DynamicBlockReferencePropertyCollection;
-        bool match = false;
-        foreach (DynamicBlockReferenceProperty prop in pc) {
-          if (prop.PropertyName == "id") {
-            sourceId = prop.Value.ToString();
-          }
-          if (prop.PropertyName == "vertical_route_id") {
-            match = true;
-          }
-        }
-        if (!match) {
+      switch (result) {
+        case "HotWater":
+          layer = "P-DOMW-HOTW";
+          break;
+        case "ColdWater":
+          layer = "P-DOMW-CWTR";
+          break;
+        case "Gas":
+          layer = "P-GAS";
+          break;
+        /* case "Sewer":
+             layer = "GMEP_PLUMBING_SEWER";
+             break;
+         case "Storm":
+             layer = "GMEP_PLUMBING_STORM";
+             break;*/
+        default:
+          ed.WriteMessage("\nInvalid route type selected.");
           return;
-        }
-        layer = sourceBlockRef.Layer;
-
-        tr.Commit();
       }
+
 
       PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
       ppo2.AllowNone = false;
@@ -171,7 +169,7 @@ namespace GMEPPlumbing
         tr2.Commit();
       }
       routeGUIDS.Add(LineGUID2);
-      AttachRouteXData(addedLineId2, LineGUID2, sourceId);
+      AttachRouteXData(addedLineId2, LineGUID2, CADObjectCommands.ActiveBasePointId);
       AddArrowsToLine(addedLineId2, LineGUID2);
 
       while (true) {
@@ -262,7 +260,7 @@ namespace GMEPPlumbing
           tr.Commit();
         }
         routeGUIDS.Add(LineGUID);
-        AttachRouteXData(addedLineId, LineGUID, sourceId);
+        AttachRouteXData(addedLineId, LineGUID, CADObjectCommands.ActiveBasePointId);
         AddArrowsToLine(addedLineId, LineGUID);
       }
     }
@@ -278,64 +276,42 @@ namespace GMEPPlumbing
       ObjectId startPipeId = ObjectId.Null;
       string verticalRouteId = Guid.NewGuid().ToString();
       ObjectId gmepTextStyleId;
-      string routeGUID = "";
-      string sourceGUID = "";
-      string basePointGUID = "";
+      string basePointGUID =  CADObjectCommands.ActiveBasePointId;
       string viewGUID = "";
       int typeId = 0;
 
-      PromptEntityOptions peo = new PromptEntityOptions(
-        "\nSelect where the route is being sourced from (source or vertical route)"
-      );
-      peo.SetRejectMessage("\nSelect where the route is being sourced from");
-      peo.AddAllowedClass(typeof(BlockReference), true);
-      PromptEntityResult per = ed.GetEntity(peo);
-      if (per.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nCommand cancelled.");
-        return;
+      PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
+      pko.Keywords.Add("HotWater");
+      pko.Keywords.Add("ColdWater");
+      pko.Keywords.Add("Gas");
+      // pko.Keywords.Add("Sewer");
+      //pko.Keywords.Add("Storm");
+      PromptResult pr = ed.GetKeywords(pko);
+      string result = pr.StringResult;
+
+      switch (result) {
+        case "HotWater":
+          layer = "P-DOMW-HOTW";
+          break;
+        case "ColdWater":
+          layer = "P-DOMW-CWTR";
+          break;
+        case "Gas":
+          layer = "P-GAS";
+          break;
+        /* case "Sewer":
+             layer = "GMEP_PLUMBING_SEWER";
+             break;
+         case "Storm":
+             layer = "GMEP_PLUMBING_STORM";
+             break;*/
+        default:
+          ed.WriteMessage("\nInvalid route type selected.");
+          return;
       }
-      ObjectId sourceObjectId = per.ObjectId;
 
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        BlockReference blockReference = (BlockReference)
-          tr.GetObject(sourceObjectId, OpenMode.ForRead);
-        var pc = blockReference.DynamicBlockReferencePropertyCollection;
-        foreach (DynamicBlockReferenceProperty prop in pc) {
-          if (prop.PropertyName == "id") {
-            routeGUID = prop.Value.ToString();
-          }
-          if (prop.PropertyName == "gmep_plumbing_source_id") {
-            sourceGUID = prop.Value.ToString();
-          }
-          if (prop.PropertyName == "base_point_id") {
-            basePointGUID = prop.Value.ToString();
-          }
-          if (prop.PropertyName == "type_id") {
-            typeId = Convert.ToInt32(prop.Value);
-          }
-        }
-        if (string.IsNullOrEmpty(routeGUID) && string.IsNullOrEmpty(sourceGUID)) {
-          ed.WriteMessage("\nSelected block does not have the required properties.");
-          return;
-        }
-
-        switch (typeId) {
-          case 1: // Water
-            layer = "P-DOMW_CWTR";
-            break;
-          case 2: // Gas
-            layer = "P-DOMW_HOTW";
-            break;
-          case 3: // Sewer Vent
-            layer = "P-GAS";
-            break;
-          default:
-            layer = blockReference.Layer;
-            break;
-        }
-
-
 
         //retrieving the view of the basepoint
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -547,14 +523,6 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
             }
-            if (prop.PropertyName == "source_id") {
-              if (routeGUID != "") {
-                prop.Value = routeGUID;
-              }
-              if (sourceGUID != "") {
-                prop.Value = sourceGUID;
-              }
-            }
           }
 
           // Set the vertical route ID
@@ -589,14 +557,6 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "vertical_route_id") {
                 prop.Value = verticalRouteId;
               }
-              if (prop.PropertyName == "source_id") {
-                if (routeGUID != "") {
-                  prop.Value = routeGUID;
-                }
-                if (sourceGUID != "") {
-                  prop.Value = sourceGUID;
-                }
-              }
             }
           }
 
@@ -628,14 +588,6 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
-            }
-            if (prop.PropertyName == "source_id") {
-              if (routeGUID != "") {
-                prop.Value = routeGUID;
-              }
-              if (sourceGUID != "") {
-                prop.Value = sourceGUID;
-              }
             }
           }
           tr.Commit();
@@ -679,14 +631,6 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
             }
-            if (prop.PropertyName == "source_id") {
-              if (routeGUID != "") {
-                prop.Value = routeGUID;
-              }
-              if (sourceGUID != "") {
-                prop.Value = sourceGUID;
-              }
-            }
           }
           tr.Commit();
         }
@@ -719,14 +663,6 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "vertical_route_id") {
                 prop.Value = verticalRouteId;
               }
-              if (prop.PropertyName == "source_id") {
-                if (routeGUID != "") {
-                  prop.Value = routeGUID;
-                }
-                if (sourceGUID != "") {
-                  prop.Value = sourceGUID;
-                }
-              }
             }
           }
 
@@ -757,14 +693,6 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
-            }
-            if (prop.PropertyName == "source_id") {
-              if (routeGUID != "") {
-                prop.Value = routeGUID;
-              }
-              if (sourceGUID != "") {
-                prop.Value = sourceGUID;
-              }
             }
           }
           tr.Commit();
@@ -984,8 +912,8 @@ namespace GMEPPlumbing
       }
     }
 
-    private void AttachRouteXData(ObjectId lineId, string id, string sourceId) {
-      ed.WriteMessage("Id: " + id + " SourceId: " + sourceId);
+    private void AttachRouteXData(ObjectId lineId, string id, string basePointId) {
+      ed.WriteMessage("Id: " + id + " basePointId: " + basePointId);
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
         if (line == null)
@@ -1000,7 +928,7 @@ namespace GMEPPlumbing
         ResultBuffer rb = new ResultBuffer(
           new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
           new TypedValue(1000, id),
-          new TypedValue(1000, sourceId)
+          new TypedValue(1000, basePointId)
         );
         line.XData = rb;
         rb.Dispose();

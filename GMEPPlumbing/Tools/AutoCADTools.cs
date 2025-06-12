@@ -10,6 +10,18 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using MongoDB.Driver.Core.Misc;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.DatabaseServices.Filters;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.GraphicsInterface;
+using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.Windows;
 
 namespace GMEPPlumbing
 {
@@ -19,7 +31,7 @@ namespace GMEPPlumbing
 
     public static string TextLayer = "P-HC-PPLM-TEXT";
 
-    public static string ActiveBasePointId { get; set; }
+    public static string ActiveBasePointId { get; set; } = "";
 
     [CommandMethod("SetScale")]
     public static void SetScale()
@@ -54,7 +66,111 @@ namespace GMEPPlumbing
         }
       }
     }
-    [CommandMethod("SetActiveBasePoint")]{
+
+    [CommandMethod("SetActiveView")]
+    public static void SetActiveView() {
+      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      Editor ed = doc.Editor;
+      Database db = doc.Database;
+
+      List<ObjectId> basePointIds = new List<ObjectId>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
+
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                  var pc = entity.DynamicBlockReferencePropertyCollection;
+                  foreach (DynamicBlockReferenceProperty prop in pc) {
+                    if (prop.PropertyName == "View_Id") {
+                      string key = prop.Value.ToString();
+                      if (key != "0") {
+                        if (!basePoints.ContainsKey(key)) {
+                          basePoints[key] = new List<ObjectId>();
+                        }
+                        basePoints[key].Add(entity.ObjectId);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        ed.WriteMessage("\nFound " + basePoints.Count + " base points in the drawing.");
+        //meow meow
+        List<string> keywords = new List<string>();
+        foreach (var key in basePoints.Keys) {
+          var objId = basePoints[key][0];
+          var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+          var pc = entity.DynamicBlockReferencePropertyCollection;
+          string planName = "";
+          string viewport = "";
+          foreach (DynamicBlockReferenceProperty prop in pc) {
+            if (prop.PropertyName == "Plan") {
+              planName = prop.Value.ToString();
+            }
+            if (prop.PropertyName == "Type") {
+              viewport = prop.Value.ToString();
+            }
+          }
+          if (planName != "" && viewport != "") {
+            string keyword = planName + ":" + viewport;
+            if (!keywords.Contains(keyword)) {
+              keywords.Add(keyword);
+            }
+            else {
+              int count = keywords.Count(x => x == keyword || (x.StartsWith(keyword + "(") && x.EndsWith(")")));
+              keywords.Add(keyword + "(" + (count + 1).ToString() + ")");
+            }
+          }
+        }
+        PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nPick View: ");
+        foreach (var keyword in keywords) {
+          promptOptions.Keywords.Add(keyword);
+        }
+        PromptResult pr = ed.GetKeywords(promptOptions);
+        string resultKeyword = pr.StringResult;
+        int index = keywords.IndexOf(resultKeyword);
+        basePointIds = basePoints.ElementAt(index).Value;
+
+        //Picking start floor
+        PromptKeywordOptions floorOptions = new PromptKeywordOptions("\nPick Floor: ");
+        for (int i = 1; i <= basePointIds.Count; i++) {
+          floorOptions.Keywords.Add(i.ToString());
+        }
+        PromptResult floorResult = ed.GetKeywords(floorOptions);
+        int startFloor = int.Parse(floorResult.StringResult);
+
+
+        foreach (ObjectId objId in basePointIds) {
+          var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+          var pc2 = entity2.DynamicBlockReferencePropertyCollection;
+
+          int floor = 0;
+          string basePointId = "";
+          foreach (DynamicBlockReferenceProperty prop in pc2) {
+            if (prop.PropertyName == "Floor") {
+              floor = Convert.ToInt32(prop.Value);
+            }
+            if (prop.PropertyName == "Id") {
+              basePointId = prop.Value.ToString();
+            }
+          }
+          if (floor == startFloor) {
+            AutoCADIntegration.ZoomToBlock(ed, entity2);
+            ActiveBasePointId = basePointId;
+          }
+        }
+        tr.Commit();
+      }
+    }
 
 
     public static string GetProjectNoFromFileName()
