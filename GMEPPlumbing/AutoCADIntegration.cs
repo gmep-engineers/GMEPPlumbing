@@ -254,6 +254,7 @@ namespace GMEPPlumbing
 
               if (angle > Math.PI / 4) {
                 ed.WriteMessage("\nAngle exceeds 45 degrees. Please pick a point closer to the previous direction.");
+                ppo.Message = "\nNext Line must be 45 degrees or less";
                 continue; 
               }
             }
