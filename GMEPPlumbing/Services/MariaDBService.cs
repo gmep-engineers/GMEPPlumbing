@@ -699,7 +699,7 @@ namespace GMEPPlumbing.Services
       return types;
     }
 
-    public async Task CreatePlumbingSource(PlumbingSource source) {
+    /*public async Task CreatePlumbingSource(PlumbingSource source) {
       string query =
         @"
         INSERT INTO plumbing_sources
@@ -716,7 +716,7 @@ namespace GMEPPlumbing.Services
       command.Parameters.AddWithValue("@fixtureId", source.FixtureId);
       await command.ExecuteNonQueryAsync();
       await CloseConnectionAsync();
-    }
+    }*/
 
     /*public async Task CreatePlumbingPlanBasePoint(PlumbingPlanBasePoint point) {
       string query =
@@ -803,14 +803,14 @@ namespace GMEPPlumbing.Services
         if (routes.Count > 0) {
           string upsertQuery = @"
               INSERT INTO plumbing_horizontal_routes
-              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, source_id)
-              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @sourceId)
+              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, base_point_id)
+              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @basePointId)
               ON DUPLICATE KEY UPDATE
                   start_pos_x = @startPosX,
                   end_pos_x = @endPosX,
                   start_pos_y = @startPosY,
                   end_pos_y = @endPosY,
-                  source_id = @sourceId
+                  base_point_id = @basePointId
           ";
           foreach (var route in routes) {
             MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -820,7 +820,7 @@ namespace GMEPPlumbing.Services
             command.Parameters.AddWithValue("@startPosY", route.StartPoint.Y);
             command.Parameters.AddWithValue("@endPosX", route.EndPoint.X);
             command.Parameters.AddWithValue("@endPosY", route.EndPoint.Y);
-            command.Parameters.AddWithValue("@sourceId", route.SourceId);
+            command.Parameters.AddWithValue("@basePointId", route.BasePointId);
             await command.ExecuteNonQueryAsync();
           }
         }
@@ -860,12 +860,11 @@ namespace GMEPPlumbing.Services
       if (routes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_vertical_routes
-              (id, project_id, pos_x, pos_y, vertical_route_id, base_point_id, source_id)
-              VALUES (@id, @projectId, @posX, @posY, @verticalRouteId, @basePointId, @sourceId)
+              (id, project_id, pos_x, pos_y, vertical_route_id, base_point_id)
+              VALUES (@id, @projectId, @posX, @posY, @verticalRouteId, @basePointId)
               ON DUPLICATE KEY UPDATE
               pos_x = @posX,
               pos_y = @posy,
-              source_id = @sourceId,
               vertical_route_id = @verticalRouteId,
               base_point_id = @basePointId
             
@@ -876,7 +875,6 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@projectId", projectId);
           command.Parameters.AddWithValue("@posX", route.Position.X);
           command.Parameters.AddWithValue("@posY", route.Position.Y);
-          command.Parameters.AddWithValue("@sourceId", route.SourceId);
           command.Parameters.AddWithValue("@verticalRouteId", route.VerticalRouteId);
           command.Parameters.AddWithValue("@basePointId", route.BasePointId);
           await command.ExecuteNonQueryAsync();
@@ -935,6 +933,59 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@type", point.Type);
           command.Parameters.AddWithValue("@posX", point.Point.X);
           command.Parameters.AddWithValue("@posY", point.Point.Y);
+          await command.ExecuteNonQueryAsync();
+        }
+      }
+      await conn.CloseAsync();
+    }
+    public async Task UpdatePlumbingSources(List<PlumbingSource> sources, string ProjectId) {
+      if (sources == null) {
+        return;
+      }
+      var idsToKeep = sources.Select(s => s.Id).ToList();
+      MySqlConnection conn = await OpenNewConnectionAsync();
+      if (idsToKeep.Count > 0) {
+        var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
+        string deleteQuery = $@"
+              DELETE FROM plumbing_sources
+              WHERE project_id = @projectId
+              AND id NOT IN ({string.Join(",", paramNames)})
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        for (int i = 0; i < idsToKeep.Count; i++) {
+          deleteCommand.Parameters.AddWithValue(paramNames[i], idsToKeep[i]);
+        }
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      else {
+        string deleteQuery = @"
+              DELETE FROM plumbing_sources
+              WHERE project_id = @projectId
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      if (sources.Count > 0) {
+        string upsertQuery = @"
+              INSERT INTO plumbing_sources
+              (id, project_id, pos_x, pos_y, type_id, base_point_id)
+              VALUES (@id, @projectId, @posX, @posY, @typeId, @basePointId)
+              ON DUPLICATE KEY UPDATE
+                  pos_x = @posX,
+                  pos_y = @posY,
+                  type_id = @typeId,
+                  base_point_id = @basePointId
+          ";
+        foreach (var source in sources) {
+          MySqlCommand command = new MySqlCommand(upsertQuery, conn);
+          command.Parameters.AddWithValue("@id", source.Id);
+          command.Parameters.AddWithValue("@projectId", ProjectId);
+          command.Parameters.AddWithValue("@posX", source.Position.X);
+          command.Parameters.AddWithValue("@posY", source.Position.Y);
+          command.Parameters.AddWithValue("@typeId", source.TypeId);
+          command.Parameters.AddWithValue("@basePointId", source.BasePointId);
           await command.ExecuteNonQueryAsync();
         }
       }
