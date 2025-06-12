@@ -98,6 +98,7 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute() {
+      string BasePointId = CADObjectCommands.GetActiveView();
       List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
   
@@ -109,6 +110,7 @@ namespace GMEPPlumbing
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
       string result = pr.StringResult;
+
 
       switch (result) {
         case "HotWater":
@@ -175,7 +177,7 @@ namespace GMEPPlumbing
         tr2.Commit();
       }
       routeGUIDS.Add(LineGUID2);
-      AttachRouteXData(addedLineId2, LineGUID2, CADObjectCommands.ActiveBasePointId);
+      AttachRouteXData(addedLineId2, LineGUID2, BasePointId);
       AddArrowsToLine(addedLineId2, LineGUID2);
 
       while (true) {
@@ -273,13 +275,14 @@ namespace GMEPPlumbing
           tr.Commit();
         }
         routeGUIDS.Add(LineGUID);
-        AttachRouteXData(addedLineId, LineGUID, CADObjectCommands.ActiveBasePointId);
+        AttachRouteXData(addedLineId, LineGUID, BasePointId);
         AddArrowsToLine(addedLineId, LineGUID);
       }
     }
 
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
+      string basePointGUID = CADObjectCommands.GetActiveView(); 
       SettingObjects = true;
       string layer = "Defpoints";
       List<ObjectId> basePointIds = new List<ObjectId>();
@@ -289,7 +292,6 @@ namespace GMEPPlumbing
       ObjectId startPipeId = ObjectId.Null;
       string verticalRouteId = Guid.NewGuid().ToString();
       ObjectId gmepTextStyleId;
-      string basePointGUID =  CADObjectCommands.ActiveBasePointId;
       string viewGUID = "";
       int typeId = 0;
 
@@ -1250,7 +1252,7 @@ namespace GMEPPlumbing
       db = doc.Database;
       ed = doc.Editor;
 
-      string basePointId = CADObjectCommands.ActiveBasePointId;
+      string basePointId = CADObjectCommands.GetActiveView();
 
       List<PlumbingFixtureType> plumbingFixtureTypes = MariaDBService.GetPlumbingFixtureTypes();
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
@@ -1486,7 +1488,7 @@ namespace GMEPPlumbing
       db = doc.Database;
       ed = doc.Editor;
 
-      string basePointGUID = CADObjectCommands.ActiveBasePointId;
+      string basePointGUID = CADObjectCommands.GetActiveView();
 
       List<PlumbingSourceType> plumbingSourceTypes = MariaDBService.GetPlumbingSourceTypes();
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");

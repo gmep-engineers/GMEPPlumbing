@@ -171,6 +171,12 @@ namespace GMEPPlumbing
         tr.Commit();
       }
     }
+    public static string GetActiveView() {
+      if (string.IsNullOrEmpty(ActiveBasePointId)) {
+        SetActiveView();
+      }
+      return ActiveBasePointId;
+    }
 
 
     public static string GetProjectNoFromFileName()
