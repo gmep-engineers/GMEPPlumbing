@@ -1461,49 +1461,6 @@ namespace GMEPPlumbing
       db = doc.Database;
       ed = doc.Editor;
 
-      PromptEntityOptions promptOptions = new PromptEntityOptions(
-        "\nSelect where the fixture is being sourced from (source or vertical route): "
-      );
-      promptOptions.SetRejectMessage("\nPlease select a valid source or vertical route.");
-      promptOptions.AddAllowedClass(typeof(BlockReference), true);
-      PromptEntityResult promptResult = ed.GetEntity(promptOptions);
-      if (promptResult.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nCommand cancelled.");
-        return;
-      }
-      ObjectId sourceOrVerticalRouteId = promptResult.ObjectId;
-      string sourceOrVerticalRouteIdString = "";
-      string basePointId = "";
-      using (Transaction transaction = db.TransactionManager.StartTransaction()) {
-        BlockReference sourceOrVerticalRouteRef = (BlockReference)transaction.GetObject(
-          sourceOrVerticalRouteId,
-          OpenMode.ForRead
-        );
-        if (sourceOrVerticalRouteRef == null) {
-          ed.WriteMessage("\nInvalid selection. Please select a valid source or vertical route.");
-          return;
-        }
-        DynamicBlockReferencePropertyCollection properties = sourceOrVerticalRouteRef.DynamicBlockReferencePropertyCollection;
-        foreach (DynamicBlockReferenceProperty prop in properties) {
-          if (prop.PropertyName == "id") {
-            sourceOrVerticalRouteIdString = prop.Value.ToString();
-
-          }
-          if (prop.PropertyName == "gmep_plumbing_source_id") {
-            sourceOrVerticalRouteIdString = prop.Value.ToString();
-          }
-          if (prop.PropertyName == "base_point_id") {
-            basePointId = prop.Value.ToString();
-          }
-        }
-        if (string.IsNullOrEmpty(sourceOrVerticalRouteIdString) || string.IsNullOrEmpty(basePointId)) {
-          ed.WriteMessage("\nSelected entity is not a source or vertical route.");
-          return;
-        }
-        transaction.Commit();
-      }
-
-
       List<PlumbingFixtureType> plumbingFixtureTypes = MariaDBService.GetPlumbingFixtureTypes();
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
       keywordOptions.Message = "\nSelect fixture type:";
@@ -1598,6 +1555,49 @@ namespace GMEPPlumbing
             fsSize
           );
         }
+      }
+
+      //getting the source
+      PromptEntityOptions promptOptions = new PromptEntityOptions(
+        "\nSelect where the fixture is being sourced from (source or vertical route): "
+      );
+      promptOptions.SetRejectMessage("\nPlease select a valid source or vertical route.");
+      promptOptions.AddAllowedClass(typeof(BlockReference), true);
+      PromptEntityResult promptResult = ed.GetEntity(promptOptions);
+      if (promptResult.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        return;
+      }
+      ObjectId sourceOrVerticalRouteId = promptResult.ObjectId;
+      string sourceOrVerticalRouteIdString = "";
+      string basePointId = "";
+      using (Transaction transaction = db.TransactionManager.StartTransaction()) {
+        BlockReference sourceOrVerticalRouteRef = (BlockReference)transaction.GetObject(
+          sourceOrVerticalRouteId,
+          OpenMode.ForRead
+        );
+        if (sourceOrVerticalRouteRef == null) {
+          ed.WriteMessage("\nInvalid selection. Please select a valid source or vertical route.");
+          return;
+        }
+        DynamicBlockReferencePropertyCollection properties = sourceOrVerticalRouteRef.DynamicBlockReferencePropertyCollection;
+        foreach (DynamicBlockReferenceProperty prop in properties) {
+          if (prop.PropertyName == "id") {
+            sourceOrVerticalRouteIdString = prop.Value.ToString();
+
+          }
+          if (prop.PropertyName == "gmep_plumbing_source_id") {
+            sourceOrVerticalRouteIdString = prop.Value.ToString();
+          }
+          if (prop.PropertyName == "base_point_id") {
+            basePointId = prop.Value.ToString();
+          }
+        }
+        if (string.IsNullOrEmpty(sourceOrVerticalRouteIdString) || string.IsNullOrEmpty(basePointId)) {
+          ed.WriteMessage("\nSelected entity is not a source or vertical route.");
+          return;
+        }
+        transaction.Commit();
       }
 
       if (!String.IsNullOrEmpty(selectedFixtureType.WaterGasBlockName))
