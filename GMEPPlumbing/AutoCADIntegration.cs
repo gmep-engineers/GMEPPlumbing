@@ -825,6 +825,19 @@ namespace GMEPPlumbing
     public static void ZoomToBlock(Editor ed, BlockReference blockRef) {
       Extents3d ext = blockRef.GeometricExtents;
       using (ViewTableRecord view = ed.GetCurrentView()) {
+        double halfWidth = view.Width / 2.0;
+        double halfHeight = view.Height / 2.0;
+        double minX = view.CenterPoint.X - halfWidth;
+        double maxX = view.CenterPoint.X + halfWidth;
+        double minY = view.CenterPoint.Y - halfHeight;
+        double maxY = view.CenterPoint.Y + halfHeight;
+
+        if (
+            ext.MinPoint.X >= minX && ext.MaxPoint.X <= maxX &&
+            ext.MinPoint.Y >= minY && ext.MaxPoint.Y <= maxY
+        ) {
+          return;
+        }
         view.CenterPoint = new Point2d(
           (ext.MinPoint.X + ext.MaxPoint.X) / 2,
           (ext.MinPoint.Y + ext.MaxPoint.Y) / 2
