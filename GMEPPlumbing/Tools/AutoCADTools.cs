@@ -19,6 +19,8 @@ namespace GMEPPlumbing
 
     public static string TextLayer = "P-HC-PPLM-TEXT";
 
+    public static string ActiveBasePointId { get; set; }
+
     [CommandMethod("SetScale")]
     public static void SetScale()
     {
@@ -52,6 +54,8 @@ namespace GMEPPlumbing
         }
       }
     }
+    [CommandMethod("SetActiveBasePoint")]{
+
 
     public static string GetProjectNoFromFileName()
     {
