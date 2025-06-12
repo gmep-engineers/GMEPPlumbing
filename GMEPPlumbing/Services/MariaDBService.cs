@@ -699,7 +699,7 @@ namespace GMEPPlumbing.Services
       return types;
     }
 
-    public async Task CreatePlumbingSource(PlumbingSource source) {
+    /*public async Task CreatePlumbingSource(PlumbingSource source) {
       string query =
         @"
         INSERT INTO plumbing_sources
@@ -716,7 +716,7 @@ namespace GMEPPlumbing.Services
       command.Parameters.AddWithValue("@fixtureId", source.FixtureId);
       await command.ExecuteNonQueryAsync();
       await CloseConnectionAsync();
-    }
+    }*/
 
     /*public async Task CreatePlumbingPlanBasePoint(PlumbingPlanBasePoint point) {
       string query =
@@ -935,6 +935,59 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@type", point.Type);
           command.Parameters.AddWithValue("@posX", point.Point.X);
           command.Parameters.AddWithValue("@posY", point.Point.Y);
+          await command.ExecuteNonQueryAsync();
+        }
+      }
+      await conn.CloseAsync();
+    }
+    public async Task UpdatePlumbingSources(List<PlumbingSource> sources, string ProjectId) {
+      if (sources == null) {
+        return;
+      }
+      var idsToKeep = sources.Select(s => s.Id).ToList();
+      MySqlConnection conn = await OpenNewConnectionAsync();
+      if (idsToKeep.Count > 0) {
+        var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
+        string deleteQuery = $@"
+              DELETE FROM plumbing_sources
+              WHERE project_id = @projectId
+              AND id NOT IN ({string.Join(",", paramNames)})
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        for (int i = 0; i < idsToKeep.Count; i++) {
+          deleteCommand.Parameters.AddWithValue(paramNames[i], idsToKeep[i]);
+        }
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      else {
+        string deleteQuery = @"
+              DELETE FROM plumbing_sources
+              WHERE project_id = @projectId
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      if (sources.Count > 0) {
+        string upsertQuery = @"
+              INSERT INTO plumbing_sources
+              (id, project_id, pos_x, pos_y, type_id, base_point_id)
+              VALUES (@id, @projectId, @posX, @posY, @typeId, @basePointId)
+              ON DUPLICATE KEY UPDATE
+                  pos_x = @posX,
+                  pos_y = @posY,
+                  type_id = @typeId,
+                  base_point_id = @basePointId
+          ";
+        foreach (var source in sources) {
+          MySqlCommand command = new MySqlCommand(upsertQuery, conn);
+          command.Parameters.AddWithValue("@id", source.Id);
+          command.Parameters.AddWithValue("@projectId", ProjectId);
+          command.Parameters.AddWithValue("@posX", source.Position.X);
+          command.Parameters.AddWithValue("@posY", source.Position.Y);
+          command.Parameters.AddWithValue("@typeId", source.TypeId);
+          command.Parameters.AddWithValue("@basePointId", source.BasePointId);
           await command.ExecuteNonQueryAsync();
         }
       }

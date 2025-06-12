@@ -124,7 +124,6 @@ namespace GMEPPlumbing {
     public string ProjectId;
     public Point3d Position;
     public int TypeId;
-    public string FixtureId;
     public string BasePointId;
 
     public PlumbingSource(
@@ -132,14 +131,12 @@ namespace GMEPPlumbing {
       string projectId,
       Point3d position,
       int typeId,
-      string fixtureId,
       string basePointId
     ) {
       Id = id;
       ProjectId = projectId;
       Position = position;
       TypeId = typeId;
-      FixtureId = fixtureId;
       BasePointId = basePointId;
     }
   }
