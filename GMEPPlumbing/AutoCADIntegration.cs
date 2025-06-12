@@ -1679,9 +1679,11 @@ namespace GMEPPlumbing
             rotation,
             selectedCatalogItem.Id,
             selectedFixtureType.Abbreviation,
-            0
+            0,
+            basePointId,
+            sourceOrVerticalRouteIdString
           );
-          MariaDBService.CreatePlumbingFixture(plumbingFixture);
+          /*MariaDBService.CreatePlumbingFixture(plumbingFixture);
           if (selectedFixtureType.Abbreviation == "WH")
           {
             MariaDBService.CreatePlumbingSource(
@@ -1690,10 +1692,11 @@ namespace GMEPPlumbing
                 projectId,
                 plumbingFixture.Position,
                 selectedFixtureType.Id,
-                plumbingFixture.Id
+                plumbingFixture.Id,
+                basePointId
               )
             );
-          }
+          }*/
           MakePlumbingFixtureWaterGasLabel(plumbingFixture, selectedFixtureType);
         }
         catch (System.Exception ex)
@@ -1900,9 +1903,10 @@ namespace GMEPPlumbing
           projectId,
           point,
           selectedSourceType.Id,
-          string.Empty
+          string.Empty,
+          basePointGUID
         );
-        MariaDBService.CreatePlumbingSource(plumbingSource);
+        //MariaDBService.CreatePlumbingSource(plumbingSource);
         MakePlumbingSourceLabel(plumbingSource, selectedSourceType);
       }
       catch (System.Exception ex)
@@ -1984,9 +1988,11 @@ namespace GMEPPlumbing
             rotation,
             selectedCatalogItemId,
             selectedFixtureTypeAbbr,
-            0
+            0,
+            "", //will replace these once implemented for vents/drains
+            ""
           );
-          MariaDBService.CreatePlumbingFixture(plumbingFixture);
+          //MariaDBService.CreatePlumbingFixture(plumbingFixture);
           MakePlumbingFixtureWasteVentLabel(plumbingFixture, br.Position, blockName, index);
         }
         return point;
@@ -2082,9 +2088,11 @@ namespace GMEPPlumbing
             0,
             selectedCatalogItemId,
             selectedFixtureTypeAbbr,
-            0
+            0,
+            "", //will replace these once implemented for vents/drains
+            ""
           );
-          MariaDBService.CreatePlumbingFixture(plumbingFixture);
+          //MariaDBService.CreatePlumbingFixture(plumbingFixture);
           MakePlumbingFixtureWasteVentLabel(plumbingFixture, br.Position, blockName, index);
         }
         return point;
@@ -2192,9 +2200,11 @@ namespace GMEPPlumbing
             br.Rotation,
             selectedCatalogItemId,
             selectedFixtureTypeAbbr,
-            0
+            0,
+            "", //will replace these once implemented for vents/drains
+            ""
           );
-          MariaDBService.CreatePlumbingFixture(plumbingFixture);
+          //MariaDBService.CreatePlumbingFixture(plumbingFixture);
 
           MakePlumbingFixtureWasteVentLabel(plumbingFixture, br.Position, blockName, index);
         }

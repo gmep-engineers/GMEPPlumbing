@@ -16,6 +16,8 @@ namespace GMEPPlumbing {
     public int CatalogId;
     public string TypeAbbreviation;
     public int Number;
+    public string BasePointId;
+    public string SourceId;
 
     public PlumbingFixture(
       string id,
@@ -24,7 +26,9 @@ namespace GMEPPlumbing {
       double rotation,
       int catalogId,
       string typeAbbreviation,
-      int number
+      int number,
+      string basePointId,
+      string sourceId
     ) {
       Id = id;
       ProjectId = projectId;
@@ -33,6 +37,8 @@ namespace GMEPPlumbing {
       CatalogId = catalogId;
       TypeAbbreviation = typeAbbreviation;
       Number = number;
+      BasePointId = basePointId;
+      SourceId = sourceId;
     }
   }
 
@@ -119,19 +125,22 @@ namespace GMEPPlumbing {
     public Point3d Position;
     public int TypeId;
     public string FixtureId;
+    public string BasePointId;
 
     public PlumbingSource(
       string id,
       string projectId,
       Point3d position,
       int typeId,
-      string fixtureId
+      string fixtureId,
+      string basePointId
     ) {
       Id = id;
       ProjectId = projectId;
       Position = position;
       TypeId = typeId;
       FixtureId = fixtureId;
+      BasePointId = basePointId;
     }
   }
 
