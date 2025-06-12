@@ -2577,7 +2577,7 @@ namespace GMEPPlumbing
           "GMEP WH 50",
         };
         foreach (string name in blockNames) {
-          BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt["GMEP SOURCE"], OpenMode.ForRead);
+          BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
           foreach (ObjectId id in sourceBlock.GetAnonymousBlockIds()) {
             if (id.IsValid) {
               using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
