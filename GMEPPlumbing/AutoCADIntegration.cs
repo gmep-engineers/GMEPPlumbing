@@ -865,6 +865,7 @@ namespace GMEPPlumbing
       SettingObjects = false;
     }
 
+
     [CommandMethod("Water")]
     public async void Water() {
       //MongoDBService.Initialize();
@@ -2633,6 +2634,77 @@ namespace GMEPPlumbing
       }
       ed.WriteMessage(ProjectId + " - Found " + sources.Count + " plumbing sources in the drawing.");
       return sources;
+    }
+  
+  public static List<PlumbingFixture> GetPlumbingFixturesFromCAD(string ProjectId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List<PlumbingFixture> fixtures = new List<PlumbingFixture>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        List<string> blockNames = new List<string>
+        {
+          "GMEP SOURCE",
+          "GMEP WH 80",
+          "GMEP WH 50",
+        };
+        foreach (string name in blockNames) {
+          BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
+          foreach (ObjectId id in sourceBlock.GetAnonymousBlockIds()) {
+            if (id.IsValid) {
+              using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+                if (anonymousBtr != null) {
+                  foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                    if (objId.IsValid) {
+                      var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+
+                      var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                      string GUID = string.Empty;
+                      string basePointId = string.Empty;
+                      int typeId = 0;
+                      int Floor = 0;
+                      bool isWaterHeater = false;
+
+                      foreach (DynamicBlockReferenceProperty prop in pc) {
+                        if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+                          GUID = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "base_point_id") {
+                          basePointId = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "type_id") {
+                          typeId = Convert.ToInt32(prop.Value);
+                        }
+                      }
+                      if (isWaterHeater) {
+                        typeId = 2;
+                      }
+                      if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
+                        /*PlumbingFixture fixture = new PlumbingFixture(
+                          GUID,
+                          ProjectId,
+                          entity.Position,
+                          typeId,
+                          basePointId
+                        );
+                        fixture.Add(source);*/
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        tr.Commit();
+      }
+      ed.WriteMessage(ProjectId + " - Found " + fixtures.Count + " plumbing fixtures in the drawing.");
+      return fixtures;
     }
   }
 
