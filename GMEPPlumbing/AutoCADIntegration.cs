@@ -131,6 +131,12 @@ namespace GMEPPlumbing
           return;
       }
 
+      PromptKeywordOptions pko2 = new PromptKeywordOptions("\nForward or Backward?");
+      pko2.Keywords.Add("Forward");
+      pko2.Keywords.Add("Backward");
+      PromptResult pr2 = ed.GetKeywords(pko2);
+      string direction = pr2.StringResult;
+
 
       PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
       ppo2.AllowNone = false;
@@ -248,8 +254,15 @@ namespace GMEPPlumbing
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
           Line line = new Line();
-          line.StartPoint = startPointLocation;
-          line.EndPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, 0);
+          if (direction == "Forward") {
+            line.StartPoint = startPointLocation;
+            line.EndPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, 0);
+          }
+          else if (direction == "Backward") {
+            line.StartPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, 0);
+            line.EndPoint = startPointLocation;
+          }
+      
           line.Layer = layer;
           btr.AppendEntity(line);
           tr.AddNewlyCreatedDBObject(line, true);
