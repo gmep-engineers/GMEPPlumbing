@@ -17,7 +17,6 @@ namespace GMEPPlumbing {
     public string TypeAbbreviation;
     public int Number;
     public string BasePointId;
-    public string SourceId;
 
     public PlumbingFixture(
       string id,
@@ -27,8 +26,7 @@ namespace GMEPPlumbing {
       int catalogId,
       string typeAbbreviation,
       int number,
-      string basePointId,
-      string sourceId
+      string basePointId
     ) {
       Id = id;
       ProjectId = projectId;
@@ -38,7 +36,6 @@ namespace GMEPPlumbing {
       TypeAbbreviation = typeAbbreviation;
       Number = number;
       BasePointId = basePointId;
-      SourceId = sourceId;
     }
   }
 
