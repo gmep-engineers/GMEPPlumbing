@@ -631,7 +631,7 @@ namespace GMEPPlumbing.Services
       return items;
     }
 
-    public void CreatePlumbingFixture(PlumbingFixture fixture) {
+   /* public void CreatePlumbingFixture(PlumbingFixture fixture) {
       // 1 get the count of different types of the same fixture
       string query =
         @"
@@ -682,7 +682,7 @@ namespace GMEPPlumbing.Services
       command.Parameters.AddWithValue("@number", fixture.Number);
       command.ExecuteNonQuery();
       CloseConnectionSync();
-    }
+    }*/
 
     public List<PlumbingSourceType> GetPlumbingSourceTypes() {
       List<PlumbingSourceType> types = new List<PlumbingSourceType>();
@@ -991,7 +991,100 @@ namespace GMEPPlumbing.Services
       }
       await conn.CloseAsync();
     }
-   
+    public async Task UpdatePlumbingFixtures(List<PlumbingFixture> fixtures, string ProjectId) {
+      if (fixtures == null)
+        return;
 
+      var idsToKeep = fixtures.Select(f => f.Id).ToList();
+      MySqlConnection conn = await OpenNewConnectionAsync();
+
+      if (idsToKeep.Count > 0) {
+        var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
+        string deleteQuery = $@"
+            DELETE FROM plumbing_fixtures
+            WHERE project_id = @projectId
+            AND id NOT IN ({string.Join(",", paramNames)})
+        ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        for (int i = 0; i < idsToKeep.Count; i++) {
+          deleteCommand.Parameters.AddWithValue(paramNames[i], idsToKeep[i]);
+        }
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      else {
+        string deleteQuery = @"
+            DELETE FROM plumbing_fixtures
+            WHERE project_id = @projectId
+        ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+
+
+      foreach (var fixture in fixtures) {
+        string query = @"
+            SELECT DISTINCT plumbing_fixture_catalog.id, plumbing_fixtures.number 
+            FROM plumbing_fixtures
+            LEFT JOIN plumbing_fixture_catalog ON plumbing_fixture_catalog.id = plumbing_fixtures.catalog_id
+            LEFT JOIN plumbing_fixture_types ON plumbing_fixture_types.id = plumbing_fixture_catalog.type_id
+            WHERE plumbing_fixtures.project_id = @projectId
+            AND plumbing_fixture_types.abbreviation = @abbreviation
+        ";
+        MySqlCommand command = new MySqlCommand(query, conn);
+        command.Parameters.AddWithValue("@projectId", fixture.ProjectId);
+        command.Parameters.AddWithValue("@abbreviation", fixture.TypeAbbreviation);
+        MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+
+        List<int> addedCatalogIds = new List<int>();
+        List<int> addedFixtureNumbers = new List<int>();
+        while (await reader.ReadAsync()) {
+          addedCatalogIds.Add(GetSafeInt(reader, "id"));
+          addedFixtureNumbers.Add(GetSafeInt(reader, "number"));
+        }
+        int count = 0;
+        if (addedCatalogIds.Count == 0) {
+          count = 1;
+        }
+        for (int i = 0; i < addedCatalogIds.Count; i++) {
+          if (addedCatalogIds[i] == fixture.CatalogId) {
+            count = addedFixtureNumbers[i];
+          }
+        }
+        if (count == 0) {
+          count = addedCatalogIds.Count + 1;
+        }
+        reader.Close();
+        fixture.Number = count;
+
+        // Upsert logic
+        string upsertQuery = @"
+            INSERT INTO plumbing_fixtures
+            (id, project_id, pos_x, pos_y, catalog_id, number, base_point_id, rotation, type_abbreviation)
+            VALUES (@id, @projectId, @posX, @posY, @catalogId, @number, @basePointId, @rotation, @typeAbbreviation)
+            ON DUPLICATE KEY UPDATE
+                pos_x = @posX,
+                pos_y = @posY,
+                catalog_id = @catalogId,
+                number = @number,
+                base_point_id = @basePointId,
+                rotation = @rotation,
+                type_abbreviation = @typeAbbreviation
+        ";
+        MySqlCommand upsertCommand = new MySqlCommand(upsertQuery, conn);
+        upsertCommand.Parameters.AddWithValue("@id", fixture.Id);
+        upsertCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        upsertCommand.Parameters.AddWithValue("@posX", fixture.Position.X);
+        upsertCommand.Parameters.AddWithValue("@posY", fixture.Position.Y);
+        upsertCommand.Parameters.AddWithValue("@catalogId", fixture.CatalogId);
+        upsertCommand.Parameters.AddWithValue("@number", fixture.Number);
+        upsertCommand.Parameters.AddWithValue("@basePointId", fixture.BasePointId);
+        upsertCommand.Parameters.AddWithValue("@rotation", fixture.Rotation);
+        upsertCommand.Parameters.AddWithValue("@typeAbbreviation", fixture.TypeAbbreviation);
+        await upsertCommand.ExecuteNonQueryAsync();
+      }
+      await conn.CloseAsync();
+    }
   }
 }
