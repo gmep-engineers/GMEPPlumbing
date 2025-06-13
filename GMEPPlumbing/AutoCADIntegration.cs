@@ -325,6 +325,12 @@ namespace GMEPPlumbing
           return;
       }
 
+      PromptKeywordOptions pko2 = new PromptKeywordOptions("\nWill the route end on the floor or the ceiling?");
+      pko2.Keywords.Add("Floor");
+      pko2.Keywords.Add("Celing");
+      PromptResult pr2 = ed.GetKeywords(pko2);
+      string endPlacement = pr2.StringResult;
+
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
 
