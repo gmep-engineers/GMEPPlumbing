@@ -2307,7 +2307,7 @@ namespace GMEPPlumbing
         List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
         List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
         List<PlumbingSource> sources = GetPlumbingSourcesFromCAD(ProjectId);
-        List<PlumbingFixture> fixtures = GetPlumbingFixturesFromCAD(ProjectId);
+        Dictionary<string, List<PlumbingFixture>> fixtures = GetPlumbingFixturesFromCAD(ProjectId);
 
         await mariaDBService.UpdatePlumbingHorizontalRoutes(horizontalRoutes, ProjectId);
         await mariaDBService.UpdatePlumbingVerticalRoutes(verticalRoutes, ProjectId);
@@ -2568,12 +2568,12 @@ namespace GMEPPlumbing
     }
 
   
-  public static List<PlumbingFixture> GetPlumbingFixturesFromCAD(string ProjectId) {
+  public static Dictionary<string, List<PlumbingFixture>> GetPlumbingFixturesFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
 
-      List<PlumbingFixture> fixtures = new List<PlumbingFixture>();
+      Dictionary<string, List<PlumbingFixture>> fixtures = new Dictionary<string, List<PlumbingFixture>>();
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -2644,7 +2644,10 @@ namespace GMEPPlumbing
                           basePointId,
                           fixtureId
                         );
-                        fixtures.Add(fixture);
+                        if (!fixtures.ContainsKey(fixtureId)) {
+                          fixtures[fixtureId] = new List<PlumbingFixture>();
+                        }
+                        fixtures[fixtureId].Add(fixture);
                       }
                     }
                   }
