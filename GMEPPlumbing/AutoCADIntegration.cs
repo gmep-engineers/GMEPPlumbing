@@ -1360,7 +1360,7 @@ namespace GMEPPlumbing
         string blockName = selectedFixtureType.WaterGasBlockName;
         Point3d point;
         double rotation = 0;
-        string fixtureId = Guid.NewGuid().ToString();
+        string GUID = Guid.NewGuid().ToString();
         try {
           using (Transaction tr = db.TransactionManager.StartTransaction()) {
             BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -1398,8 +1398,8 @@ namespace GMEPPlumbing
             BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
             DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
             foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "gmep_plumbing_fixture_id") {
-                prop.Value = fixtureId;
+              if (prop.PropertyName == "gmep_plumbing_id") {
+                prop.Value = GUID;
               }
               if (prop.PropertyName == "gmep_plumbing_fixture_demand") {
                 prop.Value = (double)selectedCatalogItem.FixtureDemand;
@@ -1420,7 +1420,7 @@ namespace GMEPPlumbing
             tr.Commit();
           }
           PlumbingFixture plumbingFixture = new PlumbingFixture(
-            fixtureId,
+            GUID,
             projectId,
             point,
             rotation,
@@ -1620,7 +1620,7 @@ namespace GMEPPlumbing
       ObjectId blockId;
       Point3d point;
       double rotation = 0;
-      string fixtureId = Guid.NewGuid().ToString();
+      string GUID = Guid.NewGuid().ToString();
       string blockName = "GMEP VENT";
       try {
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -1657,8 +1657,8 @@ namespace GMEPPlumbing
           BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
           DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
           foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "gmep_plumbing_fixture_id") {
-              prop.Value = fixtureId;
+            if (prop.PropertyName == "gmep_plumbing_id") {
+              prop.Value = GUID;
             }
             if (prop.PropertyName == "gmep_plumbing_fixture_dfu") {
               prop.Value = (double)fixtureDemand;
@@ -1676,7 +1676,7 @@ namespace GMEPPlumbing
           }
           tr.Commit();
           PlumbingFixture plumbingFixture = new PlumbingFixture(
-            fixtureId,
+            GUID,
             projectId,
             new Point3d(),
             rotation,
@@ -1709,7 +1709,7 @@ namespace GMEPPlumbing
       ed.WriteMessage("\nSelect base point for drain");
       ObjectId blockId;
       Point3d point;
-      string fixtureId = Guid.NewGuid().ToString();
+      string GUID = Guid.NewGuid().ToString();
       string blockName = "GMEP DRAIN";
       try {
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -1758,8 +1758,8 @@ namespace GMEPPlumbing
           BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
           DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
           foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "gmep_plumbing_fixture_id") {
-              prop.Value = fixtureId;
+            if (prop.PropertyName == "gmep_plumbing_id") {
+              prop.Value = GUID;
             }
             if (prop.PropertyName == "gmep_plumbing_fixture_dfu") {
               prop.Value = (double)fixtureDemand;
@@ -1776,7 +1776,7 @@ namespace GMEPPlumbing
           }
           tr.Commit();
           PlumbingFixture plumbingFixture = new PlumbingFixture(
-            fixtureId,
+            GUID,
             projectId,
             new Point3d(),
             0,
@@ -1810,7 +1810,7 @@ namespace GMEPPlumbing
       ObjectId blockId;
       Point3d point;
       double rotation = 0;
-      string fixtureId = Guid.NewGuid().ToString();
+      string GUID = Guid.NewGuid().ToString();
       if (blockName.Contains("%WCOSTYLE%")) {
         PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
         keywordOptions.Message = "\nSelect WCO style";
@@ -1866,8 +1866,8 @@ namespace GMEPPlumbing
           BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
           DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
           foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "gmep_plumbing_fixture_id") {
-              prop.Value = fixtureId;
+            if (prop.PropertyName == "gmep_plumbing_id") {
+              prop.Value = GUID;
             }
             if (prop.PropertyName == "gmep_plumbing_fixture_dfu") {
               prop.Value = (double)fixtureDemand;
@@ -1884,7 +1884,7 @@ namespace GMEPPlumbing
           }
           tr.Commit();
           PlumbingFixture plumbingFixture = new PlumbingFixture(
-            fixtureId,
+            GUID,
             projectId,
             br.Position,
             br.Rotation,
@@ -2508,7 +2508,7 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "gmep_plumbing_source_id") {
                           GUID = prop.Value?.ToString();
                         }
-                        if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+                        if (prop.PropertyName == "gmep_plumbing_id") {
                           GUID = prop.Value?.ToString();
                           isWaterHeater = true;
                         }
@@ -2592,7 +2592,7 @@ namespace GMEPPlumbing
                       int selectedCatalogItemId = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
-                        if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+                        if (prop.PropertyName == "gmep_plumbing_id") {
                           GUID = prop.Value?.ToString();
                         }
                         if (prop.PropertyName == "base_point_id") {
