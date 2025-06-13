@@ -2260,11 +2260,13 @@ namespace GMEPPlumbing
         List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
         List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
         List<PlumbingSource> sources = GetPlumbingSourcesFromCAD(ProjectId);
+        List<PlumbingFixture> fixtures = GetPlumbingFixturesFromCAD(ProjectId);
 
         await mariaDBService.UpdatePlumbingHorizontalRoutes(horizontalRoutes, ProjectId);
         await mariaDBService.UpdatePlumbingVerticalRoutes(verticalRoutes, ProjectId);
         await mariaDBService.UpdatePlumbingPlanBasePoints(basePoints, ProjectId);
         await mariaDBService.UpdatePlumbingSources(sources, ProjectId);
+        await mariaDBService.UpdatePlumbingFixtures(fixtures, ProjectId);
       }
       catch (System.Exception ex) {
         ed.WriteMessage("\nError getting ProjectId: " + ex.Message);
@@ -2531,13 +2533,25 @@ namespace GMEPPlumbing
         BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
         List<string> blockNames = new List<string>
         {
-          "GMEP SOURCE",
           "GMEP WH 80",
           "GMEP WH 50",
+          "GMEP CW HW DN",
+          "GMEP DRAIN",
+          "GMEP VENT",
+          "GMEP CP",
+          "GMEP CW DN",
+          "GMEP FS 12",
+          "GMEP FS 6",
+          "GMEP FD",
+          "GMEP RPBFP",
+          "GMEP WCO STRAIGHT",
+          "GMEP WCO ANGLED",
+          "GMEP WCO FLOOR",
+          "GMEP IWH",
         };
         foreach (string name in blockNames) {
-          BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
-          foreach (ObjectId id in sourceBlock.GetAnonymousBlockIds()) {
+          BlockTableRecord fixtureBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
+          foreach (ObjectId id in fixtureBlock.GetAnonymousBlockIds()) {
             if (id.IsValid) {
               using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
                 if (anonymousBtr != null) {
@@ -2549,9 +2563,6 @@ namespace GMEPPlumbing
 
                       string GUID = string.Empty;
                       string basePointId = string.Empty;
-                      int typeId = 0;
-                      int Floor = 0;
-                      bool isWaterHeater = false;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
                         if (prop.PropertyName == "gmep_plumbing_fixture_id") {
@@ -2560,22 +2571,20 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "base_point_id") {
                           basePointId = prop.Value?.ToString();
                         }
-                        if (prop.PropertyName == "type_id") {
-                          typeId = Convert.ToInt32(prop.Value);
-                        }
                       }
-                      if (isWaterHeater) {
-                        typeId = 2;
-                      }
+                 
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
-                        /*PlumbingFixture fixture = new PlumbingFixture(
+                        PlumbingFixture fixture = new PlumbingFixture(
                           GUID,
                           ProjectId,
                           entity.Position,
-                          typeId,
+                          entity.Rotation,
+                          0,
+                          "",
+                          0,
                           basePointId
                         );
-                        fixture.Add(source);*/
+                        fixtures.Add(fixture);
                       }
                     }
                   }
