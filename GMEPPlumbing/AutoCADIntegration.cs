@@ -1410,6 +1410,12 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "base_point_id") {
                 prop.Value = basePointId;
               }
+              if (prop.PropertyName == "type_abbreviation") {
+                prop.Value = selectedFixtureType.Abbreviation;
+              }
+              if (prop.PropertyName == "catalog_id") {
+                prop.Value = selectedCatalogItem.Id;
+              }
             }
             tr.Commit();
           }
@@ -1660,6 +1666,13 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "base_point_id") {
               prop.Value = basePointId;
             }
+            if (prop.PropertyName == "type_abbreviation")
+            {
+               prop.Value = selectedFixtureTypeAbbr;
+            }
+            if (prop.PropertyName == "catalog_id") {
+              prop.Value = selectedCatalogItemId;
+            }
           }
           tr.Commit();
           PlumbingFixture plumbingFixture = new PlumbingFixture(
@@ -1753,6 +1766,12 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "base_point_id") {
               prop.Value = basePointId;
+            }
+            if (prop.PropertyName == "type_abbreviation") {
+              prop.Value = selectedFixtureTypeAbbr;
+            }
+            if (prop.PropertyName == "catalog_id") {
+              prop.Value = selectedCatalogItemId;
             }
           }
           tr.Commit();
@@ -1855,6 +1874,12 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "base_point_id") {
               prop.Value = basePointId;
+            }
+            if (prop.PropertyName == "type_abbreviation") {
+              prop.Value = selectedFixtureTypeAbbr;
+            }
+            if (prop.PropertyName == "catalog_id") {
+              prop.Value = selectedCatalogItemId;
             }
           }
           tr.Commit();
@@ -2563,6 +2588,8 @@ namespace GMEPPlumbing
 
                       string GUID = string.Empty;
                       string basePointId = string.Empty;
+                      string selectedFixtureTypeAbbr = string.Empty;
+                      int selectedCatalogItemId = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
                         if (prop.PropertyName == "gmep_plumbing_fixture_id") {
@@ -2570,6 +2597,12 @@ namespace GMEPPlumbing
                         }
                         if (prop.PropertyName == "base_point_id") {
                           basePointId = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "type_abbreviation") {
+                          selectedFixtureTypeAbbr = prop.Value.ToString();
+                        }
+                        if (prop.PropertyName == "catalog_id") {
+                         selectedCatalogItemId = Convert.ToInt32(prop.Value);
                         }
                       }
                  
@@ -2579,8 +2612,8 @@ namespace GMEPPlumbing
                           ProjectId,
                           entity.Position,
                           entity.Rotation,
-                          0,
-                          "",
+                          selectedCatalogItemId,
+                          selectedFixtureTypeAbbr,
                           0,
                           basePointId
                         );
