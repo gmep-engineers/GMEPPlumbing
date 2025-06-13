@@ -1090,6 +1090,60 @@ namespace GMEPPlumbing.Services
         await upsertCommand.ExecuteNonQueryAsync();
       }
       await conn.CloseAsync();
+      await UpdatePlumbingFixtureComponents(fixtures, ProjectId);
+    }
+    public async Task UpdatePlumbingFixtureComponents(Dictionary<string, List<PlumbingFixture>> fixtures, string ProjectId) {
+      if (fixtures == null) {
+        return;
+      }
+      var idsToKeep = fixtures.Values.SelectMany(list => list).Select(f => f.Id).ToList();
+      MySqlConnection conn = await OpenNewConnectionAsync();
+      if (idsToKeep.Count > 0) {
+        var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
+        string deleteQuery = $@"
+              DELETE FROM plumbing_fixture_components
+              WHERE project_id = @projectId
+              AND id NOT IN ({string.Join(",", paramNames)})
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        for (int i = 0; i < idsToKeep.Count; i++) {
+          deleteCommand.Parameters.AddWithValue(paramNames[i], idsToKeep[i]);
+        }
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      else {
+        string deleteQuery = @"
+              DELETE FROM plumbing_fixture_components
+              WHERE project_id = @projectId
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      if (fixtures.Count > 0) {
+        string upsertQuery = @"
+              INSERT INTO plumbing_fixture_components
+              (id, project_id, block_name, fixture_id, pos_x, pos_y)
+              VALUES (@id, @projectId, @blockName, @fixtureId, @posX, @posY)
+              ON DUPLICATE KEY UPDATE
+                  block_name = @blockName,
+                  fixture_id = @fixtureId,
+                  pos_x = @posX,
+                  pos_y = @posY
+          ";
+        foreach (var component in fixtures.Values.SelectMany(list => list)) {
+          MySqlCommand command = new MySqlCommand(upsertQuery, conn);
+          command.Parameters.AddWithValue("@id", component.Id);
+          command.Parameters.AddWithValue("@projectId", ProjectId);
+          command.Parameters.AddWithValue("@blockName", component.BlockName);
+          command.Parameters.AddWithValue("@posX", component.Position.X);
+          command.Parameters.AddWithValue("@posY", component.Position.Y);
+          command.Parameters.AddWithValue("@fixtureId", component.FixtureId);
+          await command.ExecuteNonQueryAsync();
+        }
+      }
+      await conn.CloseAsync();
     }
   }
 }

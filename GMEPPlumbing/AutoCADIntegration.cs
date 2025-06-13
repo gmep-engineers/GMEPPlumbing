@@ -1432,7 +1432,8 @@ namespace GMEPPlumbing
             selectedFixtureType.Abbreviation,
             0,
             basePointId,
-            fixtureId
+            fixtureId,
+            blockName
           );
           /*MariaDBService.CreatePlumbingFixture(plumbingFixture);
           if (selectedFixtureType.Abbreviation == "WH")
@@ -1695,7 +1696,8 @@ namespace GMEPPlumbing
             selectedFixtureTypeAbbr,
             0,
             basePointId,
-            fixtureId
+            fixtureId,
+            blockName
           );
           //MariaDBService.CreatePlumbingFixture(plumbingFixture);
           MakePlumbingFixtureWasteVentLabel(plumbingFixture, br.Position, blockName, index);
@@ -1800,7 +1802,8 @@ namespace GMEPPlumbing
             selectedFixtureTypeAbbr,
             0,
             basePointId,
-            fixtureId
+            fixtureId,
+            blockName
           );
           //MariaDBService.CreatePlumbingFixture(plumbingFixture);
           MakePlumbingFixtureWasteVentLabel(plumbingFixture, br.Position, blockName, index);
@@ -1913,7 +1916,8 @@ namespace GMEPPlumbing
             selectedFixtureTypeAbbr,
             0,
             basePointId,
-            fixtureId
+            fixtureId,
+            blockName
           );
           //MariaDBService.CreatePlumbingFixture(plumbingFixture);
 
@@ -2642,7 +2646,8 @@ namespace GMEPPlumbing
                           selectedFixtureTypeAbbr,
                           0,
                           basePointId,
-                          fixtureId
+                          fixtureId,
+                          name
                         );
                         if (!fixtures.ContainsKey(fixtureId)) {
                           fixtures[fixtureId] = new List<PlumbingFixture>();
