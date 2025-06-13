@@ -1266,6 +1266,7 @@ namespace GMEPPlumbing
       ed = doc.Editor;
 
       string basePointId = CADObjectCommands.GetActiveView();
+      string fixtureId = Guid.NewGuid().ToString();
 
       List<PlumbingFixtureType> plumbingFixtureTypes = MariaDBService.GetPlumbingFixtureTypes();
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
@@ -1416,6 +1417,9 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "catalog_id") {
                 prop.Value = selectedCatalogItem.Id;
               }
+              if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+                prop.Value = fixtureId;
+              }
             }
             tr.Commit();
           }
@@ -1427,7 +1431,8 @@ namespace GMEPPlumbing
             selectedCatalogItem.Id,
             selectedFixtureType.Abbreviation,
             0,
-            basePointId
+            basePointId,
+            fixtureId
           );
           /*MariaDBService.CreatePlumbingFixture(plumbingFixture);
           if (selectedFixtureType.Abbreviation == "WH")
@@ -1457,8 +1462,7 @@ namespace GMEPPlumbing
         foreach (string wasteVentBlockName in wasteVentBlockNames) {
           ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
           string blockName = wasteVentBlockName;
-          double rotation = 0;
-          string fixtureId = Guid.NewGuid().ToString();
+       
           try {
             if (wasteVentBlockName == "GMEP VENT") {
               ventPosition = CreateVentBlock(
@@ -1467,7 +1471,8 @@ namespace GMEPPlumbing
                 selectedCatalogItem.Id,
                 selectedFixtureType.Abbreviation,
                 index,
-                basePointId
+                basePointId,
+                fixtureId
               );
             }
             else if (wasteVentBlockName == "GMEP DRAIN") {
@@ -1478,7 +1483,8 @@ namespace GMEPPlumbing
                 selectedFixtureType.Abbreviation,
                 index,
                 ventPosition,
-                basePointId
+                basePointId,
+                fixtureId
               );
             }
             else {
@@ -1489,7 +1495,8 @@ namespace GMEPPlumbing
                 selectedCatalogItem.Id,
                 selectedFixtureType.Abbreviation,
                 index,
-                basePointId
+                basePointId,
+                fixtureId
               );
             }
             index++;
@@ -1614,7 +1621,8 @@ namespace GMEPPlumbing
       int selectedCatalogItemId,
       string selectedFixtureTypeAbbr,
       int index,
-      string basePointId
+      string basePointId,
+      string fixtureId
     ) {
       ed.WriteMessage("\nSelect base point for vent");
       ObjectId blockId;
@@ -1673,6 +1681,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "catalog_id") {
               prop.Value = selectedCatalogItemId;
             }
+            if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+              prop.Value = fixtureId;
+            }
           }
           tr.Commit();
           PlumbingFixture plumbingFixture = new PlumbingFixture(
@@ -1683,7 +1694,8 @@ namespace GMEPPlumbing
             selectedCatalogItemId,
             selectedFixtureTypeAbbr,
             0,
-            basePointId
+            basePointId,
+            fixtureId
           );
           //MariaDBService.CreatePlumbingFixture(plumbingFixture);
           MakePlumbingFixtureWasteVentLabel(plumbingFixture, br.Position, blockName, index);
@@ -1704,7 +1716,8 @@ namespace GMEPPlumbing
       string selectedFixtureTypeAbbr,
       int index,
       Point3d ventPosition,
-      string basePointId
+      string basePointId,
+      string fixtureId
     ) {
       ed.WriteMessage("\nSelect base point for drain");
       ObjectId blockId;
@@ -1773,6 +1786,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "catalog_id") {
               prop.Value = selectedCatalogItemId;
             }
+            if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+              prop.Value = fixtureId;
+            }
           }
           tr.Commit();
           PlumbingFixture plumbingFixture = new PlumbingFixture(
@@ -1783,7 +1799,8 @@ namespace GMEPPlumbing
             selectedCatalogItemId,
             selectedFixtureTypeAbbr,
             0,
-            basePointId 
+            basePointId,
+            fixtureId
           );
           //MariaDBService.CreatePlumbingFixture(plumbingFixture);
           MakePlumbingFixtureWasteVentLabel(plumbingFixture, br.Position, blockName, index);
@@ -1804,7 +1821,8 @@ namespace GMEPPlumbing
       int selectedCatalogItemId,
       string selectedFixtureTypeAbbr,
       int index,
-      string basePointId
+      string basePointId,
+      string fixtureId
     ) {
       ed.WriteMessage("\nSelect base point for " + selectedFixtureTypeAbbr);
       ObjectId blockId;
@@ -1881,6 +1899,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "catalog_id") {
               prop.Value = selectedCatalogItemId;
             }
+            if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+              prop.Value = fixtureId;
+            }
           }
           tr.Commit();
           PlumbingFixture plumbingFixture = new PlumbingFixture(
@@ -1891,7 +1912,8 @@ namespace GMEPPlumbing
             selectedCatalogItemId,
             selectedFixtureTypeAbbr,
             0,
-            basePointId
+            basePointId,
+            fixtureId
           );
           //MariaDBService.CreatePlumbingFixture(plumbingFixture);
 
@@ -2590,6 +2612,7 @@ namespace GMEPPlumbing
                       string basePointId = string.Empty;
                       string selectedFixtureTypeAbbr = string.Empty;
                       int selectedCatalogItemId = 0;
+                      string fixtureId = string.Empty;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
                         if (prop.PropertyName == "gmep_plumbing_id") {
@@ -2604,6 +2627,9 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "catalog_id") {
                          selectedCatalogItemId = Convert.ToInt32(prop.Value);
                         }
+                        if (prop.PropertyName == "gmep_plumbing_fixture_id") {
+                         fixtureId = prop.Value?.ToString();
+                        }
                       }
                  
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
@@ -2615,7 +2641,8 @@ namespace GMEPPlumbing
                           selectedCatalogItemId,
                           selectedFixtureTypeAbbr,
                           0,
-                          basePointId
+                          basePointId,
+                          fixtureId
                         );
                         fixtures.Add(fixture);
                       }
