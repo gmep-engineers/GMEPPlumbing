@@ -1460,7 +1460,8 @@ namespace GMEPPlumbing
                 projectId,
                 selectedCatalogItem.Id,
                 selectedFixtureType.Abbreviation,
-                index
+                index,
+                basePointId
               );
             }
             else if (wasteVentBlockName == "GMEP DRAIN") {
@@ -1470,7 +1471,8 @@ namespace GMEPPlumbing
                 selectedCatalogItem.Id,
                 selectedFixtureType.Abbreviation,
                 index,
-                ventPosition
+                ventPosition,
+                basePointId
               );
             }
             else {
@@ -1480,7 +1482,8 @@ namespace GMEPPlumbing
                 projectId,
                 selectedCatalogItem.Id,
                 selectedFixtureType.Abbreviation,
-                index
+                index,
+                basePointId
               );
             }
             index++;
@@ -1604,7 +1607,8 @@ namespace GMEPPlumbing
       string projectId,
       int selectedCatalogItemId,
       string selectedFixtureTypeAbbr,
-      int index
+      int index,
+      string basePointId
     ) {
       ed.WriteMessage("\nSelect base point for vent");
       ObjectId blockId;
@@ -1653,6 +1657,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "gmep_plumbing_fixture_dfu") {
               prop.Value = (double)fixtureDemand;
             }
+            if (prop.PropertyName == "base_point_id") {
+              prop.Value = basePointId;
+            }
           }
           tr.Commit();
           PlumbingFixture plumbingFixture = new PlumbingFixture(
@@ -1663,7 +1670,7 @@ namespace GMEPPlumbing
             selectedCatalogItemId,
             selectedFixtureTypeAbbr,
             0,
-            "" //will replace these once implemented for vents/drains
+            basePointId
           );
           //MariaDBService.CreatePlumbingFixture(plumbingFixture);
           MakePlumbingFixtureWasteVentLabel(plumbingFixture, br.Position, blockName, index);
@@ -1683,7 +1690,8 @@ namespace GMEPPlumbing
       int selectedCatalogItemId,
       string selectedFixtureTypeAbbr,
       int index,
-      Point3d ventPosition
+      Point3d ventPosition,
+      string basePointId
     ) {
       ed.WriteMessage("\nSelect base point for drain");
       ObjectId blockId;
@@ -1743,6 +1751,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "gmep_plumbing_fixture_dfu") {
               prop.Value = (double)fixtureDemand;
             }
+            if (prop.PropertyName == "base_point_id") {
+              prop.Value = basePointId;
+            }
           }
           tr.Commit();
           PlumbingFixture plumbingFixture = new PlumbingFixture(
@@ -1753,7 +1764,7 @@ namespace GMEPPlumbing
             selectedCatalogItemId,
             selectedFixtureTypeAbbr,
             0,
-            "" //will replace these once implemented for vents/drain
+            basePointId 
           );
           //MariaDBService.CreatePlumbingFixture(plumbingFixture);
           MakePlumbingFixtureWasteVentLabel(plumbingFixture, br.Position, blockName, index);
@@ -1773,7 +1784,8 @@ namespace GMEPPlumbing
       string projectId,
       int selectedCatalogItemId,
       string selectedFixtureTypeAbbr,
-      int index
+      int index,
+      string basePointId
     ) {
       ed.WriteMessage("\nSelect base point for " + selectedFixtureTypeAbbr);
       ObjectId blockId;
@@ -1841,6 +1853,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "gmep_plumbing_fixture_dfu") {
               prop.Value = (double)fixtureDemand;
             }
+            if (prop.PropertyName == "base_point_id") {
+              prop.Value = basePointId;
+            }
           }
           tr.Commit();
           PlumbingFixture plumbingFixture = new PlumbingFixture(
@@ -1851,7 +1866,7 @@ namespace GMEPPlumbing
             selectedCatalogItemId,
             selectedFixtureTypeAbbr,
             0,
-            "" //will replace these once implemented for vents/drains
+            basePointId
           );
           //MariaDBService.CreatePlumbingFixture(plumbingFixture);
 
