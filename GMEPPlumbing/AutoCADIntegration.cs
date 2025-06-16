@@ -2392,6 +2392,8 @@ namespace GMEPPlumbing
                       string Id = string.Empty;
                       string VerticalRouteId = string.Empty;
                       string BasePointId = string.Empty;
+                      double pointX = 0;
+                      double pointY = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
 
@@ -2404,12 +2406,24 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "id") {
                           Id = prop.Value?.ToString();
                         }
+                        if (prop.PropertyName == "Connection X") {
+                          pointX = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Connection Y") {
+                          pointY = Convert.ToDouble(prop.Value);
+                        }
                       }
                       if (Id != "0") {
+                        double rotation = entity.Rotation;
+                        double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
+                        double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
+                        var connectionPointLocation = new Point3d(entity.Position.X + rotatedX, entity.Position.Y + rotatedY, 0);
+
                         PlumbingVerticalRoute route = new PlumbingVerticalRoute(
                           Id,
                           ProjectId,
                           entity.Position,
+                          connectionPointLocation,
                           VerticalRouteId,
                           BasePointId
                         );
@@ -2426,23 +2440,7 @@ namespace GMEPPlumbing
       }
       return routes;
     }
-    public static Point3d GetConnectionModelSpacePosition(Entity entity) {
-      // Local offset from block origin to connection point
-      Vector3d localOffset = route.ConnectionPosition - Point3d.Origin;
-
-      // Rotate the offset by the block's rotation angle (about Z axis)
-      double cos = Math.Cos(route.Rotation);
-      double sin = Math.Sin(rotation);
-      double xRot = localOffset.X * cos - localOffset.Y * sin;
-      double yRot = localOffset.X * sin + localOffset.Y * cos;
-
-      // Add rotated offset to the block's position
-      return new Point3d(
-          route.Position.X + xRot,
-          route.Position.Y + yRot,
-          route.Position.Z + localOffset.Z // Z is not rotated in 2D
-      );
-    }
+  
     public static List<PlumbingPlanBasePoint> GetPlumbingBasePointsFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;

@@ -861,11 +861,13 @@ namespace GMEPPlumbing.Services
       if (routes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_vertical_routes
-              (id, project_id, pos_x, pos_y, vertical_route_id, base_point_id)
-              VALUES (@id, @projectId, @posX, @posY, @verticalRouteId, @basePointId)
+              (id, project_id, pos_x, pos_y, connection_pos_x, connection_pos_y, vertical_route_id, base_point_id)
+              VALUES (@id, @projectId, @posX, @posY, @connectionPosX, @connectionPosY, @verticalRouteId, @basePointId)
               ON DUPLICATE KEY UPDATE
               pos_x = @posX,
               pos_y = @posy,
+              connection_pos_x = @connectionPosX, 
+              connection_pos_y = @connectionPosY,
               vertical_route_id = @verticalRouteId,
               base_point_id = @basePointId
             
@@ -878,6 +880,8 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@posY", route.Position.Y);
           command.Parameters.AddWithValue("@verticalRouteId", route.VerticalRouteId);
           command.Parameters.AddWithValue("@basePointId", route.BasePointId);
+          command.Parameters.AddWithValue("@connectionPosX", route.ConnectionPosition.X);
+          command.Parameters.AddWithValue("@connectionPosY", route.ConnectionPosition.Y);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1195,6 +1199,11 @@ namespace GMEPPlumbing.Services
           new Point3d(
             reader.GetDouble("pos_x"),
             reader.GetDouble("pos_y"),
+            0
+          ),
+          new Point3d(
+            reader.GetDouble("connection_pos_x"),
+            reader.GetDouble("connection_pos_y"),
             0
           ),
           reader.GetString("vertical_route_id"),

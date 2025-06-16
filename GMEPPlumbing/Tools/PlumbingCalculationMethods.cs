@@ -91,7 +91,7 @@ namespace GMEPPlumbing {
           .ToList();
     }
     public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
-      return VerticalRoutes.Where(route => targetRoute.EndPoint.DistanceTo(route.Position) <= 3.0).ToList();
+      return VerticalRoutes.Where(route => targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) <= 3.0).ToList();
     }
 
     public PlumbingVerticalRoute VerticalTraversal(PlumbingVerticalRoute route) {
@@ -101,9 +101,10 @@ namespace GMEPPlumbing {
       Dictionary<int, PlumbingVerticalRoute> routes = GetVerticalRoutesByIdOrdered(route.VerticalRouteId);
       var matchingKeys = routes.FirstOrDefault(kvp => kvp.Value.Id == route.Id);
       var startFloor = matchingKeys.Key;
+      ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {routes.ElementAt(routes.Count - 1).Key}");
 
       if (routes.ElementAt(0).Key == startFloor) {
-        return routes.ElementAt(routes.Count).Value;
+        return routes.ElementAt(routes.Count - 1).Value;
       }
       return routes.ElementAt(0).Value;
     }
