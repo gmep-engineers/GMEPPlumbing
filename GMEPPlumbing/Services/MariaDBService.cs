@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data.SqlClient;
@@ -1145,5 +1146,102 @@ namespace GMEPPlumbing.Services
       }
       await conn.CloseAsync();
     }
+    public async Task<List<PlumbingHorizontalRoute>> GetPlumbingHorizontalRoutes(string ProjectId) {
+      var routes = new List<PlumbingHorizontalRoute>();
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_horizontal_routes
+            WHERE project_id = @projectId
+            ORDER BY base_point_id, start_pos_x, start_pos_y, end_pos_x, end_pos_y";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        var route = new PlumbingHorizontalRoute(
+          reader.GetString("id"),
+          ProjectId,
+          new Point3d(
+            reader.GetDouble("start_pos_x"),
+            reader.GetDouble("start_pos_y"),
+            0
+          ),
+         new Point3d(
+            reader.GetDouble("end_pos_x"),
+            reader.GetDouble("end_pos_y"),
+            0
+          ),
+         reader.GetString("base_point_id")
+        );
+        routes.Add(route);
+      }
+      return routes;
+    }
+    public async Task<List<PlumbingVerticalRoute>> GetPlumbingVerticalRoutes(string ProjectId) {
+      var routes = new List<PlumbingVerticalRoute>();
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_vertical_routes
+            WHERE project_id = @projectId
+            ORDER BY vertical_route_id, base_point_id, pos_x, pos_y";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        var verticalRoute = new PlumbingVerticalRoute(
+          reader.GetString("id"),
+          ProjectId,
+          new Point3d(
+            reader.GetDouble("pos_x"),
+            reader.GetDouble("pos_y"),
+            0
+          ),
+          reader.GetString("vertical_route_id"),
+          reader.GetString("base_point_id")
+        );
+        routes.Add(verticalRoute);
+      }
+      return routes;
+    }
+
+    public async Task<List<PlumbingSource>> GetPlumbingSources(string ProjectId) {
+      var sources = new List<PlumbingSource>();
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_sources
+            WHERE project_id = @projectId
+            ORDER BY base_point_id, pos_x, pos_y";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        var source = new PlumbingSource(
+          reader.GetString("id"),
+          ProjectId,
+          new Point3d(
+            reader.GetDouble("pos_x"),
+            reader.GetDouble("pos_y"),
+            0
+          ),
+          reader.GetInt32("type_id"),
+          reader.GetString("base_point_id")
+        );
+        sources.Add(source);
+      }
+      return sources;
+    }
+    /*public async Task<Dictionary<string, List<PlumbingFixture>>> GetPlumbingFixtures(string ProjectId) {
+      var fixtures = new Dictionary<string, List<PlumbingFixture>>();
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_fixtures
+            WHERE project_id = @projectId
+            ORDER BY pos_x, pos_y, fixture_id";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        string 
+      }
+    }*/
   }
 }
