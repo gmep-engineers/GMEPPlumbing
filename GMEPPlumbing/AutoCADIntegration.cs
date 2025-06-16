@@ -39,6 +39,7 @@ using Line = Autodesk.AutoCAD.DatabaseServices.Line;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
+[assembly: CommandClass(typeof(GMEPPlumbing.PlumbingCalculationMethods))]
 [assembly: CommandClass(typeof(GMEPPlumbing.Commands.TableCommand))]
 [assembly: ExtensionApplication(typeof(GMEPPlumbing.PluginEntry))]
 
@@ -106,7 +107,7 @@ namespace GMEPPlumbing
       pko.Keywords.Add("HotWater");
       pko.Keywords.Add("ColdWater");
       pko.Keywords.Add("Gas");
-      // pko.Keywords.Add("Sewer");
+      //pko.Keywords.Add("Sewer");
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
       string result = pr.StringResult;

@@ -1174,6 +1174,8 @@ namespace GMEPPlumbing.Services
         );
         routes.Add(route);
       }
+      reader.Close();
+      await CloseConnectionAsync();
       return routes;
     }
     public async Task<List<PlumbingVerticalRoute>> GetPlumbingVerticalRoutes(string ProjectId) {
@@ -1200,6 +1202,8 @@ namespace GMEPPlumbing.Services
         );
         routes.Add(verticalRoute);
       }
+      reader.Close();
+      await CloseConnectionAsync();
       return routes;
     }
 
@@ -1227,6 +1231,8 @@ namespace GMEPPlumbing.Services
         );
         sources.Add(source);
       }
+      reader.Close();
+      await CloseConnectionAsync();
       return sources;
     }
     public async Task<Dictionary<string, List<PlumbingFixture>>> GetPlumbingFixtures(string ProjectId) {
@@ -1291,6 +1297,39 @@ namespace GMEPPlumbing.Services
         }
         fixtures[parentFixture.Id].Add(component);
       }
+      reader.Close();
+      await CloseConnectionAsync();
+      return fixtures;
+    }
+    public async Task<List<PlumbingPlanBasePoint>> GetPlumbingPlanBasePoints(string ProjectId) {
+      var points = new List<PlumbingPlanBasePoint>();
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_plan_base_points
+            WHERE project_id = @projectId
+            ORDER BY viewport_id, floor, pos_x, pos_y";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        var point = new PlumbingPlanBasePoint(
+          reader.GetString("id"),
+          ProjectId,
+           new Point3d(
+            reader.GetDouble("pos_x"),
+            reader.GetDouble("pos_y"),
+            0
+          ),
+          reader.GetString("plan"),
+          reader.GetString("type"),
+          reader.GetString("viewport_id"),
+          reader.GetInt32("floor")
+        );
+        points.Add(point);
+      }
+      reader.Close();
+      await CloseConnectionAsync();
+      return points;
     }
   }
 }
