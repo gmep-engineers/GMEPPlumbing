@@ -1229,19 +1229,68 @@ namespace GMEPPlumbing.Services
       }
       return sources;
     }
-    /*public async Task<Dictionary<string, List<PlumbingFixture>>> GetPlumbingFixtures(string ProjectId) {
+    public async Task<Dictionary<string, List<PlumbingFixture>>> GetPlumbingFixtures(string ProjectId) {
+      var parentFixtures = new Dictionary<string, PlumbingFixture>();
       var fixtures = new Dictionary<string, List<PlumbingFixture>>();
+
       await OpenConnectionAsync();
       string query = @"
             SELECT * FROM plumbing_fixtures
             WHERE project_id = @projectId
-            ORDER BY pos_x, pos_y, fixture_id";
+            ORDER BY type_abbreviation, catalog_id, number";
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("@projectId", ProjectId);
       MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
       while (reader.Read()) {
-        string 
+        var fixture = new PlumbingFixture(
+          reader.GetString("id"),
+          ProjectId,
+          Point3d.Origin,
+          0.0,
+          reader.GetInt32("catalog_id"),
+          reader.GetString("type_abbreviation"),
+          reader.GetInt32("number"),
+          "",
+          "",
+          ""
+        );
+        parentFixtures.Add(fixture.Id, fixture);
       }
-    }*/
+      reader.Close();
+      query = @"
+            SELECT * FROM plumbing_fixture_components
+            WHERE project_id = @projectId
+            ORDER BY fixture_id, pos_x, pos_y";
+      command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        string fixtureId = reader.GetString("fixture_id");
+        if (!parentFixtures.ContainsKey(fixtureId)) {
+          continue; // Skip if the parent fixture does not exist
+        }
+        PlumbingFixture parentFixture = parentFixtures[fixtureId];
+        PlumbingFixture component = new PlumbingFixture(
+          reader.GetString("id"),
+          ProjectId,
+          new Point3d(
+            reader.GetDouble("pos_x"),
+            reader.GetDouble("pos_y"),
+            0
+          ),
+          0.0,
+          parentFixture.CatalogId,
+          parentFixture.TypeAbbreviation,
+          parentFixture.Number,
+          reader.GetString("base_point_id"),
+          parentFixture.Id,
+          reader.GetString("block_name")
+        );
+        if (!fixtures.ContainsKey(parentFixture.Id)) {
+          fixtures.Add(parentFixture.Id,new List<PlumbingFixture>());
+        }
+        fixtures[parentFixture.Id].Add(component);
+      }
+    }
   }
 }

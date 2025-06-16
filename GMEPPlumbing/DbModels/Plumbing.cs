@@ -43,29 +43,7 @@ namespace GMEPPlumbing {
       BlockName = blockName;
     }
   }
-  public class PlumbingFixtureComponent {
-    public string Id;
-    public string BlockName;
-    public Point3d Position;
-    public double Rotation;
-    public string FixtureId;
-    public string ProjectId;
-    public PlumbingFixtureComponent(
-      string id,
-      string blockName,
-      Point3d position,
-      double rotation,
-      string fixtureId,
-      string projectId
-    ) {
-      Id = id;
-      BlockName = blockName;
-      Position = position;
-      Rotation = rotation;
-      FixtureId = fixtureId;
-      ProjectId = projectId;
-    }
-  }
+  
   public class PlumbingFixtureType {
     public int Id;
     public string Name;
