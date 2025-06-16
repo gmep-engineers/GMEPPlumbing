@@ -43,7 +43,7 @@ namespace GMEPPlumbing {
           .ToList();
 
           foreach (var matchingRoute in matchingRoutes) {
-            TraverseHorizonalRoute(matchingRoute);
+            TraverseRoute(matchingRoute);
           }
         }
       }
@@ -51,7 +51,7 @@ namespace GMEPPlumbing {
         ed.WriteMessage($"\nError: {ex.Message}");
       }
     }
-    public void TraverseHorizonalRoute(PlumbingHorizontalRoute route) {
+    public void TraverseRoute(PlumbingHorizontalRoute route) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
@@ -59,9 +59,11 @@ namespace GMEPPlumbing {
       List<PlumbingHorizontalRoute> childRoutes = FindNearbyHorizontalRoutes(route);
       foreach(var childRoute in childRoutes) {
         if (childRoute.Id != route.Id) {
-          TraverseHorizonalRoute(childRoute);
+          TraverseRoute(childRoute);
         }
       }
+    
+      
     }
 
 
@@ -84,6 +86,31 @@ namespace GMEPPlumbing {
               GetPointToSegmentDistance(
                   route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint) <= 3.0)
           .ToList();
+    }
+
+    public PlumbingVerticalRoute VerticalTraversal(PlumbingVerticalRoute route) {
+
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      Dictionary<int, PlumbingVerticalRoute> routes = GetVerticalRoutesByIdOrdered(route.VerticalRouteId);
+      var matchingKeys = routes.FirstOrDefault(kvp => kvp.Value.Id == route.Id);
+      var startFloor = matchingKeys.Key;
+
+      if (routes.ElementAt(0).Key == startFloor) {
+        return routes.ElementAt(routes.Count).Value;
+      }
+      return routes.ElementAt(0).Value;
+    }
+    public Dictionary<int, PlumbingVerticalRoute> GetVerticalRoutesByIdOrdered(string verticalRouteId) {
+      var basePointFloorLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp.Floor);
+      var dict = VerticalRoutes
+       .Where(vr => vr.VerticalRouteId == verticalRouteId && basePointFloorLookup.ContainsKey(vr.BasePointId))
+       .ToDictionary(
+           vr => basePointFloorLookup[vr.BasePointId], // floor
+           vr => vr
+       );
+      return dict;
     }
   }
 }
