@@ -2426,6 +2426,23 @@ namespace GMEPPlumbing
       }
       return routes;
     }
+    public static Point3d GetConnectionModelSpacePosition(Entity entity) {
+      // Local offset from block origin to connection point
+      Vector3d localOffset = route.ConnectionPosition - Point3d.Origin;
+
+      // Rotate the offset by the block's rotation angle (about Z axis)
+      double cos = Math.Cos(route.Rotation);
+      double sin = Math.Sin(rotation);
+      double xRot = localOffset.X * cos - localOffset.Y * sin;
+      double yRot = localOffset.X * sin + localOffset.Y * cos;
+
+      // Add rotated offset to the block's position
+      return new Point3d(
+          route.Position.X + xRot,
+          route.Position.Y + yRot,
+          route.Position.Z + localOffset.Z // Z is not rotated in 2D
+      );
+    }
     public static List<PlumbingPlanBasePoint> GetPlumbingBasePointsFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;

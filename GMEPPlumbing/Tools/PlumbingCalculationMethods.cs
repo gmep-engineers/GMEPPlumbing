@@ -57,13 +57,16 @@ namespace GMEPPlumbing {
       var ed = doc.Editor;
       ed.WriteMessage($"\nTraversing horizontal route: {route.Id} from {route.StartPoint} to {route.EndPoint}");
       List<PlumbingHorizontalRoute> childRoutes = FindNearbyHorizontalRoutes(route);
-      foreach(var childRoute in childRoutes) {
+      List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
+      foreach (var childRoute in childRoutes) {
         if (childRoute.Id != route.Id) {
           TraverseRoute(childRoute);
         }
       }
-    
-      
+      foreach (var verticalRoute in verticalRoutes) {
+        ed.WriteMessage($"\nTraversing vertical route: {verticalRoute.Id} at position {verticalRoute.Position}");
+        var verticalTraversal = VerticalTraversal(verticalRoute);
+      }
     }
 
 
@@ -87,9 +90,11 @@ namespace GMEPPlumbing {
                   route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint) <= 3.0)
           .ToList();
     }
+    public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
+      return VerticalRoutes.Where(route => targetRoute.EndPoint.DistanceTo(route.Position) <= 3.0).ToList();
+    }
 
     public PlumbingVerticalRoute VerticalTraversal(PlumbingVerticalRoute route) {
-
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
