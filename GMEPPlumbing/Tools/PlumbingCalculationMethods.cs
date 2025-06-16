@@ -65,6 +65,8 @@ namespace GMEPPlumbing {
       ed.WriteMessage($"\nTraversing horizontal route: {route.Id} from {route.StartPoint} to {route.EndPoint}");
       List<PlumbingHorizontalRoute> childRoutes = FindNearbyHorizontalRoutes(route);
       List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
+      List<PlumbingFixture> fixtures = FindNearbyFixtures(route);
+
       foreach (var childRoute in childRoutes) {
         if (childRoute.Id != route.Id) {
           TraverseHorizontalRoute(childRoute, visited);
@@ -73,6 +75,9 @@ namespace GMEPPlumbing {
       foreach (var verticalRoute in verticalRoutes) {
         var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute);
         TraverseVerticalRoute(verticalRouteEnd, visited);
+      }
+      foreach (var fixture in fixtures) {
+        ed.WriteMessage($"\nFound fixture: {fixture.Id} at position {fixture.Position}");
       }
     }
     public void TraverseVerticalRoute(PlumbingVerticalRoute route, HashSet<string> visited = null) {
@@ -117,6 +122,9 @@ namespace GMEPPlumbing {
     }
     public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
       return VerticalRoutes.Where(route => targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) <= 3.0 && route.BasePointId == targetRoute.BasePointId).ToList();
+    }
+    public List<PlumbingFixture> FindNearbyFixtures(PlumbingHorizontalRoute targetRoute) {
+      return PlumbingFixtures.Values.SelectMany(list => list).Where(fixture => targetRoute.EndPoint.DistanceTo(fixture.Position) <= 3.0 && fixture.BasePointId == targetRoute.BasePointId).ToList();
     }
 
     public PlumbingVerticalRoute FindVerticalRouteEnd(PlumbingVerticalRoute route) {
