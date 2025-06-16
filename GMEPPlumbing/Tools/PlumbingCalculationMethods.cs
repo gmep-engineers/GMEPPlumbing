@@ -39,11 +39,11 @@ namespace GMEPPlumbing {
 
         foreach (var source in Sources) {
           var matchingRoutes = HorizontalRoutes
-          .Where(route => route.StartPoint.DistanceTo(source.Position) <= 3.0)
+          .Where(route => route.StartPoint.DistanceTo(source.Position) <= 3.0 && route.BasePointId == source.BasePointId)
           .ToList();
 
           foreach (var matchingRoute in matchingRoutes) {
-            TraverseRoute(matchingRoute);
+            TraverseHorizontalRoute(matchingRoute);
           }
         }
       }
@@ -51,7 +51,7 @@ namespace GMEPPlumbing {
         ed.WriteMessage($"\nError: {ex.Message}");
       }
     }
-    public void TraverseRoute(PlumbingHorizontalRoute route) {
+    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
@@ -60,13 +60,26 @@ namespace GMEPPlumbing {
       List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
       foreach (var childRoute in childRoutes) {
         if (childRoute.Id != route.Id) {
-          TraverseRoute(childRoute);
+          TraverseHorizontalRoute(childRoute);
         }
       }
       foreach (var verticalRoute in verticalRoutes) {
-        ed.WriteMessage($"\nTraversing vertical route: {verticalRoute.Id} at position {verticalRoute.Position}");
-        var verticalTraversal = VerticalTraversal(verticalRoute);
+        var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute);
+        TraverseVerticalRoute(verticalRouteEnd);
       }
+    }
+    public void TraverseVerticalRoute(PlumbingVerticalRoute route) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      ed.WriteMessage($"\nTraversing vertical route: {route.Id} at position {route.Position}");
+      List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
+        .Where(r => r.BasePointId == route.BasePointId && r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0)
+        .ToList();
+      foreach (var childRoute in childRoutes) {
+        TraverseHorizontalRoute(childRoute);
+      }
+
     }
 
 
@@ -87,25 +100,27 @@ namespace GMEPPlumbing {
       return HorizontalRoutes
           .Where(route => route.Id != targetRoute.Id &&
               GetPointToSegmentDistance(
-                  route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint) <= 3.0)
+                  route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint) <= 3.0 && route.BasePointId == targetRoute.BasePointId)
           .ToList();
     }
     public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
-      return VerticalRoutes.Where(route => targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) <= 3.0).ToList();
+      return VerticalRoutes.Where(route => targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) <= 3.0 && route.BasePointId == targetRoute.BasePointId).ToList();
     }
 
-    public PlumbingVerticalRoute VerticalTraversal(PlumbingVerticalRoute route) {
+    public PlumbingVerticalRoute FindVerticalRouteEnd(PlumbingVerticalRoute route) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
       Dictionary<int, PlumbingVerticalRoute> routes = GetVerticalRoutesByIdOrdered(route.VerticalRouteId);
       var matchingKeys = routes.FirstOrDefault(kvp => kvp.Value.Id == route.Id);
       var startFloor = matchingKeys.Key;
-      ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {routes.ElementAt(routes.Count - 1).Key}");
+      
 
       if (routes.ElementAt(0).Key == startFloor) {
+        ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {routes.ElementAt(routes.Count - 1).Key}");
         return routes.ElementAt(routes.Count - 1).Value;
       }
+      ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {routes.ElementAt(0).Key}");
       return routes.ElementAt(0).Value;
     }
     public Dictionary<int, PlumbingVerticalRoute> GetVerticalRoutesByIdOrdered(string verticalRouteId) {
