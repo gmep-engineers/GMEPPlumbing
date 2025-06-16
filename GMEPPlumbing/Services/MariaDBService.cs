@@ -1032,6 +1032,8 @@ namespace GMEPPlumbing.Services
         var firstList = fixture.Value;
         int CatalogId = firstList[0].CatalogId;
         string TypeAbbreviation = firstList[0].TypeAbbreviation;
+        string BasePointId = firstList[0].BasePointId;
+ 
 
 
         string query = @"
@@ -1089,7 +1091,7 @@ namespace GMEPPlumbing.Services
         upsertCommand.Parameters.AddWithValue("@posY", 0);
         upsertCommand.Parameters.AddWithValue("@catalogId", CatalogId);
         upsertCommand.Parameters.AddWithValue("@number", fixtureNumber);
-        upsertCommand.Parameters.AddWithValue("@basePointId", "");
+        upsertCommand.Parameters.AddWithValue("@basePointId", BasePointId);
         upsertCommand.Parameters.AddWithValue("@rotation", 0);
         upsertCommand.Parameters.AddWithValue("@typeAbbreviation", TypeAbbreviation);
         await upsertCommand.ExecuteNonQueryAsync();

@@ -26,6 +26,7 @@ namespace GMEPPlumbing {
       var db = doc.Database;
       var ed = doc.Editor;
 
+
       try {
         string projectNo = CADObjectCommands.GetProjectNoFromFileName();
         ProjectId = await MariaDBService.GetProjectId(projectNo);
@@ -74,8 +75,8 @@ namespace GMEPPlumbing {
         var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute);
         TraverseVerticalRoute(verticalRouteEnd, visited);
       }
-      foreach (var fixture in fixtures) {
-        ed.WriteMessage($"\nFound fixture: {fixture.Id} at position {fixture.Position}");
+      if (fixtures.Count > 0) {
+        ed.WriteMessage("Visited: " + visited);
       }
     }
     public void TraverseVerticalRoute(PlumbingVerticalRoute route, HashSet<string> visited = null) {
