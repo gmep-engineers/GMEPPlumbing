@@ -51,24 +51,37 @@ namespace GMEPPlumbing {
         ed.WriteMessage($"\nError: {ex.Message}");
       }
     }
-    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route) {
+    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null) {
+      if (visited == null)
+        visited = new HashSet<string>();
+
+      if (!visited.Add(route.Id))
+        return;
+
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
+
       ed.WriteMessage($"\nTraversing horizontal route: {route.Id} from {route.StartPoint} to {route.EndPoint}");
       List<PlumbingHorizontalRoute> childRoutes = FindNearbyHorizontalRoutes(route);
       List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
       foreach (var childRoute in childRoutes) {
         if (childRoute.Id != route.Id) {
-          TraverseHorizontalRoute(childRoute);
+          TraverseHorizontalRoute(childRoute, visited);
         }
       }
       foreach (var verticalRoute in verticalRoutes) {
         var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute);
-        TraverseVerticalRoute(verticalRouteEnd);
+        TraverseVerticalRoute(verticalRouteEnd, visited);
       }
     }
-    public void TraverseVerticalRoute(PlumbingVerticalRoute route) {
+    public void TraverseVerticalRoute(PlumbingVerticalRoute route, HashSet<string> visited = null) {
+      if (visited == null)
+        visited = new HashSet<string>();
+
+      if (!visited.Add(route.Id))
+        return;
+
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
@@ -77,11 +90,10 @@ namespace GMEPPlumbing {
         .Where(r => r.BasePointId == route.BasePointId && r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0)
         .ToList();
       foreach (var childRoute in childRoutes) {
-        TraverseHorizontalRoute(childRoute);
+        TraverseHorizontalRoute(childRoute, visited);
       }
 
     }
-
 
     private double GetPointToSegmentDistance(Point3d pt, Point3d segStart, Point3d segEnd) {
       var v = segEnd - segStart;
