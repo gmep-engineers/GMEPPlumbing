@@ -1256,7 +1256,7 @@ namespace GMEPPlumbing.Services
           reader.GetInt32("catalog_id"),
           reader.GetString("type_abbreviation"),
           reader.GetInt32("number"),
-          "",
+          reader.GetString("base_point_id"),
           "",
           ""
         );
@@ -1288,7 +1288,7 @@ namespace GMEPPlumbing.Services
           parentFixture.CatalogId,
           parentFixture.TypeAbbreviation,
           parentFixture.Number,
-          reader.GetString("base_point_id"),
+          parentFixture.BasePointId,
           parentFixture.Id,
           reader.GetString("block_name")
         );
