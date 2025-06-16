@@ -13,7 +13,6 @@ namespace GMEPPlumbing {
   class PlumbingCalculationMethods {
     public MariaDBService MariaDBService { get; set; } = new MariaDBService();
     public string ProjectId { get; private set; } = string.Empty;
-
     public List<PlumbingPlanBasePoint> BasePoints { get; private set; } = new List<PlumbingPlanBasePoint>();
     public List<PlumbingSource> Sources { get; private set; } = new List<PlumbingSource>();
     public List<PlumbingHorizontalRoute> HorizontalRoutes { get; private set; } = new List<PlumbingHorizontalRoute>();
@@ -26,7 +25,6 @@ namespace GMEPPlumbing {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
-
 
       try {
         string projectNo = CADObjectCommands.GetProjectNoFromFileName();
