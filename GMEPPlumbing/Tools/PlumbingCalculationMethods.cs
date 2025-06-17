@@ -19,13 +19,14 @@ namespace GMEPPlumbing {
     public List<PlumbingVerticalRoute> VerticalRoutes { get; private set; } = new List<PlumbingVerticalRoute>();
     public Dictionary<string, List<PlumbingFixture>> PlumbingFixtures { get; set; } = new Dictionary<string, List<PlumbingFixture>>();
 
+    public Dictionary<string, double> LengthToFixtures { get; set; } = new Dictionary<string, double>();
+
 
     [CommandMethod("PlumbingFixtureCalc")]
     public async void PlumbingFixtureCalc() {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
-
 
       try {
         string projectNo = CADObjectCommands.GetProjectNoFromFileName();
@@ -50,7 +51,10 @@ namespace GMEPPlumbing {
         ed.WriteMessage($"\nError: {ex.Message}");
       }
     }
-    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null) {
+    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0) {
+     
+      fullRouteLength += route.StartPoint.DistanceTo(route.EndPoint);
+      
       if (visited == null)
         visited = new HashSet<string>();
 
@@ -75,8 +79,14 @@ namespace GMEPPlumbing {
         var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute);
         TraverseVerticalRoute(verticalRouteEnd, visited);
       }
-      if (fixtures.Count > 0) {
-        ed.WriteMessage("Visited: " + visited);
+      foreach(var fixture in fixtures) {
+        if (!LengthToFixtures.ContainsKey(fixture.FixtureId)) {
+          LengthToFixtures[fixture.FixtureId] = fullRouteLength;
+        }
+        else {
+          LengthToFixtures[fixture.FixtureId] += fullRouteLength;
+        }
+        ed.WriteMessage($"\nFixture {fixture.FixtureId} at {fixture.Position} with length {LengthToFixtures[fixture.FixtureId]}");
       }
     }
     public void TraverseVerticalRoute(PlumbingVerticalRoute route, HashSet<string> visited = null) {
