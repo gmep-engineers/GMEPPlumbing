@@ -38,9 +38,7 @@ namespace GMEPPlumbing {
         BasePoints = await MariaDBService.GetPlumbingPlanBasePoints(ProjectId);
 
         foreach (var source in Sources) {
-          var matchingRoutes = HorizontalRoutes
-          .Where(route => route.StartPoint.DistanceTo(source.Position) <= 3.0 && route.BasePointId == source.BasePointId)
-          .ToList();
+          var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= 3.0 && route.BasePointId == source.BasePointId).ToList();
 
           foreach (var matchingRoute in matchingRoutes) {
             TraverseHorizontalRoute(matchingRoute);
@@ -53,7 +51,7 @@ namespace GMEPPlumbing {
     }
     public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0) {
      
-      fullRouteLength += route.StartPoint.DistanceTo(route.EndPoint);
+     // fullRouteLength += route.StartPoint.DistanceTo(route.EndPoint);
       
       if (visited == null)
         visited = new HashSet<string>();
@@ -66,30 +64,25 @@ namespace GMEPPlumbing {
       var ed = doc.Editor;
 
       ed.WriteMessage($"\nTraversing horizontal route: {route.Id} from {route.StartPoint} to {route.EndPoint}");
-      List<PlumbingHorizontalRoute> childRoutes = FindNearbyHorizontalRoutes(route);
+      Dictionary<PlumbingHorizontalRoute, double> childRoutes = FindNearbyHorizontalRoutes(route);
       List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
       List<PlumbingFixture> fixtures = FindNearbyFixtures(route);
 
       foreach (var childRoute in childRoutes) {
-        if (childRoute.Id != route.Id) {
-          TraverseHorizontalRoute(childRoute, visited);
+        if (childRoute.Key.Id != route.Id) {
+          TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value);
         }
       }
       foreach (var verticalRoute in verticalRoutes) {
         var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute);
-        TraverseVerticalRoute(verticalRouteEnd, visited);
+        TraverseVerticalRoute(verticalRouteEnd, visited, fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint));
       }
       foreach(var fixture in fixtures) {
-        if (!LengthToFixtures.ContainsKey(fixture.FixtureId)) {
-          LengthToFixtures[fixture.FixtureId] = fullRouteLength;
-        }
-        else {
-          LengthToFixtures[fixture.FixtureId] += fullRouteLength;
-        }
-        ed.WriteMessage($"\nFixture {fixture.FixtureId} at {fixture.Position} with length {LengthToFixtures[fixture.FixtureId]}");
+          LengthToFixtures[fixture.FixtureId] = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+          ed.WriteMessage($"\nFixture {fixture.FixtureId} at {fixture.Position} with route length of  {LengthToFixtures[fixture.FixtureId] / 12.0} feet.");
       }
     }
-    public void TraverseVerticalRoute(PlumbingVerticalRoute route, HashSet<string> visited = null) {
+    public void TraverseVerticalRoute(PlumbingVerticalRoute route, HashSet<string> visited = null, double fullRouteLength = 0) {
       if (visited == null)
         visited = new HashSet<string>();
 
@@ -104,36 +97,59 @@ namespace GMEPPlumbing {
         .Where(r => r.BasePointId == route.BasePointId && r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0)
         .ToList();
       foreach (var childRoute in childRoutes) {
-        TraverseHorizontalRoute(childRoute, visited);
+        TraverseHorizontalRoute(childRoute, visited, fullRouteLength);
       }
 
     }
 
-    private double GetPointToSegmentDistance(Point3d pt, Point3d segStart, Point3d segEnd) {
+    private double GetPointToSegmentDistance(Point3d pt, Point3d segStart, Point3d segEnd, out double segmentLength) {
       var v = segEnd - segStart;
       var w = pt - segStart;
+
       double c1 = v.DotProduct(w);
-      if (c1 <= 0)
+      if (c1 <= 0) {
+        segmentLength = 0;
         return pt.DistanceTo(segStart);
+      }
+
       double c2 = v.DotProduct(v);
-      if (c2 <= c1)
+      if (c2 <= c1) {
+        segmentLength = v.Length;
         return pt.DistanceTo(segEnd);
+      }
+
       double b = c1 / c2;
       var pb = segStart + (v * b);
+      segmentLength = pb.DistanceTo(segStart);
       return pt.DistanceTo(pb);
     }
-    public List<PlumbingHorizontalRoute> FindNearbyHorizontalRoutes(PlumbingHorizontalRoute targetRoute) {
-      return HorizontalRoutes
-          .Where(route => route.Id != targetRoute.Id &&
-              GetPointToSegmentDistance(
-                  route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint) <= 3.0 && route.BasePointId == targetRoute.BasePointId)
-          .ToList();
+
+    public Dictionary<PlumbingHorizontalRoute, double> FindNearbyHorizontalRoutes(PlumbingHorizontalRoute targetRoute) {
+      var result = new Dictionary<PlumbingHorizontalRoute, double>();
+      foreach (var route in HorizontalRoutes) {
+        if (route.Id == targetRoute.Id || route.BasePointId != targetRoute.BasePointId)
+          continue;
+
+        double segmentLength;
+        double distance = GetPointToSegmentDistance(
+            route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segmentLength);
+
+        if (distance <= 3.0) {
+          result[route] = distance;
+        }
+      }
+      return result;
     }
     public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
       return VerticalRoutes.Where(route => targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) <= 3.0 && route.BasePointId == targetRoute.BasePointId).ToList();
     }
     public List<PlumbingFixture> FindNearbyFixtures(PlumbingHorizontalRoute targetRoute) {
-      return PlumbingFixtures.Values.SelectMany(list => list).Where(fixture => targetRoute.EndPoint.DistanceTo(fixture.Position) <= 3.0 && fixture.BasePointId == targetRoute.BasePointId).ToList();
+      return PlumbingFixtures.Values
+       .SelectMany(list => list)
+       .Where(fixture => targetRoute.EndPoint.DistanceTo(fixture.Position) <= 1.0 && fixture.BasePointId == targetRoute.BasePointId)
+       .GroupBy(fixture => fixture.FixtureId)
+       .Select(g => g.First())
+       .ToList();
     }
 
     public PlumbingVerticalRoute FindVerticalRouteEnd(PlumbingVerticalRoute route) {
