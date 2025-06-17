@@ -125,6 +125,9 @@ namespace GMEPPlumbing {
     }
 
     public Dictionary<PlumbingHorizontalRoute, double> FindNearbyHorizontalRoutes(PlumbingHorizontalRoute targetRoute) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
       var result = new Dictionary<PlumbingHorizontalRoute, double>();
       foreach (var route in HorizontalRoutes) {
         if (route.Id == targetRoute.Id || route.BasePointId != targetRoute.BasePointId)
@@ -132,10 +135,11 @@ namespace GMEPPlumbing {
 
         double segmentLength;
         double distance = GetPointToSegmentDistance(
-            route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segmentLength);
+            route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segmentLength
+       );
 
         if (distance <= 3.0) {
-          result[route] = distance;
+          result[route] = segmentLength;
         }
       }
       return result;
