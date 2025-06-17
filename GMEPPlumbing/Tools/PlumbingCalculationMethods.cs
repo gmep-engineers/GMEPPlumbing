@@ -50,9 +50,7 @@ namespace GMEPPlumbing {
       }
     }
     public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0) {
-     
-     // fullRouteLength += route.StartPoint.DistanceTo(route.EndPoint);
-      
+
       if (visited == null)
         visited = new HashSet<string>();
 
@@ -136,7 +134,7 @@ namespace GMEPPlumbing {
         double segmentLength;
         double distance = GetPointToSegmentDistance(
             route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segmentLength
-       );
+        );
 
         if (distance <= 3.0) {
           result[route] = segmentLength;
