@@ -72,12 +72,16 @@ namespace GMEPPlumbing {
         }
       }
       foreach (var verticalRoute in verticalRoutes) {
-        var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute);
-        TraverseVerticalRoute(verticalRouteEnd, visited, fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint));
+        double length;
+        var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute, out length);
+        TraverseVerticalRoute(verticalRouteEnd, visited, fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint) + length);
       }
       foreach(var fixture in fixtures) {
-          LengthToFixtures[fixture.FixtureId] = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
-          ed.WriteMessage($"\nFixture {fixture.FixtureId} at {fixture.Position} with route length of  {LengthToFixtures[fixture.FixtureId] / 12.0} feet.");
+        LengthToFixtures[fixture.FixtureId] = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+        double lengthInInches = LengthToFixtures[fixture.FixtureId];
+        int feet = (int)(lengthInInches / 12);
+        int inches = (int)Math.Round(lengthInInches % 12);
+        ed.WriteMessage($"\nFixture {fixture.FixtureId} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
     }
     public void TraverseVerticalRoute(PlumbingVerticalRoute route, HashSet<string> visited = null, double fullRouteLength = 0) {
@@ -154,19 +158,31 @@ namespace GMEPPlumbing {
        .ToList();
     }
 
-    public PlumbingVerticalRoute FindVerticalRouteEnd(PlumbingVerticalRoute route) {
+    public PlumbingVerticalRoute FindVerticalRouteEnd(PlumbingVerticalRoute route, out double height) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
       Dictionary<int, PlumbingVerticalRoute> routes = GetVerticalRoutesByIdOrdered(route.VerticalRouteId);
+      
+      var basePointsForRoute = routes.Values
+      .Select(vr => BasePoints.FirstOrDefault(bp => bp.Id == vr.BasePointId))
+      .Where(bp => bp != null)
+      .OrderBy(bp => bp.Floor)
+      .ToList();
+
       var matchingKeys = routes.FirstOrDefault(kvp => kvp.Value.Id == route.Id);
       var startFloor = matchingKeys.Key;
-      
+
+      height = basePointsForRoute.Sum(bp => bp.FloorHeight);
 
       if (routes.ElementAt(0).Key == startFloor) {
+        height -= basePointsForRoute.Last().FloorHeight;
+        height *= 12;
         ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {routes.ElementAt(routes.Count - 1).Key}");
         return routes.ElementAt(routes.Count - 1).Value;
       }
+      height -= basePointsForRoute.First().FloorHeight;
+      height *= 12;
       ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {routes.ElementAt(0).Key}");
       return routes.ElementAt(0).Value;
     }

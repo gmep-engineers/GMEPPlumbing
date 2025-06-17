@@ -756,6 +756,20 @@ namespace GMEPPlumbing
       }
 
       for (int i = 0; i < floorQty; i++) {
+
+        PromptDoubleOptions heightOptions = new PromptDoubleOptions(
+          $"\nEnter the height for floor {i + 1} on plan {planName}:"
+        );
+        heightOptions.AllowNegative = false;
+        heightOptions.AllowZero = false;
+        heightOptions.DefaultValue = 10.0;
+        PromptDoubleResult heightResult = ed.GetDouble(heightOptions);
+        if (heightResult.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nOperation cancelled.");
+          return;
+        }
+        double floorHeight = heightResult.Value;
+
         Point3d point;
         ObjectId blockId;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -777,6 +791,7 @@ namespace GMEPPlumbing
             curSpace.AppendEntity(br);
             tr.AddNewlyCreatedDBObject(br, true);
             blockId = br.ObjectId;
+
             DynamicBlockReferencePropertyCollection properties =
               br.DynamicBlockReferencePropertyCollection;
             foreach (DynamicBlockReferenceProperty prop in properties) {
@@ -800,6 +815,9 @@ namespace GMEPPlumbing
               }
               else if (prop.PropertyName == "pos_y") {
                 prop.Value = point.Y;
+              }
+              else if (prop.PropertyName == "Floor_Height") {
+                prop.Value = floorHeight;
               }
             }
           }
@@ -2469,6 +2487,7 @@ namespace GMEPPlumbing
                     string ViewId = string.Empty;
                     string Type = string.Empty;
                     int Floor = 0;
+                    double FloorHeight = 0;
 
                     foreach (DynamicBlockReferenceProperty prop in pc) {
                       if (prop.PropertyName == "Floor") {
@@ -2486,6 +2505,9 @@ namespace GMEPPlumbing
                       if (prop.PropertyName == "View_Id") {
                         ViewId = prop.Value?.ToString();
                       }
+                      if (prop.PropertyName == "Floor_Height") {
+                        FloorHeight = Convert.ToDouble(prop.Value);
+                      }
 
                     }
                     if (Id != "0") {
@@ -2496,7 +2518,8 @@ namespace GMEPPlumbing
                         Plan,
                         Type,
                         ViewId,
-                        Floor
+                        Floor,
+                        FloorHeight
                       );
                       points.Add(BasePoint);
                     }

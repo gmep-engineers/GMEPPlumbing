@@ -918,11 +918,12 @@ namespace GMEPPlumbing.Services
       if (points.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_plan_base_points
-              (id, project_id, viewport_id, floor, plan, type, pos_x, pos_y)
-              VALUES (@id, @projectId, @viewportId, @floor, @plan, @type, @posX, @posY)
+              (id, project_id, viewport_id, floor, floor_height, plan, type, pos_x, pos_y)
+              VALUES (@id, @projectId, @viewportId, @floor, @floorHeight, @plan, @type, @posX, @posY)
               ON DUPLICATE KEY UPDATE
                   viewport_id = @viewportId,
                   floor = @floor,
+                  floor_height = @floorHeight,  
                   plan = @plan,
                   type = @type,
                   pos_x = @posX,
@@ -934,6 +935,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@projectId", ProjectId);
           command.Parameters.AddWithValue("@viewportId", point.ViewportId);
           command.Parameters.AddWithValue("@floor", point.Floor);
+          command.Parameters.AddWithValue("@floorHeight", point.FloorHeight);
           command.Parameters.AddWithValue("@plan", point.Plan);
           command.Parameters.AddWithValue("@type", point.Type);
           command.Parameters.AddWithValue("@posX", point.Point.X);
@@ -1334,7 +1336,8 @@ namespace GMEPPlumbing.Services
           reader.GetString("plan"),
           reader.GetString("type"),
           reader.GetString("viewport_id"),
-          reader.GetInt32("floor")
+          reader.GetInt32("floor"),
+          reader.GetDouble("floor_height")
         );
         points.Add(point);
       }
