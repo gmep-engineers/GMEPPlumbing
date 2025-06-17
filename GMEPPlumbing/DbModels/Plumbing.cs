@@ -43,7 +43,7 @@ namespace GMEPPlumbing {
       BlockName = blockName;
     }
   }
-
+  
   public class PlumbingFixtureType {
     public int Id;
     public string Name;
@@ -196,6 +196,7 @@ namespace GMEPPlumbing {
     public string Id;
     public string ProjectId;
     public Point3d Position;
+    public Point3d ConnectionPosition;
     public string VerticalRouteId;
     public string BasePointId;
 
@@ -203,12 +204,14 @@ namespace GMEPPlumbing {
       string id,
       string projectId,
       Point3d position,
+      Point3d connectionPosition,
       string verticalRouteId,
       string basePointId
     ) {
       Id = id;
       ProjectId = projectId;
       Position = position;
+      ConnectionPosition = connectionPosition;
       VerticalRouteId = verticalRouteId;
       BasePointId = basePointId;
     }

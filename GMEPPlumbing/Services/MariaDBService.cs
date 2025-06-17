@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data.SqlClient;
@@ -860,11 +861,13 @@ namespace GMEPPlumbing.Services
       if (routes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_vertical_routes
-              (id, project_id, pos_x, pos_y, vertical_route_id, base_point_id)
-              VALUES (@id, @projectId, @posX, @posY, @verticalRouteId, @basePointId)
+              (id, project_id, pos_x, pos_y, connection_pos_x, connection_pos_y, vertical_route_id, base_point_id)
+              VALUES (@id, @projectId, @posX, @posY, @connectionPosX, @connectionPosY, @verticalRouteId, @basePointId)
               ON DUPLICATE KEY UPDATE
               pos_x = @posX,
               pos_y = @posy,
+              connection_pos_x = @connectionPosX, 
+              connection_pos_y = @connectionPosY,
               vertical_route_id = @verticalRouteId,
               base_point_id = @basePointId
             
@@ -877,6 +880,8 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@posY", route.Position.Y);
           command.Parameters.AddWithValue("@verticalRouteId", route.VerticalRouteId);
           command.Parameters.AddWithValue("@basePointId", route.BasePointId);
+          command.Parameters.AddWithValue("@connectionPosX", route.ConnectionPosition.X);
+          command.Parameters.AddWithValue("@connectionPosY", route.ConnectionPosition.Y);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1027,6 +1032,8 @@ namespace GMEPPlumbing.Services
         var firstList = fixture.Value;
         int CatalogId = firstList[0].CatalogId;
         string TypeAbbreviation = firstList[0].TypeAbbreviation;
+        string BasePointId = firstList[0].BasePointId;
+ 
 
 
         string query = @"
@@ -1084,7 +1091,7 @@ namespace GMEPPlumbing.Services
         upsertCommand.Parameters.AddWithValue("@posY", 0);
         upsertCommand.Parameters.AddWithValue("@catalogId", CatalogId);
         upsertCommand.Parameters.AddWithValue("@number", fixtureNumber);
-        upsertCommand.Parameters.AddWithValue("@basePointId", "");
+        upsertCommand.Parameters.AddWithValue("@basePointId", BasePointId);
         upsertCommand.Parameters.AddWithValue("@rotation", 0);
         upsertCommand.Parameters.AddWithValue("@typeAbbreviation", TypeAbbreviation);
         await upsertCommand.ExecuteNonQueryAsync();
@@ -1144,6 +1151,196 @@ namespace GMEPPlumbing.Services
         }
       }
       await conn.CloseAsync();
+    }
+    public async Task<List<PlumbingHorizontalRoute>> GetPlumbingHorizontalRoutes(string ProjectId) {
+      var routes = new List<PlumbingHorizontalRoute>();
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_horizontal_routes
+            WHERE project_id = @projectId
+            ORDER BY base_point_id, start_pos_x, start_pos_y, end_pos_x, end_pos_y";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        var route = new PlumbingHorizontalRoute(
+          reader.GetString("id"),
+          ProjectId,
+          new Point3d(
+            reader.GetDouble("start_pos_x"),
+            reader.GetDouble("start_pos_y"),
+            0
+          ),
+         new Point3d(
+            reader.GetDouble("end_pos_x"),
+            reader.GetDouble("end_pos_y"),
+            0
+          ),
+         reader.GetString("base_point_id")
+        );
+        routes.Add(route);
+      }
+      reader.Close();
+      await CloseConnectionAsync();
+      return routes;
+    }
+    public async Task<List<PlumbingVerticalRoute>> GetPlumbingVerticalRoutes(string ProjectId) {
+      var routes = new List<PlumbingVerticalRoute>();
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_vertical_routes
+            WHERE project_id = @projectId
+            ORDER BY vertical_route_id, base_point_id, pos_x, pos_y";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        var verticalRoute = new PlumbingVerticalRoute(
+          reader.GetString("id"),
+          ProjectId,
+          new Point3d(
+            reader.GetDouble("pos_x"),
+            reader.GetDouble("pos_y"),
+            0
+          ),
+          new Point3d(
+            reader.GetDouble("connection_pos_x"),
+            reader.GetDouble("connection_pos_y"),
+            0
+          ),
+          reader.GetString("vertical_route_id"),
+          reader.GetString("base_point_id")
+        );
+        routes.Add(verticalRoute);
+      }
+      reader.Close();
+      await CloseConnectionAsync();
+      return routes;
+    }
+
+    public async Task<List<PlumbingSource>> GetPlumbingSources(string ProjectId) {
+      var sources = new List<PlumbingSource>();
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_sources
+            WHERE project_id = @projectId
+            ORDER BY base_point_id, pos_x, pos_y";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        var source = new PlumbingSource(
+          reader.GetString("id"),
+          ProjectId,
+          new Point3d(
+            reader.GetDouble("pos_x"),
+            reader.GetDouble("pos_y"),
+            0
+          ),
+          reader.GetInt32("type_id"),
+          reader.GetString("base_point_id")
+        );
+        sources.Add(source);
+      }
+      reader.Close();
+      await CloseConnectionAsync();
+      return sources;
+    }
+    public async Task<Dictionary<string, List<PlumbingFixture>>> GetPlumbingFixtures(string ProjectId) {
+      var parentFixtures = new Dictionary<string, PlumbingFixture>();
+      var fixtures = new Dictionary<string, List<PlumbingFixture>>();
+
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_fixtures
+            WHERE project_id = @projectId
+            ORDER BY type_abbreviation, catalog_id, number";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        var fixture = new PlumbingFixture(
+          reader.GetString("id"),
+          ProjectId,
+          Point3d.Origin,
+          0.0,
+          reader.GetInt32("catalog_id"),
+          reader.GetString("type_abbreviation"),
+          reader.GetInt32("number"),
+          reader.GetString("base_point_id"),
+          "",
+          ""
+        );
+        parentFixtures.Add(fixture.Id, fixture);
+      }
+      reader.Close();
+      query = @"
+            SELECT * FROM plumbing_fixture_components
+            WHERE project_id = @projectId
+            ORDER BY fixture_id, pos_x, pos_y";
+      command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        string fixtureId = reader.GetString("fixture_id");
+        if (!parentFixtures.ContainsKey(fixtureId)) {
+          continue; // Skip if the parent fixture does not exist
+        }
+        PlumbingFixture parentFixture = parentFixtures[fixtureId];
+        PlumbingFixture component = new PlumbingFixture(
+          reader.GetString("id"),
+          ProjectId,
+          new Point3d(
+            reader.GetDouble("pos_x"),
+            reader.GetDouble("pos_y"),
+            0
+          ),
+          0.0,
+          parentFixture.CatalogId,
+          parentFixture.TypeAbbreviation,
+          parentFixture.Number,
+          parentFixture.BasePointId,
+          parentFixture.Id,
+          reader.GetString("block_name")
+        );
+        if (!fixtures.ContainsKey(parentFixture.Id)) {
+          fixtures.Add(parentFixture.Id,new List<PlumbingFixture>());
+        }
+        fixtures[parentFixture.Id].Add(component);
+      }
+      reader.Close();
+      await CloseConnectionAsync();
+      return fixtures;
+    }
+    public async Task<List<PlumbingPlanBasePoint>> GetPlumbingPlanBasePoints(string ProjectId) {
+      var points = new List<PlumbingPlanBasePoint>();
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_plan_base_points
+            WHERE project_id = @projectId
+            ORDER BY viewport_id, floor, pos_x, pos_y";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        var point = new PlumbingPlanBasePoint(
+          reader.GetString("id"),
+          ProjectId,
+           new Point3d(
+            reader.GetDouble("pos_x"),
+            reader.GetDouble("pos_y"),
+            0
+          ),
+          reader.GetString("plan"),
+          reader.GetString("type"),
+          reader.GetString("viewport_id"),
+          reader.GetInt32("floor")
+        );
+        points.Add(point);
+      }
+      reader.Close();
+      await CloseConnectionAsync();
+      return points;
     }
   }
 }
