@@ -77,8 +77,11 @@ namespace GMEPPlumbing {
         TraverseVerticalRoute(verticalRouteEnd, visited, fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint) + length);
       }
       foreach(var fixture in fixtures) {
-          LengthToFixtures[fixture.FixtureId] = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
-          ed.WriteMessage($"\nFixture {fixture.FixtureId} at {fixture.Position} with route length of  {LengthToFixtures[fixture.FixtureId] / 12.0} feet.");
+        LengthToFixtures[fixture.FixtureId] = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+        double lengthInInches = LengthToFixtures[fixture.FixtureId];
+        int feet = (int)(lengthInInches / 12);
+        int inches = (int)Math.Round(lengthInInches % 12);
+        ed.WriteMessage($"\nFixture {fixture.FixtureId} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
     }
     public void TraverseVerticalRoute(PlumbingVerticalRoute route, HashSet<string> visited = null, double fullRouteLength = 0) {
