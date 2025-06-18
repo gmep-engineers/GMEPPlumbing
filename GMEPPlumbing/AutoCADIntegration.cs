@@ -723,6 +723,7 @@ namespace GMEPPlumbing
       SettingObjects = true;
       var prompt = new Views.BasePointPromptWindow();
       bool? result = prompt.ShowDialog();
+      double currentFloorHeight = -10;
       if (result != true) {
         ed.WriteMessage("\nOperation cancelled.");
         return;
@@ -759,17 +760,32 @@ namespace GMEPPlumbing
       for (int i = 0; i < floorQty; i++) {
 
         PromptDoubleOptions heightOptions = new PromptDoubleOptions(
-          $"\nEnter the height from ground level for floor {i + 1} on plan {planName}:"
-        );
+             $"\nEnter the height from ground level for floor {i + 1} on plan {planName}:"
+         );
         heightOptions.AllowNegative = false;
         heightOptions.AllowZero = false;
-        heightOptions.DefaultValue = 10.0;
-        PromptDoubleResult heightResult = ed.GetDouble(heightOptions);
-        if (heightResult.Status != PromptStatus.OK) {
-          ed.WriteMessage("\nOperation cancelled.");
-          return;
+        heightOptions.DefaultValue = currentFloorHeight + 10;
+       
+        while (true) {
+          PromptDoubleResult heightResult = ed.GetDouble(heightOptions);
+
+          if (heightResult.Status == PromptStatus.OK) {
+            double tempFloorHeight = heightResult.Value;
+            if (tempFloorHeight <= currentFloorHeight) {
+              heightOptions.Message = $"\nHeight must be greater than the previous floor height ({currentFloorHeight}). Please enter a valid height.";
+              continue;
+            }
+            currentFloorHeight = heightResult.Value;
+            break;
+          }
+          else if (heightResult.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nOperation cancelled.");
+            return;
+          }
+          else {
+            ed.WriteMessage("\nInvalid input. Please enter a positive, non-zero number.");
+          }
         }
-        double floorHeight = heightResult.Value;
 
         Point3d point;
         ObjectId blockId;
@@ -819,7 +835,7 @@ namespace GMEPPlumbing
                 prop.Value = point.Y;
               }
               else if (prop.PropertyName == "Floor_Height") {
-                prop.Value = floorHeight;
+                prop.Value = currentFloorHeight;
               }
             }
           }
