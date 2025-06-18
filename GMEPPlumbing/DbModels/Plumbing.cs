@@ -218,4 +218,15 @@ namespace GMEPPlumbing {
       BasePointId = basePointId;
     }
   }
+  public class PlumbingFullRouteInfo {
+    public List<object> RouteObjects = new List<object>();
+    public double TotalLengthToFixture;
+    public PlumbingFullRouteInfo(
+      List<object> routeObjects,
+      double totalLengthToFixture) {
+        RouteObjects = routeObjects;
+        TotalLengthToFixture = totalLengthToFixture;
+    }
+  }
+
 }
