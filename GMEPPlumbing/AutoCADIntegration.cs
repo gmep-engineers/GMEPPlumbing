@@ -761,7 +761,7 @@ namespace GMEPPlumbing
           return;
         }
         PromptDoubleOptions pdo2 = new PromptDoubleOptions(
-          $"\nHow Far {direction2}?"
+          $"\nHow Far {direction2}(Ft)?"
         );
         pdo2.AllowNegative = false;
         pdo2.AllowZero = false;
