@@ -225,6 +225,7 @@ namespace GMEPPlumbing
       Transaction tr,
       BlockTable bt,
       string blockName,
+      string name,
       out BlockTableRecord block,
       out Point3d point
     )
@@ -240,7 +241,7 @@ namespace GMEPPlumbing
       }
       block = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
 
-      BlockJig blockJig = new BlockJig();
+      BlockJig blockJig = new BlockJig(name);
       PromptResult res = blockJig.DragMe(block.ObjectId, out point);
       if (res.Status != PromptStatus.OK)
       {

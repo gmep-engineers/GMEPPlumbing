@@ -444,6 +444,7 @@ namespace GMEPPlumbing
             tr,
             bt,
             "GMEP_PLUMBING_LINE_VERTICAL",
+            "Vertical Route",
             out block,
             out StartUpLocation
           );
@@ -722,6 +723,7 @@ namespace GMEPPlumbing
       SettingObjects = true;
       var prompt = new Views.BasePointPromptWindow();
       bool? result = prompt.ShowDialog();
+      double currentFloorHeight = -10;
       if (result != true) {
         ed.WriteMessage("\nOperation cancelled.");
         return;
@@ -758,17 +760,32 @@ namespace GMEPPlumbing
       for (int i = 0; i < floorQty; i++) {
 
         PromptDoubleOptions heightOptions = new PromptDoubleOptions(
-          $"\nEnter the height for floor {i + 1} on plan {planName}:"
-        );
+             $"\nEnter the height from ground level for floor {i + 1} on plan {planName}:"
+         );
         heightOptions.AllowNegative = false;
         heightOptions.AllowZero = false;
-        heightOptions.DefaultValue = 10.0;
-        PromptDoubleResult heightResult = ed.GetDouble(heightOptions);
-        if (heightResult.Status != PromptStatus.OK) {
-          ed.WriteMessage("\nOperation cancelled.");
-          return;
+        heightOptions.DefaultValue = currentFloorHeight + 10;
+       
+        while (true) {
+          PromptDoubleResult heightResult = ed.GetDouble(heightOptions);
+
+          if (heightResult.Status == PromptStatus.OK) {
+            double tempFloorHeight = heightResult.Value;
+            if (tempFloorHeight <= currentFloorHeight) {
+              heightOptions.Message = $"\nHeight must be greater than the previous floor height ({currentFloorHeight}). Please enter a valid height.";
+              continue;
+            }
+            currentFloorHeight = heightResult.Value;
+            break;
+          }
+          else if (heightResult.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nOperation cancelled.");
+            return;
+          }
+          else {
+            ed.WriteMessage("\nInvalid input. Please enter a positive, non-zero number.");
+          }
         }
-        double floorHeight = heightResult.Value;
 
         Point3d point;
         ObjectId blockId;
@@ -778,11 +795,12 @@ namespace GMEPPlumbing
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
           BlockTableRecord block;
-          string message = "\nCreating Plumbing Base Point for " + planName + " on floor " + (i + 1);
+          //string message = "\nCreating Plumbing Base Point for " + planName + " on floor " + (i + 1);
           BlockReference br = CADObjectCommands.CreateBlockReference(
             tr,
             bt,
             "GMEP_PLUMBING_BASEPOINT",
+            "Plumbing Base Point for " + planName + " on floor " + (i + 1),
             out block,
             out point
           );
@@ -817,7 +835,7 @@ namespace GMEPPlumbing
                 prop.Value = point.Y;
               }
               else if (prop.PropertyName == "Floor_Height") {
-                prop.Value = floorHeight;
+                prop.Value = currentFloorHeight;
               }
             }
           }
@@ -1389,6 +1407,7 @@ namespace GMEPPlumbing
               tr,
               bt,
               blockName,
+              "Plumbing Fixture " + selectedFixtureType.Name,
               out btr,
               out point
             );
@@ -1578,6 +1597,7 @@ namespace GMEPPlumbing
             tr,
             bt,
             blockName,
+            "Plumbing Source",
             out btr,
             out point
           );
@@ -1658,6 +1678,7 @@ namespace GMEPPlumbing
             tr,
             bt,
             blockName,
+            "Vent",
             out btr,
             out point
           );
@@ -1753,6 +1774,7 @@ namespace GMEPPlumbing
             tr,
             bt,
             blockName,
+            "Drain",
             out btr,
             out point
           );
@@ -1874,6 +1896,7 @@ namespace GMEPPlumbing
             tr,
             bt,
             blockName,
+            "Waste Vent",
             out btr,
             out point
           );
