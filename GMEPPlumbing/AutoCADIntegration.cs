@@ -730,6 +730,79 @@ namespace GMEPPlumbing
         PromptKeywordOptions pko3 = new PromptKeywordOptions("\nUp or Down?");
         pko3.Keywords.Add("Up");
         pko3.Keywords.Add("Down");
+
+        PromptResult pr3 = ed.GetKeywords(pko3);
+        string blockName = "";
+        string direction2 = pr3.StringResult;
+        if (direction2 == "Up") {
+          blockName = "GMEP_PLUMBING_LINE_UP";
+        }
+        else if (direction2 == "Down") {
+          blockName = "GMEP_PLUMBING_LINE_DOWN";
+        }
+        else {
+          ed.WriteMessage("\nInvalid direction selected.");
+          return;
+        }
+        PromptDoubleOptions pdo2 = new PromptDoubleOptions(
+          "\nLength of Route"
+        );
+        pdo2.AllowNegative = false;
+        pdo2.AllowZero = false;
+        pdo2.DefaultValue = 3;
+        PromptDoubleResult pdr2 = ed.GetDouble(pdo2);
+        if (pdr2.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+        double length = pdr2.Value;
+
+        Point3d labelPoint3 = Point3d.Origin;
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          //delete previous start pipe
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockReference startPipe = tr.GetObject(startPipeId, OpenMode.ForWrite) as BlockReference;
+
+          startPipe.Erase(true);
+
+          Point3d newUpPointLocation3 = BasePointRefs[startFloor].Position + upVector;
+          BlockTableRecord blockDef3 =
+            tr.GetObject(bt[blockName], OpenMode.ForRead) as BlockTableRecord;
+          BlockTableRecord curSpace3 = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          BlockReference upBlockRef3 = new BlockReference(newUpPointLocation3, blockDef3.ObjectId);
+          RotateJig rotateJig = new RotateJig(upBlockRef3);
+          PromptResult rotatePromptResult = ed.Drag(rotateJig);
+          if (rotatePromptResult.Status != PromptStatus.OK) {
+            return;
+          }
+          upBlockRef3.Layer = layer;
+          curSpace3.AppendEntity(upBlockRef3);
+          tr.AddNewlyCreatedDBObject(upBlockRef3, true);
+          labelPoint3 = upBlockRef3.Position;
+
+          var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in pc3) {
+            if (prop.PropertyName == "id") {
+              prop.Value = Guid.NewGuid().ToString();
+            }
+            if (prop.PropertyName == "base_point_id") {
+              prop.Value = BasePointGUIDs[startFloor];
+            }
+            if (prop.PropertyName == "vertical_route_id") {
+              prop.Value = verticalRouteId;
+            }
+            if (prop.PropertyName == "length") {
+              prop.Value = length;
+            }
+            if (prop.PropertyName == "start_height") {
+              prop.Value = startingHeight;
+            }
+          }
+          tr.Commit();
+          
+        }
+        MakeVerticalRouteLabel(labelPoint3, direction2.ToUpper());
       }
       SettingObjects = false;
     }
