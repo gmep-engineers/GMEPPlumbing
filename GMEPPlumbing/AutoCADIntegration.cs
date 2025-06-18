@@ -295,6 +295,7 @@ namespace GMEPPlumbing
       ObjectId gmepTextStyleId;
       string viewGUID = "";
       int typeId = 0;
+      Dictionary<int, double> floorHeights = new Dictionary<int, double>();
 
 
       PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
@@ -411,7 +412,7 @@ namespace GMEPPlumbing
         basePointIds = basePoints[viewGUID];
 
 
-        //startFloor = int.Parse(floorResult.StringResult);
+
 
         BlockReference firstFloorBasePoint = null;
 
@@ -421,6 +422,7 @@ namespace GMEPPlumbing
 
           bool selectedPoint = false;
           int tempFloor = 0;
+          double tempFloorHeight = 0;
           foreach (DynamicBlockReferenceProperty prop in pc2) {
             if (prop.PropertyName == "Floor") {
               tempFloor = Convert.ToInt32(prop.Value);
@@ -429,6 +431,14 @@ namespace GMEPPlumbing
               if (prop.Value.ToString() == basePointGUID) {
                 selectedPoint = true;
               }
+            }
+            if (prop.PropertyName == "Floor_Height") {
+              tempFloorHeight = Convert.ToDouble(prop.Value);
+            }
+          }
+          if (tempFloor != 0) {
+            if (!floorHeights.ContainsKey(tempFloor)) {
+              floorHeights[tempFloor] = tempFloorHeight;
             }
           }
           if (selectedPoint) {
@@ -538,6 +548,10 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
             }
+            if (prop.PropertyName == "length") {
+              prop.Value = floorHeights[startFloor + 1] - floorHeights[startFloor];
+            }
+
           }
 
           // Set the vertical route ID
@@ -572,6 +586,9 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "vertical_route_id") {
                 prop.Value = verticalRouteId;
               }
+              if (prop.PropertyName == "length") {
+                prop.Value = floorHeights[i + 1] - floorHeights[i];
+              }
             }
           }
 
@@ -603,6 +620,9 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
+            }
+            if (prop.PropertyName == "length") {
+              prop.Value = 0;
             }
           }
           tr.Commit();
@@ -646,6 +666,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
             }
+            if (prop.PropertyName == "length") {
+              prop.Value = 0;
+            }
           }
           tr.Commit();
         }
@@ -678,6 +701,9 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "vertical_route_id") {
                 prop.Value = verticalRouteId;
               }
+              if (prop.PropertyName == "length") {
+                prop.Value = floorHeights[i + 1] - floorHeights[i];
+              }
             }
           }
 
@@ -709,6 +735,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
             }
+            if (prop.PropertyName == "length") {
+              prop.Value = floorHeights[endFloor + 1] - floorHeights[endFloor];
+            }
           }
           tr.Commit();
         }
@@ -732,7 +761,7 @@ namespace GMEPPlumbing
           return;
         }
         PromptDoubleOptions pdo2 = new PromptDoubleOptions(
-          "\nLength of Route"
+          $"\nHow Far {direction2}?"
         );
         pdo2.AllowNegative = false;
         pdo2.AllowZero = false;
