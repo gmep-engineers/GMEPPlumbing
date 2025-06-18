@@ -163,28 +163,31 @@ namespace GMEPPlumbing {
       var db = doc.Database;
       var ed = doc.Editor;
       Dictionary<int, PlumbingVerticalRoute> routes = GetVerticalRoutesByIdOrdered(route.VerticalRouteId);
-      
-      var basePointsForRoute = routes.Values
-      .Select(vr => BasePoints.FirstOrDefault(bp => bp.Id == vr.BasePointId))
-      .Where(bp => bp != null)
-      .OrderBy(bp => bp.Floor)
-      .ToList();
 
       var matchingKeys = routes.FirstOrDefault(kvp => kvp.Value.Id == route.Id);
       var startFloor = matchingKeys.Key;
 
-      height = basePointsForRoute.Sum(bp => bp.FloorHeight);
-
+      // Determine end floor key and route
+      int endFloorKey;
       if (routes.ElementAt(0).Key == startFloor) {
-        height -= basePointsForRoute.Last().FloorHeight;
-        height *= 12;
-        ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {routes.ElementAt(routes.Count - 1).Key}");
-        return routes.ElementAt(routes.Count - 1).Value;
+        endFloorKey = routes.ElementAt(routes.Count - 1).Key;
+        ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {endFloorKey}");
       }
-      height -= basePointsForRoute.First().FloorHeight;
-      height *= 12;
-      ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {routes.ElementAt(0).Key}");
-      return routes.ElementAt(0).Value;
+      else {
+        endFloorKey = routes.ElementAt(0).Key;
+        ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {endFloorKey}");
+      }
+      var startBasePoint = BasePoints.FirstOrDefault(bp => bp.Id == route.BasePointId);
+      var endRoute = routes[endFloorKey];
+      var endBasePoint = BasePoints.FirstOrDefault(bp => bp.Id == endRoute.BasePointId);
+
+
+      // Calculate the difference in height (in inches)
+      double startHeight = startBasePoint?.FloorHeight ?? 0;
+      double endHeight = endBasePoint?.FloorHeight ?? 0;
+      height = Math.Abs(endHeight - startHeight) * 12;
+
+      return endRoute;
     }
     public Dictionary<int, PlumbingVerticalRoute> GetVerticalRoutesByIdOrdered(string verticalRouteId) {
       var basePointFloorLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp.Floor);
