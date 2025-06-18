@@ -210,23 +210,12 @@ namespace GMEPPlumbing {
       string verticalRouteId,
       string basePointId
     ) {
-      Id = id;
-      ProjectId = projectId;
-      Position = position;
-      ConnectionPosition = connectionPosition;
-      VerticalRouteId = verticalRouteId;
-      BasePointId = basePointId;
+        Id = id;
+        ProjectId = projectId;
+        Position = position;
+        ConnectionPosition = connectionPosition;
+        VerticalRouteId = verticalRouteId;
+        BasePointId = basePointId;
     }
   }
-  public class PlumbingFullRouteInfo {
-    public List<object> RouteObjects = new List<object>();
-    public double TotalLengthToFixture;
-    public PlumbingFullRouteInfo(
-      List<object> routeObjects,
-      double totalLengthToFixture) {
-        RouteObjects = routeObjects;
-        TotalLengthToFixture = totalLengthToFixture;
-    }
-  }
-
 }
