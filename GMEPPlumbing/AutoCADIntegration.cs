@@ -444,6 +444,7 @@ namespace GMEPPlumbing
             tr,
             bt,
             "GMEP_PLUMBING_LINE_VERTICAL",
+            "Vertical Route",
             out block,
             out StartUpLocation
           );
@@ -758,7 +759,7 @@ namespace GMEPPlumbing
       for (int i = 0; i < floorQty; i++) {
 
         PromptDoubleOptions heightOptions = new PromptDoubleOptions(
-          $"\nEnter the height for floor {i + 1} on plan {planName}:"
+          $"\nEnter the height from ground level for floor {i + 1} on plan {planName}:"
         );
         heightOptions.AllowNegative = false;
         heightOptions.AllowZero = false;
@@ -778,11 +779,12 @@ namespace GMEPPlumbing
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
           BlockTableRecord block;
-          string message = "\nCreating Plumbing Base Point for " + planName + " on floor " + (i + 1);
+          //string message = "\nCreating Plumbing Base Point for " + planName + " on floor " + (i + 1);
           BlockReference br = CADObjectCommands.CreateBlockReference(
             tr,
             bt,
             "GMEP_PLUMBING_BASEPOINT",
+            "Plumbing Base Point for " + planName + " on floor " + (i + 1),
             out block,
             out point
           );
@@ -1389,6 +1391,7 @@ namespace GMEPPlumbing
               tr,
               bt,
               blockName,
+              "Plumbing Fixture " + selectedFixtureType.Name,
               out btr,
               out point
             );
@@ -1578,6 +1581,7 @@ namespace GMEPPlumbing
             tr,
             bt,
             blockName,
+            "Plumbing Source",
             out btr,
             out point
           );
@@ -1658,6 +1662,7 @@ namespace GMEPPlumbing
             tr,
             bt,
             blockName,
+            "Vent",
             out btr,
             out point
           );
@@ -1753,6 +1758,7 @@ namespace GMEPPlumbing
             tr,
             bt,
             blockName,
+            "Drain",
             out btr,
             out point
           );
@@ -1874,6 +1880,7 @@ namespace GMEPPlumbing
             tr,
             bt,
             blockName,
+            "Waste Vent",
             out btr,
             out point
           );
