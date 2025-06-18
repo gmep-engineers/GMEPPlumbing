@@ -295,6 +295,7 @@ namespace GMEPPlumbing
       ObjectId gmepTextStyleId;
       string viewGUID = "";
       int typeId = 0;
+      double startingHeight = 0;
 
       PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
       pko.Keywords.Add("HotWater");
@@ -326,6 +327,15 @@ namespace GMEPPlumbing
           return;
       }
 
+      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the vertical route entry from the start of the floor.");
+      pdo.AllowNegative = false;
+      pdo.AllowZero = false;
+      pdo.DefaultValue = 3;
+      PromptDoubleResult pdr = ed.GetDouble(pdo);
+      if (pdr.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        return;
+      }
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
 
@@ -466,9 +476,7 @@ namespace GMEPPlumbing
       //picking end floor
       PromptKeywordOptions endFloorOptions = new PromptKeywordOptions("\nEnding Floor: ");
       for (int i = 1; i <= basePointIds.Count; i++) {
-        if (i != startFloor) {
           endFloorOptions.Keywords.Add(i.ToString());
-        }
       }
       PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
       int endFloor = int.Parse(endFloorResult.StringResult);
@@ -539,6 +547,9 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
+            }
+            if (prop.PropertyName == "start_height") {
+              prop.Value = startingHeight;
             }
           }
 
@@ -714,6 +725,11 @@ namespace GMEPPlumbing
           }
           tr.Commit();
         }
+      }
+      else if (endFloor == startFloor) {
+        PromptKeywordOptions pko3 = new PromptKeywordOptions("\nUp or Down?");
+        pko3.Keywords.Add("Up");
+        pko3.Keywords.Add("Down");
       }
       SettingObjects = false;
     }
