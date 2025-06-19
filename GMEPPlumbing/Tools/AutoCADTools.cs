@@ -33,21 +33,45 @@ namespace GMEPPlumbing
 
     public static string ActiveBasePointId { get; set; } = "";
 
-    //public static double PlumbingRouteHeight = 0.5;
+    public static double PlumbingRouteHeight = 0.5;
 
-    /*[CommandMethod("SetPlumbingRouteHeight")]
+    [CommandMethod("SetPlumbingRouteHeight")]
     public static void SetPlumbingRouteHeight() {
+      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      Editor ed = doc.Editor;
+      Database db = doc.Database;
+      double heightLimit = GetHeightLimit();
+
+      while (true) {
+        var promptDoubleOptions = new PromptDoubleOptions("\nEnter the plumbing route height (default is 0.5): ");
+        promptDoubleOptions.AllowNegative = false;
+        promptDoubleOptions.AllowZero = false;
+        promptDoubleOptions.DefaultValue = PlumbingRouteHeight;
+        var promptDoubleResult = ed.GetDouble(promptDoubleOptions);
+        if (promptDoubleResult.Status == PromptStatus.OK) {
+          if (promptDoubleResult.Value >= heightLimit) {
+            ed.WriteMessage($"\nHeight cannot be meet or exceed {heightLimit}.");
+            continue;
+          }
+          PlumbingRouteHeight = promptDoubleResult.Value;
+          ed.WriteMessage($"\nPlumbing route height set to {PlumbingRouteHeight}.");
+          return;
+        }
+      }
+    }
+    public static double GetHeightLimit() {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
       double heightLimit = 0;
       string GUID = GetActiveView();
       int activefloor = 0;
+
       Dictionary<int, double> floorHeights = new Dictionary<int, double>();
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
-       // Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
+        // Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
         foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
           if (id.IsValid) {
             using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
@@ -83,11 +107,11 @@ namespace GMEPPlumbing
       }
       if (floorHeights.Count == 0) {
         ed.WriteMessage("\nNo base points found in the drawing.");
-        return;
+        return 0;
       }
       if (floorHeights.ContainsKey(activefloor)) {
         if (activefloor != floorHeights.Count) {
-          heightLimit = floorHeights[activefloor];
+          heightLimit = floorHeights[activefloor + 1] - floorHeights[activefloor];
         }
         else {
           heightLimit = 10000;
@@ -95,27 +119,11 @@ namespace GMEPPlumbing
       }
       else {
         ed.WriteMessage("\nNo height limit found for the active base point.");
-        return;
+        return 0;
       }
+      return heightLimit;
+    }
 
-
-      while (true) {
-        var promptDoubleOptions = new PromptDoubleOptions("\nEnter the plumbing route height (default is 0.5): ");
-        promptDoubleOptions.AllowNegative = false;
-        promptDoubleOptions.AllowZero = false;
-        promptDoubleOptions.DefaultValue = PlumbingRouteHeight;
-        var promptDoubleResult = ed.GetDouble(promptDoubleOptions);
-        if (promptDoubleResult.Status == PromptStatus.OK) {
-          if (promptDoubleResult.Value >= heightLimit) {
-            ed.WriteMessage($"\nHeight cannot be meet or exceed {heightLimit}.");
-            continue;
-          }
-          PlumbingRouteHeight = promptDoubleResult.Value;
-          ed.WriteMessage($"\nPlumbing route height set to {PlumbingRouteHeight}.");
-          return;
-        }
-      }
-    }*/
     [CommandMethod("SetScale")]
     public static void SetScale()
     {
@@ -253,6 +261,7 @@ namespace GMEPPlumbing
         }
         tr.Commit();
       }
+      SetPlumbingRouteHeight();
     }
     public static string GetActiveView() {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
