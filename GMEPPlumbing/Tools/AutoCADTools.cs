@@ -66,20 +66,30 @@ namespace GMEPPlumbing
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
+
+      var promptDoubleOptions = new PromptDoubleOptions("\nEnter the plumbing route height: ");
+      promptDoubleOptions.AllowNegative = false;
+      promptDoubleOptions.AllowZero = false;
+      promptDoubleOptions.DefaultValue = PlumbingRouteHeight;
+
       while (true) {
-        var promptDoubleOptions = new PromptDoubleOptions("\nEnter the plumbing route height (default is 0.5): ");
-        promptDoubleOptions.AllowNegative = false;
-        promptDoubleOptions.AllowZero = false;
-        promptDoubleOptions.DefaultValue = PlumbingRouteHeight;
         var promptDoubleResult = ed.GetDouble(promptDoubleOptions);
         if (promptDoubleResult.Status == PromptStatus.OK) {
           if (promptDoubleResult.Value >= heightLimit) {
+            promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height: ";
             ed.WriteMessage($"\nHeight cannot be meet or exceed {heightLimit}.");
             continue;
           }
           PlumbingRouteHeight = promptDoubleResult.Value;
           ed.WriteMessage($"\nPlumbing route height set to {PlumbingRouteHeight}.");
           return;
+        }
+        else if (promptDoubleResult.Status == PromptStatus.Cancel) {
+          ed.WriteMessage("\nOperation cancelled.");
+          return;
+        }
+        else {
+          ed.WriteMessage("\nInvalid input. Please enter a valid height.");
         }
       }
     }
