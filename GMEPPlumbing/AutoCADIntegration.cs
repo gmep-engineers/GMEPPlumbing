@@ -594,12 +594,33 @@ namespace GMEPPlumbing
           //end pipe
 
           ZoomToBlock(ed, BasePointRefs[endFloor]);
-          PromptDoubleResult promptDoubleResult = ed.GetDouble("\nEnter the height of the start of the vertical route from the floor (in feet): ");
-          if (promptDoubleResult.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
+          var promptDoubleOptions = new PromptDoubleOptions("\nEnter the height of the start of the vertical route from the floor (in feet): ");
+          promptDoubleOptions.AllowNegative = false;
+          promptDoubleOptions.AllowZero = false;
+          promptDoubleOptions.DefaultValue = 0;
+          double height = 0;
+
+          while (true) {
+            PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
+            if (promptDoubleResult.Status == PromptStatus.OK) {
+              height = promptDoubleResult.Value;
+              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]);
+              if (height >= heightLimit) {
+                ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.");
+                promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.";
+                continue;
+              }
+              else if (promptDoubleResult.Status == PromptStatus.Cancel) {
+                ed.WriteMessage("\nCommand cancelled.");
+                return;
+              }
+              else if (promptDoubleResult.Status == PromptStatus.Error) {
+                ed.WriteMessage("\nError in input. Please try again.");
+                continue;
+              }
+              break;
+            }
           }
-          double height = promptDoubleResult.Value;
 
 
           Point3d newUpPointLocation3 = BasePointRefs[endFloor].Position + upVector;
@@ -722,12 +743,34 @@ namespace GMEPPlumbing
 
           //end pipe
           ZoomToBlock(ed, BasePointRefs[endFloor]);
-          PromptDoubleResult promptDoubleResult = ed.GetDouble("\nEnter the height of the start of the vertical route from the floor (in feet): ");
-          if (promptDoubleResult.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
+
+          var promptDoubleOptions = new PromptDoubleOptions("\nEnter the height of the start of the vertical route from the floor (in feet): ");
+          promptDoubleOptions.AllowNegative = false;
+          promptDoubleOptions.AllowZero = false;
+          promptDoubleOptions.DefaultValue = 0;
+          double height = 0;
+
+          while (true) {
+            PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
+            if (promptDoubleResult.Status == PromptStatus.OK) {
+              height = promptDoubleResult.Value;
+              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]);
+              if (height >= heightLimit) {
+                ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.");
+                promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.";
+                continue;
+              }
+              break;
+            }
+            else if (promptDoubleResult.Status == PromptStatus.Cancel) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            else if (promptDoubleResult.Status == PromptStatus.Error) {
+              ed.WriteMessage("\nError in input. Please try again.");
+              continue;
+            }
           }
-          double height = promptDoubleResult.Value;
 
           Point3d newUpPointLocation3 = BasePointRefs[endFloor].Position + upVector;
           BlockTableRecord blockDef3 =
