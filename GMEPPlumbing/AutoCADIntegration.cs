@@ -329,11 +329,9 @@ namespace GMEPPlumbing
       }
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
-
         //retrieving the view of the basepoint
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord basePointBlock = (BlockTableRecord)
-          tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
         foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
           if (id.IsValid) {
             using (
@@ -357,7 +355,7 @@ namespace GMEPPlumbing
                   }
                   if (match) {
                     viewGUID = tempViewGUID;
-                    break; // Exit the loop once we find a match
+                    break;
                   }
                 }
               }
@@ -381,7 +379,6 @@ namespace GMEPPlumbing
           ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
           gmepTextStyleId = doc.Database.Textstyle;
         }
-
         foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
           if (id.IsValid) {
             using (
@@ -551,7 +548,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "length") {
               prop.Value = floorHeights[startFloor + 1] - floorHeights[startFloor];
             }
-
+            if (prop.PropertyName == "start_height") {
+              prop.Value = CADObjectCommands.GetPlumbingRouteHeight(); 
+            }
           }
 
           // Set the vertical route ID
@@ -593,10 +592,18 @@ namespace GMEPPlumbing
           }
 
           //end pipe
+
           ZoomToBlock(ed, BasePointRefs[endFloor]);
+          PromptDoubleResult promptDoubleResult = ed.GetDouble("\nEnter the height of the start of the vertical route from the floor (in feet): ");
+          if (promptDoubleResult.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+          }
+          double height = promptDoubleResult.Value;
+
+
           Point3d newUpPointLocation3 = BasePointRefs[endFloor].Position + upVector;
-          BlockTableRecord blockDef3 =
-            tr.GetObject(bt["GMEP_PLUMBING_LINE_DOWN"], OpenMode.ForRead) as BlockTableRecord;
+          BlockTableRecord blockDef3 = tr.GetObject(bt["GMEP_PLUMBING_LINE_DOWN"], OpenMode.ForRead) as BlockTableRecord;
           BlockTableRecord curSpace3 = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
           BlockReference upBlockRef3 = new BlockReference(newUpPointLocation3, blockDef3.ObjectId);
@@ -623,6 +630,9 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "length") {
               prop.Value = 0;
+            }
+            if (prop.PropertyName == "start_height") {
+              prop.Value = height;
             }
           }
           tr.Commit();
@@ -669,6 +679,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "length") {
               prop.Value = 0;
             }
+            if (prop.PropertyName == "start_height") {
+              prop.Value = CADObjectCommands.GetPlumbingRouteHeight();
+            }
           }
           tr.Commit();
         }
@@ -709,6 +722,13 @@ namespace GMEPPlumbing
 
           //end pipe
           ZoomToBlock(ed, BasePointRefs[endFloor]);
+          PromptDoubleResult promptDoubleResult = ed.GetDouble("\nEnter the height of the start of the vertical route from the floor (in feet): ");
+          if (promptDoubleResult.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+          }
+          double height = promptDoubleResult.Value;
+
           Point3d newUpPointLocation3 = BasePointRefs[endFloor].Position + upVector;
           BlockTableRecord blockDef3 =
             tr.GetObject(bt["GMEP_PLUMBING_LINE_UP"], OpenMode.ForRead) as BlockTableRecord;
@@ -737,6 +757,9 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "length") {
               prop.Value = floorHeights[endFloor + 1] - floorHeights[endFloor];
+            }
+            if (prop.PropertyName == "start_height") {
+              prop.Value = height;
             }
           }
           tr.Commit();

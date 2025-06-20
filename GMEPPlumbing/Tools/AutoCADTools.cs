@@ -33,7 +33,7 @@ namespace GMEPPlumbing
 
     public static string ActiveBasePointId { get; set; } = "";
 
-    public static double PlumbingRouteHeight = 0.5;
+    public static double PlumbingRouteHeight = -1;
 
     public static bool SettingFlag = false;
 
@@ -50,6 +50,16 @@ namespace GMEPPlumbing
       SettingFlag = false;
 
       SetPlumbingRouteHeightValue(GUID);
+    }
+    [CommandMethod("GetPlumbingRouteHeight")]
+    public static double GetPlumbingRouteHeight() {
+      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      Editor ed = doc.Editor;
+      Database db = doc.Database;
+      if (PlumbingRouteHeight == -1) {
+        SetPlumbingRouteHeight();
+      }
+      return PlumbingRouteHeight;
     }
     public static void SetPlumbingRouteHeightValue(string GUID) {
       double heightLimit = GetHeightLimit(GUID);
