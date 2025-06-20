@@ -201,6 +201,8 @@ namespace GMEPPlumbing {
     public Point3d ConnectionPosition;
     public string VerticalRouteId;
     public string BasePointId;
+    public double StartHeight;
+    public double Length;
 
     public PlumbingVerticalRoute(
       string id,
@@ -208,7 +210,10 @@ namespace GMEPPlumbing {
       Point3d position,
       Point3d connectionPosition,
       string verticalRouteId,
-      string basePointId
+      string basePointId,
+      double startHeight,
+      double length
+
     ) {
       Id = id;
       ProjectId = projectId;
@@ -216,6 +221,8 @@ namespace GMEPPlumbing {
       ConnectionPosition = connectionPosition;
       VerticalRouteId = verticalRouteId;
       BasePointId = basePointId;
+      StartHeight = startHeight;
+      Length = length;
     }
   }
 }

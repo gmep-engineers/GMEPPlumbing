@@ -177,15 +177,10 @@ namespace GMEPPlumbing {
         endFloorKey = routes.ElementAt(0).Key;
         ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {endFloorKey}");
       }
-      var startBasePoint = BasePoints.FirstOrDefault(bp => bp.Id == route.BasePointId);
+
       var endRoute = routes[endFloorKey];
-      var endBasePoint = BasePoints.FirstOrDefault(bp => bp.Id == endRoute.BasePointId);
 
-
-      // Calculate the difference in height (in inches)
-      double startHeight = startBasePoint?.FloorHeight ?? 0;
-      double endHeight = endBasePoint?.FloorHeight ?? 0;
-      height = Math.Abs(endHeight - startHeight) * 12;
+      height = routes.Sum(kvp => kvp.Value.Length);
 
       return endRoute;
     }

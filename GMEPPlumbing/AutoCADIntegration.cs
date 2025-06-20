@@ -2560,6 +2560,8 @@ namespace GMEPPlumbing
                       string BasePointId = string.Empty;
                       double pointX = 0;
                       double pointY = 0;
+                      double startHeight = 0;
+                      double length = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
 
@@ -2578,6 +2580,12 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "Connection Y") {
                           pointY = Convert.ToDouble(prop.Value);
                         }
+                        if (prop.PropertyName == "Start Height") {
+                          startHeight = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Length") {
+                          length = Convert.ToDouble(prop.Value);
+                        }
                       }
                       if (Id != "0") {
                         double rotation = entity.Rotation;
@@ -2591,7 +2599,9 @@ namespace GMEPPlumbing
                           entity.Position,
                           connectionPointLocation,
                           VerticalRouteId,
-                          BasePointId
+                          BasePointId,
+                          startHeight,
+                          length
                         );
                         routes.Add(route);
                       }
