@@ -2580,10 +2580,10 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "Connection Y") {
                           pointY = Convert.ToDouble(prop.Value);
                         }
-                        if (prop.PropertyName == "Start Height") {
+                        if (prop.PropertyName == "start_height") {
                           startHeight = Convert.ToDouble(prop.Value);
                         }
-                        if (prop.PropertyName == "Length") {
+                        if (prop.PropertyName == "length") {
                           length = Convert.ToDouble(prop.Value);
                         }
                       }

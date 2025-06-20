@@ -869,7 +869,7 @@ namespace GMEPPlumbing.Services
               connection_pos_x = @connectionPosX, 
               connection_pos_y = @connectionPosY,
               vertical_route_id = @verticalRouteId,
-              base_point_id = @basePointId
+              base_point_id = @basePointId,
               start_height = @startHeight,
               length = @length
           ";
