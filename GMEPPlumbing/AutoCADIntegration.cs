@@ -546,7 +546,7 @@ namespace GMEPPlumbing
               prop.Value = verticalRouteId;
             }
             if (prop.PropertyName == "length") {
-              prop.Value = floorHeights[startFloor + 1] - floorHeights[startFloor];
+              prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[startFloor]) - CADObjectCommands.GetPlumbingRouteHeight();
             }
             if (prop.PropertyName == "start_height") {
               prop.Value = CADObjectCommands.GetPlumbingRouteHeight(); 
@@ -586,7 +586,7 @@ namespace GMEPPlumbing
                 prop.Value = verticalRouteId;
               }
               if (prop.PropertyName == "length") {
-                prop.Value = floorHeights[i + 1] - floorHeights[i];
+                prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[i]);
               }
             }
           }
@@ -629,7 +629,7 @@ namespace GMEPPlumbing
               prop.Value = verticalRouteId;
             }
             if (prop.PropertyName == "length") {
-              prop.Value = 0;
+              prop.Value = height;
             }
             if (prop.PropertyName == "start_height") {
               prop.Value = height;
@@ -677,7 +677,7 @@ namespace GMEPPlumbing
               prop.Value = verticalRouteId;
             }
             if (prop.PropertyName == "length") {
-              prop.Value = 0;
+              prop.Value = CADObjectCommands.GetPlumbingRouteHeight();
             }
             if (prop.PropertyName == "start_height") {
               prop.Value = CADObjectCommands.GetPlumbingRouteHeight();
@@ -715,7 +715,7 @@ namespace GMEPPlumbing
                 prop.Value = verticalRouteId;
               }
               if (prop.PropertyName == "length") {
-                prop.Value = floorHeights[i + 1] - floorHeights[i];
+                prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[i]);
               }
             }
           }
@@ -756,7 +756,7 @@ namespace GMEPPlumbing
               prop.Value = verticalRouteId;
             }
             if (prop.PropertyName == "length") {
-              prop.Value = floorHeights[endFloor + 1] - floorHeights[endFloor];
+              prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]) - height;
             }
             if (prop.PropertyName == "start_height") {
               prop.Value = height;
