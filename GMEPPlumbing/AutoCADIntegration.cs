@@ -832,12 +832,40 @@ namespace GMEPPlumbing
         pdo2.AllowNegative = false;
         pdo2.AllowZero = false;
         pdo2.DefaultValue = 3;
-        PromptDoubleResult pdr2 = ed.GetDouble(pdo2);
-        if (pdr2.Status != PromptStatus.OK) {
-          ed.WriteMessage("\nCommand cancelled.");
-          return;
+        double length = 0;
+        while (true) {
+          PromptDoubleResult pdr2 = ed.GetDouble(pdo2);
+          if (pdr2.Status == PromptStatus.OK) {
+            length = pdr2.Value;
+            if (direction2 == "Up") {
+              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[startFloor]);
+              double height = CADObjectCommands.GetPlumbingRouteHeight();
+              double limit = heightLimit - height;
+              if (length >= limit) {
+                ed.WriteMessage($"\nFull height of fixture cannot meet or exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.");
+                pdo2.Message = $"\nFull height of fixture cannot meet or exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.";
+                continue;
+              }
+            }
+            if (direction2 == "Down") {
+                double height = CADObjectCommands.GetPlumbingRouteHeight();
+                if (length >= height) {
+                  ed.WriteMessage($"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.");
+                  pdo2.Message = $"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.";
+                  continue;
+                }
+            }
+          }
+          else if (pdr2.Status == PromptStatus.Error) {
+            ed.WriteMessage("\nError in input. Please try again.");
+            continue;
+          }
+          else if (pdr2.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+          }
+          break;
         }
-        double length = pdr2.Value;
 
         Point3d labelPoint3 = Point3d.Origin;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
