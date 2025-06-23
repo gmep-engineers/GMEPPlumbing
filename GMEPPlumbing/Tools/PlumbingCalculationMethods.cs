@@ -71,7 +71,7 @@ namespace GMEPPlumbing {
         ed.WriteMessage($"\nError: {ex.Message}");
       }
     }
-    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, Dictionary<int, List<Point3d>> routePoints = null) {
+    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, double height = 0, List<Point3d> routePoints = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
@@ -79,11 +79,8 @@ namespace GMEPPlumbing {
         return;
 
       if (routePoints == null)
-        routePoints = new Dictionary<int, List<Point3d>>();
+        routePoints = new List<Point3d>();
 
-      if (!routePoints.ContainsKey(BasePoints[route.BasePointId].Floor)) {
-        routePoints[BasePoints[route.BasePointId].Floor] = new List<Point3d>();
-      }
 
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
@@ -97,10 +94,12 @@ namespace GMEPPlumbing {
 
       foreach (var childRoute in childRoutes) {
         if (childRoute.Key.Id != route.Id) {
-          Point3d endPoint = getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value);
-          Dictionary<int, List<Point3d>> routePointsTemp = routePoints;
-          routePointsTemp[BasePoints[childRoute.Key.BasePointId].Floor].Add(route.StartPoint);
-          routePointsTemp[BasePoints[childRoute.Key.BasePointId].Floor].Add(endPoint);
+          Point3d tempEndPoint = getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value);
+          List<Point3d> routePointsTemp = routePoints;
+          //Point3d endPoint = new Point3d(tempEndPoint.X, tempEndPoint.Y, height);
+
+          routePointsTemp.Add(route.StartPoint);
+          routePointsTemp.Add(endPoint);
 
           TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routePointsTemp);
         }

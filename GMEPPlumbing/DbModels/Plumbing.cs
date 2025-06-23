@@ -66,9 +66,7 @@ namespace GMEPPlumbing {
     }
   }
   public class PlumbingFullRoute { 
-    //public PlumbingSource Source;
-    //public PlumbingFixture Fixture;
-    public Dictionary<int, List<Point3d>> RoutePoints;
+    public List<Point3d> RoutePoints;
     public double Length;
   } 
 
