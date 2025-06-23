@@ -687,6 +687,7 @@ namespace GMEPPlumbing
           if (rotatePromptResult.Status != PromptStatus.OK) {
             return;
           }
+          upBlockRef2.Position = new Point3d(newUpPointLocation2.X, newUpPointLocation2.Y, zIndex);
           upBlockRef2.Layer = layer;
           curSpace2.AppendEntity(upBlockRef2);
           tr.AddNewlyCreatedDBObject(upBlockRef2, true);
@@ -728,6 +729,7 @@ namespace GMEPPlumbing
             // Create the BlockReference at the desired location
             BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
             upBlockRef.Layer = layer;
+            upBlockRef.Position = new Point3d(newUpPointLocation.X, newUpPointLocation.Y, floorHeights[i]);
             curSpace.AppendEntity(upBlockRef);
             tr.AddNewlyCreatedDBObject(upBlockRef, true);
             var pc = upBlockRef.DynamicBlockReferencePropertyCollection;
@@ -791,6 +793,7 @@ namespace GMEPPlumbing
             return;
           }
           upBlockRef3.Layer = layer;
+          upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, (floorHeights[endFloor] + height) * 12);
           curSpace3.AppendEntity(upBlockRef3);
           tr.AddNewlyCreatedDBObject(upBlockRef3, true);
           var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
