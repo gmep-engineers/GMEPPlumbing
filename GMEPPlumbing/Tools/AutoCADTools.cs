@@ -33,6 +33,131 @@ namespace GMEPPlumbing
 
     public static string ActiveBasePointId { get; set; } = "";
 
+    public static double PlumbingRouteHeight = -1;
+
+    public static bool SettingFlag = false;
+
+    //public static bool SettingFlag= false;
+
+    [CommandMethod("SetPlumbingRouteHeight")]
+    public static void SetPlumbingRouteHeight() {
+      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      Editor ed = doc.Editor;
+      Database db = doc.Database;
+
+      SettingFlag = true;
+      string GUID = GetActiveView();
+      SettingFlag = false;
+
+      SetPlumbingRouteHeightValue(GUID);
+    }
+    [CommandMethod("GetPlumbingRouteHeight")]
+    public static double GetPlumbingRouteHeight() {
+      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      Editor ed = doc.Editor;
+      Database db = doc.Database;
+      if (PlumbingRouteHeight == -1) {
+        SetPlumbingRouteHeight();
+      }
+      return PlumbingRouteHeight;
+    }
+    public static void SetPlumbingRouteHeightValue(string GUID) {
+      double heightLimit = GetHeightLimit(GUID);
+      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      Editor ed = doc.Editor;
+      Database db = doc.Database;
+
+      var promptDoubleOptions = new PromptDoubleOptions("\nEnter the plumbing route height: ");
+      promptDoubleOptions.AllowNegative = false;
+      promptDoubleOptions.AllowZero = false;
+      promptDoubleOptions.DefaultValue = PlumbingRouteHeight;
+
+      while (true) {
+        var promptDoubleResult = ed.GetDouble(promptDoubleOptions);
+        if (promptDoubleResult.Status == PromptStatus.OK) {
+          if (promptDoubleResult.Value >= heightLimit) {
+            promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height: ";
+            ed.WriteMessage($"\nHeight cannot be meet or exceed {heightLimit}.");
+            continue;
+          }
+          PlumbingRouteHeight = promptDoubleResult.Value;
+          ed.WriteMessage($"\nPlumbing route height set to {PlumbingRouteHeight}.");
+          return;
+        }
+        else if (promptDoubleResult.Status == PromptStatus.Cancel) {
+          ed.WriteMessage("\nOperation cancelled.");
+          return;
+        }
+        else {
+          ed.WriteMessage("\nInvalid input. Please enter a valid height.");
+        }
+      }
+    }
+    public static double GetHeightLimit(string GUID) {
+      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      Editor ed = doc.Editor;
+      Database db = doc.Database;
+      double heightLimit = 0;
+     
+      int activefloor = 0;
+
+      Dictionary<int, double> floorHeights = new Dictionary<int, double>();
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        // Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                  var pc = entity.DynamicBlockReferencePropertyCollection;
+                  string basePointId = "";
+                  double floorHeight = 0;
+                  int floor = 0;
+                  foreach (DynamicBlockReferenceProperty prop in pc) {
+                    if (prop.PropertyName == "Id") {
+                      basePointId = prop.Value.ToString();
+                    }
+                    if (prop.PropertyName == "Floor_Height") {
+                      floorHeight = Convert.ToDouble(prop.Value);
+                    }
+                    if (prop.PropertyName == "Floor") {
+                      floor = Convert.ToInt32(prop.Value);
+                    }
+                  }
+                  if (basePointId != "") {
+                    floorHeights[floor] = floorHeight;
+                  }
+                  if (basePointId == GUID) {
+                    activefloor = floor;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      if (floorHeights.Count == 0) {
+        ed.WriteMessage("\nNo base points found in the drawing.");
+        return 0;
+      }
+      if (floorHeights.ContainsKey(activefloor)) {
+        if (activefloor != floorHeights.Count) {
+          heightLimit = floorHeights[activefloor + 1] - floorHeights[activefloor];
+        }
+        else {
+          heightLimit = 10000;
+        }
+      }
+      else {
+        ed.WriteMessage("\nNo height limit found for the active base point.");
+        return 0;
+      }
+      return heightLimit;
+    }
+
     [CommandMethod("SetScale")]
     public static void SetScale()
     {
@@ -169,6 +294,9 @@ namespace GMEPPlumbing
           }
         }
         tr.Commit();
+      }
+      if (!SettingFlag) {
+        SetPlumbingRouteHeightValue(ActiveBasePointId);
       }
     }
     public static string GetActiveView() {

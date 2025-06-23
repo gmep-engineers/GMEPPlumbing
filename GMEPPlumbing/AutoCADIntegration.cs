@@ -295,6 +295,8 @@ namespace GMEPPlumbing
       ObjectId gmepTextStyleId;
       string viewGUID = "";
       int typeId = 0;
+      Dictionary<int, double> floorHeights = new Dictionary<int, double>();
+
 
       PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
       pko.Keywords.Add("HotWater");
@@ -326,13 +328,10 @@ namespace GMEPPlumbing
           return;
       }
 
-
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
-
         //retrieving the view of the basepoint
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord basePointBlock = (BlockTableRecord)
-          tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
         foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
           if (id.IsValid) {
             using (
@@ -356,7 +355,7 @@ namespace GMEPPlumbing
                   }
                   if (match) {
                     viewGUID = tempViewGUID;
-                    break; // Exit the loop once we find a match
+                    break;
                   }
                 }
               }
@@ -380,7 +379,6 @@ namespace GMEPPlumbing
           ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
           gmepTextStyleId = doc.Database.Textstyle;
         }
-
         foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
           if (id.IsValid) {
             using (
@@ -411,7 +409,7 @@ namespace GMEPPlumbing
         basePointIds = basePoints[viewGUID];
 
 
-        //startFloor = int.Parse(floorResult.StringResult);
+
 
         BlockReference firstFloorBasePoint = null;
 
@@ -421,6 +419,7 @@ namespace GMEPPlumbing
 
           bool selectedPoint = false;
           int tempFloor = 0;
+          double tempFloorHeight = 0;
           foreach (DynamicBlockReferenceProperty prop in pc2) {
             if (prop.PropertyName == "Floor") {
               tempFloor = Convert.ToInt32(prop.Value);
@@ -429,6 +428,14 @@ namespace GMEPPlumbing
               if (prop.Value.ToString() == basePointGUID) {
                 selectedPoint = true;
               }
+            }
+            if (prop.PropertyName == "Floor_Height") {
+              tempFloorHeight = Convert.ToDouble(prop.Value);
+            }
+          }
+          if (tempFloor != 0) {
+            if (!floorHeights.ContainsKey(tempFloor)) {
+              floorHeights[tempFloor] = tempFloorHeight;
             }
           }
           if (selectedPoint) {
@@ -466,9 +473,7 @@ namespace GMEPPlumbing
       //picking end floor
       PromptKeywordOptions endFloorOptions = new PromptKeywordOptions("\nEnding Floor: ");
       for (int i = 1; i <= basePointIds.Count; i++) {
-        if (i != startFloor) {
           endFloorOptions.Keywords.Add(i.ToString());
-        }
       }
       PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
       int endFloor = int.Parse(endFloorResult.StringResult);
@@ -540,6 +545,12 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
             }
+            if (prop.PropertyName == "length") {
+              prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[startFloor]) - CADObjectCommands.GetPlumbingRouteHeight();
+            }
+            if (prop.PropertyName == "start_height") {
+              prop.Value = CADObjectCommands.GetPlumbingRouteHeight(); 
+            }
           }
 
           // Set the vertical route ID
@@ -574,14 +585,46 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "vertical_route_id") {
                 prop.Value = verticalRouteId;
               }
+              if (prop.PropertyName == "length") {
+                prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[i]);
+              }
             }
           }
 
           //end pipe
+
           ZoomToBlock(ed, BasePointRefs[endFloor]);
+          var promptDoubleOptions = new PromptDoubleOptions("\nEnter the height of the start of the vertical route from the floor (in feet): ");
+          promptDoubleOptions.AllowNegative = false;
+          promptDoubleOptions.AllowZero = false;
+          promptDoubleOptions.DefaultValue = 0;
+          double height = 0;
+
+          while (true) {
+            PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
+            if (promptDoubleResult.Status == PromptStatus.OK) {
+              height = promptDoubleResult.Value;
+              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]);
+              if (height >= heightLimit) {
+                ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.");
+                promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.";
+                continue;
+              }
+              else if (promptDoubleResult.Status == PromptStatus.Cancel) {
+                ed.WriteMessage("\nCommand cancelled.");
+                return;
+              }
+              else if (promptDoubleResult.Status == PromptStatus.Error) {
+                ed.WriteMessage("\nError in input. Please try again.");
+                continue;
+              }
+              break;
+            }
+          }
+
+
           Point3d newUpPointLocation3 = BasePointRefs[endFloor].Position + upVector;
-          BlockTableRecord blockDef3 =
-            tr.GetObject(bt["GMEP_PLUMBING_LINE_DOWN"], OpenMode.ForRead) as BlockTableRecord;
+          BlockTableRecord blockDef3 = tr.GetObject(bt["GMEP_PLUMBING_LINE_DOWN"], OpenMode.ForRead) as BlockTableRecord;
           BlockTableRecord curSpace3 = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
           BlockReference upBlockRef3 = new BlockReference(newUpPointLocation3, blockDef3.ObjectId);
@@ -605,6 +648,12 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
+            }
+            if (prop.PropertyName == "length") {
+              prop.Value = height;
+            }
+            if (prop.PropertyName == "start_height") {
+              prop.Value = height;
             }
           }
           tr.Commit();
@@ -648,6 +697,12 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
             }
+            if (prop.PropertyName == "length") {
+              prop.Value = CADObjectCommands.GetPlumbingRouteHeight();
+            }
+            if (prop.PropertyName == "start_height") {
+              prop.Value = CADObjectCommands.GetPlumbingRouteHeight();
+            }
           }
           tr.Commit();
         }
@@ -680,11 +735,43 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "vertical_route_id") {
                 prop.Value = verticalRouteId;
               }
+              if (prop.PropertyName == "length") {
+                prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[i]);
+              }
             }
           }
 
           //end pipe
           ZoomToBlock(ed, BasePointRefs[endFloor]);
+
+          var promptDoubleOptions = new PromptDoubleOptions("\nEnter the height of the start of the vertical route from the floor (in feet): ");
+          promptDoubleOptions.AllowNegative = false;
+          promptDoubleOptions.AllowZero = false;
+          promptDoubleOptions.DefaultValue = 0;
+          double height = 0;
+
+          while (true) {
+            PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
+            if (promptDoubleResult.Status == PromptStatus.OK) {
+              height = promptDoubleResult.Value;
+              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]);
+              if (height >= heightLimit) {
+                ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.");
+                promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.";
+                continue;
+              }
+              break;
+            }
+            else if (promptDoubleResult.Status == PromptStatus.Cancel) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            else if (promptDoubleResult.Status == PromptStatus.Error) {
+              ed.WriteMessage("\nError in input. Please try again.");
+              continue;
+            }
+          }
+
           Point3d newUpPointLocation3 = BasePointRefs[endFloor].Position + upVector;
           BlockTableRecord blockDef3 =
             tr.GetObject(bt["GMEP_PLUMBING_LINE_UP"], OpenMode.ForRead) as BlockTableRecord;
@@ -711,9 +798,118 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
             }
+            if (prop.PropertyName == "length") {
+              prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]) - height;
+            }
+            if (prop.PropertyName == "start_height") {
+              prop.Value = height;
+            }
           }
           tr.Commit();
         }
+      }
+      else if (endFloor == startFloor) {
+        PromptKeywordOptions pko3 = new PromptKeywordOptions("\nUp or Down?");
+        pko3.Keywords.Add("Up");
+        pko3.Keywords.Add("Down");
+
+        PromptResult pr3 = ed.GetKeywords(pko3);
+        string blockName = "";
+        string direction2 = pr3.StringResult;
+        if (direction2 == "Up") {
+          blockName = "GMEP_PLUMBING_LINE_UP";
+        }
+        else if (direction2 == "Down") {
+          blockName = "GMEP_PLUMBING_LINE_DOWN";
+        }
+        else {
+          ed.WriteMessage("\nInvalid direction selected.");
+          return;
+        }
+        PromptDoubleOptions pdo2 = new PromptDoubleOptions(
+          $"\nHow Far {direction2}(Ft)?"
+        );
+        pdo2.AllowNegative = false;
+        pdo2.AllowZero = false;
+        pdo2.DefaultValue = 3;
+        double length = 0;
+        while (true) {
+          PromptDoubleResult pdr2 = ed.GetDouble(pdo2);
+          if (pdr2.Status == PromptStatus.OK) {
+            length = pdr2.Value;
+            if (direction2 == "Up") {
+              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[startFloor]);
+              double height = CADObjectCommands.GetPlumbingRouteHeight();
+              double limit = heightLimit - height;
+              if (length >= limit) {
+                ed.WriteMessage($"\nFull height of fixture cannot meet or exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.");
+                pdo2.Message = $"\nFull height of fixture cannot meet or exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.";
+                continue;
+              }
+            }
+            if (direction2 == "Down") {
+                double height = CADObjectCommands.GetPlumbingRouteHeight();
+                if (length >= height) {
+                  ed.WriteMessage($"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.");
+                  pdo2.Message = $"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.";
+                  continue;
+                }
+            }
+          }
+          else if (pdr2.Status == PromptStatus.Error) {
+            ed.WriteMessage("\nError in input. Please try again.");
+            continue;
+          }
+          else if (pdr2.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+          }
+          break;
+        }
+
+        Point3d labelPoint3 = Point3d.Origin;
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          //delete previous start pipe
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockReference startPipe = tr.GetObject(startPipeId, OpenMode.ForWrite) as BlockReference;
+
+          startPipe.Erase(true);
+
+          Point3d newUpPointLocation3 = BasePointRefs[startFloor].Position + upVector;
+          BlockTableRecord blockDef3 =
+            tr.GetObject(bt[blockName], OpenMode.ForRead) as BlockTableRecord;
+          BlockTableRecord curSpace3 = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          BlockReference upBlockRef3 = new BlockReference(newUpPointLocation3, blockDef3.ObjectId);
+          RotateJig rotateJig = new RotateJig(upBlockRef3);
+          PromptResult rotatePromptResult = ed.Drag(rotateJig);
+          if (rotatePromptResult.Status != PromptStatus.OK) {
+            return;
+          }
+          upBlockRef3.Layer = layer;
+          curSpace3.AppendEntity(upBlockRef3);
+          tr.AddNewlyCreatedDBObject(upBlockRef3, true);
+          labelPoint3 = upBlockRef3.Position;
+
+          var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in pc3) {
+            if (prop.PropertyName == "id") {
+              prop.Value = Guid.NewGuid().ToString();
+            }
+            if (prop.PropertyName == "base_point_id") {
+              prop.Value = BasePointGUIDs[startFloor];
+            }
+            if (prop.PropertyName == "vertical_route_id") {
+              prop.Value = verticalRouteId;
+            }
+            if (prop.PropertyName == "length") {
+              prop.Value = length;
+            }
+          }
+          tr.Commit();
+          
+        }
+        MakeVerticalRouteLabel(labelPoint3, direction2.ToUpper());
       }
       SettingObjects = false;
     }
@@ -2435,6 +2631,8 @@ namespace GMEPPlumbing
                       string BasePointId = string.Empty;
                       double pointX = 0;
                       double pointY = 0;
+                      double startHeight = 0;
+                      double length = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
 
@@ -2453,6 +2651,12 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "Connection Y") {
                           pointY = Convert.ToDouble(prop.Value);
                         }
+                        if (prop.PropertyName == "start_height") {
+                          startHeight = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "length") {
+                          length = Convert.ToDouble(prop.Value);
+                        }
                       }
                       if (Id != "0") {
                         double rotation = entity.Rotation;
@@ -2466,7 +2670,9 @@ namespace GMEPPlumbing
                           entity.Position,
                           connectionPointLocation,
                           VerticalRouteId,
-                          BasePointId
+                          BasePointId,
+                          startHeight,
+                          length
                         );
                         routes.Add(route);
                       }

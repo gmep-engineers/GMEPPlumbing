@@ -162,7 +162,8 @@ namespace GMEPPlumbing {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
-      Dictionary<int, PlumbingVerticalRoute> routes = GetVerticalRoutesByIdOrdered(route.VerticalRouteId);
+      SortedDictionary<int, PlumbingVerticalRoute> routes = GetVerticalRoutesByIdOrdered(route.VerticalRouteId);
+ 
 
       var matchingKeys = routes.FirstOrDefault(kvp => kvp.Value.Id == route.Id);
       var startFloor = matchingKeys.Key;
@@ -177,19 +178,15 @@ namespace GMEPPlumbing {
         endFloorKey = routes.ElementAt(0).Key;
         ed.WriteMessage($"\nStarting vertical traversal from floor {startFloor} to floor {endFloorKey}");
       }
-      var startBasePoint = BasePoints.FirstOrDefault(bp => bp.Id == route.BasePointId);
+
       var endRoute = routes[endFloorKey];
-      var endBasePoint = BasePoints.FirstOrDefault(bp => bp.Id == endRoute.BasePointId);
 
-
-      // Calculate the difference in height (in inches)
-      double startHeight = startBasePoint?.FloorHeight ?? 0;
-      double endHeight = endBasePoint?.FloorHeight ?? 0;
-      height = Math.Abs(endHeight - startHeight) * 12;
+      height = routes.Sum(kvp => kvp.Value.Length) * 12;
+      ed.WriteMessage($"\nTotal vertical route length from floor {startFloor} to floor {endFloorKey} is {height} inches.");
 
       return endRoute;
     }
-    public Dictionary<int, PlumbingVerticalRoute> GetVerticalRoutesByIdOrdered(string verticalRouteId) {
+    public SortedDictionary<int, PlumbingVerticalRoute> GetVerticalRoutesByIdOrdered(string verticalRouteId) {
       var basePointFloorLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp.Floor);
       var dict = VerticalRoutes
        .Where(vr => vr.VerticalRouteId == verticalRouteId && basePointFloorLookup.ContainsKey(vr.BasePointId))
@@ -197,7 +194,8 @@ namespace GMEPPlumbing {
            vr => basePointFloorLookup[vr.BasePointId], // floor
            vr => vr
        );
-      return dict;
+
+      return new SortedDictionary<int, PlumbingVerticalRoute>(dict);
     }
   }
 }
