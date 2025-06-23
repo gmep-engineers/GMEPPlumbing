@@ -43,7 +43,7 @@ namespace GMEPPlumbing {
       BlockName = blockName;
     }
   }
-  
+
   public class PlumbingFixtureType {
     public int Id;
     public string Name;
@@ -65,6 +65,12 @@ namespace GMEPPlumbing {
       WasteVentBlockName = wasteVentBlockName;
     }
   }
+  public class PlumbingFullRoute { 
+    //public PlumbingSource Source;
+    //public PlumbingFixture Fixture;
+    public Dictionary<int, List<Point3d>> RoutePoints;
+    public double Length;
+  } 
 
   public class PlumbingFixtureCatalogItem {
     public int Id;

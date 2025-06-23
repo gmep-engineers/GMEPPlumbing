@@ -21,10 +21,10 @@ namespace GMEPPlumbing.Views
     /// </summary>
     public partial class Routing : UserControl
     {
-        public Dictionary<string, double> LengthToFixtures { get; set; } = new Dictionary<string, double>();
-        public Routing(Dictionary<string, double> lengthToFixtures)
+        public Dictionary<string, List<PlumbingFullRoute>> FixtureRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
+        public Routing(Dictionary<string, List<PlumbingFullRoute>> fixtureRoutes)
         {
-          LengthToFixtures = lengthToFixtures;
+          FixtureRoutes = fixtureRoutes;
           InitializeComponent();
           DataContext = this;
         }
