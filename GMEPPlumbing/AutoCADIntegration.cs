@@ -100,6 +100,8 @@ namespace GMEPPlumbing
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute() {
       string BasePointId = CADObjectCommands.GetActiveView();
+      double zIndex = CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight;
+      
       List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
   
@@ -169,8 +171,9 @@ namespace GMEPPlumbing
           tr2.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
         Line line = new Line();
-        line.StartPoint = startPointLocation2;
-        line.EndPoint = endPointLocation2;
+        line.StartPoint = new Point3d(startPointLocation2.X, startPointLocation2.Y, zIndex);
+        line.EndPoint = new Point3d(endPointLocation2.X, endPointLocation2.Y, zIndex);
+
         line.Layer = layer;
         btr.AppendEntity(line);
         tr2.AddNewlyCreatedDBObject(line, true);
@@ -258,12 +261,12 @@ namespace GMEPPlumbing
 
           Line line = new Line();
           if (direction == "Forward") {
-            line.StartPoint = startPointLocation;
-            line.EndPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, 0);
+            line.StartPoint = new Point3d(startPointLocation.X, startPointLocation2.Y, zIndex);
+            line.EndPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, zIndex);
           }
           else if (direction == "Backward") {
-            line.StartPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, 0);
-            line.EndPoint = startPointLocation;
+            line.StartPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, zIndex);
+            line.EndPoint = new Point3d(startPointLocation.X, startPointLocation.Y, zIndex);
           }
       
           line.Layer = layer;
