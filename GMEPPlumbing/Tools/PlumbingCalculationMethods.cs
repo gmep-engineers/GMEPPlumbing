@@ -124,6 +124,13 @@ namespace GMEPPlumbing {
       }
 
     }
+    private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
+      var direction = end - start;
+      var totalLength = direction.Length;
+      if (totalLength == 0) return start; // Avoid division by zero
+      var ratio = length / totalLength;
+      return start + (direction * ratio);
+    }
 
     private double GetPointToSegmentDistance(Point3d pt, Point3d segStart, Point3d segEnd, out double segmentLength) {
       var v = segEnd - segStart;
