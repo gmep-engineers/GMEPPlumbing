@@ -10,7 +10,7 @@
        
     </UserControl.Resources>
     <Grid Background="#FF2D2D30">
-        <ListBox Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+        <ListBox ItemsSource="{Binding LengthToFixtures}" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
