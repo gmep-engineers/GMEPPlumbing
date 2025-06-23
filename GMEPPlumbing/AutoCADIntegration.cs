@@ -100,7 +100,7 @@ namespace GMEPPlumbing
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute() {
       string BasePointId = CADObjectCommands.GetActiveView();
-      double zIndex = CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight;
+      double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
       
       List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
@@ -286,7 +286,8 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
-      string basePointGUID = CADObjectCommands.GetActiveView(); 
+      string basePointGUID = CADObjectCommands.GetActiveView();
+      double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
       SettingObjects = true;
       string layer = "Defpoints";
       List<ObjectId> basePointIds = new List<ObjectId>();
@@ -529,6 +530,7 @@ namespace GMEPPlumbing
           if (rotatePromptResult.Status != PromptStatus.OK) {
             return;
           }
+          upBlockRef2.Position = new Point3d(newUpPointLocation2.X, newUpPointLocation2.Y, zIndex);
           labelPoint = upBlockRef2.Position;
 
           upBlockRef2.Layer = layer;
@@ -574,6 +576,7 @@ namespace GMEPPlumbing
             // Create the BlockReference at the desired location
             BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
             upBlockRef.Layer = layer;
+            upBlockRef.Position = new Point3d(newUpPointLocation.X, newUpPointLocation.Y, floorHeights[i]*12);
             curSpace.AppendEntity(upBlockRef);
             tr.AddNewlyCreatedDBObject(upBlockRef, true);
             var pc2 = upBlockRef.DynamicBlockReferencePropertyCollection;
@@ -636,6 +639,7 @@ namespace GMEPPlumbing
           if (rotatePromptResult2.Status != PromptStatus.OK) {
             return;
           }
+          upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, (floorHeights[endFloor] + height)*12);
 
           upBlockRef3.Layer = layer;
           curSpace3.AppendEntity(upBlockRef3);
