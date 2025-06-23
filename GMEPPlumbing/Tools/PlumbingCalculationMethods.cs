@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using Autodesk.AutoCAD.ApplicationServices;
 using Exception = System.Exception;
 using Autodesk.AutoCAD.Geometry;
+using GMEPPlumbing.Views;
+using System.Windows.Forms.Integration;
+using Autodesk.AutoCAD.Windows;
 
 namespace GMEPPlumbing {
   class PlumbingCalculationMethods {
@@ -18,8 +21,9 @@ namespace GMEPPlumbing {
     public List<PlumbingHorizontalRoute> HorizontalRoutes { get; private set; } = new List<PlumbingHorizontalRoute>();
     public List<PlumbingVerticalRoute> VerticalRoutes { get; private set; } = new List<PlumbingVerticalRoute>();
     public Dictionary<string, List<PlumbingFixture>> PlumbingFixtures { get; set; } = new Dictionary<string, List<PlumbingFixture>>();
-
     public Dictionary<string, double> LengthToFixtures { get; set; } = new Dictionary<string, double>();
+    public Routing RoutingControl { get; set; } = null;
+    private PaletteSet pw;
 
 
     [CommandMethod("PlumbingFixtureCalc")]
@@ -44,6 +48,23 @@ namespace GMEPPlumbing {
             TraverseHorizontalRoute(matchingRoute);
           }
         }
+        ed.WriteMessage("\nPlumbing fixture calculation completed successfully.");
+        RoutingControl = new Routing(LengthToFixtures);
+        var host = new ElementHost();
+        host.Child = RoutingControl;
+        pw = new PaletteSet("GMEP Plumbing Fixture Calculations");
+        pw.Style =
+          PaletteSetStyles.ShowAutoHideButton
+          | PaletteSetStyles.ShowCloseButton
+          | PaletteSetStyles.ShowPropertiesMenu;
+        pw.DockEnabled = DockSides.Left | DockSides.Right;
+
+        pw.Size = new System.Drawing.Size(1200, 800);
+        pw.MinimumSize = new System.Drawing.Size(1200, 800);
+        pw.Add("MyTab", host);
+        pw.Visible = true;
+        pw.Dock = DockSides.Left;
+        pw.RolledUp = false;
       }
       catch (Exception ex) {
         ed.WriteMessage($"\nError: {ex.Message}");
