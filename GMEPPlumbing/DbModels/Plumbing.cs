@@ -66,8 +66,8 @@ namespace GMEPPlumbing {
     }
   }
   public class PlumbingFullRoute {
-    public double Length;
-    public List<Object> RouteItems;
+    public double Length { get; set; }
+    public List<Object> RouteItems { get; set; }
   }
   public class PlumbingFixtureCatalogItem {
     public int Id;
