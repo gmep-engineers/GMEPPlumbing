@@ -25,7 +25,7 @@
                                             <TextBlock Text="Objects: " />
                                             <TextBlock Text="{Binding RouteItems.Count}" />
                                         </StackPanel>
-                                        <Viewport3D Height="200" Width="300" local:Route3DHelper.RouteItems="{Binding RouteItems}" />
+                                        <!--<Viewport3D Height="200" Width="300" local:Route3DHelper.RouteItems="{Binding RouteItems}" />-->
                                     </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

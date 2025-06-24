@@ -51,7 +51,7 @@ namespace GMEPPlumbing {
           }
         }
         ed.WriteMessage("\nPlumbing fixture calculation completed successfully.");
-        RoutingControl = new Routing(FullRoutes);
+        RoutingControl = new Routing(FullRoutes, BasePointLookup);
         var host = new ElementHost();
         host.Child = RoutingControl;
         pw = new PaletteSet("GMEP Plumbing Fixture Calculations");
