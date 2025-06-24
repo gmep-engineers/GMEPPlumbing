@@ -37,6 +37,7 @@ namespace GMEPPlumbing.Views
         foreach (var visual in scene.RouteVisuals) {
           Viewport.Children.Add(visual);
         }
+        Viewport.ZoomExtents();
       }
     }
   }
