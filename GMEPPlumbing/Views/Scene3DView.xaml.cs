@@ -11,6 +11,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Autodesk.AutoCAD.ApplicationServices;
@@ -36,9 +37,8 @@ namespace GMEPPlumbing.Views
         Viewport.Children.Add(new HelixToolkit.Wpf.DefaultLights());
         foreach (var visual in scene.RouteVisuals) {
           Viewport.Children.Add(visual);
-            ed.WriteLine($"Visual bounds: {bounds}");
         }
-        Viewport.ZoomExtents();
+        Dispatcher.BeginInvoke(new Action(() => Viewport.ZoomExtents()), System.Windows.Threading.DispatcherPriority.Loaded);
       }
     }
   }

@@ -6,12 +6,12 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:GMEPPlumbing.Views"
              mc:Ignorable="d"
-             Height="220">
+             Height="320">
     <UserControl.Resources>
         <local:InchesToFeetInchesConverter x:Key="InchesToFeetInchesConverter"/>
     </UserControl.Resources>
     <StackPanel Orientation="Vertical">
-        <helix:HelixViewport3D x:Name="Viewport" Height="200" Margin="0,10,0,0" ShowCoordinateSystem="False" ShowViewCube="False"/>
+        <helix:HelixViewport3D x:Name="Viewport" Height="200" Margin="0,10,0,0" ShowCoordinateSystem="False" ShowViewCube="False" Background="Black"/>
         <StackPanel Orientation="Horizontal">
             <TextBlock Text="Length: " />
             <TextBlock Text="{Binding Length, Converter={StaticResource InchesToFeetInchesConverter}}" Margin="0,0,10,0"/>

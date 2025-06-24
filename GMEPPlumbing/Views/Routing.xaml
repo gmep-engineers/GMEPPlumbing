@@ -11,7 +11,7 @@
         <ListBox ItemsSource="{Binding Scenes}" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Vertical">
                         <TextBlock FontWeight="Bold" Text="{Binding Key, StringFormat=Group: {0}}" Margin="0,0,0,5"/>
                         <ItemsControl ItemsSource="{Binding Value}">
                             <ItemsControl.ItemTemplate>
