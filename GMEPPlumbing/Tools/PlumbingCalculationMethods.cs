@@ -17,6 +17,7 @@ namespace GMEPPlumbing {
     public MariaDBService MariaDBService { get; set; } = new MariaDBService();
     public string ProjectId { get; private set; } = string.Empty;
     public List<PlumbingPlanBasePoint> BasePoints { get; private set; } = new List<PlumbingPlanBasePoint>();
+    public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; private set; } = new Dictionary<string, PlumbingPlanBasePoint>();
     public List<PlumbingSource> Sources { get; private set; } = new List<PlumbingSource>();
     public List<PlumbingHorizontalRoute> HorizontalRoutes { get; private set; } = new List<PlumbingHorizontalRoute>();
     public List<PlumbingVerticalRoute> VerticalRoutes { get; private set; } = new List<PlumbingVerticalRoute>();
@@ -40,6 +41,7 @@ namespace GMEPPlumbing {
         VerticalRoutes = await MariaDBService.GetPlumbingVerticalRoutes(ProjectId);
         PlumbingFixtures = await MariaDBService.GetPlumbingFixtures(ProjectId);
         BasePoints = await MariaDBService.GetPlumbingPlanBasePoints(ProjectId);
+        BasePointLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp);
 
         foreach (var source in Sources) {
           var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= 3.0 && route.BasePointId == source.BasePointId).ToList();
@@ -49,7 +51,7 @@ namespace GMEPPlumbing {
           }
         }
         ed.WriteMessage("\nPlumbing fixture calculation completed successfully.");
-        RoutingControl = new Routing(LengthToFixtures);
+        RoutingControl = new Routing(FullRoutes);
         var host = new ElementHost();
         host.Child = RoutingControl;
         pw = new PaletteSet("GMEP Plumbing Fixture Calculations");
@@ -107,8 +109,17 @@ namespace GMEPPlumbing {
         TraverseVerticalRoute(verticalRouteEnd, visited, fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint) + length, routeObjectsTemp);
       }
       foreach(var fixture in fixtures) {
-        //LengthToFixtures[fixture.FixtureId] = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
-        //double lengthInInches = LengthToFixtures[fixture.FixtureId];
+        double lengthInInches = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+        PlumbingFullRoute fullRoute = new PlumbingFullRoute();
+        fullRoute.Length = lengthInInches;
+        fullRoute.RouteItems = routeObjects;
+
+        if (!FullRoutes.ContainsKey(fixture.BasePointId)) {
+          FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
+        }
+
+        FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
+
         int feet = (int)(lengthInInches / 12);
         int inches = (int)Math.Round(lengthInInches % 12);
         ed.WriteMessage($"\nFixture {fixture.FixtureId} at {fixture.Position} with route length of {feet} feet {inches} inches.");

@@ -804,7 +804,7 @@ namespace GMEPPlumbing.Services
         if (routes.Count > 0) {
           string upsertQuery = @"
               INSERT INTO plumbing_horizontal_routes
-              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, start_pos_z, end_pos_z base_point_id)
+              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, start_pos_z, end_pos_z, base_point_id)
               VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @startPosZ, @endPosZ, @basePointId)
               ON DUPLICATE KEY UPDATE
                   start_pos_x = @startPosX,
@@ -821,8 +821,10 @@ namespace GMEPPlumbing.Services
             command.Parameters.AddWithValue("@projectId", projectId);
             command.Parameters.AddWithValue("@startPosX", route.StartPoint.X);
             command.Parameters.AddWithValue("@startPosY", route.StartPoint.Y);
+            command.Parameters.AddWithValue("@startPosZ", route.StartPoint.Z);
             command.Parameters.AddWithValue("@endPosX", route.EndPoint.X);
             command.Parameters.AddWithValue("@endPosY", route.EndPoint.Y);
+            command.Parameters.AddWithValue("@endPosZ", route.EndPoint.Z);
             command.Parameters.AddWithValue("@basePointId", route.BasePointId);
             await command.ExecuteNonQueryAsync();
           }

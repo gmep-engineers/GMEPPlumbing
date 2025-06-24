@@ -21,13 +21,13 @@ namespace GMEPPlumbing.Views
     /// </summary>
     public partial class Routing : UserControl
     {
-        public Dictionary<string, double> LengthToFixtures { get; set; } = new Dictionary<string, double>();
-        public Routing(Dictionary<string, double> lengthToFixtures)
-        {
-          LengthToFixtures = lengthToFixtures;
-          InitializeComponent();
-          DataContext = this;
-        }
+      public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
+      public Routing(Dictionary<string, List<PlumbingFullRoute>> fullRoutes)
+      {
+        FullRoutes = fullRoutes;
+        InitializeComponent();
+        DataContext = this;
+      }
     }
     public class InchesToFeetInchesConverter : IValueConverter {
       public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
