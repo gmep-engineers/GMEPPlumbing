@@ -114,7 +114,7 @@ namespace GMEPPlumbing {
         fullRoute.Length = lengthInInches;
         fullRoute.RouteItems = routeObjects;
 
-        if (!FullRoutes.ContainsKey(fixture.BasePointId)) {
+        if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
           FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
         }
 
