@@ -17,6 +17,8 @@ using System.Windows.Shapes;
 using Autodesk.AutoCAD.Geometry;
 using System.Windows.Media.Media3D;
 using System.Collections;
+using System.Collections.ObjectModel;
+using HelixToolkit.Wpf;
 
 namespace GMEPPlumbing.Views
 {
@@ -28,13 +30,28 @@ namespace GMEPPlumbing.Views
       public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
 
       public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
+
+      public Dictionary<string, List<Scene>> Scenes { get; set; } = new Dictionary<string, List<Scene>>();
       public Routing(Dictionary<string, List<PlumbingFullRoute>> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup)
       {
         FullRoutes = fullRoutes;
         BasePointLookup = basePointLookup;
         NormalizeRoutes();
+        GenerateScenes();
         InitializeComponent();
         DataContext = this;
+      }
+      public void GenerateScenes() {
+        Scenes.Clear();
+        foreach (var route in FullRoutes) {
+          if (!Scenes.ContainsKey(route.Key)) {
+            Scenes[route.Key] = new List<Scene>();
+          }
+          foreach (var fullRoute in route.Value) {
+            var scene = new Scene(fullRoute);
+            Scenes[route.Key].Add(scene);
+          }
+        }
       }
       public void NormalizeRoutes() {
         foreach (var fullRoute in FullRoutes.Values) {
@@ -68,18 +85,44 @@ namespace GMEPPlumbing.Views
         }
       }
     }
-    public class InchesToFeetInchesConverter : IValueConverter {
-      public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-        if (value is double inches) {
-          int feet = (int)(inches / 12);
-          int remainingInches = (int)Math.Round(inches % 12);
-          return $"{feet} Feet, {remainingInches} Inches";
-        }
-        return value?.ToString() ?? string.Empty;
+    
+    public class Scene {
+      public List<object> RouteItems { get; set; } = new List<object>();
+      public double Length { get; set; } = 0;
+      public ObservableCollection<Visual3D> RouteVisuals { get; set; } = new ObservableCollection<Visual3D>();
+      public Scene(PlumbingFullRoute fullRoute) {
+          RouteItems = fullRoute.RouteItems;
+          Length = fullRoute.Length;
+          BuildScene();
       }
-
-      public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-        throw new NotImplementedException();
+      public void BuildScene() {
+        RouteVisuals.Clear();
+        foreach (var item in RouteItems) {
+        Visual3D model = null;
+         if (item is PlumbingHorizontalRoute horizontalRoute) {
+          model = new TubeVisual3D {
+            Path = new Point3DCollection {
+              new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
+              new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z)
+            },
+            Diameter = 2,
+            Fill = System.Windows.Media.Brushes.SteelBlue
+          };
+        }
+        else if (item is PlumbingVerticalRoute verticalRoute) {
+          model = new TubeVisual3D {
+            Path = new Point3DCollection {
+              new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
+              new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + (verticalRoute.Length*12))
+            },
+            Diameter = 2,
+            Fill = System.Windows.Media.Brushes.SteelBlue
+          };
+        }
+        if (model != null) {
+          RouteVisuals.Add(model);
+        }
+      }
       }
     }
 }
