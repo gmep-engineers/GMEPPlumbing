@@ -36,6 +36,7 @@ namespace GMEPPlumbing.Views
         Viewport.Children.Add(new HelixToolkit.Wpf.DefaultLights());
         foreach (var visual in scene.RouteVisuals) {
           Viewport.Children.Add(visual);
+            ed.WriteLine($"Visual bounds: {bounds}");
         }
         Viewport.ZoomExtents();
       }
