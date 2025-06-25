@@ -14,9 +14,14 @@
                     <StackPanel Orientation="Vertical">
                         <TextBlock FontWeight="Bold" Text="{Binding Key, StringFormat=Group: {0}}" Margin="0,0,0,5"/>
                         <ItemsControl ItemsSource="{Binding Value}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <local:Scene3DView />
+                                    <local:Scene3DView Margin="0 0 10 0" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
