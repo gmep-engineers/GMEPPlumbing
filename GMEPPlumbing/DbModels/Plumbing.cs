@@ -65,7 +65,10 @@ namespace GMEPPlumbing {
       WasteVentBlockName = wasteVentBlockName;
     }
   }
-
+  public class PlumbingFullRoute {
+    public double Length { get; set; }
+    public List<Object> RouteItems { get; set; }
+  }
   public class PlumbingFixtureCatalogItem {
     public int Id;
     public int TypeId;

@@ -37,6 +37,8 @@ namespace GMEPPlumbing
 
     public static bool SettingFlag = false;
 
+    public static double ActiveFloorHeight = 0;
+
     //public static bool SettingFlag= false;
 
     [CommandMethod("SetPlumbingRouteHeight")]
@@ -279,6 +281,7 @@ namespace GMEPPlumbing
           var pc2 = entity2.DynamicBlockReferencePropertyCollection;
 
           int floor = 0;
+          double floorHeight = 0;
           string basePointId = "";
           foreach (DynamicBlockReferenceProperty prop in pc2) {
             if (prop.PropertyName == "Floor") {
@@ -287,10 +290,15 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "Id") {
               basePointId = prop.Value.ToString();
             }
+            if (prop.PropertyName == "Floor_Height") {
+              floorHeight = Convert.ToDouble(prop.Value);
+            }
+
           }
           if (floor == startFloor) {
             AutoCADIntegration.ZoomToBlock(ed, entity2);
             ActiveBasePointId = basePointId;
+            ActiveFloorHeight = floorHeight;
           }
         }
         tr.Commit();

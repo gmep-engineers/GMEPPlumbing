@@ -1,0 +1,24 @@
+﻿<UserControl x:Class="GMEPPlumbing.Views.Scene3DView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helix="http://helix-toolkit.org/wpf"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:GMEPPlumbing.Views"
+             mc:Ignorable="d"
+             Height="320">
+    <UserControl.Resources>
+        <local:InchesToFeetInchesConverter x:Key="InchesToFeetInchesConverter"/>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <helix:HelixViewport3D Grid.Row="0" x:Name="Viewport" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,10,0,0" ShowCoordinateSystem="False" ShowViewCube="False" Background="Black"/>
+        <StackPanel Grid.Row="1" Orientation="Horizontal">
+            <TextBlock Text="Length: " />
+            <TextBlock Text="{Binding Length, Converter={StaticResource InchesToFeetInchesConverter}}" Margin="0,0,10,0"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

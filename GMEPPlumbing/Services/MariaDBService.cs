@@ -804,13 +804,15 @@ namespace GMEPPlumbing.Services
         if (routes.Count > 0) {
           string upsertQuery = @"
               INSERT INTO plumbing_horizontal_routes
-              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, base_point_id)
-              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @basePointId)
+              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, start_pos_z, end_pos_z, base_point_id)
+              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @startPosZ, @endPosZ, @basePointId)
               ON DUPLICATE KEY UPDATE
                   start_pos_x = @startPosX,
                   end_pos_x = @endPosX,
                   start_pos_y = @startPosY,
                   end_pos_y = @endPosY,
+                  start_pos_z = @startPosZ,
+                  end_pos_z = @endPosZ,
                   base_point_id = @basePointId
           ";
           foreach (var route in routes) {
@@ -819,8 +821,10 @@ namespace GMEPPlumbing.Services
             command.Parameters.AddWithValue("@projectId", projectId);
             command.Parameters.AddWithValue("@startPosX", route.StartPoint.X);
             command.Parameters.AddWithValue("@startPosY", route.StartPoint.Y);
+            command.Parameters.AddWithValue("@startPosZ", route.StartPoint.Z);
             command.Parameters.AddWithValue("@endPosX", route.EndPoint.X);
             command.Parameters.AddWithValue("@endPosY", route.EndPoint.Y);
+            command.Parameters.AddWithValue("@endPosZ", route.EndPoint.Z);
             command.Parameters.AddWithValue("@basePointId", route.BasePointId);
             await command.ExecuteNonQueryAsync();
           }
@@ -861,13 +865,15 @@ namespace GMEPPlumbing.Services
       if (routes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_vertical_routes
-              (id, project_id, pos_x, pos_y, connection_pos_x, connection_pos_y, vertical_route_id, base_point_id, start_height, length)
-              VALUES (@id, @projectId, @posX, @posY, @connectionPosX, @connectionPosY, @verticalRouteId, @basePointId, @startHeight, @length)
+              (id, project_id, pos_x, pos_y, pos_z, connection_pos_x, connection_pos_y, connection_pos_z, vertical_route_id, base_point_id, start_height, length)
+              VALUES (@id, @projectId, @posX, @posY, @posZ, @connectionPosX, @connectionPosY, @connectionPosZ, @verticalRouteId, @basePointId, @startHeight, @length)
               ON DUPLICATE KEY UPDATE
               pos_x = @posX,
               pos_y = @posy,
+              pos_z = @posZ,
               connection_pos_x = @connectionPosX, 
               connection_pos_y = @connectionPosY,
+              connection_pos_z = @connectionPosZ,
               vertical_route_id = @verticalRouteId,
               base_point_id = @basePointId,
               start_height = @startHeight,
@@ -879,10 +885,12 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@projectId", projectId);
           command.Parameters.AddWithValue("@posX", route.Position.X);
           command.Parameters.AddWithValue("@posY", route.Position.Y);
+          command.Parameters.AddWithValue("@posZ", route.Position.Z);
           command.Parameters.AddWithValue("@verticalRouteId", route.VerticalRouteId);
           command.Parameters.AddWithValue("@basePointId", route.BasePointId);
           command.Parameters.AddWithValue("@connectionPosX", route.ConnectionPosition.X);
           command.Parameters.AddWithValue("@connectionPosY", route.ConnectionPosition.Y);
+          command.Parameters.AddWithValue("@connectionPosZ", route.ConnectionPosition.Z);
           command.Parameters.AddWithValue("@startHeight", route.StartHeight);
           command.Parameters.AddWithValue("@length", route.Length);
           await command.ExecuteNonQueryAsync();
@@ -980,11 +988,12 @@ namespace GMEPPlumbing.Services
       if (sources.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_sources
-              (id, project_id, pos_x, pos_y, type_id, base_point_id)
-              VALUES (@id, @projectId, @posX, @posY, @typeId, @basePointId)
+              (id, project_id, pos_x, pos_y, pos_z, type_id, base_point_id)
+              VALUES (@id, @projectId, @posX, @posY, @posZ, @typeId, @basePointId)
               ON DUPLICATE KEY UPDATE
                   pos_x = @posX,
                   pos_y = @posY,
+                  pos_z = @posZ,
                   type_id = @typeId,
                   base_point_id = @basePointId
           ";
@@ -994,6 +1003,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@projectId", ProjectId);
           command.Parameters.AddWithValue("@posX", source.Position.X);
           command.Parameters.AddWithValue("@posY", source.Position.Y);
+          command.Parameters.AddWithValue("@posZ", source.Position.Z);
           command.Parameters.AddWithValue("@typeId", source.TypeId);
           command.Parameters.AddWithValue("@basePointId", source.BasePointId);
           await command.ExecuteNonQueryAsync();
@@ -1136,13 +1146,14 @@ namespace GMEPPlumbing.Services
       if (fixtures.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_fixture_components
-              (id, project_id, block_name, fixture_id, pos_x, pos_y)
-              VALUES (@id, @projectId, @blockName, @fixtureId, @posX, @posY)
+              (id, project_id, block_name, fixture_id, pos_x, pos_y, pos_z)
+              VALUES (@id, @projectId, @blockName, @fixtureId, @posX, @posY, @posZ)
               ON DUPLICATE KEY UPDATE
                   block_name = @blockName,
                   fixture_id = @fixtureId,
                   pos_x = @posX,
-                  pos_y = @posY
+                  pos_y = @posY,
+                  pos_z = @posZ
           ";
         foreach (var component in fixtures.Values.SelectMany(list => list)) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -1151,6 +1162,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@blockName", component.BlockName);
           command.Parameters.AddWithValue("@posX", component.Position.X);
           command.Parameters.AddWithValue("@posY", component.Position.Y);
+          command.Parameters.AddWithValue("@posZ", component.Position.Z);
           command.Parameters.AddWithValue("@fixtureId", component.FixtureId);
           await command.ExecuteNonQueryAsync();
         }
@@ -1174,12 +1186,12 @@ namespace GMEPPlumbing.Services
           new Point3d(
             reader.GetDouble("start_pos_x"),
             reader.GetDouble("start_pos_y"),
-            0
+            reader.GetDouble("start_pos_z")
           ),
          new Point3d(
             reader.GetDouble("end_pos_x"),
             reader.GetDouble("end_pos_y"),
-            0
+            reader.GetDouble("end_pos_z")
           ),
          reader.GetString("base_point_id")
         );
@@ -1206,12 +1218,12 @@ namespace GMEPPlumbing.Services
           new Point3d(
             reader.GetDouble("pos_x"),
             reader.GetDouble("pos_y"),
-            0
+            reader.GetDouble("pos_z")
           ),
           new Point3d(
             reader.GetDouble("connection_pos_x"),
             reader.GetDouble("connection_pos_y"),
-            0
+            reader.GetDouble("connection_pos_z")
           ),
           reader.GetString("vertical_route_id"),
           reader.GetString("base_point_id"),
@@ -1242,7 +1254,7 @@ namespace GMEPPlumbing.Services
           new Point3d(
             reader.GetDouble("pos_x"),
             reader.GetDouble("pos_y"),
-            0
+            reader.GetDouble("pos_z")
           ),
           reader.GetInt32("type_id"),
           reader.GetString("base_point_id")
@@ -1300,7 +1312,7 @@ namespace GMEPPlumbing.Services
           new Point3d(
             reader.GetDouble("pos_x"),
             reader.GetDouble("pos_y"),
-            0
+            reader.GetDouble("pos_z")
           ),
           0.0,
           parentFixture.CatalogId,

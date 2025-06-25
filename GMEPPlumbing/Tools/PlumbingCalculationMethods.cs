@@ -17,11 +17,12 @@ namespace GMEPPlumbing {
     public MariaDBService MariaDBService { get; set; } = new MariaDBService();
     public string ProjectId { get; private set; } = string.Empty;
     public List<PlumbingPlanBasePoint> BasePoints { get; private set; } = new List<PlumbingPlanBasePoint>();
+    public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; private set; } = new Dictionary<string, PlumbingPlanBasePoint>();
     public List<PlumbingSource> Sources { get; private set; } = new List<PlumbingSource>();
     public List<PlumbingHorizontalRoute> HorizontalRoutes { get; private set; } = new List<PlumbingHorizontalRoute>();
     public List<PlumbingVerticalRoute> VerticalRoutes { get; private set; } = new List<PlumbingVerticalRoute>();
     public Dictionary<string, List<PlumbingFixture>> PlumbingFixtures { get; set; } = new Dictionary<string, List<PlumbingFixture>>();
-    public Dictionary<string, double> LengthToFixtures { get; set; } = new Dictionary<string, double>();
+    public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
     public Routing RoutingControl { get; set; } = null;
     private PaletteSet pw;
 
@@ -40,6 +41,8 @@ namespace GMEPPlumbing {
         VerticalRoutes = await MariaDBService.GetPlumbingVerticalRoutes(ProjectId);
         PlumbingFixtures = await MariaDBService.GetPlumbingFixtures(ProjectId);
         BasePoints = await MariaDBService.GetPlumbingPlanBasePoints(ProjectId);
+        BasePointLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp);
+        FullRoutes.Clear();
 
         foreach (var source in Sources) {
           var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= 3.0 && route.BasePointId == source.BasePointId).ToList();
@@ -49,7 +52,7 @@ namespace GMEPPlumbing {
           }
         }
         ed.WriteMessage("\nPlumbing fixture calculation completed successfully.");
-        RoutingControl = new Routing(LengthToFixtures);
+        RoutingControl = new Routing(FullRoutes, BasePointLookup);
         var host = new ElementHost();
         host.Child = RoutingControl;
         pw = new PaletteSet("GMEP Plumbing Fixture Calculations");
@@ -70,13 +73,17 @@ namespace GMEPPlumbing {
         ed.WriteMessage($"\nError: {ex.Message}");
       }
     }
-    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0) {
-
+    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
       if (!visited.Add(route.Id))
         return;
+
+      if (routeObjects == null)
+        routeObjects = new List<Object>();
+
+      routeObjects.Add(route);
 
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
@@ -89,28 +96,45 @@ namespace GMEPPlumbing {
 
       foreach (var childRoute in childRoutes) {
         if (childRoute.Key.Id != route.Id) {
-          TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value);
+          TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjects);
         }
       }
       foreach (var verticalRoute in verticalRoutes) {
         double length;
-        var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute, out length);
-        TraverseVerticalRoute(verticalRouteEnd, visited, fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint) + length);
+        List<Object> routeObjectsTemp = new List<Object>(routeObjects);
+        SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects = null;
+        var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute, out length, out verticalRouteObjects);
+        foreach (var vr in verticalRouteObjects) {
+          routeObjectsTemp.Add(vr.Value);
+        }
+        TraverseVerticalRoute(verticalRouteEnd, visited, fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint) + length, routeObjectsTemp);
       }
       foreach(var fixture in fixtures) {
-        LengthToFixtures[fixture.FixtureId] = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
-        double lengthInInches = LengthToFixtures[fixture.FixtureId];
+        double lengthInInches = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+        PlumbingFullRoute fullRoute = new PlumbingFullRoute();
+        fullRoute.Length = lengthInInches;
+        fullRoute.RouteItems = routeObjects;
+
+        if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
+          FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
+        }
+
+        FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
+
         int feet = (int)(lengthInInches / 12);
         int inches = (int)Math.Round(lengthInInches % 12);
         ed.WriteMessage($"\nFixture {fixture.FixtureId} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
     }
-    public void TraverseVerticalRoute(PlumbingVerticalRoute route, HashSet<string> visited = null, double fullRouteLength = 0) {
+    public void TraverseVerticalRoute(PlumbingVerticalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
       if (!visited.Add(route.Id))
         return;
+
+      if (routeObjects == null)
+        routeObjects = new List<Object>();
 
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
@@ -120,9 +144,16 @@ namespace GMEPPlumbing {
         .Where(r => r.BasePointId == route.BasePointId && r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0)
         .ToList();
       foreach (var childRoute in childRoutes) {
-        TraverseHorizontalRoute(childRoute, visited, fullRouteLength);
+        TraverseHorizontalRoute(childRoute, visited, fullRouteLength, routeObjects);
       }
 
+    }
+    private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
+      var direction = end - start;
+      var totalLength = direction.Length;
+      if (totalLength == 0) return start; // Avoid division by zero
+      var ratio = length / totalLength;
+      return start + (direction * ratio);
     }
 
     private double GetPointToSegmentDistance(Point3d pt, Point3d segStart, Point3d segEnd, out double segmentLength) {
@@ -179,11 +210,11 @@ namespace GMEPPlumbing {
        .ToList();
     }
 
-    public PlumbingVerticalRoute FindVerticalRouteEnd(PlumbingVerticalRoute route, out double height) {
+    public PlumbingVerticalRoute FindVerticalRouteEnd(PlumbingVerticalRoute route, out double height, out SortedDictionary<int, PlumbingVerticalRoute> routes) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
-      SortedDictionary<int, PlumbingVerticalRoute> routes = GetVerticalRoutesByIdOrdered(route.VerticalRouteId);
+      routes = GetVerticalRoutesByIdOrdered(route.VerticalRouteId);
  
 
       var matchingKeys = routes.FirstOrDefault(kvp => kvp.Value.Id == route.Id);

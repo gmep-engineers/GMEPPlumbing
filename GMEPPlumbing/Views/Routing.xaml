@@ -4,25 +4,27 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:GMEPPlumbing.Views"
+             xmlns:helix="http://helix-toolkit.org/wpf"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <UserControl.Resources>
-        <local:InchesToFeetInchesConverter x:Key="InchesToFeetInchesConverter"/>
-    </UserControl.Resources>
     <Grid Background="#FF2D2D30">
-        <ListBox ItemsSource="{Binding LengthToFixtures}" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+        <ListBox ItemsSource="{Binding Scenes}" HorizontalContentAlignment="Stretch" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Margin="0,0,10,0">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="Fixture: {0} - Length From Source: {1}">
-                                    <Binding Path="Key"/>
-                                    <Binding Path="Value" Converter="{StaticResource InchesToFeetInchesConverter}"/>
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
-                    </StackPanel>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Key, StringFormat=Group: {0}}" Margin="0,0,0,5"/>
+                        <TabControl Grid.Row="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" ItemsSource="{Binding Value}" Margin="0,20,0,0">
+                            <TabControl.ContentTemplate>
+                                <DataTemplate>
+                                    <local:Scene3DView Margin="5"/>
+                                </DataTemplate>
+                            </TabControl.ContentTemplate>
+                        </TabControl>
+                    </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>

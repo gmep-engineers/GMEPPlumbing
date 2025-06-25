@@ -13,13 +13,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using System.Xml.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.DatabaseServices.Filters;
 using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
@@ -56,7 +52,6 @@ namespace GMEPPlumbing
     private DateTime newCreationTime;
 
     public MariaDBService MariaDBService { get; set; } = new MariaDBService();
-
     public Document doc { get; private set; }
     public Database db { get; private set; }
     public Editor ed { get; private set; }
@@ -100,6 +95,8 @@ namespace GMEPPlumbing
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute() {
       string BasePointId = CADObjectCommands.GetActiveView();
+      double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
+      
       List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
   
@@ -169,8 +166,9 @@ namespace GMEPPlumbing
           tr2.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
         Line line = new Line();
-        line.StartPoint = startPointLocation2;
-        line.EndPoint = endPointLocation2;
+        line.StartPoint = new Point3d(startPointLocation2.X, startPointLocation2.Y, zIndex);
+        line.EndPoint = new Point3d(endPointLocation2.X, endPointLocation2.Y, zIndex);
+
         line.Layer = layer;
         btr.AppendEntity(line);
         tr2.AddNewlyCreatedDBObject(line, true);
@@ -258,12 +256,12 @@ namespace GMEPPlumbing
 
           Line line = new Line();
           if (direction == "Forward") {
-            line.StartPoint = startPointLocation;
-            line.EndPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, 0);
+            line.StartPoint = new Point3d(startPointLocation.X, startPointLocation.Y, zIndex);
+            line.EndPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, zIndex);
           }
           else if (direction == "Backward") {
-            line.StartPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, 0);
-            line.EndPoint = startPointLocation;
+            line.StartPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, zIndex);
+            line.EndPoint = new Point3d(startPointLocation.X, startPointLocation.Y, zIndex);
           }
       
           line.Layer = layer;
@@ -283,7 +281,8 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
-      string basePointGUID = CADObjectCommands.GetActiveView(); 
+      string basePointGUID = CADObjectCommands.GetActiveView();
+      double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
       SettingObjects = true;
       string layer = "Defpoints";
       List<ObjectId> basePointIds = new List<ObjectId>();
@@ -526,6 +525,7 @@ namespace GMEPPlumbing
           if (rotatePromptResult.Status != PromptStatus.OK) {
             return;
           }
+          upBlockRef2.Position = new Point3d(newUpPointLocation2.X, newUpPointLocation2.Y, zIndex);
           labelPoint = upBlockRef2.Position;
 
           upBlockRef2.Layer = layer;
@@ -571,6 +571,7 @@ namespace GMEPPlumbing
             // Create the BlockReference at the desired location
             BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
             upBlockRef.Layer = layer;
+            upBlockRef.Position = new Point3d(newUpPointLocation.X, newUpPointLocation.Y, floorHeights[i]*12);
             curSpace.AppendEntity(upBlockRef);
             tr.AddNewlyCreatedDBObject(upBlockRef, true);
             var pc2 = upBlockRef.DynamicBlockReferencePropertyCollection;
@@ -633,6 +634,7 @@ namespace GMEPPlumbing
           if (rotatePromptResult2.Status != PromptStatus.OK) {
             return;
           }
+          upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, (floorHeights[endFloor] + height)*12);
 
           upBlockRef3.Layer = layer;
           curSpace3.AppendEntity(upBlockRef3);
@@ -680,6 +682,7 @@ namespace GMEPPlumbing
           if (rotatePromptResult.Status != PromptStatus.OK) {
             return;
           }
+          upBlockRef2.Position = new Point3d(newUpPointLocation2.X, newUpPointLocation2.Y, zIndex);
           upBlockRef2.Layer = layer;
           curSpace2.AppendEntity(upBlockRef2);
           tr.AddNewlyCreatedDBObject(upBlockRef2, true);
@@ -721,6 +724,7 @@ namespace GMEPPlumbing
             // Create the BlockReference at the desired location
             BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
             upBlockRef.Layer = layer;
+            upBlockRef.Position = new Point3d(newUpPointLocation.X, newUpPointLocation.Y, floorHeights[i]);
             curSpace.AppendEntity(upBlockRef);
             tr.AddNewlyCreatedDBObject(upBlockRef, true);
             var pc = upBlockRef.DynamicBlockReferencePropertyCollection;
@@ -784,6 +788,7 @@ namespace GMEPPlumbing
             return;
           }
           upBlockRef3.Layer = layer;
+          upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, (floorHeights[endFloor] + height) * 12);
           curSpace3.AppendEntity(upBlockRef3);
           tr.AddNewlyCreatedDBObject(upBlockRef3, true);
           var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
@@ -886,6 +891,7 @@ namespace GMEPPlumbing
           if (rotatePromptResult.Status != PromptStatus.OK) {
             return;
           }
+          upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, zIndex);
           upBlockRef3.Layer = layer;
           curSpace3.AppendEntity(upBlockRef3);
           tr.AddNewlyCreatedDBObject(upBlockRef3, true);
@@ -1494,6 +1500,7 @@ namespace GMEPPlumbing
     public void PlumbingFixture() {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
+      double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
       doc = Application.DocumentManager.MdiActiveDocument;
       db = doc.Database;
       ed = doc.Editor;
@@ -1616,6 +1623,7 @@ namespace GMEPPlumbing
               if (rotatePromptResult.Status != PromptStatus.OK) {
                 return;
               }
+              br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
               rotation = br.Rotation;
 
               curSpace.AppendEntity(br);
@@ -1707,7 +1715,8 @@ namespace GMEPPlumbing
                 selectedFixtureType.Abbreviation,
                 index,
                 basePointId,
-                fixtureId
+                fixtureId,
+                zIndex
               );
             }
             else if (wasteVentBlockName == "GMEP DRAIN") {
@@ -1719,7 +1728,8 @@ namespace GMEPPlumbing
                 index,
                 ventPosition,
                 basePointId,
-                fixtureId
+                fixtureId,
+                zIndex
               );
             }
             else {
@@ -1731,7 +1741,8 @@ namespace GMEPPlumbing
                 selectedFixtureType.Abbreviation,
                 index,
                 basePointId,
-                fixtureId
+                fixtureId,
+                zIndex
               );
             }
             index++;
@@ -1748,6 +1759,7 @@ namespace GMEPPlumbing
     public void CreatePlumbingSource() {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
+      double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
       doc = Application.DocumentManager.MdiActiveDocument;
       db = doc.Database;
       ed = doc.Editor;
@@ -1807,6 +1819,8 @@ namespace GMEPPlumbing
               return;
             }
             rotation = br.Rotation;
+            br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
+
 
             curSpace.AppendEntity(br);
 
@@ -1858,7 +1872,8 @@ namespace GMEPPlumbing
       string selectedFixtureTypeAbbr,
       int index,
       string basePointId,
-      string fixtureId
+      string fixtureId, 
+      double zIndex = 0
     ) {
       ed.WriteMessage("\nSelect base point for vent");
       ObjectId blockId;
@@ -1888,8 +1903,10 @@ namespace GMEPPlumbing
               return new Point3d();
             }
             rotation = br.Rotation;
+            br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
             curSpace.AppendEntity(br);
             tr.AddNewlyCreatedDBObject(br, true);
+
           }
           blockId = br.Id;
           point = br.Position;
@@ -1955,7 +1972,8 @@ namespace GMEPPlumbing
       int index,
       Point3d ventPosition,
       string basePointId,
-      string fixtureId
+      string fixtureId,
+      double zIndex = 0
     ) {
       ed.WriteMessage("\nSelect base point for drain");
       ObjectId blockId;
@@ -1977,6 +1995,7 @@ namespace GMEPPlumbing
           if (br != null) {
             BlockTableRecord curSpace = (BlockTableRecord)
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+            br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
             curSpace.AppendEntity(br);
             tr.AddNewlyCreatedDBObject(br, true);
             point = br.Position;
@@ -1993,8 +2012,8 @@ namespace GMEPPlumbing
               0
             );
             Line line = new Line();
-            line.StartPoint = startPoint;
-            line.EndPoint = endPoint;
+            line.StartPoint = new Point3d(startPoint.X, startPoint.Y, zIndex);
+            line.EndPoint = new Point3d(endPoint.X, endPoint.Y, zIndex);
             line.Layer = "P-WV-W-BELOW";
             curSpace.AppendEntity(line);
             tr.AddNewlyCreatedDBObject(line, true);
@@ -2062,7 +2081,8 @@ namespace GMEPPlumbing
       string selectedFixtureTypeAbbr,
       int index,
       string basePointId,
-      string fixtureId
+      string fixtureId,
+      double zIndex = 0
     ) {
       ed.WriteMessage("\nSelect base point for " + selectedFixtureTypeAbbr);
       ObjectId blockId;
@@ -2109,6 +2129,7 @@ namespace GMEPPlumbing
               }
               rotation = br.Rotation;
             }
+            br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
 
             curSpace.AppendEntity(br);
 
@@ -2607,11 +2628,11 @@ namespace GMEPPlumbing
         BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
 
         List<string> blockNames = new List<string>
-          {
-              "GMEP_PLUMBING_LINE_UP",
-              "GMEP_PLUMBING_LINE_DOWN",
-              "GMEP_PLUMBING_LINE_VERTICAL"
-          };
+        {
+            "GMEP_PLUMBING_LINE_UP",
+            "GMEP_PLUMBING_LINE_DOWN",
+            "GMEP_PLUMBING_LINE_VERTICAL"
+        };
 
         foreach (var name in blockNames) {
           BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
@@ -2662,7 +2683,7 @@ namespace GMEPPlumbing
                         double rotation = entity.Rotation;
                         double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
                         double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
-                        var connectionPointLocation = new Point3d(entity.Position.X + rotatedX, entity.Position.Y + rotatedY, 0);
+                        var connectionPointLocation = new Point3d(entity.Position.X + rotatedX, entity.Position.Y + rotatedY, entity.Position.Z);
 
                         PlumbingVerticalRoute route = new PlumbingVerticalRoute(
                           Id,
