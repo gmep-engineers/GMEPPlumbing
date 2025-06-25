@@ -42,6 +42,7 @@ namespace GMEPPlumbing {
         PlumbingFixtures = await MariaDBService.GetPlumbingFixtures(ProjectId);
         BasePoints = await MariaDBService.GetPlumbingPlanBasePoints(ProjectId);
         BasePointLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp);
+        FullRoutes.Clear();
 
         foreach (var source in Sources) {
           var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= 3.0 && route.BasePointId == source.BasePointId).ToList();
