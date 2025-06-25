@@ -34,7 +34,7 @@ namespace GMEPPlumbing.Views
       public Dictionary<string, List<Scene>> Scenes { get; set; } = new Dictionary<string, List<Scene>>();
       public Routing(Dictionary<string, List<PlumbingFullRoute>> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup)
       {
-        FullRoutes = fullRoutes;
+        FullRoutes = DeepCopyFullRoutes(fullRoutes);
         BasePointLookup = basePointLookup;
         NormalizeRoutes();
         GenerateScenes();
@@ -83,6 +83,50 @@ namespace GMEPPlumbing.Views
             }
           }
         }
+      }
+      public static Dictionary<string, List<PlumbingFullRoute>> DeepCopyFullRoutes(Dictionary<string, List<PlumbingFullRoute>> original) {
+        var result = new Dictionary<string, List<PlumbingFullRoute>>();
+        foreach (var kvp in original) {
+          var newList = new List<PlumbingFullRoute>();
+          foreach (var fullRoute in kvp.Value) {
+            var newFullRoute = new PlumbingFullRoute {
+              Length = fullRoute.Length,
+              RouteItems = new List<object>()
+            };
+            foreach (var item in fullRoute.RouteItems) {
+              if (item is PlumbingHorizontalRoute hr) {
+                var copy = new PlumbingHorizontalRoute(
+                    hr.Id,
+                    hr.ProjectId,
+                    new Point3d(hr.StartPoint.X, hr.StartPoint.Y, hr.StartPoint.Z),
+                    new Point3d(hr.EndPoint.X, hr.EndPoint.Y, hr.EndPoint.Z),
+                    hr.BasePointId
+                );
+                newFullRoute.RouteItems.Add(copy);
+              }
+              else if (item is PlumbingVerticalRoute vr) {
+                var copy = new PlumbingVerticalRoute(
+                    vr.Id,
+                    vr.ProjectId,
+                    new Point3d(vr.Position.X, vr.Position.Y, vr.Position.Z),
+                    new Point3d(vr.ConnectionPosition.X, vr.ConnectionPosition.Y, vr.ConnectionPosition.Z),
+                    vr.VerticalRouteId,
+                    vr.BasePointId,
+                    vr.StartHeight,
+                    vr.Length
+                );
+                newFullRoute.RouteItems.Add(copy);
+              }
+              else {
+                // If you have other types, handle them here or clone as needed
+                newFullRoute.RouteItems.Add(item);
+              }
+            }
+            newList.Add(newFullRoute);
+          }
+          result[kvp.Key] = newList;
+        }
+        return result;
       }
     }
     
