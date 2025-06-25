@@ -256,7 +256,7 @@ namespace GMEPPlumbing
 
           Line line = new Line();
           if (direction == "Forward") {
-            line.StartPoint = new Point3d(startPointLocation.X, startPointLocation2.Y, zIndex);
+            line.StartPoint = new Point3d(startPointLocation.X, startPointLocation.Y, zIndex);
             line.EndPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, zIndex);
           }
           else if (direction == "Backward") {
