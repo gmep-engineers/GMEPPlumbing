@@ -96,7 +96,7 @@ namespace GMEPPlumbing {
 
       foreach (var childRoute in childRoutes) {
         if (childRoute.Key.Id != route.Id) {
-          TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjects);
+          TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, new List<object>(routeObjects));
         }
       }
       foreach (var verticalRoute in verticalRoutes) {
