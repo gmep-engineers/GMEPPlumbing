@@ -34,7 +34,7 @@ namespace GMEPPlumbing.Views
       var ed = doc.Editor;
       Viewport.Children.Clear();
       if (DataContext is Scene scene) {
-        Viewport.Children.Add(new HelixToolkit.Wpf.DefaultLights());
+        Viewport.Children.Add(new HelixToolkit.Wpf.SunLight());
         foreach (var visual in scene.RouteVisuals) {
           Viewport.Children.Add(visual);
         }

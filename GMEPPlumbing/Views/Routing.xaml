@@ -8,24 +8,23 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid Background="#FF2D2D30">
-        <ListBox ItemsSource="{Binding Scenes}" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+        <ListBox ItemsSource="{Binding Scenes}" HorizontalContentAlignment="Stretch" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Vertical">
-                        <TextBlock FontWeight="Bold" Text="{Binding Key, StringFormat=Group: {0}}" Margin="0,0,0,5"/>
-                        <ItemsControl ItemsSource="{Binding Value}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Key, StringFormat=Group: {0}}" Margin="0,0,0,5"/>
+                        <TabControl Grid.Row="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" ItemsSource="{Binding Value}" Margin="0,20,0,0">
+                            <TabControl.ContentTemplate>
                                 <DataTemplate>
-                                    <local:Scene3DView Margin="0 0 10 0" />
+                                    <local:Scene3DView Margin="5"/>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
+                            </TabControl.ContentTemplate>
+                        </TabControl>
+                    </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
