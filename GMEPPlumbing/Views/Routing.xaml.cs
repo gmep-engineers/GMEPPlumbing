@@ -180,8 +180,7 @@ namespace GMEPPlumbing.Views
           BuildScene();
       }
       public void BuildScene() {
-
-        RouteVisuals.Clear();
+      RouteVisuals.Clear();
         foreach (var item in RouteItems) {
         Visual3D model = null;
          if (item is PlumbingHorizontalRoute horizontalRoute) {
@@ -202,7 +201,7 @@ namespace GMEPPlumbing.Views
           model = new TubeVisual3D {
             Path = new Point3DCollection {
               new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
-              new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + (verticalRoute.Length*12))
+              new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length)
             },
             Diameter = 2,
             Fill = System.Windows.Media.Brushes.SteelBlue
