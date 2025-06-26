@@ -83,7 +83,7 @@ namespace GMEPPlumbing {
       if (routeObjects == null)
         routeObjects = new List<Object>();
 
-      routeObjects.Add(route);
+      //routeObjects.Add(route);
 
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
@@ -96,12 +96,22 @@ namespace GMEPPlumbing {
 
       foreach (var childRoute in childRoutes) {
         if (childRoute.Key.Id != route.Id) {
-          TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, new List<object>(routeObjects));
+          var routeObjectsTemp = new List<Object>(routeObjects);
+          var adjustedRoute = new PlumbingHorizontalRoute(
+           route.Id,
+           route.ProjectId,
+           route.StartPoint,
+           getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value),
+           route.BasePointId
+          );
+          routeObjectsTemp.Add(adjustedRoute);
+          TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
         }
       }
       foreach (var verticalRoute in verticalRoutes) {
         double length;
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
+        routeObjectsTemp.Add(route);
         SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects = null;
         var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute, out length, out verticalRouteObjects);
         foreach (var vr in verticalRouteObjects) {
@@ -110,10 +120,13 @@ namespace GMEPPlumbing {
         TraverseVerticalRoute(verticalRouteEnd, visited, fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint) + length, routeObjectsTemp);
       }
       foreach(var fixture in fixtures) {
+        List<Object> routeObjectsTemp = new List<Object>(routeObjects);
+        routeObjectsTemp.Add(route);
+
         double lengthInInches = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
         PlumbingFullRoute fullRoute = new PlumbingFullRoute();
         fullRoute.Length = lengthInInches;
-        fullRoute.RouteItems = routeObjects;
+        fullRoute.RouteItems = routeObjectsTemp;
 
         if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
           FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
