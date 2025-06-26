@@ -109,7 +109,8 @@ namespace GMEPPlumbing.Views
           foreach (var fullRoute in kvp.Value) {
             var newFullRoute = new PlumbingFullRoute {
               Length = fullRoute.Length,
-              RouteItems = new List<object>()
+              RouteItems = new List<object>(),
+              TypeId = fullRoute.TypeId,
             };
             foreach (var item in fullRoute.RouteItems) {
               if (item is PlumbingHorizontalRoute hr) {
@@ -175,12 +176,23 @@ namespace GMEPPlumbing.Views
       public double Length { get; set; } = 0;
       public ObservableCollection<Visual3D> RouteVisuals { get; set; } = new ObservableCollection<Visual3D>();
       public Dictionary<string, PlumbingPlanBasePoint> BasePoints { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
-
       public HashSet<string> BasePointIds = new HashSet<string>();
+      public SolidColorBrush RouteColor { get; set; } = new SolidColorBrush(Color.FromArgb(255, 0, 0, 255)); // Default to blue
       public Scene(PlumbingFullRoute fullRoute, Dictionary<string, PlumbingPlanBasePoint> basePoints) {
           RouteItems = fullRoute.RouteItems;
           Length = fullRoute.Length;
           BasePoints = basePoints;
+          switch (fullRoute.TypeId) {
+            case 1:
+              RouteColor = System.Windows.Media.Brushes.Yellow;
+              break;
+            case 2:
+              RouteColor = System.Windows.Media.Brushes.Magenta;
+              break;
+            case 3:
+              RouteColor = System.Windows.Media.Brushes.SteelBlue;
+              break;
+          }
           BuildScene();
       }
       public void BuildScene() {
@@ -194,7 +206,7 @@ namespace GMEPPlumbing.Views
               new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z)
             },
             Diameter = 2,
-            Fill = System.Windows.Media.Brushes.SteelBlue
+            Fill = RouteColor
           };
           BasePointIds.Add(horizontalRoute.BasePointId);
         }
@@ -209,7 +221,7 @@ namespace GMEPPlumbing.Views
               new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length)
             },
             Diameter = 2,
-            Fill = System.Windows.Media.Brushes.SteelBlue
+            Fill = RouteColor
           };
           BasePointIds.Add(verticalRoute.BasePointId);
         }
@@ -217,7 +229,7 @@ namespace GMEPPlumbing.Views
           model = new SphereVisual3D {
             Center = new Point3D(plumbingSource.Position.X, plumbingSource.Position.Y, plumbingSource.Position.Z),
             Radius = 2,
-            Fill = System.Windows.Media.Brushes.SteelBlue
+            Fill = RouteColor
           };
           BasePointIds.Add(plumbingSource.BasePointId);
         }
@@ -225,7 +237,7 @@ namespace GMEPPlumbing.Views
           model = new SphereVisual3D {
             Center = new Point3D(plumbingFixture.Position.X, plumbingFixture.Position.Y, plumbingFixture.Position.Z),
             Radius = 3,
-            Fill = System.Windows.Media.Brushes.Green
+            Fill = RouteColor
           };
           BasePointIds.Add(plumbingFixture.BasePointId);
         }

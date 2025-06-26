@@ -124,10 +124,16 @@ namespace GMEPPlumbing {
         routeObjectsTemp.Add(route);
         routeObjectsTemp.Add(fixture);
 
+        int typeId = 0;
+        if (routeObjectsTemp[0] is PlumbingSource source) {
+          typeId = source.TypeId;
+        }
+
         double lengthInInches = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
         PlumbingFullRoute fullRoute = new PlumbingFullRoute();
         fullRoute.Length = lengthInInches;
         fullRoute.RouteItems = routeObjectsTemp;
+        fullRoute.TypeId = typeId;
 
         if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
           FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
