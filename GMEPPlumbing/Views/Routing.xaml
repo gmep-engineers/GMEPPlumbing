@@ -11,13 +11,13 @@
         <ListBox ItemsSource="{Binding Scenes}" HorizontalContentAlignment="Stretch" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Grid>
+                    <Grid Height="{Binding RelativeSource={RelativeSource AncestorType=ListBox}, Path=ActualHeight}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Key, StringFormat=Group: {0}}" Margin="0,0,0,5"/>
-                        <TabControl Grid.Row="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" ItemsSource="{Binding Value}" Margin="0,20,0,0">
+                        <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Key, StringFormat=View: {0}}" Margin="0,0,0,5"/>
+                        <TabControl Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" ItemsSource="{Binding Value}" Margin="0,20,0,0">
                             <TabControl.ContentTemplate>
                                 <DataTemplate>
                                     <local:Scene3DView Margin="5"/>
