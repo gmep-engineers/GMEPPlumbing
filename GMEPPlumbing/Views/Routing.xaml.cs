@@ -48,7 +48,7 @@ namespace GMEPPlumbing.Views
             Scenes[route.Key] = new List<Scene>();
           }
           foreach (var fullRoute in route.Value) {
-            var scene = new Scene(fullRoute);
+            var scene = new Scene(fullRoute, BasePointLookup.Values.ToList());
             Scenes[route.Key].Add(scene);
           }
         }
@@ -174,9 +174,11 @@ namespace GMEPPlumbing.Views
       public List<object> RouteItems { get; set; } = new List<object>();
       public double Length { get; set; } = 0;
       public ObservableCollection<Visual3D> RouteVisuals { get; set; } = new ObservableCollection<Visual3D>();
-      public Scene(PlumbingFullRoute fullRoute) {
+      public List<PlumbingPlanBasePoint> BasePoints { get; set; } = new List<PlumbingPlanBasePoint>();
+      public Scene(PlumbingFullRoute fullRoute, List<PlumbingPlanBasePoint> basePoints) {
           RouteItems = fullRoute.RouteItems;
           Length = fullRoute.Length;
+          BasePoints = basePoints;
           BuildScene();
       }
       public void BuildScene() {
@@ -225,6 +227,26 @@ namespace GMEPPlumbing.Views
           RouteVisuals.Add(model);
         }
       }
+      foreach (var basePoint in BasePoints) {
+        var basePointModel = new RectangleVisual3D {
+          Origin = new Point3D(0, 0, basePoint.FloorHeight * 12),
+          Width = 50,
+          Length = 50,
+          Normal = new Vector3D(0, 0, 1),
+          Fill = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255))
+        };
+        RouteVisuals.Add(basePointModel);
+
+        var textModel = new TextVisual3D {
+          Position = new Point3D(0, 0, basePoint.FloorHeight * 12 + 0.5), // Slightly above the rectangle
+          Text = $"Floor {basePoint.Floor}",
+          Height = 10, // Size of the text
+          Foreground = Brushes.White,
+          UpDirection = new Vector3D(0, 1, 0), // Text facing up
+          Background = Brushes.Transparent // Or Brushes.White for a background
+        };
+        RouteVisuals.Add(textModel);
       }
+    }
     }
 }
