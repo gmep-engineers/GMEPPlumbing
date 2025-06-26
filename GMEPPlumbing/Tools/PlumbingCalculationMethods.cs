@@ -48,7 +48,7 @@ namespace GMEPPlumbing {
           var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= 3.0 && route.BasePointId == source.BasePointId).ToList();
 
           foreach (var matchingRoute in matchingRoutes) {
-            TraverseHorizontalRoute(matchingRoute);
+            TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
           }
         }
         ed.WriteMessage("\nPlumbing fixture calculation completed successfully.");
@@ -122,6 +122,7 @@ namespace GMEPPlumbing {
       foreach(var fixture in fixtures) {
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
         routeObjectsTemp.Add(route);
+        routeObjectsTemp.Add(fixture);
 
         double lengthInInches = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
         PlumbingFullRoute fullRoute = new PlumbingFullRoute();

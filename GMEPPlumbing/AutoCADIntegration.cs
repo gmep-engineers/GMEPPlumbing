@@ -2685,6 +2685,19 @@ namespace GMEPPlumbing
                         double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
                         var connectionPointLocation = new Point3d(entity.Position.X + rotatedX, entity.Position.Y + rotatedY, entity.Position.Z);
 
+                        int nodeTypeId = 0;
+                        switch (name) {
+                          case "GMEP_PLUMBING_LINE_UP":
+                            nodeTypeId = 1;
+                            break;
+                          case "GMEP_PLUMBING_LINE_DOWN":
+                            nodeTypeId = 3;
+                            break;
+                          case "GMEP_PLUMBING_LINE_VERTICAL":
+                            nodeTypeId = 2;
+                            break;
+                        }
+
                         PlumbingVerticalRoute route = new PlumbingVerticalRoute(
                           Id,
                           ProjectId,
@@ -2693,7 +2706,8 @@ namespace GMEPPlumbing
                           VerticalRouteId,
                           BasePointId,
                           startHeight,
-                          length
+                          length,
+                          nodeTypeId
                         );
                         routes.Add(route);
                       }

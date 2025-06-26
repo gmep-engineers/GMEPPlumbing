@@ -865,8 +865,8 @@ namespace GMEPPlumbing.Services
       if (routes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_vertical_routes
-              (id, project_id, pos_x, pos_y, pos_z, connection_pos_x, connection_pos_y, connection_pos_z, vertical_route_id, base_point_id, start_height, length)
-              VALUES (@id, @projectId, @posX, @posY, @posZ, @connectionPosX, @connectionPosY, @connectionPosZ, @verticalRouteId, @basePointId, @startHeight, @length)
+              (id, project_id, pos_x, pos_y, pos_z, connection_pos_x, connection_pos_y, connection_pos_z, vertical_route_id, base_point_id, start_height, length, node_type_id)
+              VALUES (@id, @projectId, @posX, @posY, @posZ, @connectionPosX, @connectionPosY, @connectionPosZ, @verticalRouteId, @basePointId, @startHeight, @length, @nodeTypeId)
               ON DUPLICATE KEY UPDATE
               pos_x = @posX,
               pos_y = @posy,
@@ -877,7 +877,8 @@ namespace GMEPPlumbing.Services
               vertical_route_id = @verticalRouteId,
               base_point_id = @basePointId,
               start_height = @startHeight,
-              length = @length
+              length = @length,
+              node_type_id = @nodeTypeId
           ";
         foreach (var route in routes) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -893,6 +894,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@connectionPosZ", route.ConnectionPosition.Z);
           command.Parameters.AddWithValue("@startHeight", route.StartHeight);
           command.Parameters.AddWithValue("@length", route.Length);
+          command.Parameters.AddWithValue("@nodeTypeId", route.NodeTypeId);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1228,7 +1230,8 @@ namespace GMEPPlumbing.Services
           reader.GetString("vertical_route_id"),
           reader.GetString("base_point_id"),
           reader.GetDouble("start_height"),
-          reader.GetDouble("length")
+          reader.GetDouble("length"), 
+          reader.GetInt32("node_type_id")
         );
         routes.Add(verticalRoute);
       }
