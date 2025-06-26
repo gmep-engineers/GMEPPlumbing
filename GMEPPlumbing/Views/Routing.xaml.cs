@@ -131,7 +131,8 @@ namespace GMEPPlumbing.Views
                     vr.VerticalRouteId,
                     vr.BasePointId,
                     vr.StartHeight,
-                    vr.Length
+                    vr.Length,
+                    vr.NodeTypeId
                 );
                 newFullRoute.RouteItems.Add(copy);
               }
@@ -179,6 +180,7 @@ namespace GMEPPlumbing.Views
           BuildScene();
       }
       public void BuildScene() {
+
         RouteVisuals.Clear();
         foreach (var item in RouteItems) {
         Visual3D model = null;
@@ -193,6 +195,10 @@ namespace GMEPPlumbing.Views
           };
         }
         else if (item is PlumbingVerticalRoute verticalRoute) {
+          double length = verticalRoute.Length * 12;
+          if (verticalRoute.NodeTypeId == 3) {
+            length = -length;
+          }
           model = new TubeVisual3D {
             Path = new Point3DCollection {
               new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
