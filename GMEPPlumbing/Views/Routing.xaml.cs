@@ -236,8 +236,8 @@ namespace GMEPPlumbing.Views
         else if (item is PlumbingFixture plumbingFixture) {
           model = new SphereVisual3D {
             Center = new Point3D(plumbingFixture.Position.X, plumbingFixture.Position.Y, plumbingFixture.Position.Z),
-            Radius = 3,
-            Fill = RouteColor
+            Radius = 2,
+            Fill = Brushes.Green
           };
           BasePointIds.Add(plumbingFixture.BasePointId);
         }
