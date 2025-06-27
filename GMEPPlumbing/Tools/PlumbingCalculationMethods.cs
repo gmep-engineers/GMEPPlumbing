@@ -159,14 +159,21 @@ namespace GMEPPlumbing {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
+      double routeLength = 0;
+      if (route.NodeTypeId == 3) {
+        routeLength = -route.Length*12;
+      }
+      else if (route.NodeTypeId == 1) {
+        routeLength = route.Length*12;
+      }
+      Vector3d direction = new Vector3d(0, 0, routeLength);
       ed.WriteMessage($"\nTraversing vertical route: {route.Id} at position {route.Position}");
       List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
-        .Where(r => r.BasePointId == route.BasePointId && r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0)
+        .Where(r => r.BasePointId == route.BasePointId && (r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || r.StartPoint.DistanceTo(route.Position + direction) <= 3.0))
         .ToList();
       foreach (var childRoute in childRoutes) {
         TraverseHorizontalRoute(childRoute, visited, fullRouteLength, routeObjects);
       }
-
     }
     private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
       var direction = end - start;
