@@ -161,10 +161,10 @@ namespace GMEPPlumbing {
       var ed = doc.Editor;
       double routeLength = 0;
       if (route.NodeTypeId == 3) {
-        routeLength = -route.Length;
+        routeLength = -route.Length*12;
       }
       else if (route.NodeTypeId == 1) {
-        routeLength = route.Length;
+        routeLength = route.Length*12;
       }
       Vector3d direction = new Vector3d(0, 0, routeLength);
       ed.WriteMessage($"\nTraversing vertical route: {route.Id} at position {route.Position}");
