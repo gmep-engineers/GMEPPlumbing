@@ -1437,7 +1437,7 @@ namespace GMEPPlumbing
       CADObjectCommands.CreateTextWithJig(
         CADObjectCommands.TextLayer,
         TextHorizontalMode.TextLeft,
-        "PLMG " + direction
+        direction
       );
     }
 
