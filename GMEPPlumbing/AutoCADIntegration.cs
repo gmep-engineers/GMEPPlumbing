@@ -911,6 +911,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "length") {
               prop.Value = length;
             }
+            if (prop.PropertyName == "start_height") {
+              prop.Value = CADObjectCommands.GetPlumbingRouteHeight();
+            }
           }
           tr.Commit();
           
