@@ -506,6 +506,7 @@ namespace GMEPPlumbing
 
       if (endFloor > startFloor) {
         Point3d labelPoint = Point3d.Origin;
+        Point3d labelPoint2 = Point3d.Origin;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           //delete previous start pipe
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -556,7 +557,7 @@ namespace GMEPPlumbing
           // Set the vertical route ID
           tr.Commit();
         }
-        MakeVerticalRouteLabel(labelPoint, "UP");
+        MakeVerticalRouteLabel(labelPoint, "UP TO UPPER");
 
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           //Continue Pipe
@@ -629,6 +630,7 @@ namespace GMEPPlumbing
           BlockTableRecord curSpace3 = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
           BlockReference upBlockRef3 = new BlockReference(newUpPointLocation3, blockDef3.ObjectId);
+          labelPoint2 = upBlockRef3.Position;
           RotateJig rotateJig2 = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
           if (rotatePromptResult2.Status != PromptStatus.OK) {
@@ -660,8 +662,10 @@ namespace GMEPPlumbing
           }
           tr.Commit();
         }
+        MakeVerticalRouteLabel(labelPoint2, "UP FROM LOWER");
       }
       else if (endFloor < startFloor) {
+        Point3d labelPoint = Point3d.Origin;
         Point3d labelPoint2 = Point3d.Origin;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           //delete previous start pipe
@@ -686,7 +690,7 @@ namespace GMEPPlumbing
           upBlockRef2.Layer = layer;
           curSpace2.AppendEntity(upBlockRef2);
           tr.AddNewlyCreatedDBObject(upBlockRef2, true);
-          labelPoint2 = upBlockRef2.Position;
+          labelPoint = upBlockRef2.Position;
 
           var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
 
@@ -709,7 +713,7 @@ namespace GMEPPlumbing
           }
           tr.Commit();
         }
-        MakeVerticalRouteLabel(labelPoint2, "DOWN");
+        MakeVerticalRouteLabel(labelPoint, "DOWN TO LOWER");
 
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           //Continue Pipe
@@ -782,6 +786,7 @@ namespace GMEPPlumbing
           BlockTableRecord curSpace3 = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
           BlockReference upBlockRef3 = new BlockReference(newUpPointLocation3, blockDef3.ObjectId);
+          labelPoint2 = upBlockRef3.Position;
           RotateJig rotateJig2 = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
           if (rotatePromptResult2.Status != PromptStatus.OK) {
@@ -812,6 +817,7 @@ namespace GMEPPlumbing
           }
           tr.Commit();
         }
+        MakeVerticalRouteLabel(labelPoint2, "DOWN FROM UPPER");
       }
       else if (endFloor == startFloor) {
         PromptKeywordOptions pko3 = new PromptKeywordOptions("\nUp or Down?");
@@ -1431,7 +1437,7 @@ namespace GMEPPlumbing
       CADObjectCommands.CreateTextWithJig(
         CADObjectCommands.TextLayer,
         TextHorizontalMode.TextLeft,
-        "PLMG " + direction
+        direction
       );
     }
 
