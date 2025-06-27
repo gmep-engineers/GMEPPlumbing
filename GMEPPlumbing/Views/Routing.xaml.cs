@@ -200,7 +200,8 @@ namespace GMEPPlumbing.Views
         foreach (var item in RouteItems) {
         Visual3D model = null;
          if (item is PlumbingHorizontalRoute horizontalRoute) {
-          model = new TubeVisual3D {
+          ModelVisual3D fullModel = new ModelVisual3D();
+          var lineModel = new TubeVisual3D {
             Path = new Point3DCollection {
               new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
               new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z)
@@ -208,6 +209,14 @@ namespace GMEPPlumbing.Views
             Diameter = 2,
             Fill = RouteColor
           };
+          var ballModel = new SphereVisual3D {
+            Center = new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z),
+            Radius = 1,
+            Fill = RouteColor
+          };
+          fullModel.Children.Add(lineModel);
+          fullModel.Children.Add(ballModel);
+          model = fullModel;
           BasePointIds.Add(horizontalRoute.BasePointId);
         }
         else if (item is PlumbingVerticalRoute verticalRoute) {
@@ -236,8 +245,8 @@ namespace GMEPPlumbing.Views
         else if (item is PlumbingFixture plumbingFixture) {
           model = new SphereVisual3D {
             Center = new Point3D(plumbingFixture.Position.X, plumbingFixture.Position.Y, plumbingFixture.Position.Z),
-            Radius = 3,
-            Fill = RouteColor
+            Radius = 2,
+            Fill = Brushes.Green
           };
           BasePointIds.Add(plumbingFixture.BasePointId);
         }
