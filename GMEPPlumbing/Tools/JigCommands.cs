@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Security;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Shapes;
@@ -400,6 +401,41 @@ namespace GMEPPlumbing
       }
 
       return true;
+    }
+    public class TextJig : EntityJig {
+      private Point3d insertionPoint;
+      public TextJig(string textString, double textHeight, TextHorizontalMode horizontalMode)
+        : base(new DBText())
+      {
+        insertionPoint = Point3d.Origin;
+        DBText dbText = (DBText)Entity;
+        dbText.TextString = textString;
+        dbText.Height = textHeight;
+        dbText.HorizontalMode = horizontalMode;
+      }
+      protected override bool Update() {
+        DBText dbText = (DBText)Entity;
+        dbText.Position = insertionPoint;
+        if (dbText.HorizontalMode != TextHorizontalMode.TextLeft) {
+          dbText.AlignmentPoint = insertionPoint;
+        }
+        return true;
+      }
+      protected override SamplerStatus Sampler(JigPrompts prompts) {
+        JigPromptPointOptions jigOpts = new JigPromptPointOptions("\nSpecify insertion point: ");
+        PromptPointResult ppr = prompts.AcquirePoint(jigOpts);
+        if (ppr.Status == PromptStatus.OK) {
+          if (ppr.Value.IsEqualTo(insertionPoint)) {
+            return SamplerStatus.NoChange;
+          }
+          else {
+            insertionPoint = ppr.Value;
+            return SamplerStatus.OK;
+          }
+        }
+        return SamplerStatus.Cancel;
+      }
+
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
