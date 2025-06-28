@@ -201,6 +201,11 @@ namespace GMEPPlumbing.Views
         Visual3D model = null;
          if (item is PlumbingHorizontalRoute horizontalRoute) {
           ModelVisual3D fullModel = new ModelVisual3D();
+          var ballModel2 = new SphereVisual3D {
+            Center = new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
+            Radius = 1,
+            Fill = RouteColor
+          };
           var lineModel = new TubeVisual3D {
             Path = new Point3DCollection {
               new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
@@ -214,8 +219,11 @@ namespace GMEPPlumbing.Views
             Radius = 1,
             Fill = RouteColor
           };
+       
+          fullModel.Children.Add(ballModel2);
           fullModel.Children.Add(lineModel);
           fullModel.Children.Add(ballModel);
+          
           model = fullModel;
           BasePointIds.Add(horizontalRoute.BasePointId);
         }
