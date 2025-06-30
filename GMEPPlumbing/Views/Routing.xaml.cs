@@ -78,6 +78,11 @@ namespace GMEPPlumbing.Views
                     verticalRoute.Position.Y - basePoint.Point.Y,
                     verticalRoute.Position.Z
                   );
+                  verticalRoute.ConnectionPosition = new Point3d(
+                    verticalRoute.ConnectionPosition.X - basePoint.Point.X,
+                    verticalRoute.ConnectionPosition.Y - basePoint.Point.Y,
+                    verticalRoute.ConnectionPosition.Z
+                  );
                 }
               }
               else if (item is PlumbingSource plumbingSource) {
@@ -201,6 +206,11 @@ namespace GMEPPlumbing.Views
         Visual3D model = null;
          if (item is PlumbingHorizontalRoute horizontalRoute) {
           ModelVisual3D fullModel = new ModelVisual3D();
+          var ballModel2 = new SphereVisual3D {
+            Center = new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
+            Radius = 1,
+            Fill = RouteColor
+          };
           var lineModel = new TubeVisual3D {
             Path = new Point3DCollection {
               new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
@@ -214,17 +224,37 @@ namespace GMEPPlumbing.Views
             Radius = 1,
             Fill = RouteColor
           };
+       
+          fullModel.Children.Add(ballModel2);
           fullModel.Children.Add(lineModel);
           fullModel.Children.Add(ballModel);
+          
           model = fullModel;
           BasePointIds.Add(horizontalRoute.BasePointId);
         }
         else if (item is PlumbingVerticalRoute verticalRoute) {
+          ModelVisual3D fullModel = new ModelVisual3D();
+
+          var ballModel = new SphereVisual3D {
+            Center = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
+            Radius = 1,
+            Fill = RouteColor
+          };
+         var connectionTubeModel = new TubeVisual3D {
+            Path = new Point3DCollection {
+              new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
+              new Point3D(verticalRoute.ConnectionPosition.X, verticalRoute.ConnectionPosition.Y, verticalRoute.ConnectionPosition.Z)
+            },
+            Diameter = 2,
+            Fill = RouteColor
+          };
+
           double length = verticalRoute.Length * 12;
+
           if (verticalRoute.NodeTypeId == 3) {
             length = -length;
           }
-          model = new TubeVisual3D {
+          var tubeModel = new TubeVisual3D {
             Path = new Point3DCollection {
               new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
               new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length)
@@ -232,6 +262,13 @@ namespace GMEPPlumbing.Views
             Diameter = 2,
             Fill = RouteColor
           };
+
+          fullModel.Children.Add(tubeModel);
+          if (verticalRoute.NodeTypeId != 2) {
+            fullModel.Children.Add(connectionTubeModel);
+            fullModel.Children.Add(ballModel);
+          }
+          model = fullModel;
           BasePointIds.Add(verticalRoute.BasePointId);
         }
         else if (item is PlumbingSource plumbingSource) {
@@ -240,7 +277,9 @@ namespace GMEPPlumbing.Views
             Radius = 2,
             Fill = RouteColor
           };
+
           BasePointIds.Add(plumbingSource.BasePointId);
+
         }
         else if (item is PlumbingFixture plumbingFixture) {
           model = new SphereVisual3D {

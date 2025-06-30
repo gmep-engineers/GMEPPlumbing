@@ -242,7 +242,6 @@ namespace GMEPPlumbing {
       var db = doc.Database;
       var ed = doc.Editor;
       routes = GetVerticalRoutesByIdOrdered(route.VerticalRouteId);
- 
 
       var matchingKeys = routes.FirstOrDefault(kvp => kvp.Value.Id == route.Id);
       var startFloor = matchingKeys.Key;
@@ -260,7 +259,7 @@ namespace GMEPPlumbing {
 
       var endRoute = routes[endFloorKey];
 
-      height = routes.Sum(kvp => kvp.Value.Length) * 12;
+      height = (routes.Sum(kvp => kvp.Value.Length) * 12) + 6;
       ed.WriteMessage($"\nTotal vertical route length from floor {startFloor} to floor {endFloorKey} is {height} inches.");
 
       return endRoute;
