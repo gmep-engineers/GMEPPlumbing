@@ -215,7 +215,8 @@ namespace GMEPPlumbing.Views
     }
     public void BuildScene() {
       RouteVisuals.Clear();
-        foreach (var item in RouteItems) {
+      List<TextVisual3D> textVisuals = new List<TextVisual3D>();
+      foreach (var item in RouteItems) {
         Visual3D model = null;
          if (item is PlumbingHorizontalRoute horizontalRoute) {
           ModelVisual3D fullModel = new ModelVisual3D();
@@ -237,11 +238,38 @@ namespace GMEPPlumbing.Views
             Radius = 1,
             Fill = RouteColor
           };
-       
+
+          // Calculate midpoint and offset
+          var midX = (horizontalRoute.StartPoint.X + horizontalRoute.EndPoint.X) / 2.0;
+          var midY = (horizontalRoute.StartPoint.Y + horizontalRoute.EndPoint.Y) / 2.0;
+          var midZ = (horizontalRoute.StartPoint.Z + horizontalRoute.EndPoint.Z) / 2.0 + 4; // Offset above the line
+
+          var dirX = horizontalRoute.EndPoint.X - horizontalRoute.StartPoint.X;
+          var dirY = horizontalRoute.EndPoint.Y - horizontalRoute.StartPoint.Y;
+          var dirZ = horizontalRoute.EndPoint.Z - horizontalRoute.StartPoint.Z;
+          var direction = new Vector3D(dirX, dirY, dirZ);
+          direction.Normalize();
+
+          // Calculate length in feet/inches
+          double length = horizontalRoute.StartPoint.DistanceTo(horizontalRoute.EndPoint);
+          int feet = (int)(length / 12);
+          int inches = (int)Math.Round(length % 12);
+
+          var textModel = new TextVisual3D {
+            Position = new Point3D(midX, midY, midZ),
+            Text = $"{feet}' {inches}\"",
+            Height = 8,
+            Foreground = Brushes.Black,
+            Background = Brushes.White,
+            UpDirection = new Vector3D(0, 0, 1),
+            TextDirection = direction
+          };
+          textVisuals.Add(textModel);
+
           fullModel.Children.Add(ballModel2);
           fullModel.Children.Add(lineModel);
           fullModel.Children.Add(ballModel);
-          
+
           model = fullModel;
           BasePointIds.Add(horizontalRoute.BasePointId);
         }
@@ -324,7 +352,10 @@ namespace GMEPPlumbing.Views
           //UpDirection = new Vector3D(0, 1, 0), // Text facing up
           Background = Brushes.Transparent // Or Brushes.White for a background
         };
-        RouteVisuals.Add(textModel);
+        textVisuals.Add(textModel);
+      }
+      foreach (var text in textVisuals) {
+        RouteVisuals.Add(text);
       }
     }
     public void RemoveDuplicateRouteVisuals() {
