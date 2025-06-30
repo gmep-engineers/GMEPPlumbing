@@ -317,11 +317,11 @@ namespace GMEPPlumbing.Views
         RouteVisuals.Add(basePointModel);
 
         var textModel = new TextVisual3D {
-          Position = new Point3D(0, 0, BasePoints[basePoint].FloorHeight * 12 + 0.5), // Slightly above the rectangle
+          Position = new Point3D(0, 0, BasePoints[basePoint].FloorHeight * 12 + 12), // Slightly above the rectangle
           Text = $"Floor {BasePoints[basePoint].Floor}",
-          Height = 10, // Size of the text
+          Height = 20, // Size of the text
           Foreground = Brushes.White,
-          UpDirection = new Vector3D(0, 1, 0), // Text facing up
+          //UpDirection = new Vector3D(0, 1, 0), // Text facing up
           Background = Brushes.Transparent // Or Brushes.White for a background
         };
         RouteVisuals.Add(textModel);

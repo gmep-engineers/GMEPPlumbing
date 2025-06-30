@@ -15,6 +15,7 @@ using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Autodesk.AutoCAD.ApplicationServices;
+using HelixToolkit.Wpf;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace GMEPPlumbing.Views
@@ -26,6 +27,7 @@ namespace GMEPPlumbing.Views
     public Scene3DView() {
       InitializeComponent();
       this.DataContextChanged += Scene3DView_DataContextChanged;
+      this.Viewport.CameraChanged += Viewport_CameraChanged;
     }
 
     private void Scene3DView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e) {
@@ -40,6 +42,27 @@ namespace GMEPPlumbing.Views
         }
         Dispatcher.BeginInvoke(new Action(() => Viewport.ZoomExtents()), System.Windows.Threading.DispatcherPriority.Loaded);
       }
+    }
+    private void Viewport_CameraChanged(object sender, RoutedEventArgs e) {
+      // Find all TextVisual3D in the viewport
+      foreach (var visual in Viewport.Children) {
+        if (visual is TextVisual3D text) {
+          FaceTextToCamera(text);
+        }
+      }
+    }
+
+    private void FaceTextToCamera(TextVisual3D text) {
+      var camera = Viewport.Camera as ProjectionCamera;
+      if (camera == null) return;
+
+      var lookDirection = camera.LookDirection;
+      var up = camera.UpDirection;
+      var right = Vector3D.CrossProduct(lookDirection, up);
+      right.Normalize();
+
+      text.TextDirection = right;
+      text.UpDirection = up;
     }
   }
   public class InchesToFeetInchesConverter : IValueConverter {
