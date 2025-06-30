@@ -33,9 +33,9 @@ namespace GMEPPlumbing
 
     public static string ActiveBasePointId { get; set; } = "";
 
-    //public static double PlumbingRouteHeight = -1;
+    public static double PlumbingRouteHeight = 0;
 
-    public static bool SettingFlag = false;
+    //public static bool SettingFlag = false;
 
     public static double ActiveFloorHeight = 0;
 
@@ -47,9 +47,9 @@ namespace GMEPPlumbing
       Editor ed = doc.Editor;
       Database db = doc.Database;
 
-      SettingFlag = true;
+      //SettingFlag = true;
       string GUID = GetActiveView();
-      SettingFlag = false;
+      //SettingFlag = false;
 
       SetPlumbingRouteHeightValue(GUID);
     }
@@ -83,13 +83,7 @@ namespace GMEPPlumbing
                     }
                   }
                   if (match) {
-                    if (routeHeight == -1) {
-                      //result = SetPlumbingRouteHeight();
-
-                    }
-                    else {
-                      result = routeHeight;
-                    }
+                     result = routeHeight;
                   }
                 }
               }
