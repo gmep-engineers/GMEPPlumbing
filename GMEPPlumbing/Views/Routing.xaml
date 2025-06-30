@@ -9,6 +9,23 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <local:AddOneConverter x:Key="AddOneConverter"/>
+        <Style x:Key="RotatedTabHeaderStyle" TargetType="TabItem">
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Margin="8,4">
+                            <TextBlock.LayoutTransform>
+                                <RotateTransform Angle="-90"/>
+                            </TextBlock.LayoutTransform>
+                        </TextBlock>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="MinWidth" Value="30"/>
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
     </UserControl.Resources>
     <Grid Background="#FF2D2D30">
         <ListBox ItemsSource="{Binding Scenes}" HorizontalContentAlignment="Stretch" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
@@ -20,23 +37,30 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Key, StringFormat=View: {0}}" Margin="0,0,0,5"/>
-                        <TabControl Grid.Row="1" AlternationCount="1000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" ItemsSource="{Binding Value}" Margin="0,20,0,0">
-                            <TabControl.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock>
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="Fixture {0}">
-                                                <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=TabItem}" Path="(ItemsControl.AlternationIndex)" Converter="{StaticResource AddOneConverter}" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </TabControl.ItemTemplate>
-                            <TabControl.ContentTemplate>
-                                <DataTemplate>
-                                    <local:Scene3DView Margin="5"/>
-                                </DataTemplate>
-                            </TabControl.ContentTemplate>
+                        <TabControl TabStripPlacement="Left" Grid.Row="1"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <TabItem Header="Main" Style="{StaticResource RotatedTabHeaderStyle}">
+                                <local:Scene3DView DataContext="{Binding Value.Item1}" Margin="5"/>
+                            </TabItem>
+                            <TabItem Header="Fixture Routes" Style="{StaticResource RotatedTabHeaderStyle}">
+                                <TabControl AlternationCount="1000"  ItemsSource="{Binding Value.Item2}">
+                                    <TabControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock>
+                                                <TextBlock.Text>
+                                                    <MultiBinding StringFormat="Fixture {0}">
+                                                        <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=TabItem}" Path="(ItemsControl.AlternationIndex)" Converter="{StaticResource AddOneConverter}" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </TabControl.ItemTemplate>
+                                    <TabControl.ContentTemplate>
+                                        <DataTemplate>
+                                            <local:Scene3DView Margin="5"/>
+                                        </DataTemplate>
+                                    </TabControl.ContentTemplate>
+                                </TabControl>
+                            </TabItem>
                         </TabControl>
                     </Grid>
                 </DataTemplate>

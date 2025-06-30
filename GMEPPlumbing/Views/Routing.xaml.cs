@@ -31,7 +31,7 @@ namespace GMEPPlumbing.Views
 
       public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
 
-      public Dictionary<string, List<Scene>> Scenes { get; set; } = new Dictionary<string, List<Scene>>();
+      public Dictionary<string, Tuple<Scene, List<Scene>>> Scenes { get; set; } = new Dictionary<string, Tuple<Scene, List<Scene>>>();
       public Routing(Dictionary<string, List<PlumbingFullRoute>> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup)
       {
         FullRoutes = DeepCopyFullRoutes(fullRoutes);
@@ -44,15 +44,25 @@ namespace GMEPPlumbing.Views
       public void GenerateScenes() {
         Scenes.Clear();
         foreach (var route in FullRoutes) {
-          if (!Scenes.ContainsKey(route.Key)) {
-            Scenes[route.Key] = new List<Scene>();
-          }
+          Scene fullScene = new Scene();
+          List<Scene> sceneList = new List<Scene>();  
+          List<Scene> sceneList2 = new List<Scene>();
           foreach (var fullRoute in route.Value) {
             var scene = new Scene(fullRoute, BasePointLookup);
-            Scenes[route.Key].Add(scene);
+            var scene2 = new Scene(fullRoute, BasePointLookup);
+            sceneList.Add(scene);
+            sceneList2.Add(scene2);
           }
+          foreach (var scene in sceneList2) {
+            foreach(var visual in scene.RouteVisuals) {
+              fullScene.RouteVisuals.Add(visual);
+            }
+            fullScene.RemoveDuplicateRouteVisuals();
+            Scenes[route.Key] = new Tuple<Scene, List<Scene>>(fullScene, sceneList);
+        }
         }
       }
+
       public void NormalizeRoutes() {
         foreach (var fullRoute in FullRoutes.Values) {
           foreach (var route in fullRoute) {
@@ -200,7 +210,10 @@ namespace GMEPPlumbing.Views
           }
           BuildScene();
       }
-      public void BuildScene() {
+    public Scene() {
+      
+    }
+    public void BuildScene() {
       RouteVisuals.Clear();
         foreach (var item in RouteItems) {
         Visual3D model = null;
@@ -314,7 +327,31 @@ namespace GMEPPlumbing.Views
         RouteVisuals.Add(textModel);
       }
     }
+    public void RemoveDuplicateRouteVisuals() {
+      var unique = new HashSet<string>();
+      var toRemove = new List<Visual3D>();
+
+      foreach (var visual in RouteVisuals) {
+        string key = null;
+        if (visual is SphereVisual3D sphere)
+          key = $"Sphere:{sphere.Center.X},{sphere.Center.Y},{sphere.Center.Z}";
+        else if (visual is TubeVisual3D tube && tube.Path.Count > 1)
+          key = $"Tube:{tube.Path[0].X},{tube.Path[0].Y},{tube.Path[0].Z}-{tube.Path[1].X},{tube.Path[1].Y},{tube.Path[1].Z}";
+        else if (visual is RectangleVisual3D rect)
+          key = $"Rect:{rect.Origin.X},{rect.Origin.Y},{rect.Origin.Z}";
+        else if (visual is TextVisual3D text)
+          key = $"Text:{text.Position.X},{text.Position.Y},{text.Position.Z}:{text.Text}";
+        else
+          key = visual.GetType().Name + visual.GetHashCode();
+
+        if (!unique.Add(key))
+          toRemove.Add(visual);
+      }
+
+      foreach (var visual in toRemove)
+        RouteVisuals.Remove(visual);
     }
+  }
   public class AddOneConverter : IValueConverter {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
       if (value is int i)
