@@ -16,6 +16,16 @@
         </Grid.RowDefinitions>
         <helix:HelixViewport3D Grid.Row="0" x:Name="Viewport" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,10,0,0" ShowCoordinateSystem="False" ShowViewCube="False" Background="Black"/>
         <StackPanel HorizontalAlignment="Center" Grid.Row="1" Orientation="Horizontal">
+            <StackPanel.Style>
+                <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Length}" Value="0">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </StackPanel.Style>
             <TextBlock FontWeight="Bold" Text="Length: " />
             <TextBlock FontWeight="Bold" Text="{Binding Length, Converter={StaticResource InchesToFeetInchesConverter}}" Margin="0,0,10,0"/>
         </StackPanel>
