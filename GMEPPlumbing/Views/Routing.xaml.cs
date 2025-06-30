@@ -252,19 +252,6 @@ namespace GMEPPlumbing.Views
           double length = verticalRoute.Length * 12;
 
           if (verticalRoute.NodeTypeId == 3) {
-            /*ballModel = new SphereVisual3D {
-              Center = new Point3D(verticalRoute.Position.X + verticalRoute.Length, verticalRoute.Position.Y + verticalRoute.Length, verticalRoute.Position.Z + verticalRoute.Length),
-              Radius = 1,
-              Fill = RouteColor
-            };
-            connectionTubeModel = new TubeVisual3D {
-              Path = new Point3DCollection {
-              new Point3D(verticalRoute.Position.X + verticalRoute.Length, verticalRoute.Position.Y + verticalRoute.Length, verticalRoute.Position.Z + verticalRoute.Length),
-              new Point3D(verticalRoute.ConnectionPosition.X + verticalRoute.Length, verticalRoute.ConnectionPosition.Y + verticalRoute.Length, verticalRoute.ConnectionPosition.Z + verticalRoute.Length)
-            },
-              Diameter = 2,
-              Fill = RouteColor
-            };*/
             length = -length;
           }
           var tubeModel = new TubeVisual3D {
