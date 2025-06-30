@@ -33,7 +33,7 @@ namespace GMEPPlumbing
 
     public static string ActiveBasePointId { get; set; } = "";
 
-    public static double PlumbingRouteHeight = -1;
+    //public static double PlumbingRouteHeight = -1;
 
     public static bool SettingFlag = false;
 
@@ -58,10 +58,48 @@ namespace GMEPPlumbing
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
-      if (PlumbingRouteHeight == -1) {
-        SetPlumbingRouteHeight();
+      double result = 0;
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                  var pc = entity.DynamicBlockReferencePropertyCollection;
+                  bool match = false;
+                  double routeHeight = 0;
+                  foreach (DynamicBlockReferenceProperty prop in pc) {
+                    if (prop.PropertyName == "Id") {
+                      if (prop.Value.ToString() == ActiveBasePointId) {
+                        match = true;
+                      }
+                    }
+                    if (prop.PropertyName == "Route_Height") {
+                      routeHeight = Convert.ToDouble(prop.Value);
+                    }
+                  }
+                  if (match) {
+                    if (routeHeight == -1) {
+                      //result = SetPlumbingRouteHeight();
+
+                    }
+                    else {
+                      result = routeHeight;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        tr.Commit();
       }
-      return PlumbingRouteHeight;
+
+      return result;
     }
     public static void SetPlumbingRouteHeightValue(string GUID) {
       double heightLimit = GetHeightLimit(GUID);
