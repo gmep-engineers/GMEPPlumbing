@@ -296,7 +296,6 @@ namespace GMEPPlumbing
       int typeId = 0;
       Dictionary<int, double> floorHeights = new Dictionary<int, double>();
 
-
       PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
       pko.Keywords.Add("HotWater");
       pko.Keywords.Add("ColdWater");
@@ -304,6 +303,10 @@ namespace GMEPPlumbing
       // pko.Keywords.Add("Sewer");
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
+      if (pr.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        return;
+      }
       string result = pr.StringResult;
 
       switch (result) {
@@ -462,6 +465,10 @@ namespace GMEPPlumbing
             tr.AddNewlyCreatedDBObject(br, true);
             startPipeId = br.ObjectId;
           }
+          else {
+            ed.WriteMessage("\nFailed to create vertical route block reference.");
+            return;
+          }
         }
 
         tr.Commit();
@@ -475,6 +482,10 @@ namespace GMEPPlumbing
           endFloorOptions.Keywords.Add(i.ToString());
       }
       PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
+      if (endFloorResult.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        return;
+      }
       int endFloor = int.Parse(endFloorResult.StringResult);
 
       Dictionary<int, BlockReference> BasePointRefs = new Dictionary<int, BlockReference>();
