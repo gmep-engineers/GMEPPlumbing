@@ -46,71 +46,104 @@ namespace GMEPPlumbing
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
-      double routeHeight = 0;
 
-      //SettingFlag = true;
       string GUID = GetActiveView();
       double heightLimit = GetHeightLimit(GUID);
-      //SettingFlag = false;
-      PromptDoubleOptions promptDoubleOptions = new PromptDoubleOptions("\nEnter the plumbing route height: ");
-      promptDoubleOptions.AllowNegative = false;
-      
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
-        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForWrite);
-        // Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
-        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
-          if (id.IsValid) {
-            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord) {
-              if (anonymousBtr != null) {
-                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
-                  var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
-                  var pc = entity.DynamicBlockReferencePropertyCollection;
-                  string basePointId = "";
-                  foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "Id") {
-                      basePointId = prop.Value.ToString();
-                    }
-                  }
-                  if (basePointId == GUID) {
-                    foreach (DynamicBlockReferenceProperty prop in pc) {
-                      if (prop.PropertyName == "Route_Height") {
-                        if (prop.Value != null) {
-                          routeHeight = Convert.ToDouble(prop.Value);
-                          promptDoubleOptions.DefaultValue = routeHeight;
+      double routeHeight = 0;
+      double? newHeight = null;
 
-                          while (true) {
-                            PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
-                            if (promptDoubleResult.Status == PromptStatus.OK) {
-                              if (promptDoubleResult.Value <= 0) {
-                                ed.WriteMessage("\nHeight must be greater than zero.");
-                                promptDoubleOptions.Message = "\nHeight must be greater than zero. Please enter a valid height: ";
-                                continue;
-                              }
-                              if (promptDoubleResult.Value >= heightLimit) {
-                                ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}.");
-                                promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height: ";
-                                continue;
-                              }
-                              // prop.Value = promptDoubleResult.Value;
-                              //ActiveRouteHeight = promptDoubleResult.Value;
-                              break;
-                            }
-                            else if (promptDoubleResult.Status == PromptStatus.Cancel) {
-                              ed.WriteMessage("\nOperation cancelled.");
-                              break;
-                            }
-                            else {
-                              ed.WriteMessage("\nInvalid input. Please enter a valid height.");
-                              continue;
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
+      // 1. Find the current route height (read-only, no transaction needed for just reading)
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+          if (!id.IsValid) continue;
+          var anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord;
+          if (anonymousBtr == null) continue;
+          foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+            var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+            if (entity == null) continue;
+            var pc = entity.DynamicBlockReferencePropertyCollection;
+            string basePointId = "";
+            foreach (DynamicBlockReferenceProperty prop in pc) {
+              if (prop.PropertyName == "Id")
+                basePointId = prop.Value.ToString();
+            }
+            if (basePointId == GUID) {
+              foreach (DynamicBlockReferenceProperty prop in pc) {
+                if (prop.PropertyName == "Route_Height" && prop.Value != null) {
+                  routeHeight = Convert.ToDouble(prop.Value);
+                  break;
                 }
               }
+            }
+          }
+        }
+      }
+
+      // 2. Prompt for new value (outside transaction)
+      PromptDoubleOptions promptDoubleOptions = new PromptDoubleOptions("\nEnter the plumbing route height: ");
+      promptDoubleOptions.AllowNegative = false;
+      promptDoubleOptions.DefaultValue = routeHeight;
+
+      while (true) {
+        PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
+        if (promptDoubleResult.Status == PromptStatus.OK) {
+          if (promptDoubleResult.Value <= 0) {
+            ed.WriteMessage("\nHeight must be greater than zero.");
+            promptDoubleOptions.Message = "\nHeight must be greater than zero. Please enter a valid height: ";
+            continue;
+          }
+          if (promptDoubleResult.Value >= heightLimit) {
+            ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}.");
+            promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height: ";
+            continue;
+          }
+          newHeight = promptDoubleResult.Value;
+          break;
+        }
+        else if (promptDoubleResult.Status == PromptStatus.Cancel) {
+          ed.WriteMessage("\nOperation cancelled.");
+          return;
+        }
+        else {
+          ed.WriteMessage("\nInvalid input. Please enter a valid height.");
+          continue;
+        }
+      }
+
+      if (!newHeight.HasValue)
+        return;
+
+      // 3. Now perform the write in a transaction
+      using (DocumentLock docLock = doc.LockDocument())
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
+          if (!id.IsValid) continue;
+          var anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord;
+          if (anonymousBtr == null) continue;
+          foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+            var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+            if (entity == null) continue;
+            var pc = entity.DynamicBlockReferencePropertyCollection;
+            string basePointId = "";
+            foreach (DynamicBlockReferenceProperty prop in pc) {
+              if (prop.PropertyName == "Id")
+                basePointId = prop.Value.ToString();
+            }
+            if (basePointId == GUID) {
+              // Open for write only when you need to set the property
+             /* var entityForWrite = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+              var pcWrite = entityForWrite.DynamicBlockReferencePropertyCollection;
+              foreach (DynamicBlockReferenceProperty propWrite in pcWrite) {
+                if (propWrite.PropertyName == "Route_Height") {
+                  propWrite.Value = newHeight.Value;
+                  ActiveRouteHeight = newHeight.Value;
+                  break;
+                }
+              }*/
             }
           }
         }
