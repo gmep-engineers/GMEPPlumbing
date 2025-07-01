@@ -946,6 +946,7 @@ namespace GMEPPlumbing
       var prompt = new Views.BasePointPromptWindow();
       bool? result = prompt.ShowDialog();
       double currentFloorHeight = -10;
+      double currentRouteHeight = 3;
       if (result != true) {
         ed.WriteMessage("\nOperation cancelled.");
         return;
@@ -1009,6 +1010,34 @@ namespace GMEPPlumbing
           }
         }
 
+        PromptDoubleOptions routeHeightOptions = new PromptDoubleOptions(
+             $"\nEnter the route height from floor {i + 1} on plan {planName}:"
+         );
+        heightOptions.AllowNegative = false;
+        heightOptions.AllowZero = false;
+        heightOptions.DefaultValue = 3;
+
+        while (true) {
+          PromptDoubleResult routeHeightResult = ed.GetDouble(routeHeightOptions);
+
+          if (routeHeightResult.Status == PromptStatus.OK) {
+            double tempRouteHeight = routeHeightResult.Value;
+            if (tempRouteHeight < 0) {
+              heightOptions.Message = $"\nRoute Height must be greater than zero.";
+              continue;
+            }
+            currentRouteHeight = routeHeightResult.Value;
+            break;
+          }
+          else if (routeHeightResult.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nOperation cancelled.");
+            return;
+          }
+          else {
+            ed.WriteMessage("\nInvalid input. Please enter a positive, non-zero number.");
+          }
+        }
+
         Point3d point;
         ObjectId blockId;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -1058,6 +1087,9 @@ namespace GMEPPlumbing
               }
               else if (prop.PropertyName == "Floor_Height") {
                 prop.Value = currentFloorHeight;
+              }
+              else if (prop.PropertyName == "Route_Height") {
+                prop.Value = currentRouteHeight;
               }
             }
           }
