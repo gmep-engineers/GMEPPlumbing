@@ -309,6 +309,41 @@ namespace GMEPPlumbing.Views
             fullModel.Children.Add(connectionTubeModel);
             fullModel.Children.Add(ballModel);
           }
+
+          var start = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z);
+          var end = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length);
+          var mid = new Point3D(
+              (start.X + end.X) / 2.0,
+              (start.Y + end.Y) / 2.0,
+              (start.Z + end.Z) / 2.0
+          );
+
+          // Offset 2 units in the positive X direction (right side)
+          var textPos = new Point3D(mid.X + 4, mid.Y, mid.Z);
+
+          // Text direction is down (negative Z)
+          var textDirection = new Vector3D(0, 0, -1);
+
+          // Up direction is positive X (right side)
+          var upDirection = new Vector3D(1, 0, 0);
+
+          // Calculate pipe length in feet/inches
+          double pipeLength = start.DistanceTo(end);
+          int feet = (int)(pipeLength / 12);
+          int inches = (int)Math.Round(pipeLength % 12);
+
+          var textModel = new TextVisual3D {
+            Position = textPos,
+            Text = $"{feet}' {inches}\"",
+            Height = 8,
+            Foreground = Brushes.Black,
+            Background = Brushes.White,
+            TextDirection = textDirection,
+            UpDirection = upDirection
+          };
+
+          textVisuals.Add(textModel);
+
           model = fullModel;
           BasePointIds.Add(verticalRoute.BasePointId);
         }

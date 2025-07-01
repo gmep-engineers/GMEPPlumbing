@@ -27,7 +27,7 @@ namespace GMEPPlumbing.Views
     public Scene3DView() {
       InitializeComponent();
       this.DataContextChanged += Scene3DView_DataContextChanged;
-      this.Viewport.CameraChanged += Viewport_CameraChanged;
+      //this.Viewport.CameraChanged += Viewport_CameraChanged;
     }
 
     private void Scene3DView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e) {
