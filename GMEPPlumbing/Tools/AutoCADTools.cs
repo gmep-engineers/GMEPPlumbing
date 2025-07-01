@@ -50,20 +50,21 @@ namespace GMEPPlumbing
 
       //SettingFlag = true;
       string GUID = GetActiveView();
+      double heightLimit = GetHeightLimit(GUID);
       //SettingFlag = false;
       PromptDoubleOptions promptDoubleOptions = new PromptDoubleOptions("\nEnter the plumbing route height: ");
       promptDoubleOptions.AllowNegative = false;
       
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForWrite);
         // Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
         foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
           if (id.IsValid) {
-            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForWrite) as BlockTableRecord) {
               if (anonymousBtr != null) {
                 foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
-                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                  var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
                   var pc = entity.DynamicBlockReferencePropertyCollection;
                   string basePointId = "";
                   foreach (DynamicBlockReferenceProperty prop in pc) {
@@ -73,12 +74,11 @@ namespace GMEPPlumbing
                   }
                   if (basePointId == GUID) {
                     foreach (DynamicBlockReferenceProperty prop in pc) {
-                      if (prop.PropertyName == "Plumbing_Route_Height") {
+                      if (prop.PropertyName == "Route_Height") {
                         if (prop.Value != null) {
                           routeHeight = Convert.ToDouble(prop.Value);
                           promptDoubleOptions.DefaultValue = routeHeight;
 
-                          double heightLimit = GetHeightLimit(GUID);
                           while (true) {
                             PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
                             if (promptDoubleResult.Status == PromptStatus.OK) {
@@ -92,13 +92,13 @@ namespace GMEPPlumbing
                                 promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height: ";
                                 continue;
                               }
-                              prop.Value = promptDoubleResult.Value;
-                              ActiveRouteHeight = promptDoubleResult.Value;
+                              // prop.Value = promptDoubleResult.Value;
+                              //ActiveRouteHeight = promptDoubleResult.Value;
                               break;
                             }
                             else if (promptDoubleResult.Status == PromptStatus.Cancel) {
                               ed.WriteMessage("\nOperation cancelled.");
-                              return;
+                              break;
                             }
                             else {
                               ed.WriteMessage("\nInvalid input. Please enter a valid height.");
