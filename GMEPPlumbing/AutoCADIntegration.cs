@@ -514,7 +514,6 @@ namespace GMEPPlumbing
         }
         tr.Commit();
       }
-
       if (endFloor > startFloor) {
         Point3d labelPoint = Point3d.Origin;
         Point3d labelPoint2 = Point3d.Origin;
