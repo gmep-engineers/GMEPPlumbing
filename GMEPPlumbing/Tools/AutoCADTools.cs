@@ -125,7 +125,7 @@ namespace GMEPPlumbing
           var anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord;
           if (anonymousBtr == null) continue;
           foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
-            var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+            var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
             if (entity == null) continue;
             var pc = entity.DynamicBlockReferencePropertyCollection;
             string basePointId = "";
@@ -133,17 +133,14 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "Id")
                 basePointId = prop.Value.ToString();
             }
-            if (basePointId == GUID) {
-              // Open for write only when you need to set the property
-             /* var entityForWrite = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
-              var pcWrite = entityForWrite.DynamicBlockReferencePropertyCollection;
-              foreach (DynamicBlockReferenceProperty propWrite in pcWrite) {
+            if (basePointId == GUID) {;
+              foreach (DynamicBlockReferenceProperty propWrite in pc) {
                 if (propWrite.PropertyName == "Route_Height") {
                   propWrite.Value = newHeight.Value;
                   ActiveRouteHeight = newHeight.Value;
                   break;
                 }
-              }*/
+              }
             }
           }
         }
