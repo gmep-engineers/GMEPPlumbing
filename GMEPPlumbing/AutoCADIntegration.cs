@@ -310,6 +310,7 @@ namespace GMEPPlumbing
       PromptResult pr = ed.GetKeywords(pko);
       if (pr.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
         return;
       }
       string result = pr.StringResult;
@@ -472,6 +473,7 @@ namespace GMEPPlumbing
           }
           else {
             ed.WriteMessage("\nFailed to create vertical route block reference.");
+            routeHeightDisplay.Disable();
             return;
           }
         }
@@ -489,6 +491,7 @@ namespace GMEPPlumbing
       PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
       if (endFloorResult.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
         return;
       }
       int endFloor = int.Parse(endFloorResult.StringResult);
