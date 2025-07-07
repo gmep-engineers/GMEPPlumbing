@@ -346,10 +346,10 @@ namespace GMEPPlumbing
                   bool match = false;
                   string tempViewGUID = "";
                   foreach (DynamicBlockReferenceProperty prop in pc2) {
-                    if (prop.PropertyName == "View_Id") {
+                    if (prop.PropertyName == "view_id") {
                       tempViewGUID = prop.Value.ToString();
                     }
-                    if (prop.PropertyName == "Id") {
+                    if (prop.PropertyName == "id") {
                       if (prop.Value.ToString() == basePointGUID) {
                         match = true;
                       }
@@ -391,7 +391,7 @@ namespace GMEPPlumbing
                   var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                   var pc = entity.DynamicBlockReferencePropertyCollection;
                   foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "View_Id") {
+                    if (prop.PropertyName == "view_id") {
                       string key = prop.Value.ToString();
                       if (key != "0") {
                         if (!basePoints.ContainsKey(key)) {
@@ -423,15 +423,15 @@ namespace GMEPPlumbing
           int tempFloor = 0;
           double tempFloorHeight = 0;
           foreach (DynamicBlockReferenceProperty prop in pc2) {
-            if (prop.PropertyName == "Floor") {
+            if (prop.PropertyName == "floor") {
               tempFloor = Convert.ToInt32(prop.Value);
             }
-            if (prop.PropertyName == "Id") {
+            if (prop.PropertyName == "id") {
               if (prop.Value.ToString() == basePointGUID) {
                 selectedPoint = true;
               }
             }
-            if (prop.PropertyName == "Floor_Height") {
+            if (prop.PropertyName == "floor_height") {
               tempFloorHeight = Convert.ToDouble(prop.Value);
             }
           }
@@ -500,11 +500,11 @@ namespace GMEPPlumbing
           int floor = 0;
           string guid = "";
           foreach (DynamicBlockReferenceProperty prop in pc2) {
-            if (prop.PropertyName == "Floor") {
+            if (prop.PropertyName == "floor") {
               floor = Convert.ToInt32(prop.Value);
               BasePointRefs.Add(floor, entity2);
             }
-            if (prop.PropertyName == "Id") {
+            if (prop.PropertyName == "id") {
               guid = prop.Value.ToString();
             }
           }
@@ -1064,19 +1064,19 @@ namespace GMEPPlumbing
             DynamicBlockReferencePropertyCollection properties =
               br.DynamicBlockReferencePropertyCollection;
             foreach (DynamicBlockReferenceProperty prop in properties) {
-              if (prop.PropertyName == "Plan") {
+              if (prop.PropertyName == "plan") {
                 prop.Value = planName;
               }
-              else if (prop.PropertyName == "Floor") {
+              else if (prop.PropertyName == "floor") {
                 prop.Value = i + 1;
               }
-              else if (prop.PropertyName == "Type") {
+              else if (prop.PropertyName == "type") {
                 prop.Value = viewport;
               }
-              else if (prop.PropertyName == "View_Id") {
+              else if (prop.PropertyName == "view_id") {
                 prop.Value = ViewId;
               }
-              else if (prop.PropertyName == "Id") {
+              else if (prop.PropertyName == "id") {
                 prop.Value = Guid.NewGuid().ToString();
               }
               else if (prop.PropertyName == "pos_x") {
@@ -1085,10 +1085,10 @@ namespace GMEPPlumbing
               else if (prop.PropertyName == "pos_y") {
                 prop.Value = point.Y;
               }
-              else if (prop.PropertyName == "Floor_Height") {
+              else if (prop.PropertyName == "floor_height") {
                 prop.Value = currentFloorHeight;
               }
-              else if (prop.PropertyName == "Route_Height") {
+              else if (prop.PropertyName == "route_height") {
                 prop.Value = currentRouteHeight;
               }
             }
@@ -2343,7 +2343,7 @@ namespace GMEPPlumbing
                     var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                     var pc = entity.DynamicBlockReferencePropertyCollection;
                     foreach (DynamicBlockReferenceProperty prop in pc) {
-                      if (prop.PropertyName == "Id") {
+                      if (prop.PropertyName == "id") {
                         string basePointId = prop.Value?.ToString();
                         if (!string.IsNullOrEmpty(basePointId) && basePointId != "0") {
                           basePoints.Add(basePointId, entity.ObjectId);
@@ -2449,7 +2449,7 @@ namespace GMEPPlumbing
           string Id = string.Empty;
           var pc = blockRef.DynamicBlockReferencePropertyCollection;
           foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "Id") {
+            if (prop.PropertyName == "id") {
               Id = prop.Value?.ToString();
             }
           }
@@ -2523,7 +2523,7 @@ namespace GMEPPlumbing
           double pos_x = 0;
           double pos_y = 0;
           foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "Id") {
+            if (prop.PropertyName == "id") {
               Id = prop.Value?.ToString();
             }
             if (prop.PropertyName == "pos_x") {
@@ -2602,7 +2602,7 @@ namespace GMEPPlumbing
       foreach (
         DynamicBlockReferenceProperty prop in blockRef.DynamicBlockReferencePropertyCollection
       ) {
-        if (prop.PropertyName == "View_Id")
+        if (prop.PropertyName == "view_id")
           return true;
       }
       return false;
@@ -2806,22 +2806,22 @@ namespace GMEPPlumbing
                     double FloorHeight = 0;
 
                     foreach (DynamicBlockReferenceProperty prop in pc) {
-                      if (prop.PropertyName == "Floor") {
+                      if (prop.PropertyName == "floor") {
                         Floor = Convert.ToInt32(prop.Value);
                       }
-                      if (prop.PropertyName == "Plan") {
+                      if (prop.PropertyName == "plan") {
                         Plan = prop.Value?.ToString();
                       }
-                      if (prop.PropertyName == "Id") {
+                      if (prop.PropertyName == "id") {
                         Id = prop.Value?.ToString();
                       }
-                      if (prop.PropertyName == "Type") {
+                      if (prop.PropertyName == "type") {
                         Type = prop.Value?.ToString();
                       }
-                      if (prop.PropertyName == "View_Id") {
+                      if (prop.PropertyName == "view_id") {
                         ViewId = prop.Value?.ToString();
                       }
-                      if (prop.PropertyName == "Floor_Height") {
+                      if (prop.PropertyName == "floor_height") {
                         FloorHeight = Convert.ToDouble(prop.Value);
                       }
 

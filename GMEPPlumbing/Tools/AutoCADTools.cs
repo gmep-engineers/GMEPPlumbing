@@ -66,12 +66,12 @@ namespace GMEPPlumbing
             var pc = entity.DynamicBlockReferencePropertyCollection;
             string basePointId = "";
             foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "Id")
+              if (prop.PropertyName == "id")
                 basePointId = prop.Value.ToString();
             }
             if (basePointId == GUID) {
               foreach (DynamicBlockReferenceProperty prop in pc) {
-                if (prop.PropertyName == "Route_Height" && prop.Value != null) {
+                if (prop.PropertyName == "route_height" && prop.Value != null) {
                   routeHeight = Convert.ToDouble(prop.Value);
                   break;
                 }
@@ -130,12 +130,12 @@ namespace GMEPPlumbing
             var pc = entity.DynamicBlockReferencePropertyCollection;
             string basePointId = "";
             foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "Id")
+              if (prop.PropertyName == "id")
                 basePointId = prop.Value.ToString();
             }
             if (basePointId == GUID) {;
               foreach (DynamicBlockReferenceProperty propWrite in pc) {
-                if (propWrite.PropertyName == "Route_Height") {
+                if (propWrite.PropertyName == "route_height") {
                   propWrite.Value = newHeight.Value;
                   ActiveRouteHeight = newHeight.Value;
                   break;
@@ -147,6 +147,50 @@ namespace GMEPPlumbing
         tr.Commit();
       }
     }
+    [CommandMethod("TestOpenAllBasePoints")]
+public static void TestOpenAllBasePoints()
+{
+    Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+    if (doc == null)
+    {
+        Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog("No active drawing found.");
+        return;
+    }
+    Editor ed = doc.Editor;
+    Database db = doc.Database;
+    if (db == null)
+    {
+        ed.WriteMessage("\nNo active database found.");
+        return;
+    }
+
+    using (DocumentLock docLock = doc.LockDocument())
+    using (Transaction tr = db.TransactionManager.StartTransaction())
+    {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        if (!bt.Has("GMEP_PLUMBING_BASEPOINT"))
+        {
+            ed.WriteMessage("\nBlock 'GMEP_PLUMBING_BASEPOINT' not found.");
+            return;
+        }
+        BlockTableRecord basePointBlock = tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead) as BlockTableRecord;
+        int count = 0;
+        foreach (ObjectId anonId in basePointBlock.GetAnonymousBlockIds())
+        {
+            BlockTableRecord anonBtr = tr.GetObject(anonId, OpenMode.ForRead) as BlockTableRecord;
+            if (anonBtr == null) continue;
+            foreach (ObjectId refId in anonBtr.GetBlockReferenceIds(true, false))
+            {
+                BlockReference br = tr.GetObject(refId, OpenMode.ForWrite) as BlockReference;
+                if (br == null) continue;
+                ed.WriteMessage($"\nOpened base point for write: {br.Handle}");
+                count++;
+            }
+        }
+        ed.WriteMessage($"\nTotal base points opened for write: {count}");
+        tr.Commit();
+    }
+}
     public static double GetPlumbingRouteHeight() {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
@@ -181,13 +225,13 @@ namespace GMEPPlumbing
                   double floorHeight = 0;
                   int floor = 0;
                   foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "Id") {
+                    if (prop.PropertyName == "id") {
                       basePointId = prop.Value.ToString();
                     }
-                    if (prop.PropertyName == "Floor_Height") {
+                    if (prop.PropertyName == "floor_height") {
                       floorHeight = Convert.ToDouble(prop.Value);
                     }
-                    if (prop.PropertyName == "Floor") {
+                    if (prop.PropertyName == "floor") {
                       floor = Convert.ToInt32(prop.Value);
                     }
                   }
@@ -277,7 +321,7 @@ namespace GMEPPlumbing
                   var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                   var pc = entity.DynamicBlockReferencePropertyCollection;
                   foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "View_Id") {
+                    if (prop.PropertyName == "view_id") {
                       string key = prop.Value.ToString();
                       if (key != "0") {
                         if (!basePoints.ContainsKey(key)) {
@@ -302,10 +346,10 @@ namespace GMEPPlumbing
           string planName = "";
           string viewport = "";
           foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "Plan") {
+            if (prop.PropertyName == "plan") {
               planName = prop.Value.ToString();
             }
-            if (prop.PropertyName == "Type") {
+            if (prop.PropertyName == "type") {
               viewport = prop.Value.ToString();
             }
           }
@@ -347,16 +391,16 @@ namespace GMEPPlumbing
           string basePointId = "";
           double routeHeight = 0;
           foreach (DynamicBlockReferenceProperty prop in pc2) {
-            if (prop.PropertyName == "Floor") {
+            if (prop.PropertyName == "floor") {
               floor = Convert.ToInt32(prop.Value);
             }
-            if (prop.PropertyName == "Id") {
+            if (prop.PropertyName == "id") {
               basePointId = prop.Value.ToString();
             }
-            if (prop.PropertyName == "Floor_Height") {
+            if (prop.PropertyName == "floor_height") {
               floorHeight = Convert.ToDouble(prop.Value);
             }
-            if (prop.PropertyName == "Route_Height") {
+            if (prop.PropertyName == "route_height") {
               routeHeight = Convert.ToDouble(prop.Value);
             }
 
