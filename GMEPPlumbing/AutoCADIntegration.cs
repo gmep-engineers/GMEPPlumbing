@@ -2599,11 +2599,13 @@ namespace GMEPPlumbing
       return false;
     }
     private static bool IsPlumbingBasePointBlock(BlockReference blockRef) {
-      foreach (
-        DynamicBlockReferenceProperty prop in blockRef.DynamicBlockReferencePropertyCollection
-      ) {
-        if (prop.PropertyName == "view_id")
-          return true;
+      if (!CADObjectCommands.IsEditing) {
+        foreach (
+          DynamicBlockReferenceProperty prop in blockRef.DynamicBlockReferencePropertyCollection
+        ) {
+          if (prop.PropertyName == "view_id")
+            return true;
+        }
       }
       return false;
     }

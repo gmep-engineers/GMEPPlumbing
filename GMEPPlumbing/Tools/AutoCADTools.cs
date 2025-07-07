@@ -39,6 +39,8 @@ namespace GMEPPlumbing
 
     public static double ActiveFloorHeight = 0;
 
+    public static bool IsEditing { get; set; } = false;
+
     //public static bool SettingFlag= false;
 
     [CommandMethod("SetPlumbingRouteHeight")]
@@ -115,6 +117,7 @@ namespace GMEPPlumbing
       if (!newHeight.HasValue)
         return;
 
+      IsEditing = true;
       // 3. Now perform the write in a transaction
       using (DocumentLock docLock = doc.LockDocument())
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -146,51 +149,9 @@ namespace GMEPPlumbing
         }
         tr.Commit();
       }
-    }
-    [CommandMethod("TestOpenAllBasePoints")]
-public static void TestOpenAllBasePoints()
-{
-    Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-    if (doc == null)
-    {
-        Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog("No active drawing found.");
-        return;
-    }
-    Editor ed = doc.Editor;
-    Database db = doc.Database;
-    if (db == null)
-    {
-        ed.WriteMessage("\nNo active database found.");
-        return;
+      IsEditing = false;
     }
 
-    using (DocumentLock docLock = doc.LockDocument())
-    using (Transaction tr = db.TransactionManager.StartTransaction())
-    {
-        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        if (!bt.Has("GMEP_PLUMBING_BASEPOINT"))
-        {
-            ed.WriteMessage("\nBlock 'GMEP_PLUMBING_BASEPOINT' not found.");
-            return;
-        }
-        BlockTableRecord basePointBlock = tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead) as BlockTableRecord;
-        int count = 0;
-        foreach (ObjectId anonId in basePointBlock.GetAnonymousBlockIds())
-        {
-            BlockTableRecord anonBtr = tr.GetObject(anonId, OpenMode.ForRead) as BlockTableRecord;
-            if (anonBtr == null) continue;
-            foreach (ObjectId refId in anonBtr.GetBlockReferenceIds(true, false))
-            {
-                BlockReference br = tr.GetObject(refId, OpenMode.ForWrite) as BlockReference;
-                if (br == null) continue;
-                ed.WriteMessage($"\nOpened base point for write: {br.Handle}");
-                count++;
-            }
-        }
-        ed.WriteMessage($"\nTotal base points opened for write: {count}");
-        tr.Commit();
-    }
-}
     public static double GetPlumbingRouteHeight() {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
