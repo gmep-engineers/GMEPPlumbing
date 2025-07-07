@@ -3097,20 +3097,64 @@ namespace GMEPPlumbing
 
     private void Ed_PointMonitor(object sender, PointMonitorEventArgs e) {
       var view = _ed.GetCurrentView();
+      var db = _ed.Document.Database;
+
+      // Text settings
+      double textHeight = view.Height / 70;
+      string displayText = $"Route Height: {_routeHeight:0.##} ft";
+
+      // Estimate text width (AutoCAD text width is roughly 0.6 * height * chars)
+      double textWidth = textHeight * displayText.Length * 0.6;
+      double padding = textHeight * 0.4;
 
       // Position text 10 units left of the cursor
       var pos = e.Context.RawPoint + new Vector3d(-(view.Width / 10.5), -(view.Height / 150), 0);
+
+      // Rectangle corners (lower left, lower right, upper right, upper left)
+      Point3d lowerLeft = new Point3d(pos.X - padding, pos.Y - padding, pos.Z);
+      Point3d lowerRight = new Point3d(pos.X + textWidth + padding, pos.Y - padding, pos.Z);
+      Point3d upperRight = new Point3d(pos.X + textWidth + padding, pos.Y + textHeight + padding, pos.Z);
+      Point3d upperLeft = new Point3d(pos.X - padding, pos.Y + textHeight + padding, pos.Z);
+
+      // Create filled rectangle using Solid
+      var solid = new Solid(lowerLeft, lowerRight, upperLeft, upperRight);
+      solid.ColorIndex = 8; // Light gray, or set as needed
+
+      var border = new Polyline(4);
+      border.AddVertexAt(0, new Point2d(lowerLeft.X, lowerLeft.Y), 0, 0, 0);
+      border.AddVertexAt(1, new Point2d(lowerRight.X, lowerRight.Y), 0, 0, 0);
+      border.AddVertexAt(2, new Point2d(upperRight.X, upperRight.Y), 0, 0, 0);
+      border.AddVertexAt(3, new Point2d(upperLeft.X, upperLeft.Y), 0, 0, 0);
+      border.Closed = true;
+      border.Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0);
+
+      // Create the text
       var text = new DBText {
         Position = pos,
-        Height = view.Height / 70,
-        TextString = $"Route Height: {_routeHeight:0.##} ft",
-        Layer = "0"
+        Height = textHeight,
+        TextString = displayText,
+        Layer = "0",
+        Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0),
+        TextStyleId = db.Textstyle,
       };
 
-      // Remove previous transient
-      TransientManager.CurrentTransientManager.EraseTransients(TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+      // Remove previous transients
+      TransientManager.CurrentTransientManager.EraseTransients(
+          TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
 
-      // Draw new transient
+      // Draw background solid first, then text
+      TransientManager.CurrentTransientManager.AddTransient(
+          solid,
+          TransientDrawingMode.DirectShortTerm,
+          128,
+          new IntegerCollection()
+      );
+      TransientManager.CurrentTransientManager.AddTransient(
+          border,
+          TransientDrawingMode.DirectShortTerm,
+          128,
+          new IntegerCollection()
+      );
       TransientManager.CurrentTransientManager.AddTransient(
           text,
           TransientDrawingMode.DirectShortTerm,
