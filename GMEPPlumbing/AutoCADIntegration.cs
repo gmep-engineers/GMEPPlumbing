@@ -281,6 +281,11 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
+      
+      //beginning display
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
+
       string basePointGUID = CADObjectCommands.GetActiveView();
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
       SettingObjects = true;
@@ -514,6 +519,7 @@ namespace GMEPPlumbing
         }
         tr.Commit();
       }
+      routeHeightDisplay.Disable();
 
       if (endFloor > startFloor) {
         Point3d labelPoint = Point3d.Origin;
@@ -3058,6 +3064,59 @@ namespace GMEPPlumbing
     private void DocumentManager_DocumentActivated(object sender, DocumentCollectionEventArgs e)
     {
       AutoCADIntegration.AttachHandlers(e.Document);
+    }
+  }
+
+
+  public class RouteHeightDisplay {
+    private readonly Editor _ed;
+    private double _routeHeight;
+    private bool _enabled = false;
+
+    public RouteHeightDisplay(Editor ed) {
+      _ed = ed;
+    }
+
+    public void Enable(double routeHeight) {
+      if (_enabled) return;
+      _routeHeight = routeHeight;
+      _ed.PointMonitor += Ed_PointMonitor;
+      _enabled = true;
+    }
+
+    public void Disable() {
+      if (!_enabled) return;
+      _ed.PointMonitor -= Ed_PointMonitor;
+      _enabled = false;
+      TransientManager.CurrentTransientManager.EraseTransients(TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+    }
+
+    public void UpdateHeight(double routeHeight) {
+      _routeHeight = routeHeight;
+    }
+
+    private void Ed_PointMonitor(object sender, PointMonitorEventArgs e) {
+      var view = _ed.GetCurrentView();
+
+      // Position text 10 units left of the cursor
+      var pos = e.Context.RawPoint + new Vector3d(-(view.Width / 10.5), -(view.Height / 150), 0);
+      var text = new DBText {
+        Position = pos,
+        Height = view.Height / 70,
+        TextString = $"Route Height: {_routeHeight:0.##} ft",
+        Layer = "0"
+      };
+
+      // Remove previous transient
+      TransientManager.CurrentTransientManager.EraseTransients(TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+
+      // Draw new transient
+      TransientManager.CurrentTransientManager.AddTransient(
+          text,
+          TransientDrawingMode.DirectShortTerm,
+          128,
+          new IntegerCollection()
+      );
     }
   }
 }
