@@ -1524,14 +1524,7 @@ namespace GMEPPlumbing
       double x = fixture.Position.X + (distance * Math.Sin(fixture.Rotation));
       double y = fixture.Position.Y - (distance * Math.Cos(fixture.Rotation));
       Point3d dnPoint = new Point3d(x, y, 0);
-      switch (type.WaterGasBlockName) {
-        case "GMEP CW DN":
-          MakeCwDnLabel(dnPoint);
-          break;
-        case "GMEP CW HW DN":
-          MakeCwHwDnLabel(dnPoint, fixture.Rotation);
-          break;
-      }
+   
       CADObjectCommands.CreateTextWithJig(
         CADObjectCommands.TextLayer,
         TextHorizontalMode.TextLeft,
@@ -1547,7 +1540,7 @@ namespace GMEPPlumbing
       );
     }
 
-    private void MakePlumbingFixtureWasteVentLabel(
+    /*private void MakePlumbingFixtureWasteVentLabel(
       PlumbingFixture fixture,
       Point3d position,
       string blockName,
@@ -1580,7 +1573,7 @@ namespace GMEPPlumbing
           fixture.TypeAbbreviation + "-" + fixture.Number.ToString()
         );
       }
-    }
+    }*/
 
     [CommandMethod("PF")]
     [CommandMethod("PlumbingFixture")]
@@ -1651,7 +1644,7 @@ namespace GMEPPlumbing
         i => i.Id.ToString() == keywordResultString
       );
 
-      if (selectedFixtureType.WaterGasBlockName.Contains("%WHSIZE%")) {
+      if (selectedFixtureType.BlockName.Contains("%WHSIZE%")) {
         if (selectedFixtureType.Abbreviation == "WH") {
           keywordOptions = new PromptKeywordOptions("");
           keywordOptions.Message = "\nSelect WH size";
@@ -1669,14 +1662,14 @@ namespace GMEPPlumbing
           if (whSize.Contains(' ')) {
             whSize = whSize.Split(' ')[0];
           }
-          selectedFixtureType.WaterGasBlockName = selectedFixtureType.WaterGasBlockName.Replace(
+          selectedFixtureType.BlockName = selectedFixtureType.BlockName.Replace(
             "%WHSIZE%",
             whSize
           );
         }
       }
 
-      if (selectedFixtureType.WasteVentBlockName.Contains("%FSSIZE%")) {
+      if (selectedFixtureType.BlockName.Contains("%FSSIZE%")) {
         if (selectedFixtureType.Abbreviation == "FS") {
           keywordOptions = new PromptKeywordOptions("");
           keywordOptions.Message = "\nSelect FS size";
@@ -1694,7 +1687,7 @@ namespace GMEPPlumbing
           if (fsSize.Contains(' ')) {
             fsSize = fsSize.Split(' ')[0];
           }
-          selectedFixtureType.WasteVentBlockName = selectedFixtureType.WasteVentBlockName.Replace(
+          selectedFixtureType.BlockName = selectedFixtureType.BlockName.Replace(
             "%FSSIZE%",
             fsSize
           );
@@ -1702,10 +1695,10 @@ namespace GMEPPlumbing
       }
       
 
-      if (!String.IsNullOrEmpty(selectedFixtureType.WaterGasBlockName)) {
+      if (!String.IsNullOrEmpty(selectedFixtureType.BlockName)) {
         ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
         ObjectId blockId;
-        string blockName = selectedFixtureType.WaterGasBlockName;
+        string blockName = selectedFixtureType.BlockName;
         Point3d point;
         double rotation = 0;
         string GUID = Guid.NewGuid().ToString();
@@ -1790,82 +1783,13 @@ namespace GMEPPlumbing
             fixtureId,
             blockName
           );
-          /*MariaDBService.CreatePlumbingFixture(plumbingFixture);
-          if (selectedFixtureType.Abbreviation == "WH")
-          {
-            MariaDBService.CreatePlumbingSource(
-              new PlumbingSource(
-                Guid.NewGuid().ToString(),
-                projectId,
-                plumbingFixture.Position,
-                selectedFixtureType.Id,
-                plumbingFixture.Id,
-                basePointId
-              )
-            );
-          }*/
+     
           MakePlumbingFixtureWaterGasLabel(plumbingFixture, selectedFixtureType);
         }
         catch (System.Exception ex) {
           ed.WriteMessage(ex.ToString());
           routeHeightDisplay.Disable();
           Console.WriteLine(ex.ToString());
-        }
-      }
-      if (!String.IsNullOrEmpty(selectedFixtureType.WasteVentBlockName)) {
-        string[] wasteVentBlockNames = selectedFixtureType.WasteVentBlockName.Split(',');
-        int index = 0;
-        Point3d ventPosition = new Point3d();
-        foreach (string wasteVentBlockName in wasteVentBlockNames) {
-          ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
-          string blockName = wasteVentBlockName;
-       
-          try {
-            if (wasteVentBlockName == "GMEP VENT") {
-              ventPosition = CreateVentBlock(
-                selectedCatalogItem.FixtureDemand,
-                projectId,
-                selectedCatalogItem.Id,
-                selectedFixtureType.Abbreviation,
-                index,
-                basePointId,
-                fixtureId,
-                zIndex
-              );
-            }
-            else if (wasteVentBlockName == "GMEP DRAIN") {
-              CreateDrainBlock(
-                selectedCatalogItem.FixtureDemand,
-                projectId,
-                selectedCatalogItem.Id,
-                selectedFixtureType.Abbreviation,
-                index,
-                ventPosition,
-                basePointId,
-                fixtureId,
-                zIndex
-              );
-            }
-            else {
-              CreateWasteVentBlock(
-                wasteVentBlockName,
-                selectedCatalogItem.FixtureDemand,
-                projectId,
-                selectedCatalogItem.Id,
-                selectedFixtureType.Abbreviation,
-                index,
-                basePointId,
-                fixtureId,
-                zIndex
-              );
-            }
-            index++;
-          }
-          catch (System.Exception ex) {
-            ed.WriteMessage(ex.ToString());
-            routeHeightDisplay.Disable();
-            Console.WriteLine(ex.ToString());
-          }
         }
       }
       routeHeightDisplay.Disable();
@@ -2001,7 +1925,7 @@ namespace GMEPPlumbing
       routeHeightDisplay.Disable();
     }
 
-    public Point3d CreateVentBlock(
+    /*public Point3d CreateVentBlock(
       decimal fixtureDemand,
       string projectId,
       int selectedCatalogItemId,
@@ -2323,7 +2247,7 @@ namespace GMEPPlumbing
         ed.WriteMessage(ex.ToString());
         Console.WriteLine(ex.ToString());
       }
-    }
+    }*/
 
     public static void Db_VerticalRouteErased(object sender, ObjectErasedEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
