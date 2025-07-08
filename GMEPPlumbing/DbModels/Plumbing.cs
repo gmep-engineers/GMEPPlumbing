@@ -17,7 +17,6 @@ namespace GMEPPlumbing {
     public string TypeAbbreviation;
     public int Number;
     public string BasePointId;
-    public string FixtureId;
     public string BlockName;
     public PlumbingFixture(
       string id,

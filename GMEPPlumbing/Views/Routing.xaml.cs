@@ -172,7 +172,6 @@ namespace GMEPPlumbing.Views
                     plumbingFixture.TypeAbbreviation,
                     plumbingFixture.Number,
                     plumbingFixture.BasePointId,
-                    plumbingFixture.FixtureId,
                     plumbingFixture.BlockName
                 );
                 newFullRoute.RouteItems.Add(copy);
