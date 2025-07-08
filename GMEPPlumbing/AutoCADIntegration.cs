@@ -1590,7 +1590,6 @@ namespace GMEPPlumbing
       ed = doc.Editor;
 
       string basePointId = CADObjectCommands.GetActiveView();
-      string fixtureId = Guid.NewGuid().ToString();
 
       List<PlumbingFixtureType> plumbingFixtureTypes = MariaDBService.GetPlumbingFixtureTypes();
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
@@ -1747,7 +1746,7 @@ namespace GMEPPlumbing
             BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
             DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
             foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "gmep_plumbing_id") {
+              if (prop.PropertyName == "id") {
                 prop.Value = GUID;
               }
               if (prop.PropertyName == "gmep_plumbing_fixture_demand") {
@@ -1765,9 +1764,6 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "catalog_id") {
                 prop.Value = selectedCatalogItem.Id;
               }
-              if (prop.PropertyName == "gmep_plumbing_fixture_id") {
-                prop.Value = fixtureId;
-              }
             }
             tr.Commit();
           }
@@ -1780,7 +1776,6 @@ namespace GMEPPlumbing
             selectedFixtureType.Abbreviation,
             0,
             basePointId,
-            fixtureId,
             blockName
           );
      
@@ -2632,7 +2627,7 @@ namespace GMEPPlumbing
         List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
         List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
         List<PlumbingSource> sources = GetPlumbingSourcesFromCAD(ProjectId);
-        Dictionary<string, List<PlumbingFixture>> fixtures = GetPlumbingFixturesFromCAD(ProjectId);
+        List<PlumbingFixture> fixtures = GetPlumbingFixturesFromCAD(ProjectId);
 
         await mariaDBService.UpdatePlumbingHorizontalRoutes(horizontalRoutes, ProjectId);
         await mariaDBService.UpdatePlumbingVerticalRoutes(verticalRoutes, ProjectId);
@@ -2937,12 +2932,12 @@ namespace GMEPPlumbing
     }
 
   
-  public static Dictionary<string, List<PlumbingFixture>> GetPlumbingFixturesFromCAD(string ProjectId) {
+  public static List<PlumbingFixture> GetPlumbingFixturesFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
 
-      Dictionary<string, List<PlumbingFixture>> fixtures = new Dictionary<string, List<PlumbingFixture>>();
+      List<PlumbingFixture> fixtures = new List<PlumbingFixture>();
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -2951,18 +2946,18 @@ namespace GMEPPlumbing
         {
           "GMEP WH 80",
           "GMEP WH 50",
-          "GMEP CW HW DN",
+          //"GMEP CW HW DN",
           "GMEP DRAIN",
-          "GMEP VENT",
+          //"GMEP VENT",
           "GMEP CP",
-          "GMEP CW DN",
+          //"GMEP CW DN",
           "GMEP FS 12",
           "GMEP FS 6",
           "GMEP FD",
           "GMEP RPBFP",
-          "GMEP WCO STRAIGHT",
-          "GMEP WCO ANGLED",
-          "GMEP WCO FLOOR",
+          //"GMEP WCO STRAIGHT",
+          //"GMEP WCO ANGLED",
+          //"GMEP WCO FLOOR",
           "GMEP IWH",
         };
         foreach (string name in blockNames) {
@@ -2981,10 +2976,9 @@ namespace GMEPPlumbing
                       string basePointId = string.Empty;
                       string selectedFixtureTypeAbbr = string.Empty;
                       int selectedCatalogItemId = 0;
-                      string fixtureId = string.Empty;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
-                        if (prop.PropertyName == "gmep_plumbing_id") {
+                        if (prop.PropertyName == "id") {
                           GUID = prop.Value?.ToString();
                         }
                         if (prop.PropertyName == "base_point_id") {
@@ -2995,9 +2989,6 @@ namespace GMEPPlumbing
                         }
                         if (prop.PropertyName == "catalog_id") {
                          selectedCatalogItemId = Convert.ToInt32(prop.Value);
-                        }
-                        if (prop.PropertyName == "gmep_plumbing_fixture_id") {
-                         fixtureId = prop.Value?.ToString();
                         }
                       }
                  
@@ -3011,13 +3002,10 @@ namespace GMEPPlumbing
                           selectedFixtureTypeAbbr,
                           0,
                           basePointId,
-                          fixtureId,
                           name
                         );
-                        if (!fixtures.ContainsKey(fixtureId)) {
-                          fixtures[fixtureId] = new List<PlumbingFixture>();
-                        }
-                        fixtures[fixtureId].Add(fixture);
+                        
+                        fixtures.Add(fixture);
                       }
                     }
                   }
