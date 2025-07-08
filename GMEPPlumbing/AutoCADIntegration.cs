@@ -1842,6 +1842,10 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingSource")]
     public void CreatePlumbingSource() {
+
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
+
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
@@ -1862,6 +1866,12 @@ namespace GMEPPlumbing
       keywordOptions.Keywords.Default = "1 Water Meter";
       keywordOptions.AllowNone = false;
       PromptResult keywordResult = ed.GetKeywords(keywordOptions);
+      if (keywordResult.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nOperation cancelled.");
+        routeHeightDisplay.Disable();
+        return;
+      }
+
       string keywordResultString = keywordResult.StringResult;
 
       PlumbingSourceType selectedSourceType = plumbingSourceTypes.FirstOrDefault(t =>
@@ -1872,6 +1882,7 @@ namespace GMEPPlumbing
       }
 
       if (selectedSourceType.Type == "Water Heater") {
+        routeHeightDisplay.Disable();
         ed.Command("PlumbingFixture", "WH");
         return;
       }
@@ -1901,6 +1912,8 @@ namespace GMEPPlumbing
             PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
             if (rotatePromptResult.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nOperation cancelled.");
+              routeHeightDisplay.Disable();
               return;
             }
             rotation = br.Rotation;
@@ -1910,6 +1923,11 @@ namespace GMEPPlumbing
             curSpace.AppendEntity(br);
 
             tr.AddNewlyCreatedDBObject(br, true);
+          }
+          else {
+            ed.WriteMessage("\nFailed to create block reference.");
+            routeHeightDisplay.Disable();
+            return;
           }
 
           blockId = br.Id;
@@ -1946,8 +1964,10 @@ namespace GMEPPlumbing
       }
       catch (System.Exception ex) {
         ed.WriteMessage(ex.ToString());
+        routeHeightDisplay.Disable();
         Console.WriteLine(ex.ToString());
       }
+      routeHeightDisplay.Disable();
     }
 
     public Point3d CreateVentBlock(
