@@ -94,6 +94,11 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute() {
+      
+      //Beginning display
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
+
       string BasePointId = CADObjectCommands.GetActiveView();
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
       
@@ -107,6 +112,11 @@ namespace GMEPPlumbing
       //pko.Keywords.Add("Sewer");
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
+      if (pr.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
+        return;
+      }
       string result = pr.StringResult;
 
 
@@ -135,6 +145,11 @@ namespace GMEPPlumbing
       pko2.Keywords.Add("Forward");
       pko2.Keywords.Add("Backward");
       PromptResult pr2 = ed.GetKeywords(pko2);
+      if (pr2.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
+        return;
+      }
       string direction = pr2.StringResult;
 
 
@@ -143,6 +158,7 @@ namespace GMEPPlumbing
       PromptPointResult ppr2 = ed.GetPoint(ppo2);
       if (ppr2.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
         return;
       }
 
@@ -155,8 +171,11 @@ namespace GMEPPlumbing
       ppo3.UseBasePoint = true;
 
       PromptPointResult ppr3 = ed.GetPoint(ppo3);
-      if (ppr3.Status != PromptStatus.OK)
+      if (ppr3.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
         return;
+      }
 
       Point3d endPointLocation2 = ppr3.Value;
 
@@ -188,6 +207,7 @@ namespace GMEPPlumbing
 
         if (per.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
+          routeHeightDisplay.Disable();
           return;
         }
         ObjectId basePointId = per.ObjectId;
@@ -231,8 +251,11 @@ namespace GMEPPlumbing
 
           while (true) {
             PromptPointResult ppr = ed.GetPoint(ppo);
-            if (ppr.Status != PromptStatus.OK)
+            if (ppr.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              routeHeightDisplay.Disable();
               return;
+            }
 
             if (layer == "P-GAS" && basePoint is Line basePointLine2) {
               Vector3d prevDir = basePointLine2.EndPoint - basePointLine2.StartPoint;
@@ -277,10 +300,16 @@ namespace GMEPPlumbing
         AttachRouteXData(addedLineId, LineGUID, BasePointId);
         AddArrowsToLine(addedLineId, LineGUID);
       }
+      routeHeightDisplay.Disable();
     }
 
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
+      
+      //beginning display
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
+
       string basePointGUID = CADObjectCommands.GetActiveView();
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
       SettingObjects = true;
@@ -305,6 +334,7 @@ namespace GMEPPlumbing
       PromptResult pr = ed.GetKeywords(pko);
       if (pr.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
         return;
       }
       string result = pr.StringResult;
@@ -467,6 +497,7 @@ namespace GMEPPlumbing
           }
           else {
             ed.WriteMessage("\nFailed to create vertical route block reference.");
+            routeHeightDisplay.Disable();
             return;
           }
         }
@@ -484,6 +515,7 @@ namespace GMEPPlumbing
       PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
       if (endFloorResult.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
         return;
       }
       int endFloor = int.Parse(endFloorResult.StringResult);
@@ -514,6 +546,7 @@ namespace GMEPPlumbing
         }
         tr.Commit();
       }
+      routeHeightDisplay.Disable();
 
       if (endFloor > startFloor) {
         Point3d labelPoint = Point3d.Origin;
@@ -1550,6 +1583,10 @@ namespace GMEPPlumbing
     [CommandMethod("PF")]
     [CommandMethod("PlumbingFixture")]
     public void PlumbingFixture() {
+
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
+
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
@@ -1570,6 +1607,12 @@ namespace GMEPPlumbing
       keywordOptions.Keywords.Default = "WC - Water Closet";
       keywordOptions.AllowNone = false;
       PromptResult keywordResult = ed.GetKeywords(keywordOptions);
+
+      if (keywordResult.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
+        return;
+      }
       string keywordResultString = keywordResult.StringResult;
       PlumbingFixtureType selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t =>
         keywordResultString.StartsWith(t.Abbreviation)
@@ -1615,6 +1658,11 @@ namespace GMEPPlumbing
           keywordOptions.Keywords.Default = "50 gal.";
           keywordOptions.AllowNone = false;
           keywordResult = ed.GetKeywords(keywordOptions);
+          if (keywordResult.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            routeHeightDisplay.Disable();
+            return;
+          }
           string whSize = keywordResult.StringResult;
           if (whSize.Contains(' ')) {
             whSize = whSize.Split(' ')[0];
@@ -1635,6 +1683,11 @@ namespace GMEPPlumbing
           keywordOptions.Keywords.Default = "12\"";
           keywordOptions.AllowNone = false;
           keywordResult = ed.GetKeywords(keywordOptions);
+          if (keywordResult.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            routeHeightDisplay.Disable();
+            return;
+          }
           string fsSize = keywordResult.StringResult.Replace("\"", "");
           if (fsSize.Contains(' ')) {
             fsSize = fsSize.Split(' ')[0];
@@ -1673,14 +1726,20 @@ namespace GMEPPlumbing
               PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
               if (rotatePromptResult.Status != PromptStatus.OK) {
+                ed.WriteMessage("\nRotation cancelled.");
+                routeHeightDisplay.Disable();
                 return;
               }
               br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
               rotation = br.Rotation;
 
               curSpace.AppendEntity(br);
-
               tr.AddNewlyCreatedDBObject(br, true);
+            }
+            else {
+              ed.WriteMessage("\nBlock reference could not be created.");
+              routeHeightDisplay.Disable();
+              return;
             }
 
             blockId = br.Id;
@@ -1747,6 +1806,7 @@ namespace GMEPPlumbing
         }
         catch (System.Exception ex) {
           ed.WriteMessage(ex.ToString());
+          routeHeightDisplay.Disable();
           Console.WriteLine(ex.ToString());
         }
       }
@@ -1801,14 +1861,20 @@ namespace GMEPPlumbing
           }
           catch (System.Exception ex) {
             ed.WriteMessage(ex.ToString());
+            routeHeightDisplay.Disable();
             Console.WriteLine(ex.ToString());
           }
         }
       }
+      routeHeightDisplay.Disable();
     }
 
     [CommandMethod("PlumbingSource")]
     public void CreatePlumbingSource() {
+
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
+
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
@@ -1829,6 +1895,12 @@ namespace GMEPPlumbing
       keywordOptions.Keywords.Default = "1 Water Meter";
       keywordOptions.AllowNone = false;
       PromptResult keywordResult = ed.GetKeywords(keywordOptions);
+      if (keywordResult.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nOperation cancelled.");
+        routeHeightDisplay.Disable();
+        return;
+      }
+
       string keywordResultString = keywordResult.StringResult;
 
       PlumbingSourceType selectedSourceType = plumbingSourceTypes.FirstOrDefault(t =>
@@ -1839,6 +1911,7 @@ namespace GMEPPlumbing
       }
 
       if (selectedSourceType.Type == "Water Heater") {
+        routeHeightDisplay.Disable();
         ed.Command("PlumbingFixture", "WH");
         return;
       }
@@ -1868,6 +1941,8 @@ namespace GMEPPlumbing
             PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
             if (rotatePromptResult.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nOperation cancelled.");
+              routeHeightDisplay.Disable();
               return;
             }
             rotation = br.Rotation;
@@ -1877,6 +1952,11 @@ namespace GMEPPlumbing
             curSpace.AppendEntity(br);
 
             tr.AddNewlyCreatedDBObject(br, true);
+          }
+          else {
+            ed.WriteMessage("\nFailed to create block reference.");
+            routeHeightDisplay.Disable();
+            return;
           }
 
           blockId = br.Id;
@@ -1913,8 +1993,10 @@ namespace GMEPPlumbing
       }
       catch (System.Exception ex) {
         ed.WriteMessage(ex.ToString());
+        routeHeightDisplay.Disable();
         Console.WriteLine(ex.ToString());
       }
+      routeHeightDisplay.Disable();
     }
 
     public Point3d CreateVentBlock(
@@ -3058,6 +3140,103 @@ namespace GMEPPlumbing
     private void DocumentManager_DocumentActivated(object sender, DocumentCollectionEventArgs e)
     {
       AutoCADIntegration.AttachHandlers(e.Document);
+    }
+  }
+
+
+  public class RouteHeightDisplay {
+    private readonly Editor _ed;
+    private double _routeHeight;
+    private bool _enabled = false;
+
+    public RouteHeightDisplay(Editor ed) {
+      _ed = ed;
+    }
+
+    public void Enable(double routeHeight) {
+      if (_enabled) return;
+      _routeHeight = routeHeight;
+      _ed.PointMonitor += Ed_PointMonitor;
+      _enabled = true;
+    }
+
+    public void Disable() {
+      if (!_enabled) return;
+      _ed.PointMonitor -= Ed_PointMonitor;
+      _enabled = false;
+      TransientManager.CurrentTransientManager.EraseTransients(TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+    }
+
+    public void UpdateHeight(double routeHeight) {
+      _routeHeight = routeHeight;
+    }
+
+    private void Ed_PointMonitor(object sender, PointMonitorEventArgs e) {
+      var view = _ed.GetCurrentView();
+      var db = _ed.Document.Database;
+
+      // Text settings
+      double textHeight = view.Height / 70;
+      string displayText = $"Route Height: {_routeHeight:0.##} ft";
+
+      // Estimate text width (AutoCAD text width is roughly 0.6 * height * chars)
+      double textWidth = textHeight * displayText.Length * 0.6;
+      double padding = textHeight * 0.4;
+
+      // Position text 10 units left of the cursor
+      var pos = e.Context.RawPoint + new Vector3d(-(view.Width / 10.5), -(view.Height / 150), 0);
+
+      // Rectangle corners (lower left, lower right, upper right, upper left)
+      Point3d lowerLeft = new Point3d(pos.X - padding, pos.Y - padding, pos.Z);
+      Point3d lowerRight = new Point3d(pos.X + textWidth + padding, pos.Y - padding, pos.Z);
+      Point3d upperRight = new Point3d(pos.X + textWidth + padding, pos.Y + textHeight + padding, pos.Z);
+      Point3d upperLeft = new Point3d(pos.X - padding, pos.Y + textHeight + padding, pos.Z);
+
+      // Create filled rectangle using Solid
+      var solid = new Solid(lowerLeft, lowerRight, upperLeft, upperRight);
+      solid.ColorIndex = 8; // Light gray, or set as needed
+
+      var border = new Polyline(4);
+      border.AddVertexAt(0, new Point2d(lowerLeft.X, lowerLeft.Y), 0, 0, 0);
+      border.AddVertexAt(1, new Point2d(lowerRight.X, lowerRight.Y), 0, 0, 0);
+      border.AddVertexAt(2, new Point2d(upperRight.X, upperRight.Y), 0, 0, 0);
+      border.AddVertexAt(3, new Point2d(upperLeft.X, upperLeft.Y), 0, 0, 0);
+      border.Closed = true;
+      border.Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0);
+
+      // Create the text
+      var text = new DBText {
+        Position = pos,
+        Height = textHeight,
+        TextString = displayText,
+        Layer = "0",
+        Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0),
+        TextStyleId = db.Textstyle,
+      };
+
+      // Remove previous transients
+      TransientManager.CurrentTransientManager.EraseTransients(
+          TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+
+      // Draw background solid first, then text
+      TransientManager.CurrentTransientManager.AddTransient(
+          solid,
+          TransientDrawingMode.DirectShortTerm,
+          128,
+          new IntegerCollection()
+      );
+      TransientManager.CurrentTransientManager.AddTransient(
+          border,
+          TransientDrawingMode.DirectShortTerm,
+          128,
+          new IntegerCollection()
+      );
+      TransientManager.CurrentTransientManager.AddTransient(
+          text,
+          TransientDrawingMode.DirectShortTerm,
+          128,
+          new IntegerCollection()
+      );
     }
   }
 }
