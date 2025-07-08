@@ -39,6 +39,10 @@ namespace GMEPPlumbing
 
     public static double ActiveFloorHeight = 0;
 
+    public static string ActiveViewName { get; set; } = "";
+
+    public static int ActiveFloor { get; set; } = 0;
+
     public static bool IsEditing { get; set; } = false;
 
     //public static bool SettingFlag= false;
@@ -371,6 +375,8 @@ namespace GMEPPlumbing
             ActiveBasePointId = basePointId;
             ActiveFloorHeight = floorHeight;
             ActiveRouteHeight = routeHeight;
+            ActiveFloor = floor;
+            ActiveViewName = resultKeyword;
           }
         }
         tr.Commit();

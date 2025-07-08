@@ -94,14 +94,13 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute() {
-      
-      //Beginning display
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
-
       string BasePointId = CADObjectCommands.GetActiveView();
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
-      
+
+      //Beginning display
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight(), CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+
       List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
   
@@ -306,12 +305,15 @@ namespace GMEPPlumbing
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
       
-      //beginning display
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
+   
 
       string basePointGUID = CADObjectCommands.GetActiveView();
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
+
+      //beginning display
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight(), CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+
       SettingObjects = true;
       string layer = "Defpoints";
       List<ObjectId> basePointIds = new List<ObjectId>();
@@ -1583,13 +1585,13 @@ namespace GMEPPlumbing
     [CommandMethod("PF")]
     [CommandMethod("PlumbingFixture")]
     public void PlumbingFixture() {
-
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
-
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
+      
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight(), CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+
       doc = Application.DocumentManager.MdiActiveDocument;
       db = doc.Database;
       ed = doc.Editor;
@@ -1871,13 +1873,13 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingSource")]
     public void CreatePlumbingSource() {
-
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
-
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
+
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight(), CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+
       doc = Application.DocumentManager.MdiActiveDocument;
       db = doc.Database;
       ed = doc.Editor;
@@ -3147,15 +3149,19 @@ namespace GMEPPlumbing
   public class RouteHeightDisplay {
     private readonly Editor _ed;
     private double _routeHeight;
+    private string _viewName = string.Empty;
+    private int _floor = 0;
     private bool _enabled = false;
 
     public RouteHeightDisplay(Editor ed) {
       _ed = ed;
     }
 
-    public void Enable(double routeHeight) {
+    public void Enable(double routeHeight, string viewName, int floor) {
       if (_enabled) return;
       _routeHeight = routeHeight;
+      _viewName = viewName;
+      _floor = floor;
       _ed.PointMonitor += Ed_PointMonitor;
       _enabled = true;
     }
@@ -3167,30 +3173,38 @@ namespace GMEPPlumbing
       TransientManager.CurrentTransientManager.EraseTransients(TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
     }
 
-    public void UpdateHeight(double routeHeight) {
+    public void Update(double routeHeight, string viewName, int floor) {
       _routeHeight = routeHeight;
+      _viewName = viewName;
+      _floor = floor;
     }
 
     private void Ed_PointMonitor(object sender, PointMonitorEventArgs e) {
       var view = _ed.GetCurrentView();
       var db = _ed.Document.Database;
 
-      // Text settings
-      double textHeight = view.Height / 70;
-      string displayText = $"Route Height: {_routeHeight:0.##} ft";
 
-      // Estimate text width (AutoCAD text width is roughly 0.6 * height * chars)
-      double textWidth = textHeight * displayText.Length * 0.6;
+      string viewNameText = $"View: {_viewName}";
+      string floorText = $"Floor: {_floor}";
+      string routeHeightText = $"Route Height: {_routeHeight:0.##} ft";
+
+      double textHeight = view.Height / 70;
+      double lineSpacing = textHeight * 1.2;
+
+      string[] lines = { viewNameText, routeHeightText, floorText };
+      int maxLen = lines.Max(s => s.Length);
+      double textWidth = textHeight * maxLen * 0.6;
       double padding = textHeight * 0.4;
 
       // Position text 10 units left of the cursor
       var pos = e.Context.RawPoint + new Vector3d(-(view.Width / 10.5), -(view.Height / 150), 0);
 
       // Rectangle corners (lower left, lower right, upper right, upper left)
+      double rectHeight = lineSpacing * 3 + padding * 2;
       Point3d lowerLeft = new Point3d(pos.X - padding, pos.Y - padding, pos.Z);
       Point3d lowerRight = new Point3d(pos.X + textWidth + padding, pos.Y - padding, pos.Z);
-      Point3d upperRight = new Point3d(pos.X + textWidth + padding, pos.Y + textHeight + padding, pos.Z);
-      Point3d upperLeft = new Point3d(pos.X - padding, pos.Y + textHeight + padding, pos.Z);
+      Point3d upperRight = new Point3d(pos.X + textWidth + padding, pos.Y + rectHeight - padding, pos.Z);
+      Point3d upperLeft = new Point3d(pos.X - padding, pos.Y + rectHeight - padding, pos.Z);
 
       // Create filled rectangle using Solid
       var solid = new Solid(lowerLeft, lowerRight, upperLeft, upperRight);
@@ -3205,10 +3219,26 @@ namespace GMEPPlumbing
       border.Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0);
 
       // Create the text
-      var text = new DBText {
-        Position = pos,
+      var text1 = new DBText {
+        Position = new Point3d(pos.X, pos.Y + lineSpacing * 2, pos.Z),
         Height = textHeight,
-        TextString = displayText,
+        TextString = viewNameText,
+        Layer = "0",
+        Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0),
+        TextStyleId = db.Textstyle,
+      };
+      var text2 = new DBText {
+        Position = new Point3d(pos.X, pos.Y + lineSpacing, pos.Z),
+        Height = textHeight,
+        TextString = floorText,
+        Layer = "0",
+        Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0),
+        TextStyleId = db.Textstyle,
+      };
+      var text3 = new DBText {
+        Position = new Point3d(pos.X, pos.Y, pos.Z),
+        Height = textHeight,
+        TextString = routeHeightText,
         Layer = "0",
         Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0),
         TextStyleId = db.Textstyle,
@@ -3220,23 +3250,15 @@ namespace GMEPPlumbing
 
       // Draw background solid first, then text
       TransientManager.CurrentTransientManager.AddTransient(
-          solid,
-          TransientDrawingMode.DirectShortTerm,
-          128,
-          new IntegerCollection()
-      );
+          solid, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
       TransientManager.CurrentTransientManager.AddTransient(
-          border,
-          TransientDrawingMode.DirectShortTerm,
-          128,
-          new IntegerCollection()
-      );
+          border, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
       TransientManager.CurrentTransientManager.AddTransient(
-          text,
-          TransientDrawingMode.DirectShortTerm,
-          128,
-          new IntegerCollection()
-      );
+          text1, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+      TransientManager.CurrentTransientManager.AddTransient(
+          text2, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+      TransientManager.CurrentTransientManager.AddTransient(
+          text3, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
     }
   }
 }
