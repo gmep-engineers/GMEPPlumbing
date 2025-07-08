@@ -1583,6 +1583,10 @@ namespace GMEPPlumbing
     [CommandMethod("PF")]
     [CommandMethod("PlumbingFixture")]
     public void PlumbingFixture() {
+
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
+
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
@@ -1603,6 +1607,12 @@ namespace GMEPPlumbing
       keywordOptions.Keywords.Default = "WC - Water Closet";
       keywordOptions.AllowNone = false;
       PromptResult keywordResult = ed.GetKeywords(keywordOptions);
+
+      if (keywordResult.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
+        return;
+      }
       string keywordResultString = keywordResult.StringResult;
       PlumbingFixtureType selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t =>
         keywordResultString.StartsWith(t.Abbreviation)
@@ -1648,6 +1658,11 @@ namespace GMEPPlumbing
           keywordOptions.Keywords.Default = "50 gal.";
           keywordOptions.AllowNone = false;
           keywordResult = ed.GetKeywords(keywordOptions);
+          if (keywordResult.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            routeHeightDisplay.Disable();
+            return;
+          }
           string whSize = keywordResult.StringResult;
           if (whSize.Contains(' ')) {
             whSize = whSize.Split(' ')[0];
@@ -1668,6 +1683,11 @@ namespace GMEPPlumbing
           keywordOptions.Keywords.Default = "12\"";
           keywordOptions.AllowNone = false;
           keywordResult = ed.GetKeywords(keywordOptions);
+          if (keywordResult.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            routeHeightDisplay.Disable();
+            return;
+          }
           string fsSize = keywordResult.StringResult.Replace("\"", "");
           if (fsSize.Contains(' ')) {
             fsSize = fsSize.Split(' ')[0];
@@ -1706,14 +1726,20 @@ namespace GMEPPlumbing
               PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
               if (rotatePromptResult.Status != PromptStatus.OK) {
+                ed.WriteMessage("\nRotation cancelled.");
+                routeHeightDisplay.Disable();
                 return;
               }
               br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
               rotation = br.Rotation;
 
               curSpace.AppendEntity(br);
-
               tr.AddNewlyCreatedDBObject(br, true);
+            }
+            else {
+              ed.WriteMessage("\nBlock reference could not be created.");
+              routeHeightDisplay.Disable();
+              return;
             }
 
             blockId = br.Id;
@@ -1780,6 +1806,7 @@ namespace GMEPPlumbing
         }
         catch (System.Exception ex) {
           ed.WriteMessage(ex.ToString());
+          routeHeightDisplay.Disable();
           Console.WriteLine(ex.ToString());
         }
       }
@@ -1834,10 +1861,12 @@ namespace GMEPPlumbing
           }
           catch (System.Exception ex) {
             ed.WriteMessage(ex.ToString());
+            routeHeightDisplay.Disable();
             Console.WriteLine(ex.ToString());
           }
         }
       }
+      routeHeightDisplay.Disable();
     }
 
     [CommandMethod("PlumbingSource")]
