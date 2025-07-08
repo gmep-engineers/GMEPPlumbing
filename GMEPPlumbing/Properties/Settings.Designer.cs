@@ -26,7 +26,7 @@ namespace GMEPPlumbing.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("Server=gmep-design-tool-test.ch8c88cauy2x.us-west-1.rds.amazonaws.com;Port=3306;D" +
-            "atabase=gmep-design-tool;User Id=admin;Password=f51Vu3o5Qlc140r;")]
+            "atabase=gmep-design-tool-dev;User Id=admin;Password=f51Vu3o5Qlc140r;")]
         public string ConnectionString {
             get {
                 return ((string)(this["ConnectionString"]));
