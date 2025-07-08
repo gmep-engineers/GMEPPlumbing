@@ -94,6 +94,11 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute() {
+      
+      //Beginning display
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight());
+
       string BasePointId = CADObjectCommands.GetActiveView();
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
       
@@ -107,6 +112,11 @@ namespace GMEPPlumbing
       //pko.Keywords.Add("Sewer");
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
+      if (pr.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
+        return;
+      }
       string result = pr.StringResult;
 
 
@@ -135,6 +145,11 @@ namespace GMEPPlumbing
       pko2.Keywords.Add("Forward");
       pko2.Keywords.Add("Backward");
       PromptResult pr2 = ed.GetKeywords(pko2);
+      if (pr2.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
+        return;
+      }
       string direction = pr2.StringResult;
 
 
@@ -143,6 +158,7 @@ namespace GMEPPlumbing
       PromptPointResult ppr2 = ed.GetPoint(ppo2);
       if (ppr2.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
         return;
       }
 
@@ -155,8 +171,11 @@ namespace GMEPPlumbing
       ppo3.UseBasePoint = true;
 
       PromptPointResult ppr3 = ed.GetPoint(ppo3);
-      if (ppr3.Status != PromptStatus.OK)
+      if (ppr3.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        routeHeightDisplay.Disable();
         return;
+      }
 
       Point3d endPointLocation2 = ppr3.Value;
 
@@ -188,6 +207,7 @@ namespace GMEPPlumbing
 
         if (per.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
+          routeHeightDisplay.Disable();
           return;
         }
         ObjectId basePointId = per.ObjectId;
@@ -231,8 +251,11 @@ namespace GMEPPlumbing
 
           while (true) {
             PromptPointResult ppr = ed.GetPoint(ppo);
-            if (ppr.Status != PromptStatus.OK)
+            if (ppr.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              routeHeightDisplay.Disable();
               return;
+            }
 
             if (layer == "P-GAS" && basePoint is Line basePointLine2) {
               Vector3d prevDir = basePointLine2.EndPoint - basePointLine2.StartPoint;
@@ -277,6 +300,7 @@ namespace GMEPPlumbing
         AttachRouteXData(addedLineId, LineGUID, BasePointId);
         AddArrowsToLine(addedLineId, LineGUID);
       }
+      routeHeightDisplay.Disable();
     }
 
     [CommandMethod("PlumbingVerticalRoute")]
