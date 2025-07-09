@@ -1519,17 +1519,39 @@ namespace GMEPPlumbing
       );
     }
 
-    private void MakePlumbingFixtureWaterGasLabel(PlumbingFixture fixture, PlumbingFixtureType type) {
+    private void MakePlumbingFixtureLabel(PlumbingFixture fixture, PlumbingFixtureType type) {
       double distance = 3;
       double x = fixture.Position.X + (distance * Math.Sin(fixture.Rotation));
       double y = fixture.Position.Y - (distance * Math.Cos(fixture.Rotation));
       Point3d dnPoint = new Point3d(x, y, 0);
-   
-      CADObjectCommands.CreateTextWithJig(
-        CADObjectCommands.TextLayer,
-        TextHorizontalMode.TextLeft,
-        fixture.TypeAbbreviation + "-" + fixture.Number.ToString()
-      );
+
+      if (fixture.TypeAbbreviation != "CO") {
+        CADObjectCommands.CreateTextWithJig(
+          CADObjectCommands.TextLayer,
+          TextHorizontalMode.TextLeft,
+          fixture.TypeAbbreviation + "-" + fixture.Number.ToString()
+        );
+      }
+      else {
+        string typeAbb = "";
+        switch (fixture.BlockName) {
+          case "GMEP WCO STRAIGHT":
+            typeAbb = "2\" WCO";
+            break;
+          case "GMEP WCO ANGLED":
+            typeAbb = "2\" WCO ANGLED";
+            break;
+          case "GMEP WCO FLOOR":
+            typeAbb = "2\" GCO";
+            break;
+
+        }
+        CADObjectCommands.CreateTextWithJig(
+         CADObjectCommands.TextLayer,
+         TextHorizontalMode.TextLeft,
+         typeAbb
+       );
+      }
     }
 
     private void MakePlumbingSourceLabel(PlumbingSource source, PlumbingSourceType type) {
@@ -1614,34 +1636,38 @@ namespace GMEPPlumbing
       if (selectedFixtureType == null) {
         selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t => t.Abbreviation == "WC");
       }
-      List<PlumbingFixtureCatalogItem> plumbingFixtureCatalogItems =
-        MariaDBService.GetPlumbingFixtureCatalogItemsByType(selectedFixtureType.Id);
 
-      keywordOptions = new PromptKeywordOptions("");
-      keywordOptions.Message = "\nSelect catalog item:";
-      plumbingFixtureCatalogItems.ForEach(i => {
-        keywordOptions.Keywords.Add(
-          i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model
+      PlumbingFixtureCatalogItem selectedCatalogItem = null;
+      if (selectedFixtureType.Abbreviation != "CO") {
+        List<PlumbingFixtureCatalogItem> plumbingFixtureCatalogItems =
+          MariaDBService.GetPlumbingFixtureCatalogItemsByType(selectedFixtureType.Id);
+
+        keywordOptions = new PromptKeywordOptions("");
+        keywordOptions.Message = "\nSelect catalog item:";
+        plumbingFixtureCatalogItems.ForEach(i => {
+          keywordOptions.Keywords.Add(
+            i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model
+          );
+        });
+
+        keywordOptions.Keywords.Default =
+          plumbingFixtureCatalogItems[0].Id.ToString()
+          + " - "
+          + plumbingFixtureCatalogItems[0].Description
+          + " - "
+          + plumbingFixtureCatalogItems[0].Make
+          + " "
+          + plumbingFixtureCatalogItems[0].Model;
+        keywordResult = ed.GetKeywords(keywordOptions);
+
+        keywordResultString = keywordResult.StringResult;
+        if (keywordResultString.Contains(' ')) {
+          keywordResultString = keywordResultString.Split(' ')[0];
+        }
+        selectedCatalogItem = plumbingFixtureCatalogItems.FirstOrDefault(
+          i => i.Id.ToString() == keywordResultString
         );
-      });
-
-      keywordOptions.Keywords.Default =
-        plumbingFixtureCatalogItems[0].Id.ToString()
-        + " - "
-        + plumbingFixtureCatalogItems[0].Description
-        + " - "
-        + plumbingFixtureCatalogItems[0].Make
-        + " "
-        + plumbingFixtureCatalogItems[0].Model;
-      keywordResult = ed.GetKeywords(keywordOptions);
-
-      keywordResultString = keywordResult.StringResult;
-      if (keywordResultString.Contains(' ')) {
-        keywordResultString = keywordResultString.Split(' ')[0];
       }
-      PlumbingFixtureCatalogItem selectedCatalogItem = plumbingFixtureCatalogItems.FirstOrDefault(
-        i => i.Id.ToString() == keywordResultString
-      );
 
       if (selectedFixtureType.BlockName.Contains("%WHSIZE%")) {
         if (selectedFixtureType.Abbreviation == "WH") {
@@ -1692,7 +1718,34 @@ namespace GMEPPlumbing
           );
         }
       }
-      
+      if (selectedFixtureType.BlockName.Contains("%COSTYLE%")) {
+        if (selectedFixtureType.Abbreviation == "CO") {
+          // Prompt for WCO style
+          keywordOptions = new PromptKeywordOptions("");
+          keywordOptions.Message = "\nSelect CO style";
+          keywordOptions.Keywords.Add("STRAIGHT");
+          keywordOptions.Keywords.Add("ANGLED");
+          keywordOptions.Keywords.Add("FLOOR");
+          keywordOptions.Keywords.Default = "STRAIGHT";
+          keywordOptions.AllowNone = false;
+          keywordResult = ed.GetKeywords(keywordOptions);
+          if (keywordResult.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            routeHeightDisplay.Disable();
+            return;
+          }
+          string coStyle = keywordResult.StringResult.Replace("\"", "");
+          if (coStyle.Contains(' ')) {
+            coStyle = coStyle.Split(' ')[0];
+          }
+          string blockName = selectedFixtureType.BlockName;
+          selectedFixtureType.BlockName = selectedFixtureType.BlockName.Replace(
+            "%COSTYLE%",
+            coStyle
+          );
+        }
+      }
+
 
       if (!String.IsNullOrEmpty(selectedFixtureType.BlockName)) {
         ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
@@ -1749,10 +1802,10 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "id") {
                 prop.Value = GUID;
               }
-              if (prop.PropertyName == "gmep_plumbing_fixture_demand") {
+              if (prop.PropertyName == "gmep_plumbing_fixture_demand" && selectedCatalogItem != null) {
                 prop.Value = (double)selectedCatalogItem.FixtureDemand;
               }
-              if (prop.PropertyName == "gmep_plumbing_fixture_hot_demand") {
+              if (prop.PropertyName == "gmep_plumbing_fixture_hot_demand" && selectedCatalogItem != null) {
                 prop.Value = (double)selectedCatalogItem.HotDemand;
               }
               if (prop.PropertyName == "base_point_id") {
@@ -1761,7 +1814,7 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "type_abbreviation") {
                 prop.Value = selectedFixtureType.Abbreviation;
               }
-              if (prop.PropertyName == "catalog_id") {
+              if (prop.PropertyName == "catalog_id" && selectedCatalogItem != null) {
                 prop.Value = selectedCatalogItem.Id;
               }
             }
@@ -1772,14 +1825,14 @@ namespace GMEPPlumbing
             projectId,
             point,
             rotation,
-            selectedCatalogItem.Id,
+            0,
             selectedFixtureType.Abbreviation,
             0,
             basePointId,
             blockName
           );
      
-          MakePlumbingFixtureWaterGasLabel(plumbingFixture, selectedFixtureType);
+          MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
         }
         catch (System.Exception ex) {
           ed.WriteMessage(ex.ToString());
