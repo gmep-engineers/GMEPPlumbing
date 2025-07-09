@@ -1821,6 +1821,11 @@ namespace GMEPPlumbing
         ed.Command("PlumbingFixture", "WH");
         return;
       }
+      if (selectedSourceType.Type == "Insta-hot Water Heater") {
+        routeHeightDisplay.Disable();
+        ed.Command("PlumbingFixture", "IWH");
+        return;
+      }
 
       ed.WriteMessage("\nSelect base point for plumbing source");
       ObjectId blockId;
@@ -2856,6 +2861,7 @@ namespace GMEPPlumbing
           "GMEP SOURCE",
           "GMEP WH 80",
           "GMEP WH 50",
+          "GMEP IWH"
         };
         foreach (string name in blockNames) {
           BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
@@ -2895,6 +2901,9 @@ namespace GMEPPlumbing
                       }
                       if (name == "GMEP WH 50" || name == "GMEP WH 80") {
                         typeId = 2;
+                      }
+                      if (name == "GMEP IWH") {
+                        typeId = 3;
                       }
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
                         Point3d position = entity.Position;
