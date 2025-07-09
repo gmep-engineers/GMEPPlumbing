@@ -1535,13 +1535,13 @@ namespace GMEPPlumbing
       else {
         string typeAbb = "";
         switch (fixture.BlockName) {
-          case "GMEP WCO STRAIGHT":
+          case "GMEP CO STRAIGHT":
             typeAbb = "2\" WCO";
             break;
-          case "GMEP WCO ANGLED":
-            typeAbb = "2\" WCO ANGLED";
+          case "GMEP CO ANGLED":
+            typeAbb = "2\" WCO";
             break;
-          case "GMEP WCO FLOOR":
+          case "GMEP CO FLOOR":
             typeAbb = "2\" GCO";
             break;
 
