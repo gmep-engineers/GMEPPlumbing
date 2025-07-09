@@ -1044,7 +1044,7 @@ namespace GMEPPlumbing.Services
       if (fixtures.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_fixtures
-              (id, project_id, catalog_id, number, base_point_id, type_abbreviation, block_name rotation, pos_x, pos_y, pos_z)
+              (id, project_id, catalog_id, number, base_point_id, type_abbreviation, rotation, block_name, pos_x, pos_y, pos_z)
               VALUES (@id, @projectId, @catalogId, @number, @basePointId, @typeAbbreviation, @rotation, @blockName, @posX, @posY, @posZ)
               ON DUPLICATE KEY UPDATE
                   pos_x = @posX,
