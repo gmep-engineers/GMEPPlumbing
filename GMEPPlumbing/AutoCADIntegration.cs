@@ -1477,39 +1477,6 @@ namespace GMEPPlumbing
       }
     }
 
-    private void MakeCwDnLabel(Point3d dnPoint) {
-      CADObjectCommands.CreateArrowJig("D0", dnPoint);
-      CADObjectCommands.CreateTextWithJig(
-        CADObjectCommands.TextLayer,
-        TextHorizontalMode.TextLeft,
-        "3/4\"CW DN"
-      );
-    }
-
-    private void MakeCwHwDnLabel(Point3d dnPoint, double rotation) {
-      double distance = 3.9101;
-      double x1 = dnPoint.X - (distance * Math.Cos(rotation));
-      double y1 = dnPoint.Y - (distance * Math.Sin(rotation));
-      CADObjectCommands.CreateArrowJig("D0", new Point3d(x1, y1, 0));
-      double x2 = dnPoint.X + (distance * Math.Cos(rotation));
-      double y2 = dnPoint.Y + (distance * Math.Sin(rotation));
-      CADObjectCommands.CreateArrowJig("D0", new Point3d(x2, y2, 0), false);
-      CADObjectCommands.CreateTextWithJig(
-        CADObjectCommands.TextLayer,
-        TextHorizontalMode.TextLeft,
-        "3/4\"CW&HW DN"
-      );
-    }
-
-    public void MakeVentLabel(Point3d dnPoint) {
-      CADObjectCommands.CreateArrowJig("D0", dnPoint);
-      CADObjectCommands.CreateTextWithJig(
-        CADObjectCommands.TextLayer,
-        TextHorizontalMode.TextLeft,
-        "2\" UP ABV. CLG."
-      );
-    }
-
     public void MakeVerticalRouteLabel(Point3d dnPoint, string direction) {
       CADObjectCommands.CreateArrowJig("D0", dnPoint);
       CADObjectCommands.CreateTextWithJig(
@@ -1561,41 +1528,6 @@ namespace GMEPPlumbing
         type.Type.ToUpper()
       );
     }
-
-    /*private void MakePlumbingFixtureWasteVentLabel(
-      PlumbingFixture fixture,
-      Point3d position,
-      string blockName,
-      int index
-    ) {
-      switch (blockName) {
-        case "GMEP VENT":
-          MakeVentLabel(position);
-          break;
-        case "GMEP WCO STRAIGHT":
-        case "GMEP WCO ANGLED":
-          CADObjectCommands.CreateTextWithJig(
-            CADObjectCommands.TextLayer,
-            TextHorizontalMode.TextLeft,
-            "2\" WCO"
-          );
-          break;
-        case "GMEP WCO FLOOR":
-          CADObjectCommands.CreateTextWithJig(
-            CADObjectCommands.TextLayer,
-            TextHorizontalMode.TextLeft,
-            "2\" GCO"
-          );
-          break;
-      }
-      if (index == 0) {
-        CADObjectCommands.CreateTextWithJig(
-          CADObjectCommands.TextLayer,
-          TextHorizontalMode.TextLeft,
-          fixture.TypeAbbreviation + "-" + fixture.Number.ToString()
-        );
-      }
-    }*/
 
     [CommandMethod("PF")]
     [CommandMethod("PlumbingFixture")]
