@@ -2999,19 +2999,16 @@ namespace GMEPPlumbing
         {
           "GMEP WH 80",
           "GMEP WH 50",
-          //"GMEP CW HW DN",
           "GMEP DRAIN",
-          //"GMEP VENT",
           "GMEP CP",
-          //"GMEP CW DN",
           "GMEP FS 12",
           "GMEP FS 6",
           "GMEP FD",
           "GMEP RPBFP",
+          "GMEP IWH",
           //"GMEP WCO STRAIGHT",
           //"GMEP WCO ANGLED",
           //"GMEP WCO FLOOR",
-          "GMEP IWH",
         };
         foreach (string name in blockNames) {
           BlockTableRecord fixtureBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
