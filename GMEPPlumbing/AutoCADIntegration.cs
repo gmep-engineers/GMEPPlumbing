@@ -1875,7 +1875,7 @@ namespace GMEPPlumbing
           BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
           DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
           foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "gmep_plumbing_source_id") {
+            if (prop.PropertyName == "id") {
               prop.Value = sourceId;
             }
             if (prop.PropertyName == "type_id") {
@@ -2873,17 +2873,12 @@ namespace GMEPPlumbing
                       string basePointId = string.Empty;
                       int typeId = 0;
                       int Floor = 0;
-                      bool isWaterHeater = false;
                       double hotWaterX = 0;
                       double hotWaterY = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
-                        if (prop.PropertyName == "gmep_plumbing_source_id") {
+                        if (prop.PropertyName == "id") {
                           GUID = prop.Value?.ToString();
-                        }
-                        if (prop.PropertyName == "gmep_plumbing_id") {
-                          GUID = prop.Value?.ToString();
-                          isWaterHeater = true;
                         }
                         if (prop.PropertyName == "base_point_id") {
                           basePointId = prop.Value?.ToString();
@@ -2898,7 +2893,7 @@ namespace GMEPPlumbing
                           hotWaterY = Convert.ToDouble(prop.Value);
                         }
                       }
-                      if (isWaterHeater) {
+                      if (name == "GMEP WH 50" || name == "GMEP WH 80") {
                         typeId = 2;
                       }
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
