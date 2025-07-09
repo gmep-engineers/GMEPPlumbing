@@ -587,8 +587,7 @@ namespace GMEPPlumbing.Services
             GetSafeInt(reader, "id"),
             GetSafeString(reader, "name"),
             GetSafeString(reader, "abbreviation"),
-            GetSafeString(reader, "water_gas_block_name"),
-            GetSafeString(reader, "waste_vent_block_name")
+            GetSafeString(reader, "block_name")
           )
         );
       }
@@ -1013,119 +1012,16 @@ namespace GMEPPlumbing.Services
       }
       await conn.CloseAsync();
     }
-    public async Task UpdatePlumbingFixtures(Dictionary<string, List<PlumbingFixture>> fixtures, string ProjectId) {
-      if (fixtures == null)
-        return;
-
-      var idsToKeep = fixtures.Keys.ToList();
-      MySqlConnection conn = await OpenNewConnectionAsync();
-
-      if (idsToKeep.Count > 0) {
-        var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
-        string deleteQuery = $@"
-            DELETE FROM plumbing_fixtures
-            WHERE project_id = @projectId
-            AND id NOT IN ({string.Join(",", paramNames)})
-        ";
-        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
-        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
-        for (int i = 0; i < idsToKeep.Count; i++) {
-          deleteCommand.Parameters.AddWithValue(paramNames[i], idsToKeep[i]);
-        }
-        await deleteCommand.ExecuteNonQueryAsync();
-      }
-      else {
-        string deleteQuery = @"
-            DELETE FROM plumbing_fixtures
-            WHERE project_id = @projectId
-        ";
-        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
-        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
-        await deleteCommand.ExecuteNonQueryAsync();
-      }
-
-
-      foreach (var fixture in fixtures) {
-        var firstList = fixture.Value;
-        int CatalogId = firstList[0].CatalogId;
-        string TypeAbbreviation = firstList[0].TypeAbbreviation;
-        string BasePointId = firstList[0].BasePointId;
- 
-
-
-        string query = @"
-            SELECT DISTINCT plumbing_fixture_catalog.id, plumbing_fixtures.number 
-            FROM plumbing_fixtures
-            LEFT JOIN plumbing_fixture_catalog ON plumbing_fixture_catalog.id = plumbing_fixtures.catalog_id
-            LEFT JOIN plumbing_fixture_types ON plumbing_fixture_types.id = plumbing_fixture_catalog.type_id
-            WHERE plumbing_fixtures.project_id = @projectId
-            AND plumbing_fixture_types.abbreviation = @abbreviation
-        ";
-        MySqlCommand command = new MySqlCommand(query, conn);
-        command.Parameters.AddWithValue("@projectId", ProjectId);
-        command.Parameters.AddWithValue("@abbreviation", TypeAbbreviation);
-        MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
-
-        List<int> addedCatalogIds = new List<int>();
-        List<int> addedFixtureNumbers = new List<int>();
-        while (await reader.ReadAsync()) {
-          addedCatalogIds.Add(GetSafeInt(reader, "id"));
-          addedFixtureNumbers.Add(GetSafeInt(reader, "number"));
-        }
-        int count = 0;
-        if (addedCatalogIds.Count == 0) {
-          count = 1;
-        }
-        for (int i = 0; i < addedCatalogIds.Count; i++) {
-          if (addedCatalogIds[i] == CatalogId) {
-            count = addedFixtureNumbers[i];
-          }
-        }
-        if (count == 0) {
-          count = addedCatalogIds.Count + 1;
-        }
-        reader.Close();
-        int fixtureNumber = count;
-
-        // Upsert logic
-        string upsertQuery = @"
-            INSERT INTO plumbing_fixtures
-            (id, project_id, pos_x, pos_y, catalog_id, number, base_point_id, rotation, type_abbreviation)
-            VALUES (@id, @projectId, @posX, @posY, @catalogId, @number, @basePointId, @rotation, @typeAbbreviation)
-            ON DUPLICATE KEY UPDATE
-                pos_x = @posX,
-                pos_y = @posY,
-                catalog_id = @catalogId,
-                number = @number,
-                base_point_id = @basePointId,
-                rotation = @rotation,
-                type_abbreviation = @typeAbbreviation
-        ";
-        MySqlCommand upsertCommand = new MySqlCommand(upsertQuery, conn);
-        upsertCommand.Parameters.AddWithValue("@id", fixture.Key);
-        upsertCommand.Parameters.AddWithValue("@projectId", ProjectId);
-        upsertCommand.Parameters.AddWithValue("@posX", 0);
-        upsertCommand.Parameters.AddWithValue("@posY", 0);
-        upsertCommand.Parameters.AddWithValue("@catalogId", CatalogId);
-        upsertCommand.Parameters.AddWithValue("@number", fixtureNumber);
-        upsertCommand.Parameters.AddWithValue("@basePointId", BasePointId);
-        upsertCommand.Parameters.AddWithValue("@rotation", 0);
-        upsertCommand.Parameters.AddWithValue("@typeAbbreviation", TypeAbbreviation);
-        await upsertCommand.ExecuteNonQueryAsync();
-      }
-      await conn.CloseAsync();
-      await UpdatePlumbingFixtureComponents(fixtures, ProjectId);
-    }
-    public async Task UpdatePlumbingFixtureComponents(Dictionary<string, List<PlumbingFixture>> fixtures, string ProjectId) {
+    public async Task UpdatePlumbingFixtures(List<PlumbingFixture> fixtures, string ProjectId) {
       if (fixtures == null) {
         return;
       }
-      var idsToKeep = fixtures.Values.SelectMany(list => list).Select(f => f.Id).ToList();
+      var idsToKeep = fixtures.Select(list => list).Select(f => f.Id).ToList();
       MySqlConnection conn = await OpenNewConnectionAsync();
       if (idsToKeep.Count > 0) {
         var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
         string deleteQuery = $@"
-              DELETE FROM plumbing_fixture_components
+              DELETE FROM plumbing_fixtures
               WHERE project_id = @projectId
               AND id NOT IN ({string.Join(",", paramNames)})
           ";
@@ -1138,7 +1034,7 @@ namespace GMEPPlumbing.Services
       }
       else {
         string deleteQuery = @"
-              DELETE FROM plumbing_fixture_components
+              DELETE FROM plumbing_fixtures
               WHERE project_id = @projectId
           ";
         MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
@@ -1147,30 +1043,35 @@ namespace GMEPPlumbing.Services
       }
       if (fixtures.Count > 0) {
         string upsertQuery = @"
-              INSERT INTO plumbing_fixture_components
-              (id, project_id, block_name, fixture_id, pos_x, pos_y, pos_z)
-              VALUES (@id, @projectId, @blockName, @fixtureId, @posX, @posY, @posZ)
+              INSERT INTO plumbing_fixtures
+              (id, project_id, catalog_id, number, base_point_id, type_abbreviation, rotation, block_name, pos_x, pos_y, pos_z)
+              VALUES (@id, @projectId, @catalogId, @number, @basePointId, @typeAbbreviation, @rotation, @blockName, @posX, @posY, @posZ)
               ON DUPLICATE KEY UPDATE
-                  block_name = @blockName,
-                  fixture_id = @fixtureId,
                   pos_x = @posX,
                   pos_y = @posY,
-                  pos_z = @posZ
+                  pos_z = @posZ,
+                  rotation = @rotation,
+                  number = @number
           ";
-        foreach (var component in fixtures.Values.SelectMany(list => list)) {
+        foreach (var component in fixtures.Select(list => list)) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
           command.Parameters.AddWithValue("@id", component.Id);
           command.Parameters.AddWithValue("@projectId", ProjectId);
+          command.Parameters.AddWithValue("@catalogId", component.CatalogId);
+          command.Parameters.AddWithValue("@number", component.Number);
+          command.Parameters.AddWithValue("@basePointId", component.BasePointId);
+          command.Parameters.AddWithValue("@typeAbbreviation", component.TypeAbbreviation);
+          command.Parameters.AddWithValue("@rotation", component.Rotation);
           command.Parameters.AddWithValue("@blockName", component.BlockName);
           command.Parameters.AddWithValue("@posX", component.Position.X);
           command.Parameters.AddWithValue("@posY", component.Position.Y);
           command.Parameters.AddWithValue("@posZ", component.Position.Z);
-          command.Parameters.AddWithValue("@fixtureId", component.FixtureId);
           await command.ExecuteNonQueryAsync();
         }
       }
       await conn.CloseAsync();
     }
+
     public async Task<List<PlumbingHorizontalRoute>> GetPlumbingHorizontalRoutes(string ProjectId) {
       var routes = new List<PlumbingHorizontalRoute>();
       await OpenConnectionAsync();
@@ -1268,9 +1169,8 @@ namespace GMEPPlumbing.Services
       await CloseConnectionAsync();
       return sources;
     }
-    public async Task<Dictionary<string, List<PlumbingFixture>>> GetPlumbingFixtures(string ProjectId) {
-      var parentFixtures = new Dictionary<string, PlumbingFixture>();
-      var fixtures = new Dictionary<string, List<PlumbingFixture>>();
+    public async Task<List<PlumbingFixture>> GetPlumbingFixtures(string ProjectId) {
+      var fixtures = new List<PlumbingFixture>();
 
       await OpenConnectionAsync();
       string query = @"
@@ -1281,54 +1181,22 @@ namespace GMEPPlumbing.Services
       command.Parameters.AddWithValue("@projectId", ProjectId);
       MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
       while (reader.Read()) {
+        double posx = reader.GetDouble("pos_x");
+        double posy = reader.GetDouble("pos_y");
+        double posz = reader.GetDouble("pos_z");
+
         var fixture = new PlumbingFixture(
           reader.GetString("id"),
           ProjectId,
-          Point3d.Origin,
-          0.0,
+          new Point3d(posx, posy, posz),
+          reader.GetDouble("rotation"),
           reader.GetInt32("catalog_id"),
           reader.GetString("type_abbreviation"),
           reader.GetInt32("number"),
           reader.GetString("base_point_id"),
-          "",
-          ""
-        );
-        parentFixtures.Add(fixture.Id, fixture);
-      }
-      reader.Close();
-      query = @"
-            SELECT * FROM plumbing_fixture_components
-            WHERE project_id = @projectId
-            ORDER BY fixture_id, pos_x, pos_y";
-      command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@projectId", ProjectId);
-      reader = (MySqlDataReader)await command.ExecuteReaderAsync();
-      while (reader.Read()) {
-        string fixtureId = reader.GetString("fixture_id");
-        if (!parentFixtures.ContainsKey(fixtureId)) {
-          continue; // Skip if the parent fixture does not exist
-        }
-        PlumbingFixture parentFixture = parentFixtures[fixtureId];
-        PlumbingFixture component = new PlumbingFixture(
-          reader.GetString("id"),
-          ProjectId,
-          new Point3d(
-            reader.GetDouble("pos_x"),
-            reader.GetDouble("pos_y"),
-            reader.GetDouble("pos_z")
-          ),
-          0.0,
-          parentFixture.CatalogId,
-          parentFixture.TypeAbbreviation,
-          parentFixture.Number,
-          parentFixture.BasePointId,
-          parentFixture.Id,
           reader.GetString("block_name")
         );
-        if (!fixtures.ContainsKey(parentFixture.Id)) {
-          fixtures.Add(parentFixture.Id,new List<PlumbingFixture>());
-        }
-        fixtures[parentFixture.Id].Add(component);
+        fixtures.Add(fixture);
       }
       reader.Close();
       await CloseConnectionAsync();

@@ -21,7 +21,7 @@ namespace GMEPPlumbing {
     public List<PlumbingSource> Sources { get; private set; } = new List<PlumbingSource>();
     public List<PlumbingHorizontalRoute> HorizontalRoutes { get; private set; } = new List<PlumbingHorizontalRoute>();
     public List<PlumbingVerticalRoute> VerticalRoutes { get; private set; } = new List<PlumbingVerticalRoute>();
-    public Dictionary<string, List<PlumbingFixture>> PlumbingFixtures { get; set; } = new Dictionary<string, List<PlumbingFixture>>();
+    public List<PlumbingFixture> PlumbingFixtures { get; set; } = new List<PlumbingFixture>();
     public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
     public Routing RoutingControl { get; set; } = null;
     private PaletteSet pw;
@@ -143,7 +143,7 @@ namespace GMEPPlumbing {
 
         int feet = (int)(lengthInInches / 12);
         int inches = (int)Math.Round(lengthInInches % 12);
-        ed.WriteMessage($"\nFixture {fixture.FixtureId} at {fixture.Position} with route length of {feet} feet {inches} inches.");
+        ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
     }
     public void TraverseVerticalRoute(PlumbingVerticalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
@@ -229,10 +229,9 @@ namespace GMEPPlumbing {
       return VerticalRoutes.Where(route => targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) <= 3.0 && route.BasePointId == targetRoute.BasePointId).ToList();
     }
     public List<PlumbingFixture> FindNearbyFixtures(PlumbingHorizontalRoute targetRoute) {
-      return PlumbingFixtures.Values
-       .SelectMany(list => list)
+      return PlumbingFixtures.Select(list => list)
        .Where(fixture => targetRoute.EndPoint.DistanceTo(fixture.Position) <= 1.0 && fixture.BasePointId == targetRoute.BasePointId)
-       .GroupBy(fixture => fixture.FixtureId)
+       .GroupBy(fixture => fixture.Id)
        .Select(g => g.First())
        .ToList();
     }
