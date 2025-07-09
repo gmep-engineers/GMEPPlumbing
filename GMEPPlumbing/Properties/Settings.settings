@@ -1,0 +1,9 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="GMEPPlumbing.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="ConnectionString" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Server=gmep-design-tool-test.ch8c88cauy2x.us-west-1.rds.amazonaws.com;Port=3306;Database=gmep-design-tool-dev;User Id=admin;Password=f51Vu3o5Qlc140r;</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

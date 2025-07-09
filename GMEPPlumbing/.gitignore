@@ -9,6 +9,9 @@ obj/Debug/
 *.suo
 .vs/
 
+#Ignore Setting files
+Settings.settings
+Settings.Designer.cs
 # Ignore build results
 [Dd]ebug/
 [Rr]elease/
