@@ -2874,6 +2874,8 @@ namespace GMEPPlumbing
                       int typeId = 0;
                       int Floor = 0;
                       bool isWaterHeater = false;
+                      double hotWaterX = 0;
+                      double hotWaterY = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
                         if (prop.PropertyName == "gmep_plumbing_source_id") {
@@ -2889,15 +2891,28 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "type_id") {
                           typeId = Convert.ToInt32(prop.Value);
                         }
+                        if (prop.PropertyName == "Hot Water X") {
+                          hotWaterX = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Hot Water Y") {
+                          hotWaterY = Convert.ToDouble(prop.Value);
+                        }
                       }
                       if (isWaterHeater) {
                         typeId = 2;
                       }
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
+                        Point3d position = entity.Position;
+                        if (hotWaterX != 0 && hotWaterY != 0) {
+                          double rotation = entity.Rotation;
+                          double rotatedX = hotWaterX * Math.Cos(rotation) - hotWaterY * Math.Sin(rotation);
+                          double rotatedY = hotWaterX * Math.Sin(rotation) + hotWaterY * Math.Cos(rotation);
+                          position = new Point3d(entity.Position.X + rotatedX, entity.Position.Y + rotatedY, entity.Position.Z);
+                        }
                         PlumbingSource source = new PlumbingSource(
                           GUID,
                           ProjectId,
-                          entity.Position,
+                          position,
                           typeId,
                           basePointId
                         );
@@ -2958,6 +2973,8 @@ namespace GMEPPlumbing
                       string basePointId = string.Empty;
                       string selectedFixtureTypeAbbr = string.Empty;
                       int selectedCatalogItemId = 0;
+                      double coldWaterX = 0;
+                      double coldWaterY = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
                         if (prop.PropertyName == "id") {
@@ -2972,13 +2989,26 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "catalog_id") {
                          selectedCatalogItemId = Convert.ToInt32(prop.Value);
                         }
+                        if (prop.PropertyName == "Cold Water X") {
+                          coldWaterX = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Cold Water Y") {
+                          coldWaterY = Convert.ToDouble(prop.Value);
+                        }
                       }
                  
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
+                        Point3d position = entity.Position;
+                        if (coldWaterX != 0 && coldWaterY != 0) {
+                          double rotation = entity.Rotation;
+                          double rotatedX = coldWaterX * Math.Cos(rotation) - coldWaterY * Math.Sin(rotation);
+                          double rotatedY = coldWaterX * Math.Sin(rotation) + coldWaterY * Math.Cos(rotation);
+                          position = new Point3d(entity.Position.X + rotatedX, entity.Position.Y + rotatedY, entity.Position.Z);
+                        }
                         PlumbingFixture fixture = new PlumbingFixture(
                           GUID,
                           ProjectId,
-                          entity.Position,
+                          position,
                           entity.Rotation,
                           selectedCatalogItemId,
                           selectedFixtureTypeAbbr,
