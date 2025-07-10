@@ -108,6 +108,7 @@ namespace GMEPPlumbing
       pko.Keywords.Add("HotWater");
       pko.Keywords.Add("ColdWater");
       pko.Keywords.Add("Gas");
+      pko.Keywords.Add("Waste");
       //pko.Keywords.Add("Sewer");
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -128,6 +129,9 @@ namespace GMEPPlumbing
           break;
         case "Gas":
           layer = "P-GAS";
+          break;
+        case "Waste":
+          layer = "P-GREASE-WASTE";
           break;
         /* case "Sewer":
              layer = "GMEP_PLUMBING_SEWER";
@@ -304,9 +308,6 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
-      
-   
-
       string basePointGUID = CADObjectCommands.GetActiveView();
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
 
@@ -331,6 +332,7 @@ namespace GMEPPlumbing
       pko.Keywords.Add("HotWater");
       pko.Keywords.Add("ColdWater");
       pko.Keywords.Add("Gas");
+      pko.Keywords.Add("Waste");
       // pko.Keywords.Add("Sewer");
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -350,6 +352,9 @@ namespace GMEPPlumbing
           break;
         case "Gas":
           layer = "P-GAS";
+          break;
+        case "Waste":
+          layer = "P-GREASE-WASTE";
           break;
         /* case "Sewer":
              layer = "GMEP_PLUMBING_SEWER";
@@ -2924,11 +2929,8 @@ namespace GMEPPlumbing
                           hotWaterY = Convert.ToDouble(prop.Value);
                         }
                       }
-                      if (name == "GMEP WH 50" || name == "GMEP WH 80") {
+                      if (name == "GMEP WH 50" || name == "GMEP WH 80" || name == "GMEP IWH") {
                         typeId = 2;
-                      }
-                      if (name == "GMEP IWH") {
-                        typeId = 3;
                       }
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
                         Point3d position = entity.Position;

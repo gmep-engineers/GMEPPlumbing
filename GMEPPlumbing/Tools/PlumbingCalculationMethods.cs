@@ -190,12 +190,12 @@ namespace GMEPPlumbing {
           types.Add("Cold Water");
           break;
         case 2:
-        case 3:
           types.Add("Hot Water");
           break;
-        case 4:
+        case 3:
           types.Add("Gas");
           break;
+
       }
       return types;
     }
