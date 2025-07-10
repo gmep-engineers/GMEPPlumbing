@@ -105,9 +105,13 @@ namespace GMEPPlumbing
       string layer = "Defpoints";
   
       PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
-      pko.Keywords.Add("HotWater");
-      pko.Keywords.Add("ColdWater");
-      pko.Keywords.Add("Gas");
+      if (CADObjectCommands.ActiveViewTypes.Contains("Water")) { 
+        pko.Keywords.Add("HotWater");
+        pko.Keywords.Add("ColdWater");
+      }
+      if (CADObjectCommands.ActiveViewTypes.Contains("Gas")) {
+        pko.Keywords.Add("Gas");
+      }
       //pko.Keywords.Add("Sewer");
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -328,10 +332,14 @@ namespace GMEPPlumbing
       Dictionary<int, double> floorHeights = new Dictionary<int, double>();
 
       PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
-      pko.Keywords.Add("HotWater");
-      pko.Keywords.Add("ColdWater");
-      pko.Keywords.Add("Gas");
-      // pko.Keywords.Add("Sewer");
+      if (CADObjectCommands.ActiveViewTypes.Contains("Water")) {
+        pko.Keywords.Add("HotWater");
+        pko.Keywords.Add("ColdWater");
+      }
+      if (CADObjectCommands.ActiveViewTypes.Contains("Gas")) {
+        pko.Keywords.Add("Gas");
+      }
+      //pko.Keywords.Add("Sewer");
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
       if (pr.Status != PromptStatus.OK) {
@@ -988,8 +996,8 @@ namespace GMEPPlumbing
       }
       bool water = prompt.Water;
       bool gas = prompt.Gas;
-      bool sewerVent = prompt.SewerVent;
-      bool storm = prompt.Storm;
+      bool sewerVent = false;
+      bool storm = false;
       string planName = prompt.PlanName.ToUpper();
       string floorQtyResult = prompt.FloorQty;
       string ViewId = Guid.NewGuid().ToString();

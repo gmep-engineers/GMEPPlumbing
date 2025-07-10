@@ -45,6 +45,8 @@ namespace GMEPPlumbing
 
     public static bool IsEditing { get; set; } = false;
 
+    public static List<string> ActiveViewTypes = new List<string>();
+
     //public static bool SettingFlag= false;
 
     [CommandMethod("SetPlumbingRouteHeight")]
@@ -355,6 +357,7 @@ namespace GMEPPlumbing
           double floorHeight = 0;
           string basePointId = "";
           double routeHeight = 0;
+          List<string> viewTypes = new List<string>();
           foreach (DynamicBlockReferenceProperty prop in pc2) {
             if (prop.PropertyName == "floor") {
               floor = Convert.ToInt32(prop.Value);
@@ -368,7 +371,20 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "route_height") {
               routeHeight = Convert.ToDouble(prop.Value);
             }
-
+            if (prop.PropertyName == "type") {
+              if (prop.Value.ToString().Contains("Water")) {
+                viewTypes.Add("Water");
+              }
+              if (prop.Value.ToString().Contains("Gas")) {
+                viewTypes.Add("Gas");
+              }
+              if (prop.Value.ToString().Contains("Sewer-Vent")) {
+                viewTypes.Add("Sewer-Vent");
+              }
+              if (prop.Value.ToString().Contains("Storm")) {
+                viewTypes.Add("Storm");
+              }
+            }
           }
           if (floor == startFloor) {
             AutoCADIntegration.ZoomToBlock(ed, entity2);
@@ -377,6 +393,7 @@ namespace GMEPPlumbing
             ActiveRouteHeight = routeHeight;
             ActiveFloor = floor;
             ActiveViewName = resultKeyword;
+            ActiveViewTypes = viewTypes;
           }
         }
         tr.Commit();
