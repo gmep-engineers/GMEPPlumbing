@@ -176,17 +176,20 @@ namespace GMEPPlumbing {
   public class PlumbingHorizontalRoute {
     public string Id;
     public string ProjectId;
+    public string Type;
     public Point3d StartPoint;
     public Point3d EndPoint;
     public string BasePointId;
     public PlumbingHorizontalRoute(
       string id,
       string projectId,
+      string type,
       Point3d startPoint,
       Point3d endPoint,
       string basePointId
     ) {
       Id = id;
+      Type = type;
       ProjectId = projectId;
       StartPoint = startPoint;
       EndPoint = endPoint;
@@ -196,6 +199,7 @@ namespace GMEPPlumbing {
   public class PlumbingVerticalRoute {
     public string Id;
     public string ProjectId;
+    public string Type;
     public Point3d Position;
     public Point3d ConnectionPosition;
     public string VerticalRouteId;
@@ -207,6 +211,7 @@ namespace GMEPPlumbing {
     public PlumbingVerticalRoute(
       string id,
       string projectId,
+      string type,
       Point3d position,
       Point3d connectionPosition,
       string verticalRouteId,
@@ -224,6 +229,7 @@ namespace GMEPPlumbing {
       StartHeight = startHeight;
       Length = length;
       NodeTypeId = nodeTypeId;
+      Type = type;
     }
   }
 }

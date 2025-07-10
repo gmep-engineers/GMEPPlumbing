@@ -132,6 +132,7 @@ namespace GMEPPlumbing.Views
                 var copy = new PlumbingHorizontalRoute(
                     hr.Id,
                     hr.ProjectId,
+                    hr.Type,
                     new Point3d(hr.StartPoint.X, hr.StartPoint.Y, hr.StartPoint.Z),
                     new Point3d(hr.EndPoint.X, hr.EndPoint.Y, hr.EndPoint.Z),
                     hr.BasePointId
@@ -142,6 +143,7 @@ namespace GMEPPlumbing.Views
                 var copy = new PlumbingVerticalRoute(
                     vr.Id,
                     vr.ProjectId,
+                    vr.Type,
                     new Point3d(vr.Position.X, vr.Position.Y, vr.Position.Z),
                     new Point3d(vr.ConnectionPosition.X, vr.ConnectionPosition.Y, vr.ConnectionPosition.Z),
                     vr.VerticalRouteId,

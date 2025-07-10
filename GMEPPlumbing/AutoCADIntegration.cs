@@ -2646,11 +2646,23 @@ namespace GMEPPlumbing
           if (entId.ObjectClass == RXClass.GetClass(typeof(Line))) {
             Line line = tr.GetObject(entId, OpenMode.ForRead) as Line;
             if (line != null) {
+              string type = "";
+              switch (line.Layer) {
+                case "P-DOMW-CWTR":
+                  type = "Cold Water";
+                  break;
+                case "P-DOMW-HOTW":
+                  type = "Hot Water";
+                  break;
+                case "P-GAS":
+                  type = "Gas";
+                  break;
+              }
               ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
               if (xdata != null && xdata.AsArray().Length > 2) {
                 TypedValue[] values = xdata.AsArray();
 
-                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, line.StartPoint, line.EndPoint, values[2].Value.ToString());
+                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString());
                 routes.Add(route);
               }
             }
@@ -2744,10 +2756,23 @@ namespace GMEPPlumbing
                             nodeTypeId = 2;
                             break;
                         }
+                        string type = "";
+                        switch(entity.Layer) {
+                          case "P-DOMW-CWTR":
+                            type = "Cold Water";
+                            break;
+                          case "P-DOMW-HOTW":
+                            type = "Hot Water";
+                            break;
+                          case "P-GAS":
+                            type = "Gas";
+                            break;
+                        }
 
                         PlumbingVerticalRoute route = new PlumbingVerticalRoute(
                           Id,
                           ProjectId,
+                          type,
                           entity.Position,
                           connectionPointLocation,
                           VerticalRouteId,
