@@ -1821,6 +1821,11 @@ namespace GMEPPlumbing
         ed.Command("PlumbingFixture", "WH");
         return;
       }
+      if (selectedSourceType.Type == "Insta-hot Water Heater") {
+        routeHeightDisplay.Disable();
+        ed.Command("PlumbingFixture", "IWH");
+        return;
+      }
 
       ed.WriteMessage("\nSelect base point for plumbing source");
       ObjectId blockId;
@@ -1875,7 +1880,7 @@ namespace GMEPPlumbing
           BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
           DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
           foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "gmep_plumbing_source_id") {
+            if (prop.PropertyName == "id") {
               prop.Value = sourceId;
             }
             if (prop.PropertyName == "type_id") {
@@ -2856,6 +2861,7 @@ namespace GMEPPlumbing
           "GMEP SOURCE",
           "GMEP WH 80",
           "GMEP WH 50",
+          "GMEP IWH"
         };
         foreach (string name in blockNames) {
           BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
@@ -2873,15 +2879,12 @@ namespace GMEPPlumbing
                       string basePointId = string.Empty;
                       int typeId = 0;
                       int Floor = 0;
-                      bool isWaterHeater = false;
+                      double hotWaterX = 0;
+                      double hotWaterY = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
-                        if (prop.PropertyName == "gmep_plumbing_source_id") {
+                        if (prop.PropertyName == "id") {
                           GUID = prop.Value?.ToString();
-                        }
-                        if (prop.PropertyName == "gmep_plumbing_id") {
-                          GUID = prop.Value?.ToString();
-                          isWaterHeater = true;
                         }
                         if (prop.PropertyName == "base_point_id") {
                           basePointId = prop.Value?.ToString();
@@ -2889,15 +2892,31 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "type_id") {
                           typeId = Convert.ToInt32(prop.Value);
                         }
+                        if (prop.PropertyName == "Hot Water X") {
+                          hotWaterX = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Hot Water Y") {
+                          hotWaterY = Convert.ToDouble(prop.Value);
+                        }
                       }
-                      if (isWaterHeater) {
+                      if (name == "GMEP WH 50" || name == "GMEP WH 80") {
                         typeId = 2;
                       }
+                      if (name == "GMEP IWH") {
+                        typeId = 3;
+                      }
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
+                        Point3d position = entity.Position;
+                        if (hotWaterX != 0 && hotWaterY != 0) {
+                          double rotation = entity.Rotation;
+                          double rotatedX = hotWaterX * Math.Cos(rotation) - hotWaterY * Math.Sin(rotation);
+                          double rotatedY = hotWaterX * Math.Sin(rotation) + hotWaterY * Math.Cos(rotation);
+                          position = new Point3d(entity.Position.X + rotatedX, entity.Position.Y + rotatedY, entity.Position.Z);
+                        }
                         PlumbingSource source = new PlumbingSource(
                           GUID,
                           ProjectId,
-                          entity.Position,
+                          position,
                           typeId,
                           basePointId
                         );
@@ -2958,6 +2977,8 @@ namespace GMEPPlumbing
                       string basePointId = string.Empty;
                       string selectedFixtureTypeAbbr = string.Empty;
                       int selectedCatalogItemId = 0;
+                      double coldWaterX = 0;
+                      double coldWaterY = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
                         if (prop.PropertyName == "id") {
@@ -2972,13 +2993,26 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "catalog_id") {
                          selectedCatalogItemId = Convert.ToInt32(prop.Value);
                         }
+                        if (prop.PropertyName == "Cold Water X") {
+                          coldWaterX = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Cold Water Y") {
+                          coldWaterY = Convert.ToDouble(prop.Value);
+                        }
                       }
                  
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
+                        Point3d position = entity.Position;
+                        if (coldWaterX != 0 && coldWaterY != 0) {
+                          double rotation = entity.Rotation;
+                          double rotatedX = coldWaterX * Math.Cos(rotation) - coldWaterY * Math.Sin(rotation);
+                          double rotatedY = coldWaterX * Math.Sin(rotation) + coldWaterY * Math.Cos(rotation);
+                          position = new Point3d(entity.Position.X + rotatedX, entity.Position.Y + rotatedY, entity.Position.Z);
+                        }
                         PlumbingFixture fixture = new PlumbingFixture(
                           GUID,
                           ProjectId,
-                          entity.Position,
+                          position,
                           entity.Rotation,
                           selectedCatalogItemId,
                           selectedFixtureTypeAbbr,
