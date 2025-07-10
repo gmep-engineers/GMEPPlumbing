@@ -2965,6 +2965,7 @@ namespace GMEPPlumbing
           "GMEP FD",
           "GMEP RPBFP",
           "GMEP IWH",
+          "GMEP FIXTURE",
           //"GMEP WCO STRAIGHT",
           //"GMEP WCO ANGLED",
           //"GMEP WCO FLOOR",
