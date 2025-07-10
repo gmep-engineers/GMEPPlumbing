@@ -108,6 +108,7 @@ namespace GMEPPlumbing
       pko.Keywords.Add("HotWater");
       pko.Keywords.Add("ColdWater");
       pko.Keywords.Add("Gas");
+      pko.Keywords.Add("Vent");
       //pko.Keywords.Add("Sewer");
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -128,6 +129,9 @@ namespace GMEPPlumbing
           break;
         case "Gas":
           layer = "P-GAS";
+          break;
+        case "Vent":
+          layer = "P-SANR-VENT";
           break;
         /* case "Sewer":
              layer = "GMEP_PLUMBING_SEWER";
@@ -331,6 +335,7 @@ namespace GMEPPlumbing
       pko.Keywords.Add("HotWater");
       pko.Keywords.Add("ColdWater");
       pko.Keywords.Add("Gas");
+      pko.Keywords.Add("Vent");
       // pko.Keywords.Add("Sewer");
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -350,6 +355,9 @@ namespace GMEPPlumbing
           break;
         case "Gas":
           layer = "P-GAS";
+          break;
+        case "Vent":
+          layer = "P-SANR-VENT";
           break;
         /* case "Sewer":
              layer = "GMEP_PLUMBING_SEWER";
