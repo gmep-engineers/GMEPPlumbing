@@ -2689,6 +2689,9 @@ namespace GMEPPlumbing
                 case "P-GAS":
                   type = "Gas";
                   break;
+                case "P-GREASE-WASTE":
+                  type = "Waste";
+                  break;
               }
               ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
               if (xdata != null && xdata.AsArray().Length > 2) {
@@ -2918,7 +2921,11 @@ namespace GMEPPlumbing
           "GMEP SOURCE",
           "GMEP WH 80",
           "GMEP WH 50",
-          "GMEP IWH"
+          "GMEP IWH",
+          "GMEP DRAIN",
+          "GMEP FS 12",
+          "GMEP FS 6",
+          "GMEP FD"
         };
         foreach (string name in blockNames) {
           BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
@@ -2956,11 +2963,11 @@ namespace GMEPPlumbing
                           hotWaterY = Convert.ToDouble(prop.Value);
                         }
                       }
-                      if (name == "GMEP WH 50" || name == "GMEP WH 80") {
+                      if (name == "GMEP WH 50" || name == "GMEP WH 80" || name == "GMEP IWH") {
                         typeId = 2;
                       }
-                      if (name == "GMEP IWH") {
-                        typeId = 3;
+                      if (name == "GMEP DRAIN" || name == "GMEP FS 12" || name == "GMEP FS 6" || name == "GMEP FD") {
+                        typeId = 4;
                       }
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
                         Point3d position = entity.Position;
