@@ -209,7 +209,7 @@ namespace GMEPPlumbing.Views
               RouteColor = System.Windows.Media.Brushes.SteelBlue;
               break;
             case 4:
-              RouteColor = System.Windows.Media.Brushes.Orange;
+              RouteColor = System.Windows.Media.Brushes.Magenta;
               break;
           } 
           BuildScene();
