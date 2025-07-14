@@ -113,7 +113,10 @@ namespace GMEPPlumbing
       if (CADObjectCommands.ActiveViewTypes.Contains("Gas")) {
         pko.Keywords.Add("Gas");
       }
-      //pko.Keywords.Add("Sewer");
+      if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
+        pko.Keywords.Add("Waste");
+        //pko.Keywords.Add("Vent");
+      }
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
       if (pr.Status != PromptStatus.OK) {
@@ -134,10 +137,10 @@ namespace GMEPPlumbing
         case "Gas":
           layer = "P-GAS";
           break;
-        /* case "Sewer":
-             layer = "GMEP_PLUMBING_SEWER";
-             break;
-         case "Storm":
+        case "Waste":
+          layer = "P-GREASE-WASTE";
+          break;
+         /*case "Storm":
              layer = "GMEP_PLUMBING_STORM";
              break;*/
         default:
@@ -310,8 +313,6 @@ namespace GMEPPlumbing
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
       
-   
-
       string basePointGUID = CADObjectCommands.GetActiveView();
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
 
@@ -340,7 +341,10 @@ namespace GMEPPlumbing
       if (CADObjectCommands.ActiveViewTypes.Contains("Gas")) {
         pko.Keywords.Add("Gas");
       }
-      //pko.Keywords.Add("Sewer");
+      if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
+        pko.Keywords.Add("Waste");
+        //pko.Keywords.Add("Vent");
+      }
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
       if (pr.Status != PromptStatus.OK) {
@@ -360,9 +364,10 @@ namespace GMEPPlumbing
         case "Gas":
           layer = "P-GAS";
           break;
-        /* case "Sewer":
-             layer = "GMEP_PLUMBING_SEWER";
+         case "Waste":
+             layer = "P-GREASE-WASTE";
              break;
+          /*
          case "Storm":
              layer = "GMEP_PLUMBING_STORM";
              break;*/
