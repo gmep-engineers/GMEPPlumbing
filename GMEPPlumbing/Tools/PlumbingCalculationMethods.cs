@@ -190,11 +190,13 @@ namespace GMEPPlumbing {
           types.Add("Cold Water");
           break;
         case 2:
-        case 3:
           types.Add("Hot Water");
           break;
-        case 4:
+        case 3:
           types.Add("Gas");
+          break;
+        case 4:
+          types.Add("Waste");
           break;
       }
       return types;
@@ -214,6 +216,7 @@ namespace GMEPPlumbing {
         case "U":
         case "WC":
           types.Add("Cold Water");
+          types.Add("Waste");
           break;
         case "S":
         case "HS":
@@ -222,6 +225,7 @@ namespace GMEPPlumbing {
         case "FD":
           types.Add("Cold Water");
           types.Add("Hot Water");
+          types.Add("Waste");
           break;
       }
       return types;

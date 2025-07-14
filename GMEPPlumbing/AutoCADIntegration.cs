@@ -113,7 +113,10 @@ namespace GMEPPlumbing
       if (CADObjectCommands.ActiveViewTypes.Contains("Gas")) {
         pko.Keywords.Add("Gas");
       }
-      //pko.Keywords.Add("Sewer");
+      if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
+        pko.Keywords.Add("Waste");
+        //pko.Keywords.Add("Vent");
+      }
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
       if (pr.Status != PromptStatus.OK) {
@@ -134,10 +137,10 @@ namespace GMEPPlumbing
         case "Gas":
           layer = "P-GAS";
           break;
-        /* case "Sewer":
-             layer = "GMEP_PLUMBING_SEWER";
-             break;
-         case "Storm":
+        case "Waste":
+          layer = "P-GREASE-WASTE";
+          break;
+         /*case "Storm":
              layer = "GMEP_PLUMBING_STORM";
              break;*/
         default:
@@ -310,8 +313,6 @@ namespace GMEPPlumbing
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
       
-   
-
       string basePointGUID = CADObjectCommands.GetActiveView();
       double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
 
@@ -340,7 +341,10 @@ namespace GMEPPlumbing
       if (CADObjectCommands.ActiveViewTypes.Contains("Gas")) {
         pko.Keywords.Add("Gas");
       }
-      //pko.Keywords.Add("Sewer");
+      if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
+        pko.Keywords.Add("Waste");
+        //pko.Keywords.Add("Vent");
+      }
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
       if (pr.Status != PromptStatus.OK) {
@@ -360,9 +364,10 @@ namespace GMEPPlumbing
         case "Gas":
           layer = "P-GAS";
           break;
-        /* case "Sewer":
-             layer = "GMEP_PLUMBING_SEWER";
+         case "Waste":
+             layer = "P-GREASE-WASTE";
              break;
+          /*
          case "Storm":
              layer = "GMEP_PLUMBING_STORM";
              break;*/
@@ -997,7 +1002,7 @@ namespace GMEPPlumbing
       }
       bool water = prompt.Water;
       bool gas = prompt.Gas;
-      bool sewerVent = false;
+      bool sewerVent = prompt.SewerVent;
       bool storm = false;
       string planName = prompt.PlanName.ToUpper();
       string floorQtyResult = prompt.FloorQty;
@@ -2684,6 +2689,9 @@ namespace GMEPPlumbing
                 case "P-GAS":
                   type = "Gas";
                   break;
+                case "P-GREASE-WASTE":
+                  type = "Waste";
+                  break;
               }
               ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
               if (xdata != null && xdata.AsArray().Length > 2) {
@@ -2913,7 +2921,11 @@ namespace GMEPPlumbing
           "GMEP SOURCE",
           "GMEP WH 80",
           "GMEP WH 50",
-          "GMEP IWH"
+          "GMEP IWH",
+          "GMEP DRAIN",
+          "GMEP FS 12",
+          "GMEP FS 6",
+          "GMEP FD"
         };
         foreach (string name in blockNames) {
           BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
@@ -2951,11 +2963,11 @@ namespace GMEPPlumbing
                           hotWaterY = Convert.ToDouble(prop.Value);
                         }
                       }
-                      if (name == "GMEP WH 50" || name == "GMEP WH 80") {
+                      if (name == "GMEP WH 50" || name == "GMEP WH 80" || name == "GMEP IWH") {
                         typeId = 2;
                       }
-                      if (name == "GMEP IWH") {
-                        typeId = 3;
+                      if (name == "GMEP DRAIN" || name == "GMEP FS 12" || name == "GMEP FS 6" || name == "GMEP FD") {
+                        typeId = 4;
                       }
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
                         Point3d position = entity.Position;
