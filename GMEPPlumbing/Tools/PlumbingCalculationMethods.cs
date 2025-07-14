@@ -46,7 +46,7 @@ namespace GMEPPlumbing {
 
         foreach (var source in Sources) {
           List<string> types = GetSourceOutputTypes(source);
-          var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= 12.0 && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
+          var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= 13.0 && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
           foreach (var matchingRoute in matchingRoutes) {
             TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
           }
