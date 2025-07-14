@@ -32,6 +32,7 @@ using Org.BouncyCastle.Bcpg.OpenPgp;
 using SharpCompress.Common;
 using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
 using Line = Autodesk.AutoCAD.DatabaseServices.Line;
+using static MongoDB.Bson.Serialization.Serializers.SerializerHelper;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
@@ -1693,6 +1694,7 @@ namespace GMEPPlumbing
         string blockName = selectedFixtureType.BlockName;
         Point3d point;
         double rotation = 0;
+        int number = 0;
         string GUID = Guid.NewGuid().ToString();
         try {
           using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -1758,6 +1760,23 @@ namespace GMEPPlumbing
                 prop.Value = selectedCatalogItem.Id;
               }
             }
+            PlumbingFixture fixture = new PlumbingFixture(
+             GUID,
+             projectId,
+             point,
+             rotation,
+             selectedCatalogItem.Id,
+             selectedFixtureType.Abbreviation,
+             0,
+             basePointId,
+             blockName
+            );
+            foreach (DynamicBlockReferenceProperty prop in pc) {
+              if (prop.PropertyName == "number") {
+                number = DetermineFixtureNumber(fixture);
+                prop.Value = number;
+              }
+            }
             tr.Commit();
           }
           PlumbingFixture plumbingFixture = new PlumbingFixture(
@@ -1765,13 +1784,13 @@ namespace GMEPPlumbing
             projectId,
             point,
             rotation,
-            0,
+            selectedCatalogItem.Id,
             selectedFixtureType.Abbreviation,
-            0,
+            number,
             basePointId,
             blockName
           );
-     
+
           MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
         }
         catch (System.Exception ex) {
@@ -3012,6 +3031,7 @@ namespace GMEPPlumbing
                       int selectedCatalogItemId = 0;
                       double coldWaterX = 0;
                       double coldWaterY = 0;
+                      int number = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
                         if (prop.PropertyName == "id") {
@@ -3032,6 +3052,9 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "Cold Water Y") {
                           coldWaterY = Convert.ToDouble(prop.Value);
                         }
+                        if (prop.PropertyName == "number") {
+                          number = Convert.ToInt32(prop.Value);
+                        }
                       }
                  
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
@@ -3049,7 +3072,7 @@ namespace GMEPPlumbing
                           entity.Rotation,
                           selectedCatalogItemId,
                           selectedFixtureTypeAbbr,
-                          0,
+                          number,
                           basePointId,
                           name
                         );
@@ -3067,6 +3090,21 @@ namespace GMEPPlumbing
       }
       ed.WriteMessage(ProjectId + " - Found " + fixtures.Count + " plumbing fixtures in the drawing.");
       return fixtures;
+    }
+    public int DetermineFixtureNumber(PlumbingFixture fixture) {
+      var fixtures = GetPlumbingFixturesFromCAD(fixture.ProjectId)
+        .Where(f => f.TypeAbbreviation == fixture.TypeAbbreviation && f.Id != fixture.Id)
+        .ToList();
+      
+      var existing = fixtures.FirstOrDefault(f => f.CatalogId == fixture.CatalogId);
+
+      if (existing != null) {
+        ed.WriteMessage($"\nExisting fixture found: {existing?.Number ?? 0} for catalog {fixture.CatalogId}");
+        return existing.Number;
+      }
+
+      int nextNumber = fixtures.Select(f => f.Number).DefaultIfEmpty(0).Max() + 1;
+      return nextNumber;
     }
   }
 
