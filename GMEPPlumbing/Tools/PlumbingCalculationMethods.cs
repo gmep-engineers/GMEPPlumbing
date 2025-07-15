@@ -273,7 +273,7 @@ namespace GMEPPlumbing {
       return result;
     }
     public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
-      return VerticalRoutes.Where(route => targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) <= 3.0 && route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type).ToList();
+      return VerticalRoutes.Where(route => (targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || targetRoute.EndPoint.DistanceTo(route.Position) <= 3.0) && route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type).ToList();
     }
     public List<PlumbingFixture> FindNearbyFixtures(PlumbingHorizontalRoute targetRoute) {
       return PlumbingFixtures.Select(list => list)

@@ -885,18 +885,14 @@ namespace GMEPPlumbing
         pko3.Keywords.Add("Down");
 
         PromptResult pr3 = ed.GetKeywords(pko3);
-        string blockName = "";
-        string direction2 = pr3.StringResult;
-        if (direction2 == "Up") {
-          blockName = "GMEP_PLUMBING_LINE_UP";
-        }
-        else if (direction2 == "Down") {
-          blockName = "GMEP_PLUMBING_LINE_DOWN";
-        }
-        else {
-          ed.WriteMessage("\nInvalid direction selected.");
+        if (pr3.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          routeHeightDisplay.Disable();
           return;
         }
+        string blockName = "GMEP_PLUMBING_LINE_DOWN";
+        string direction2 = pr3.StringResult;
+
         PromptDoubleOptions pdo2 = new PromptDoubleOptions(
           $"\nHow Far {direction2}(Ft)?"
         );
@@ -957,6 +953,9 @@ namespace GMEPPlumbing
           if (rotatePromptResult.Status != PromptStatus.OK) {
             return;
           }
+          if (direction2 == "Up") {
+            zIndex += length * 12;
+          }
           upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, zIndex);
           upBlockRef3.Layer = layer;
           curSpace3.AppendEntity(upBlockRef3);
@@ -978,7 +977,12 @@ namespace GMEPPlumbing
               prop.Value = length;
             }
             if (prop.PropertyName == "start_height") {
-              prop.Value = CADObjectCommands.GetPlumbingRouteHeight();
+              if (direction2 == "Up") {
+                prop.Value = CADObjectCommands.GetPlumbingRouteHeight() + length;
+              }
+              else if (direction2 == "Down") {
+                prop.Value = CADObjectCommands.GetPlumbingRouteHeight(); ;
+              }
             }
           }
           tr.Commit();
