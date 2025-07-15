@@ -273,9 +273,31 @@ namespace GMEPPlumbing {
       return result;
     }
     public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
       Point3d endPoint = new Point3d(targetRoute.EndPoint.X, targetRoute.EndPoint.Y, 0);
 
-      return VerticalRoutes.Where(route => (targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || endPoint.DistanceTo(new Point3d(route.Position.X, route.Position.Y, 0)) <= 3.0) && route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type).ToList();
+      return VerticalRoutes.Where(route => {
+        if (route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type) {
+          ed.WriteMessage($"\nChecking vertical route {route.Id} for target route {targetRoute.Id}");
+          if (targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) < 3.0) {
+            return true;
+          }
+          Point3d routePos = new Point3d(route.Position.X, route.Position.Y, 0);
+          double startHeight = route.Position.Z;
+          double endHeight = route.Position.Z + (route.Length * 12); // Convert feet to inches
+          if (route.NodeTypeId == 3) {
+            startHeight = route.Position.Z - (route.Length * 12); // For down routes, adjust start height
+            endHeight = route.Position.Z;
+          }
+          if (targetRoute.EndPoint.Z >= startHeight && targetRoute.EndPoint.Z <= endHeight && endPoint.DistanceTo(routePos) < 3.0) {
+            return true;
+          }
+        }
+        return false;
+      }
+      ).ToList();
     }
     public List<PlumbingFixture> FindNearbyFixtures(PlumbingHorizontalRoute targetRoute) {
       return PlumbingFixtures.Select(list => list)
