@@ -93,7 +93,7 @@ namespace GMEPPlumbing {
       Dictionary<PlumbingHorizontalRoute, double> childRoutes = FindNearbyHorizontalRoutes(route);
       List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
       List<PlumbingFixture> fixtures = FindNearbyFixtures(route);
-
+      
       foreach (var childRoute in childRoutes) {
         if (childRoute.Key.Id != route.Id) {
           var routeObjectsTemp = new List<Object>(routeObjects);
@@ -273,7 +273,9 @@ namespace GMEPPlumbing {
       return result;
     }
     public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
-      return VerticalRoutes.Where(route => (targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || targetRoute.EndPoint.DistanceTo(route.Position) <= 3.0) && route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type).ToList();
+      Point3d endPoint = new Point3d(targetRoute.EndPoint.X, targetRoute.EndPoint.Y, 0);
+
+      return VerticalRoutes.Where(route => (targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || endPoint.DistanceTo(new Point3d(route.Position.X, route.Position.Y, 0)) <= 3.0) && route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type).ToList();
     }
     public List<PlumbingFixture> FindNearbyFixtures(PlumbingHorizontalRoute targetRoute) {
       return PlumbingFixtures.Select(list => list)
