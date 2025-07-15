@@ -110,15 +110,29 @@ namespace GMEPPlumbing {
         }
       }
       foreach (var verticalRoute in verticalRoutes) {
-        double length;
+        double length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
         routeObjectsTemp.Add(route);
-        SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects = null;
-        var verticalRouteEnd = FindVerticalRouteEnd(verticalRoute, out length, out verticalRouteObjects);
-        foreach (var vr in verticalRouteObjects) {
-          routeObjectsTemp.Add(vr.Value);
+        SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects = GetVerticalRoutesByIdOrdered(verticalRoute.VerticalRouteId);
+        int matchingKey = verticalRouteObjects.FirstOrDefault(kvp => kvp.Value.Id == verticalRoute.Id).Key;
+
+        //doing stuff to calculate remaining distance to traverse the vertical route
+
+        TraverseVerticalRoute(verticalRouteObjects[matchingKey], visited, length, routeObjectsTemp);
+        routeObjectsTemp.Add(verticalRouteObjects[matchingKey]);
+
+        for (int i = matchingKey + 1; i < verticalRouteObjects.Count(); i++) {
+          TraverseVerticalRoute(verticalRouteObjects[i], visited, length, routeObjectsTemp);
+          routeObjectsTemp.Add(verticalRouteObjects[i]);
         }
-        TraverseVerticalRoute(verticalRouteEnd, visited, fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint) + length, routeObjectsTemp);
+
+        length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+        routeObjectsTemp = new List<Object>(routeObjects);
+
+        for (int i = matchingKey - 1; i > 0; i--) {
+          TraverseVerticalRoute(verticalRouteObjects[i], visited, length, routeObjectsTemp);
+          routeObjectsTemp.Add(verticalRouteObjects[i]);
+        }
       }
       foreach(var fixture in fixtures) {
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
@@ -308,7 +322,7 @@ namespace GMEPPlumbing {
        .ToList();
     }
 
-    public PlumbingVerticalRoute FindVerticalRouteEnd(PlumbingVerticalRoute route, out double height, out SortedDictionary<int, PlumbingVerticalRoute> routes) {
+    /*public PlumbingVerticalRoute FindVerticalRouteEnd(PlumbingVerticalRoute route, out double height, out SortedDictionary<int, PlumbingVerticalRoute> routes) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
@@ -334,7 +348,7 @@ namespace GMEPPlumbing {
       ed.WriteMessage($"\nTotal vertical route length from floor {startFloor} to floor {endFloorKey} is {height} inches.");
 
       return endRoute;
-    }
+    }*/
     public SortedDictionary<int, PlumbingVerticalRoute> GetVerticalRoutesByIdOrdered(string verticalRouteId) {
       var basePointFloorLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp.Floor);
       var dict = VerticalRoutes
