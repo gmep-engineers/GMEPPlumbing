@@ -116,8 +116,8 @@ namespace GMEPPlumbing {
         SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects = GetVerticalRoutesByIdOrdered(verticalRoute.VerticalRouteId);
         int matchingKey = verticalRouteObjects.FirstOrDefault(kvp => kvp.Value.Id == verticalRoute.Id).Key;
 
-        double newLength = ((route.Length * 12) - Math.Abs(route.Position.Z - childRoute.StartPoint.Z)) / 12;
-        
+        double newLength = ((verticalRoute.Length * 12) - Math.Abs(verticalRouteObjects[matchingKey].Position.Z - route.EndPoint.Z)) / 12;
+
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
           verticalRoute.Id,
           verticalRoute.ProjectId,
@@ -133,10 +133,12 @@ namespace GMEPPlumbing {
 
         TraverseVerticalRoute(adjustedRoute, visited, length, routeObjectsTemp);
         routeObjectsTemp.Add(adjustedRoute);
+        length += adjustedRoute.Length * 12;
 
         for (int i = matchingKey + 1; i <= verticalRouteObjects.Count(); i++) {
           TraverseVerticalRoute(verticalRouteObjects[i], visited, length, routeObjectsTemp);
           routeObjectsTemp.Add(verticalRouteObjects[i]);
+          length += verticalRouteObjects[i].Length * 12;
         }
 
         length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
@@ -145,6 +147,7 @@ namespace GMEPPlumbing {
         for (int i = matchingKey - 1; i > 0; i--) {
           TraverseVerticalRoute(verticalRouteObjects[i], visited, length, routeObjectsTemp);
           routeObjectsTemp.Add(verticalRouteObjects[i]);
+          length += verticalRouteObjects[i].Length * 12;
         }
       }
       foreach(var fixture in fixtures) {
@@ -201,7 +204,22 @@ namespace GMEPPlumbing {
         .Where(r => r.Type == route.Type && r.BasePointId == route.BasePointId && (r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || (routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= startHeight && r.EndPoint.Z <= endHeight)))
         .ToList();
       foreach (var childRoute in childRoutes) {
-        TraverseHorizontalRoute(childRoute, visited, fullRouteLength, routeObjects);
+        double newLength = ((route.Length * 12) - Math.Abs(route.Position.Z - childRoute.StartPoint.Z)) / 12;
+        PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
+          route.Id,
+          route.ProjectId,
+          route.Type,
+          route.Position,
+          route.ConnectionPosition,
+          route.VerticalRouteId,
+          route.BasePointId,
+          route.StartHeight,
+          newLength,
+          route.NodeTypeId
+        );
+        List<object> routeObjectsTemp = new List<object>(routeObjects);
+        routeObjectsTemp.Add(adjustedRoute);
+        TraverseHorizontalRoute(childRoute, visited, fullRouteLength + adjustedRoute.Length, routeObjectsTemp);
       }
     }
     private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
