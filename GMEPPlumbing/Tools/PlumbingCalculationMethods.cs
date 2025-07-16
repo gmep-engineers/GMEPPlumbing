@@ -116,7 +116,7 @@ namespace GMEPPlumbing {
         SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects = GetVerticalRoutesByIdOrdered(verticalRoute.VerticalRouteId);
         int matchingKey = verticalRouteObjects.FirstOrDefault(kvp => kvp.Value.Id == verticalRoute.Id).Key;
 
-        double newLength = ((verticalRoute.Length*12) - Math.Abs(verticalRouteObjects[matchingKey].Position.Z - route.EndPoint.Z))/12;
+        double newLength = ((route.Length * 12) - Math.Abs(route.Position.Z - childRoute.StartPoint.Z)) / 12;
         
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
           verticalRoute.Id,
