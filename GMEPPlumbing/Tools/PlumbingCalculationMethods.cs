@@ -116,10 +116,25 @@ namespace GMEPPlumbing {
         SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects = GetVerticalRoutesByIdOrdered(verticalRoute.VerticalRouteId);
         int matchingKey = verticalRouteObjects.FirstOrDefault(kvp => kvp.Value.Id == verticalRoute.Id).Key;
 
-        //TraverseVerticalRoute(verticalRouteObjects[matchingKey], visited, length, routeObjectsTemp);
-        //routeObjectsTemp.Add(verticalRouteObjects[matchingKey]);
+        double newLength = ((verticalRoute.Length*12) - Math.Abs(verticalRouteObjects[matchingKey].Position.Z - route.EndPoint.Z))/12;
+        
+        PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
+          verticalRoute.Id,
+          verticalRoute.ProjectId,
+          verticalRoute.Type,
+          new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, route.EndPoint.Z),
+          new Point3d(route.EndPoint.X, route.EndPoint.Y, route.EndPoint.Z),
+          verticalRoute.VerticalRouteId,
+          verticalRoute.BasePointId,
+          verticalRoute.StartHeight,
+          newLength,
+          verticalRoute.NodeTypeId
+        );
 
-        for (int i = matchingKey + 1; i < verticalRouteObjects.Count(); i++) {
+        TraverseVerticalRoute(adjustedRoute, visited, length, routeObjectsTemp);
+        routeObjectsTemp.Add(adjustedRoute);
+
+        for (int i = matchingKey + 1; i <= verticalRouteObjects.Count(); i++) {
           TraverseVerticalRoute(verticalRouteObjects[i], visited, length, routeObjectsTemp);
           routeObjectsTemp.Add(verticalRouteObjects[i]);
         }
