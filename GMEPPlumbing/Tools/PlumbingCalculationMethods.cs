@@ -265,7 +265,7 @@ namespace GMEPPlumbing {
         }
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
-        TraverseHorizontalRoute(childRoute, visited, fullRouteLength + adjustedRoute.Length, routeObjectsTemp);
+        TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length*12), routeObjectsTemp);
       }
     }
     private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
