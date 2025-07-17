@@ -258,6 +258,9 @@ namespace GMEPPlumbing {
           adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
           adjustedRoute.ConnectionPosition = new Point3d(childRoute.StartPoint.X, childRoute.StartPoint.Y, childRoute.StartPoint.Z);
           adjustedRoute.Length = newLength2;
+          if (direction == 1) {
+            adjustedRoute.Length = newLength;
+          }
         }
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
