@@ -116,20 +116,28 @@ namespace GMEPPlumbing {
         SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects = GetVerticalRoutesByIdOrdered(verticalRoute.VerticalRouteId);
         int matchingKey = verticalRouteObjects.FirstOrDefault(kvp => kvp.Value.Id == verticalRoute.Id).Key;
 
-        double newLength = ((verticalRoute.Length * 12) - Math.Abs(verticalRouteObjects[matchingKey].Position.Z - route.EndPoint.Z)) / 12;
+        //double newLength = ((verticalRoute.Length * 12) - Math.Abs(verticalRouteObjects[matchingKey].Position.Z - route.EndPoint.Z)) / 12;
+        double entryPointZ = route.EndPoint.Z;
+        double newLength = Math.Abs(verticalRoute.Position.Z - entryPointZ) / 12.0;
+        double newLength2 = Math.Abs(verticalRoute.Length * 12 - Math.Abs(verticalRoute.Position.Z - entryPointZ)) / 12.0;
 
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
           verticalRoute.Id,
           verticalRoute.ProjectId,
           verticalRoute.Type,
-          new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, route.EndPoint.Z),
-          new Point3d(route.EndPoint.X, route.EndPoint.Y, route.EndPoint.Z),
+          new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ),
+          new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ),
           verticalRoute.VerticalRouteId,
           verticalRoute.BasePointId,
           verticalRoute.StartHeight,
-          newLength,
+          newLength2,
           verticalRoute.NodeTypeId
         );
+        if (adjustedRoute.NodeTypeId == 3) {
+          adjustedRoute.Position = verticalRoute.Position;
+          adjustedRoute.ConnectionPosition = verticalRoute.ConnectionPosition;
+          adjustedRoute.Length = newLength;
+        }
 
         TraverseVerticalRoute(adjustedRoute, visited, length, routeObjectsTemp);
         routeObjectsTemp.Add(adjustedRoute);
@@ -141,8 +149,28 @@ namespace GMEPPlumbing {
           length += verticalRouteObjects[i].Length * 12;
         }
 
+        //reset and adjust for going down
         length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
         routeObjectsTemp = new List<Object>(routeObjects);
+
+        adjustedRoute = new PlumbingVerticalRoute(
+          verticalRoute.Id,
+          verticalRoute.ProjectId,
+          verticalRoute.Type,
+          new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ),
+          new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ),
+          verticalRoute.VerticalRouteId,
+          verticalRoute.BasePointId,
+          verticalRoute.StartHeight,
+          newLength,
+          verticalRoute.NodeTypeId
+        );
+        if (adjustedRoute.NodeTypeId != 3) {
+          adjustedRoute.Position = verticalRoute.Position;
+          adjustedRoute.ConnectionPosition = verticalRoute.ConnectionPosition;
+        }
+        routeObjectsTemp.Add(adjustedRoute);
+        length += adjustedRoute.Length * 12;
 
         for (int i = matchingKey - 1; i > 0; i--) {
           TraverseVerticalRoute(verticalRouteObjects[i], visited, length, routeObjectsTemp);
