@@ -788,7 +788,7 @@ namespace GMEPPlumbing
             // Create the BlockReference at the desired location
             BlockReference upBlockRef = new BlockReference(newUpPointLocation, blockDef.ObjectId);
             upBlockRef.Layer = layer;
-            upBlockRef.Position = new Point3d(newUpPointLocation.X, newUpPointLocation.Y, floorHeights[i]);
+            upBlockRef.Position = new Point3d(newUpPointLocation.X, newUpPointLocation.Y, floorHeights[i]*12);
             curSpace.AppendEntity(upBlockRef);
             tr.AddNewlyCreatedDBObject(upBlockRef, true);
             var pc = upBlockRef.DynamicBlockReferencePropertyCollection;
