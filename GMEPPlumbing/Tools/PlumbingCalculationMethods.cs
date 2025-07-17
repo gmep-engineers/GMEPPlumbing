@@ -139,12 +139,12 @@ namespace GMEPPlumbing {
           adjustedRoute.Length = newLength;
         }
 
-        TraverseVerticalRoute(verticalRoute, entryPointZ, visited, length, routeObjectsTemp);
+        TraverseVerticalRoute(verticalRoute, entryPointZ, 1, visited, length, routeObjectsTemp);
         routeObjectsTemp.Add(adjustedRoute);
         length += adjustedRoute.Length * 12;
 
         for (int i = matchingKey + 1; i <= verticalRouteObjects.Count(); i++) {
-          TraverseVerticalRoute(verticalRouteObjects[i], verticalRouteObjects[i].Position.Z, visited, length, routeObjectsTemp);
+          TraverseVerticalRoute(verticalRouteObjects[i], verticalRouteObjects[i].Position.Z, 2, visited, length, routeObjectsTemp);
           routeObjectsTemp.Add(verticalRouteObjects[i]);
           length += verticalRouteObjects[i].Length * 12;
         }
@@ -174,7 +174,7 @@ namespace GMEPPlumbing {
         length += adjustedRoute.Length * 12;
 
         for (int i = matchingKey - 1; i > 0; i--) {
-          TraverseVerticalRoute(verticalRouteObjects[i], verticalRouteObjects[i].Position.Z, visited, length, routeObjectsTemp);
+          TraverseVerticalRoute(verticalRouteObjects[i], verticalRouteObjects[i].Position.Z, 3, visited, length, routeObjectsTemp);
           routeObjectsTemp.Add(verticalRouteObjects[i]);
           length += verticalRouteObjects[i].Length * 12;
         }
@@ -206,7 +206,7 @@ namespace GMEPPlumbing {
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
     }
-    public void TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+    public void TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, int direction, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
@@ -233,9 +233,12 @@ namespace GMEPPlumbing {
         .Where(r => r.Type == route.Type && r.BasePointId == route.BasePointId && (r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || (routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= startHeight && r.EndPoint.Z <= endHeight)))
         .ToList();
 
-      bool isUpRoute = route.NodeTypeId == 1 || route.NodeTypeId == 2;
+      bool isUpRoute = (route.NodeTypeId == 1 || route.NodeTypeId == 2);
       foreach (var childRoute in childRoutes) {
         bool isUpward = childRoute.StartPoint.Z >= entryPointZ;
+        if (direction == 3) {
+          isUpward = !isUpward; // Reverse the direction
+        }
         
         double newLength = Math.Abs(childRoute.StartPoint.Z - entryPointZ) / 12.0;
         double newLength2 = ((route.Length * 12) - Math.Abs(entryPointZ - childRoute.StartPoint.Z)) / 12;
