@@ -152,6 +152,7 @@ namespace GMEPPlumbing {
         //reset and adjust for going down
         length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
         routeObjectsTemp = new List<Object>(routeObjects);
+        routeObjectsTemp.Add(route);
 
         adjustedRoute = new PlumbingVerticalRoute(
           verticalRoute.Id,
