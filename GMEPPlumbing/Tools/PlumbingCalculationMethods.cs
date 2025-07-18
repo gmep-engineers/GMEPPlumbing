@@ -244,14 +244,17 @@ namespace GMEPPlumbing {
           isUpward = childRoute.StartPoint.Z >= entryPointZ;
           newLength2 = newLength;
         }
- 
+        Point3d connectionPosition = route.ConnectionPosition;
         
+        if (route.NodeTypeId != 3) {
+          new Point3d(childRoute.StartPoint.X, childRoute.StartPoint.Y, entryPointZ);
+        }
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
           route.Id,
           route.ProjectId,
           route.Type,
           new Point3d(route.Position.X, route.Position.Y, entryPointZ),
-          new Point3d(childRoute.StartPoint.X, childRoute.StartPoint.Y, entryPointZ),
+          connectionPosition,
           route.VerticalRouteId,
           route.BasePointId,
           route.StartHeight,
