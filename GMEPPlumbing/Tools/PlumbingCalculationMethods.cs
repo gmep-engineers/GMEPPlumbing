@@ -323,7 +323,6 @@ namespace GMEPPlumbing {
           types.Add("Waste");
           break;
         case "SWR":
-
           types.Add("Waste");
           break;
       }
