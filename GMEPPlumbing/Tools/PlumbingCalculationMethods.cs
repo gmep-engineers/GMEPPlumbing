@@ -236,13 +236,16 @@ namespace GMEPPlumbing {
 
       bool isUpRoute = (route.NodeTypeId == 1 || route.NodeTypeId == 2);
       foreach (var childRoute in childRoutes) {
-        bool isUpward = childRoute.StartPoint.Z >= entryPointZ;
-        if (direction == 3) {
-          isUpward = !isUpward; // Reverse the direction
-        }
-        
         double newLength = Math.Abs(childRoute.StartPoint.Z - entryPointZ) / 12.0;
         double newLength2 = ((route.Length * 12) - Math.Abs(entryPointZ - childRoute.StartPoint.Z)) / 12;
+
+        bool isUpward = direction == 2;
+        if (direction == 1) {
+          isUpward = childRoute.StartPoint.Z >= entryPointZ;
+          newLength2 = newLength;
+        }
+ 
+        
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
           route.Id,
           route.ProjectId,
@@ -259,9 +262,6 @@ namespace GMEPPlumbing {
           adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
           adjustedRoute.ConnectionPosition = new Point3d(childRoute.StartPoint.X, childRoute.StartPoint.Y, childRoute.StartPoint.Z);
           adjustedRoute.Length = newLength2;
-          if (direction == 1) {
-            adjustedRoute.Length = newLength;
-          }
         }
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
