@@ -2803,6 +2803,9 @@ namespace GMEPPlumbing
                           case "P-DOMW-HOTW":
                             type = "Hot Water";
                             break;
+                          case "P-GREASE-WASTE":
+                            type = "Waste";
+                            break;
                           case "P-GAS":
                             type = "Gas";
                             break;
@@ -2967,6 +2970,9 @@ namespace GMEPPlumbing
                           hotWaterY = Convert.ToDouble(prop.Value);
                         }
                       }
+                      if (typeId == 4) {
+                        continue;
+                      }
                       if (name == "GMEP WH 50" || name == "GMEP WH 80" || name == "GMEP IWH") {
                         typeId = 2;
                       }
@@ -3025,6 +3031,7 @@ namespace GMEPPlumbing
           "GMEP FD",
           "GMEP RPBFP",
           "GMEP IWH",
+          "GMEP SOURCE"
           //"GMEP WCO STRAIGHT",
           //"GMEP WCO ANGLED",
           //"GMEP WCO FLOOR",
@@ -3048,6 +3055,7 @@ namespace GMEPPlumbing
                       double coldWaterX = 0;
                       double coldWaterY = 0;
                       int number = 0;
+                      int sourceTypeId = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
                         if (prop.PropertyName == "id") {
@@ -3071,15 +3079,22 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "number") {
                           number = Convert.ToInt32(prop.Value);
                         }
+                        if (prop.PropertyName == "type_id") {
+                          sourceTypeId = Convert.ToInt32(prop.Value);
+                        }
+
                       }
                  
-                      if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
+                      if (!string.IsNullOrEmpty(GUID) && GUID != "0" && (sourceTypeId == 0 || sourceTypeId == 4)) {
                         Point3d position = entity.Position;
                         if (coldWaterX != 0 && coldWaterY != 0) {
                           double rotation = entity.Rotation;
                           double rotatedX = coldWaterX * Math.Cos(rotation) - coldWaterY * Math.Sin(rotation);
                           double rotatedY = coldWaterX * Math.Sin(rotation) + coldWaterY * Math.Cos(rotation);
                           position = new Point3d(entity.Position.X + rotatedX, entity.Position.Y + rotatedY, entity.Position.Z);
+                        }
+                        if (sourceTypeId == 4) {
+                          selectedFixtureTypeAbbr = "SWR";
                         }
                         PlumbingFixture fixture = new PlumbingFixture(
                           GUID,
