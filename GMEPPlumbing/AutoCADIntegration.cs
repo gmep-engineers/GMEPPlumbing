@@ -2741,6 +2741,9 @@ namespace GMEPPlumbing
                 case "P-GAS":
                   type = "Gas";
                   break;
+                case "P-WV-VENT":
+                  type = "Vent";
+                  break;
                 case "P-GREASE-WASTE":
                   type = "Waste";
                   break;
@@ -2853,6 +2856,9 @@ namespace GMEPPlumbing
                             break;
                           case "P-GREASE-WASTE":
                             type = "Waste";
+                            break;
+                          case "P-WV-VENT":
+                            type = "Vent";
                             break;
                           case "P-GAS":
                             type = "Gas";
