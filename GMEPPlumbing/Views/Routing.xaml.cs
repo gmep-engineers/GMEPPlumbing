@@ -399,6 +399,15 @@ namespace GMEPPlumbing.Views
         };
         RouteVisuals.Add(basePointModel);
 
+        var basePointModel2 = new RectangleVisual3D {
+          Origin = new Point3D(0, 0, BasePoints[basePoint].CeilingHeight * 12),
+          Width = 50,
+          Length = 50,
+          Normal = new Vector3D(0, 0, 1),
+          Fill = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255))
+        };
+        RouteVisuals.Add(basePointModel2);
+
         var textModel = new TextVisual3D {
           Position = new Point3D(0, 0, BasePoints[basePoint].FloorHeight * 12 + 12), // Slightly above the rectangle
           Text = $"Floor {BasePoints[basePoint].Floor}",
