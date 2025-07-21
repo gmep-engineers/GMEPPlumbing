@@ -115,7 +115,7 @@ namespace GMEPPlumbing
       }
       if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
         pko.Keywords.Add("Waste");
-        //pko.Keywords.Add("Vent");
+        pko.Keywords.Add("Vent");
       }
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -140,9 +140,12 @@ namespace GMEPPlumbing
         case "Waste":
           layer = "P-GREASE-WASTE";
           break;
-         /*case "Storm":
-             layer = "GMEP_PLUMBING_STORM";
-             break;*/
+        case "Vent":
+          layer = "P-GREASE-VENT";
+          break;
+        /*case "Storm":
+            layer = "GMEP_PLUMBING_STORM";
+            break;*/
         default:
           ed.WriteMessage("\nInvalid route type selected.");
           return;
@@ -343,7 +346,7 @@ namespace GMEPPlumbing
       }
       if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
         pko.Keywords.Add("Waste");
-        //pko.Keywords.Add("Vent");
+        pko.Keywords.Add("Vent");
       }
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -364,13 +367,16 @@ namespace GMEPPlumbing
         case "Gas":
           layer = "P-GAS";
           break;
-         case "Waste":
-             layer = "P-GREASE-WASTE";
-             break;
-          /*
-         case "Storm":
-             layer = "GMEP_PLUMBING_STORM";
-             break;*/
+        case "Waste":
+          layer = "P-GREASE-WASTE";
+          break;
+        case "Vent":
+          layer = "P-GREASE-VENT";
+          break;
+        /*
+       case "Storm":
+           layer = "GMEP_PLUMBING_STORM";
+           break;*/
         default:
           ed.WriteMessage("\nInvalid route type selected.");
           return;
@@ -1851,7 +1857,6 @@ namespace GMEPPlumbing
       if (selectedSourceType == null) {
         selectedSourceType = plumbingSourceTypes.FirstOrDefault(t => t.Type == "Water Meter");
       }
-
       if (selectedSourceType.Type == "Water Heater") {
         routeHeightDisplay.Disable();
         ed.Command("PlumbingFixture", "WH");
