@@ -115,7 +115,7 @@ namespace GMEPPlumbing
       }
       if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
         pko.Keywords.Add("Waste");
-        //pko.Keywords.Add("Vent");
+        pko.Keywords.Add("Vent");
       }
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -139,6 +139,9 @@ namespace GMEPPlumbing
           break;
         case "Waste":
           layer = "P-GREASE-WASTE";
+          break;
+        case "Vent":
+          layer = "P-WV-VENT";
           break;
          /*case "Storm":
              layer = "GMEP_PLUMBING_STORM";
@@ -343,7 +346,7 @@ namespace GMEPPlumbing
       }
       if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
         pko.Keywords.Add("Waste");
-        //pko.Keywords.Add("Vent");
+        pko.Keywords.Add("Vent");
       }
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -364,13 +367,16 @@ namespace GMEPPlumbing
         case "Gas":
           layer = "P-GAS";
           break;
-         case "Waste":
-             layer = "P-GREASE-WASTE";
-             break;
-          /*
-         case "Storm":
-             layer = "GMEP_PLUMBING_STORM";
-             break;*/
+        case "Waste":
+          layer = "P-GREASE-WASTE";
+          break;
+        case "Vent":
+          layer = "P-WV-VENT";
+          break;
+        /*
+       case "Storm":
+           layer = "GMEP_PLUMBING_STORM";
+           break;*/
         default:
           ed.WriteMessage("\nInvalid route type selected.");
           return;
@@ -999,6 +1005,7 @@ namespace GMEPPlumbing
       var prompt = new Views.BasePointPromptWindow();
       bool? result = prompt.ShowDialog();
       double currentFloorHeight = -10;
+      double currentCeilingHeight = -1;
       double currentRouteHeight = 3;
       if (result != true) {
         ed.WriteMessage("\nOperation cancelled.");
@@ -1040,15 +1047,15 @@ namespace GMEPPlumbing
          );
         heightOptions.AllowNegative = false;
         heightOptions.AllowZero = false;
-        heightOptions.DefaultValue = currentFloorHeight + 10;
-       
+        heightOptions.DefaultValue = currentCeilingHeight + 1;
+
         while (true) {
           PromptDoubleResult heightResult = ed.GetDouble(heightOptions);
 
           if (heightResult.Status == PromptStatus.OK) {
             double tempFloorHeight = heightResult.Value;
-            if (tempFloorHeight <= currentFloorHeight) {
-              heightOptions.Message = $"\nHeight must be greater than the previous floor height ({currentFloorHeight}). Please enter a valid height.";
+            if (tempFloorHeight <= currentCeilingHeight) {
+              heightOptions.Message = $"\nHeight must be greater than the previous ceiling height ({currentCeilingHeight}). Please enter a valid height.";
               continue;
             }
             currentFloorHeight = heightResult.Value;
@@ -1061,14 +1068,42 @@ namespace GMEPPlumbing
           else {
             ed.WriteMessage("\nInvalid input. Please enter a positive, non-zero number.");
           }
+
+        }
+
+        PromptDoubleOptions ceilingHeightOptions = new PromptDoubleOptions(
+           $"\nEnter the height of the ceiling from ground level for floor {i + 1} on plan {planName}:"
+        );
+        ceilingHeightOptions.AllowNegative = false;
+        ceilingHeightOptions.AllowZero = false;
+        ceilingHeightOptions.DefaultValue = currentFloorHeight + 10;
+
+        while (true) {
+          PromptDoubleResult ceilingHeightResult = ed.GetDouble(ceilingHeightOptions);
+          if (ceilingHeightResult.Status == PromptStatus.OK) {
+            double tempCeilingHeight = ceilingHeightResult.Value;
+            if (tempCeilingHeight <= currentFloorHeight) {
+              ceilingHeightOptions.Message = $"\nCeiling height must be greater than the floor height ({currentFloorHeight}). Please enter a valid height.";
+              continue;
+            }
+            currentCeilingHeight = ceilingHeightResult.Value;
+            break;
+          }
+          else if (ceilingHeightResult.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nOperation cancelled.");
+            return;
+          }
+          else {
+            ed.WriteMessage("\nInvalid input. Please enter a positive, non-zero number.");
+          }
         }
 
         PromptDoubleOptions routeHeightOptions = new PromptDoubleOptions(
              $"\nEnter the route height from floor {i + 1} on plan {planName}:"
          );
-        heightOptions.AllowNegative = false;
-        heightOptions.AllowZero = false;
-        heightOptions.DefaultValue = 3;
+        routeHeightOptions.AllowNegative = false;
+        routeHeightOptions.AllowZero = false;
+        routeHeightOptions.DefaultValue = 3;
 
         while (true) {
           PromptDoubleResult routeHeightResult = ed.GetDouble(routeHeightOptions);
@@ -1143,6 +1178,9 @@ namespace GMEPPlumbing
               }
               else if (prop.PropertyName == "route_height") {
                 prop.Value = currentRouteHeight;
+              }
+              else if (prop.PropertyName == "ceiling_height") {
+                prop.Value = currentCeilingHeight;
               }
             }
           }
@@ -2866,6 +2904,7 @@ namespace GMEPPlumbing
                     string Type = string.Empty;
                     int Floor = 0;
                     double FloorHeight = 0;
+                    double CeilingHeight = 0;
 
                     foreach (DynamicBlockReferenceProperty prop in pc) {
                       if (prop.PropertyName == "floor") {
@@ -2886,6 +2925,9 @@ namespace GMEPPlumbing
                       if (prop.PropertyName == "floor_height") {
                         FloorHeight = Convert.ToDouble(prop.Value);
                       }
+                      if (prop.PropertyName == "ceiling_height") {
+                        CeilingHeight = Convert.ToDouble(prop.Value);
+                      }
 
                     }
                     if (Id != "0") {
@@ -2897,7 +2939,8 @@ namespace GMEPPlumbing
                         Type,
                         ViewId,
                         Floor,
-                        FloorHeight
+                        FloorHeight,
+                        CeilingHeight
                       );
                       points.Add(BasePoint);
                     }

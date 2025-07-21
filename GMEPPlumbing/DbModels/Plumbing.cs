@@ -161,8 +161,9 @@ namespace GMEPPlumbing {
     public string Type;
     public Point3d Point;
     public double FloorHeight;
+    public double CeilingHeight;
 
-    public PlumbingPlanBasePoint(string id, string projectId, Point3d point, string plan, string type, string viewportId, int floor, double floorHeight) {
+    public PlumbingPlanBasePoint(string id, string projectId, Point3d point, string plan, string type, string viewportId, int floor, double floorHeight, double ceilingHeight) {
       Id = id;
       ProjectId = projectId;
       ViewportId = viewportId;
@@ -171,6 +172,7 @@ namespace GMEPPlumbing {
       Plan = plan;
       Point = point;
       FloorHeight = floorHeight;
+      CeilingHeight = ceilingHeight;
     }
   }
   public class PlumbingHorizontalRoute {
