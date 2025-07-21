@@ -1547,6 +1547,14 @@ namespace GMEPPlumbing
       double x = fixture.Position.X + (distance * Math.Sin(fixture.Rotation));
       double y = fixture.Position.Y - (distance * Math.Cos(fixture.Rotation));
       Point3d dnPoint = new Point3d(x, y, 0);
+      if (fixture.TypeAbbreviation == "VE") {
+        CADObjectCommands.CreateTextWithJig(
+          CADObjectCommands.TextLayer,
+          TextHorizontalMode.TextLeft,
+          "EXIT THROUGH ROOF"
+        );
+        return;
+      }
 
       if (fixture.TypeAbbreviation != "CO") {
         CADObjectCommands.CreateTextWithJig(
@@ -1626,7 +1634,7 @@ namespace GMEPPlumbing
       }
 
       PlumbingFixtureCatalogItem selectedCatalogItem = null;
-      if (selectedFixtureType.Abbreviation != "CO") {
+      if (selectedFixtureType.Abbreviation != "CO" && selectedFixtureType.Abbreviation != "VE") {
         List<PlumbingFixtureCatalogItem> plumbingFixtureCatalogItems =
           MariaDBService.GetPlumbingFixtureCatalogItemsByType(selectedFixtureType.Id);
 
@@ -1807,12 +1815,13 @@ namespace GMEPPlumbing
                 prop.Value = selectedCatalogItem.Id;
               }
             }
+            int catalogId = selectedCatalogItem != null ? selectedCatalogItem.Id : 0;
             PlumbingFixture fixture = new PlumbingFixture(
              GUID,
              projectId,
              point,
              rotation,
-             selectedCatalogItem.Id,
+             catalogId,
              selectedFixtureType.Abbreviation,
              0,
              basePointId,
@@ -1826,12 +1835,13 @@ namespace GMEPPlumbing
             }
             tr.Commit();
           }
+          int catalogId2 = selectedCatalogItem != null ? selectedCatalogItem.Id : 0;
           PlumbingFixture plumbingFixture = new PlumbingFixture(
             GUID,
             projectId,
             point,
             rotation,
-            selectedCatalogItem.Id,
+            catalogId2,
             selectedFixtureType.Abbreviation,
             number,
             basePointId,
@@ -3074,7 +3084,8 @@ namespace GMEPPlumbing
           "GMEP FD",
           "GMEP RPBFP",
           "GMEP IWH",
-          "GMEP SOURCE"
+          "GMEP SOURCE",
+          "GMEP PLUMBING VENT EXIT"
           //"GMEP WCO STRAIGHT",
           //"GMEP WCO ANGLED",
           //"GMEP WCO FLOOR",
