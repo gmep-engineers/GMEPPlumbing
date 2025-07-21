@@ -115,7 +115,7 @@ namespace GMEPPlumbing
       }
       if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
         pko.Keywords.Add("Waste");
-        //pko.Keywords.Add("Vent");
+        pko.Keywords.Add("Vent");
       }
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -139,6 +139,9 @@ namespace GMEPPlumbing
           break;
         case "Waste":
           layer = "P-GREASE-WASTE";
+          break;
+        case "Vent":
+          layer = "P-WV-VENT";
           break;
          /*case "Storm":
              layer = "GMEP_PLUMBING_STORM";
@@ -343,7 +346,7 @@ namespace GMEPPlumbing
       }
       if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
         pko.Keywords.Add("Waste");
-        //pko.Keywords.Add("Vent");
+        pko.Keywords.Add("Vent");
       }
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -364,13 +367,16 @@ namespace GMEPPlumbing
         case "Gas":
           layer = "P-GAS";
           break;
-         case "Waste":
-             layer = "P-GREASE-WASTE";
-             break;
-          /*
-         case "Storm":
-             layer = "GMEP_PLUMBING_STORM";
-             break;*/
+        case "Waste":
+          layer = "P-GREASE-WASTE";
+          break;
+        case "Vent":
+          layer = "P-WV-VENT";
+          break;
+        /*
+       case "Storm":
+           layer = "GMEP_PLUMBING_STORM";
+           break;*/
         default:
           ed.WriteMessage("\nInvalid route type selected.");
           return;

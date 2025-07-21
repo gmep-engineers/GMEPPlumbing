@@ -193,12 +193,12 @@ namespace GMEPPlumbing.Views
       public ObservableCollection<Visual3D> RouteVisuals { get; set; } = new ObservableCollection<Visual3D>();
       public Dictionary<string, PlumbingPlanBasePoint> BasePoints { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
       public HashSet<string> BasePointIds = new HashSet<string>();
-      public SolidColorBrush RouteColor { get; set; } = new SolidColorBrush(Color.FromArgb(255, 0, 0, 255)); // Default to blue
+      //public SolidColorBrush RouteColor { get; set; } = new SolidColorBrush(Color.FromArgb(255, 0, 0, 255)); // Default to blue
       public Scene(PlumbingFullRoute fullRoute, Dictionary<string, PlumbingPlanBasePoint> basePoints) {
           RouteItems = fullRoute.RouteItems;
           Length = fullRoute.Length;
           BasePoints = basePoints;
-          switch (fullRoute.TypeId) {
+          /*switch (fullRoute.TypeId) {
             case 1:
               RouteColor = System.Windows.Media.Brushes.Yellow;
               break;
@@ -211,12 +211,13 @@ namespace GMEPPlumbing.Views
             case 4:
               RouteColor = System.Windows.Media.Brushes.Magenta;
               break;
-          } 
+          } */
           BuildScene();
       }
     public Scene() {
       
     }
+
     public void BuildScene() {
       RouteVisuals.Clear();
       List<TextVisual3D> textVisuals = new List<TextVisual3D>();
@@ -227,7 +228,7 @@ namespace GMEPPlumbing.Views
           var ballModel2 = new SphereVisual3D {
             Center = new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
             Radius = 1,
-            Fill = RouteColor
+            Fill = TypeToBrushColor(horizontalRoute.Type)
           };
           var lineModel = new TubeVisual3D {
             Path = new Point3DCollection {
@@ -235,12 +236,12 @@ namespace GMEPPlumbing.Views
               new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z)
             },
             Diameter = 2,
-            Fill = RouteColor
+            Fill = TypeToBrushColor(horizontalRoute.Type)
           };
           var ballModel = new SphereVisual3D {
             Center = new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z),
             Radius = 1,
-            Fill = RouteColor
+            Fill = TypeToBrushColor(horizontalRoute.Type)
           };
 
           // Calculate midpoint and offset
@@ -283,7 +284,7 @@ namespace GMEPPlumbing.Views
           var ballModel = new SphereVisual3D {
             Center = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
             Radius = 1,
-            Fill = RouteColor
+            Fill = TypeToBrushColor(verticalRoute.Type)
           };
          var connectionTubeModel = new TubeVisual3D {
             Path = new Point3DCollection {
@@ -291,8 +292,8 @@ namespace GMEPPlumbing.Views
               new Point3D(verticalRoute.ConnectionPosition.X, verticalRoute.ConnectionPosition.Y, verticalRoute.ConnectionPosition.Z)
             },
             Diameter = 2,
-            Fill = RouteColor
-          };
+            Fill = TypeToBrushColor(verticalRoute.Type)
+         };
 
           double length = verticalRoute.Length * 12;
 
@@ -305,7 +306,7 @@ namespace GMEPPlumbing.Views
               new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length)
             },
             Diameter = 2,
-            Fill = RouteColor
+            Fill = TypeToBrushColor(verticalRoute.Type)
           };
 
           fullModel.Children.Add(tubeModel);
@@ -352,10 +353,25 @@ namespace GMEPPlumbing.Views
           BasePointIds.Add(verticalRoute.BasePointId);
         }
         else if (item is PlumbingSource plumbingSource) {
+          SolidColorBrush SourceColor = Brushes.Gray; // Default color
+          switch (plumbingSource.TypeId) {
+            case 1:
+              SourceColor = System.Windows.Media.Brushes.Yellow;
+              break;
+            case 2:
+              SourceColor = System.Windows.Media.Brushes.Magenta;
+              break;
+            case 3:
+              SourceColor = System.Windows.Media.Brushes.SteelBlue;
+              break;
+            case 4:
+              SourceColor = System.Windows.Media.Brushes.Magenta;
+              break;
+          }
           model = new SphereVisual3D {
             Center = new Point3D(plumbingSource.Position.X, plumbingSource.Position.Y, plumbingSource.Position.Z),
             Radius = 2,
-            Fill = RouteColor
+            Fill = SourceColor
           };
 
           BasePointIds.Add(plumbingSource.BasePointId);
@@ -395,6 +411,22 @@ namespace GMEPPlumbing.Views
       }
       foreach (var text in textVisuals) {
         RouteVisuals.Add(text);
+      }
+    }
+    public SolidColorBrush TypeToBrushColor(string type) {
+      switch (type) {
+        case "Cold Water":
+          return System.Windows.Media.Brushes.Yellow;
+        case "Hot Water":
+          return System.Windows.Media.Brushes.Magenta;
+        case "Gas":
+          return System.Windows.Media.Brushes.SteelBlue;
+        case "Waste":
+          return System.Windows.Media.Brushes.Magenta;
+        case "Vent":
+          return System.Windows.Media.Brushes.Green;
+        default:
+          return System.Windows.Media.Brushes.Gray; // Default color for unknown layers
       }
     }
     public void RemoveDuplicateRouteVisuals() {
