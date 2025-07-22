@@ -2404,6 +2404,10 @@ namespace GMEPPlumbing
         && e.DBObject is BlockReference blockRef
         && IsVerticalRouteBlock(blockRef)
       ) {
+        var dynamicProperties = blockRef.DynamicBlockReferencePropertyCollection;
+        if (dynamicProperties == null || dynamicProperties.Count == 0) return;
+        
+
         SettingObjects = true;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -2589,6 +2593,9 @@ namespace GMEPPlumbing
         && e.DBObject is BlockReference blockRef
         && IsPlumbingBasePointBlock(blockRef)
       ) {
+        var properties = blockRef.DynamicBlockReferencePropertyCollection;
+        if (properties == null || properties.Count == 0) return;
+
         SettingObjects = true;
 
         string Id = string.Empty;
