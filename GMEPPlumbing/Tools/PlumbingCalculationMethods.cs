@@ -367,7 +367,16 @@ namespace GMEPPlumbing {
           double segLen;
           double distToRoute = GetPointToSegmentDistance(targetTrajectoryPoint, route.StartPoint, route.EndPoint, out segLen);
           if (distToRoute <= 3.0) {
-            result[route] = targetRoute.StartPoint.DistanceTo(targetRoute.EndPoint);
+            Point3d closestPoint = GetClosestPointOnSegment(targetTrajectoryPoint, route.StartPoint, route.EndPoint);
+            var adjustedRoute = new PlumbingHorizontalRoute(
+                route.Id,
+                route.ProjectId,
+                route.Type,
+                closestPoint, // new start point
+                route.EndPoint,
+                route.BasePointId
+            );
+            result[adjustedRoute] = targetRoute.StartPoint.DistanceTo(targetRoute.EndPoint);
             continue;
           }
         }
@@ -380,7 +389,16 @@ namespace GMEPPlumbing {
           double segLen;
           double distToTarget = GetPointToSegmentDistance(routeReverseTrajectoryPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segLen);
           if (distToTarget <= 3.0) {
-            result[route] = segLen;
+            Point3d closestPoint = GetClosestPointOnSegment(routeReverseTrajectoryPoint, route.StartPoint, route.EndPoint);
+            var adjustedRoute = new PlumbingHorizontalRoute(
+                route.Id,
+                route.ProjectId,
+                route.Type,
+                closestPoint, // new start point
+                route.EndPoint,
+                route.BasePointId
+            );
+            result[adjustedRoute] = segLen;
             continue;
           }
         }
@@ -389,10 +407,34 @@ namespace GMEPPlumbing {
         if (DoSegmentsIntersect(targetRoute.StartPoint, targetRoute.EndPoint, route.StartPoint, route.EndPoint, out intersectionPoint)) {
           double segLen;
           GetPointToSegmentDistance(intersectionPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segLen);
-          result[route] = segLen;
+          var adjustedRoute = new PlumbingHorizontalRoute(
+                route.Id,
+                route.ProjectId,
+                route.Type,
+                intersectionPoint, // new start point
+                route.EndPoint,
+                route.BasePointId
+            );
+          result[adjustedRoute] = segLen;
         }
       }
       return result;
+    }
+    // Helper: Find the closest point on a segment to a given point
+    private Point3d GetClosestPointOnSegment(Point3d pt, Point3d segStart, Point3d segEnd) {
+      var v = segEnd - segStart;
+      var w = pt - segStart;
+
+      double c1 = v.DotProduct(w);
+      if (c1 <= 0)
+        return segStart;
+
+      double c2 = v.DotProduct(v);
+      if (c2 <= c1)
+        return segEnd;
+
+      double b = c1 / c2;
+      return segStart + (v * b);
     }
     private bool DoSegmentsIntersect(Point3d p1, Point3d p2, Point3d q1, Point3d q2, out Point3d intersectionPoint) {
       // 2D intersection (ignoring Z)
