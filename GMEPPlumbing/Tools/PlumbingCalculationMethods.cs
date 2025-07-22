@@ -354,24 +354,66 @@ namespace GMEPPlumbing {
     }
 
     public Dictionary<PlumbingHorizontalRoute, double> FindNearbyHorizontalRoutes(PlumbingHorizontalRoute targetRoute) {
-      var doc = Application.DocumentManager.MdiActiveDocument;
-      var db = doc.Database;
-      var ed = doc.Editor;
       var result = new Dictionary<PlumbingHorizontalRoute, double>();
       foreach (var route in HorizontalRoutes) {
         if (route.Id == targetRoute.Id || route.BasePointId != targetRoute.BasePointId || route.Type != targetRoute.Type)
           continue;
 
-        double segmentLength;
-        double distance = GetPointToSegmentDistance(
-            route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segmentLength
-        );
+        // 1. Target route's trajectory: endpoint extended in its direction
+        Vector3d targetDir = targetRoute.EndPoint - targetRoute.StartPoint;
+        if (targetDir.Length > 0) {
+          targetDir = targetDir.GetNormal();
+          Point3d targetTrajectoryPoint = targetRoute.EndPoint + targetDir * 3.0;
+          double segLen;
+          double distToRoute = GetPointToSegmentDistance(targetTrajectoryPoint, route.StartPoint, route.EndPoint, out segLen);
+          if (distToRoute <= 3.0) {
+            result[route] = segLen;
+            continue;
+          }
+        }
 
-        if (distance <= 3.0) {
-          result[route] = segmentLength;
+        // 2. Candidate route's reverse trajectory: startpoint extended backward
+        Vector3d routeDir = route.EndPoint - route.StartPoint;
+        if (routeDir.Length > 0) {
+          routeDir = routeDir.GetNormal();
+          Point3d routeReverseTrajectoryPoint = route.StartPoint - routeDir * 3.0;
+          double segLen;
+          double distToTarget = GetPointToSegmentDistance(routeReverseTrajectoryPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segLen);
+          if (distToTarget <= 3.0) {
+            result[route] = segLen;
+            continue;
+          }
+        }
+        // 3. Segments intersect
+        if (DoSegmentsIntersect(targetRoute.StartPoint, targetRoute.EndPoint, route.StartPoint, route.EndPoint)) {
+          double segLen;
+          GetPointToSegmentDistance(route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segLen);
+          result[route] = segLen;
         }
       }
       return result;
+    }
+    private bool DoSegmentsIntersect(Point3d p1, Point3d p2, Point3d q1, Point3d q2) {
+      // 2D intersection (ignoring Z)
+      double x1 = p1.X, y1 = p1.Y, x2 = p2.X, y2 = p2.Y;
+      double x3 = q1.X, y3 = q1.Y, x4 = q2.X, y4 = q2.Y;
+
+      double d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+      if (Math.Abs(d) < 1e-10) return false; // Parallel or colinear
+
+      double pre = (x1 * y2 - y1 * x2), post = (x3 * y4 - y3 * x4);
+      double x = (pre * (x3 - x4) - (x1 - x2) * post) / d;
+      double y = (pre * (y3 - y4) - (y1 - y2) * post) / d;
+
+      // Check if intersection is within both segments
+      if (x < Math.Min(x1, x2) - 1e-10 || x > Math.Max(x1, x2) + 1e-10 ||
+          x < Math.Min(x3, x4) - 1e-10 || x > Math.Max(x3, x4) + 1e-10)
+        return false;
+      if (y < Math.Min(y1, y2) - 1e-10 || y > Math.Max(y1, y2) + 1e-10 ||
+          y < Math.Min(y3, y4) - 1e-10 || y > Math.Max(y3, y4) + 1e-10)
+        return false;
+
+      return true;
     }
     public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
       var doc = Application.DocumentManager.MdiActiveDocument;
