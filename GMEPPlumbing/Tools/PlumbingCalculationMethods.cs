@@ -367,12 +367,12 @@ namespace GMEPPlumbing {
           double segLen;
           double distToRoute = GetPointToSegmentDistance(targetTrajectoryPoint, route.StartPoint, route.EndPoint, out segLen);
           if (distToRoute <= 3.0) {
-            result[route] = segLen;
+            result[route] = targetRoute.StartPoint.DistanceTo(targetRoute.EndPoint);
             continue;
           }
         }
 
-        // 2. Candidate route's reverse trajectory: startpoint extended backward
+        // Candidate route's reverse trajectory: startpoint extended backward
         Vector3d routeDir = route.EndPoint - route.StartPoint;
         if (routeDir.Length > 0) {
           routeDir = routeDir.GetNormal();
@@ -385,21 +385,25 @@ namespace GMEPPlumbing {
           }
         }
         // 3. Segments intersect
-        if (DoSegmentsIntersect(targetRoute.StartPoint, targetRoute.EndPoint, route.StartPoint, route.EndPoint)) {
+        Point3d intersectionPoint;
+        if (DoSegmentsIntersect(targetRoute.StartPoint, targetRoute.EndPoint, route.StartPoint, route.EndPoint, out intersectionPoint)) {
           double segLen;
-          GetPointToSegmentDistance(route.StartPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segLen);
+          GetPointToSegmentDistance(intersectionPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segLen);
           result[route] = segLen;
         }
       }
       return result;
     }
-    private bool DoSegmentsIntersect(Point3d p1, Point3d p2, Point3d q1, Point3d q2) {
+    private bool DoSegmentsIntersect(Point3d p1, Point3d p2, Point3d q1, Point3d q2, out Point3d intersectionPoint) {
       // 2D intersection (ignoring Z)
       double x1 = p1.X, y1 = p1.Y, x2 = p2.X, y2 = p2.Y;
       double x3 = q1.X, y3 = q1.Y, x4 = q2.X, y4 = q2.Y;
 
       double d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-      if (Math.Abs(d) < 1e-10) return false; // Parallel or colinear
+      if (Math.Abs(d) < 1e-10) {
+        intersectionPoint = default(Point3d);
+        return false; // Parallel or colinear
+      }
 
       double pre = (x1 * y2 - y1 * x2), post = (x3 * y4 - y3 * x4);
       double x = (pre * (x3 - x4) - (x1 - x2) * post) / d;
@@ -407,12 +411,15 @@ namespace GMEPPlumbing {
 
       // Check if intersection is within both segments
       if (x < Math.Min(x1, x2) - 1e-10 || x > Math.Max(x1, x2) + 1e-10 ||
-          x < Math.Min(x3, x4) - 1e-10 || x > Math.Max(x3, x4) + 1e-10)
+          x < Math.Min(x3, x4) - 1e-10 || x > Math.Max(x3, x4) + 1e-10 ||
+          y < Math.Min(y1, y2) - 1e-10 || y > Math.Max(y1, y2) + 1e-10 ||
+          y < Math.Min(y3, y4) - 1e-10 || y > Math.Max(y3, y4) + 1e-10) {
+        intersectionPoint = default(Point3d);
         return false;
-      if (y < Math.Min(y1, y2) - 1e-10 || y > Math.Max(y1, y2) + 1e-10 ||
-          y < Math.Min(y3, y4) - 1e-10 || y > Math.Max(y3, y4) + 1e-10)
-        return false;
+      }
 
+      // Use Z from the first segment's start point (or set to 0 if you want 2D)
+      intersectionPoint = new Point3d(x, y, p1.Z);
       return true;
     }
     public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
