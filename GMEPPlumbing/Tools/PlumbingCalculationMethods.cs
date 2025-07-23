@@ -71,6 +71,11 @@ namespace GMEPPlumbing {
       }
       catch (Exception ex) {
         ed.WriteMessage($"\nError: {ex.Message}");
+        ed.WriteMessage($"\nStack Trace: {ex.StackTrace}");
+        if (ex.InnerException != null) {
+          ed.WriteMessage($"\nInner Exception: {ex.InnerException.Message}");
+          ed.WriteMessage($"\nInner Stack Trace: {ex.InnerException.StackTrace}");
+        }
       }
     }
     public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
@@ -143,7 +148,8 @@ namespace GMEPPlumbing {
         routeObjectsTemp.Add(adjustedRoute);
         length += adjustedRoute.Length * 12;
 
-        for (int i = matchingKey + 1; i <= verticalRouteObjects.Count(); i++) {
+        for (int i = matchingKey + 1; i <= verticalRouteObjects.Keys.Max(); i++) {
+          if (!verticalRouteObjects.ContainsKey(i)) continue;
           TraverseVerticalRoute(verticalRouteObjects[i], verticalRouteObjects[i].Position.Z, 2, visited, length, routeObjectsTemp);
           routeObjectsTemp.Add(verticalRouteObjects[i]);
           length += verticalRouteObjects[i].Length * 12;
@@ -174,7 +180,8 @@ namespace GMEPPlumbing {
         routeObjectsTemp.Add(adjustedRoute);
         length += adjustedRoute.Length * 12;
 
-        for (int i = matchingKey - 1; i > 0; i--) {
+        for (int i = matchingKey - 1; i >= verticalRouteObjects.Keys.Min(); i--) {
+          if (!verticalRouteObjects.ContainsKey(i)) continue;
           TraverseVerticalRoute(verticalRouteObjects[i], verticalRouteObjects[i].Position.Z, 3, visited, length, routeObjectsTemp);
           routeObjectsTemp.Add(verticalRouteObjects[i]);
           length += verticalRouteObjects[i].Length * 12;
