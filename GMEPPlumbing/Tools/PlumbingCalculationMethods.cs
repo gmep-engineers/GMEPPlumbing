@@ -381,7 +381,7 @@ namespace GMEPPlumbing {
           }
         }
 
-        // Candidate route's reverse trajectory: startpoint extended backward
+        // 2. Candidate route's reverse trajectory: startpoint extended backward
         Vector3d routeDir = route.EndPoint - route.StartPoint;
         if (routeDir.Length > 0) {
           routeDir = routeDir.GetNormal();
