@@ -300,6 +300,9 @@ namespace GMEPPlumbing {
     private List<string> GetFixtureInputTypes(PlumbingFixture fixture) {
       var types = new List<string>();
       switch (fixture.TypeAbbreviation) {
+        case "DF":
+          types.Add("Cold Water");
+          break;
         case "CP":
           types.Add("Hot Water");
           break;

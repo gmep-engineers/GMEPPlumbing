@@ -2404,6 +2404,8 @@ namespace GMEPPlumbing
         && e.DBObject is BlockReference blockRef
         && IsVerticalRouteBlock(blockRef)
       ) {
+        if (blockRef == null || blockRef.IsErased || blockRef.IsDisposed)
+          return;
         var dynamicProperties = blockRef.DynamicBlockReferencePropertyCollection;
         if (dynamicProperties == null || dynamicProperties.Count == 0) return;
         
@@ -2593,6 +2595,8 @@ namespace GMEPPlumbing
         && e.DBObject is BlockReference blockRef
         && IsPlumbingBasePointBlock(blockRef)
       ) {
+        if (blockRef == null || blockRef.IsErased || blockRef.IsDisposed)
+          return;
         var properties = blockRef.DynamicBlockReferencePropertyCollection;
         if (properties == null || properties.Count == 0) return;
 
@@ -2699,7 +2703,7 @@ namespace GMEPPlumbing
       var db = doc.Database;
       var ed = doc.Editor;
       MariaDBService mariaDBService = new MariaDBService();
-
+      ed.WriteMessage("\nDocument saved, updating plumbing data...");
       try {
         string projectNo = CADObjectCommands.GetProjectNoFromFileName();
         string ProjectId = await mariaDBService.GetProjectId(projectNo);
