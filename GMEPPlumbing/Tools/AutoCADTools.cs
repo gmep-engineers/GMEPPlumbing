@@ -50,13 +50,14 @@ namespace GMEPPlumbing
     //public static bool SettingFlag= false;
 
     [CommandMethod("SetPlumbingRouteHeight")]
+    [CommandMethod("RH")]
     public static void SetPlumbingRouteHeight() {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
 
       string GUID = GetActiveView();
-      double heightLimit = GetHeightLimit(GUID);
+      Tuple<double, double> heightLimits = GetHeightLimits(GUID);
       double routeHeight = 0;
       double? newHeight = null;
 
@@ -102,9 +103,9 @@ namespace GMEPPlumbing
             promptDoubleOptions.Message = "\nHeight must be greater than zero. Please enter a valid height: ";
             continue;
           }
-          if (promptDoubleResult.Value >= heightLimit) {
-            ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}.");
-            promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height: ";
+          if (promptDoubleResult.Value >= heightLimits.Item2) {
+            ed.WriteMessage($"\nHeight must be below {heightLimits.Item2} and above {heightLimits.Item1}.");
+            promptDoubleOptions.Message = $"\nHeight must be below {heightLimits.Item2} and above {heightLimits.Item1}. Please enter a valid height: ";
             continue;
           }
           newHeight = promptDoubleResult.Value;
@@ -168,15 +169,18 @@ namespace GMEPPlumbing
       return ActiveRouteHeight;
     }
 
-    public static double GetHeightLimit(string GUID) {
+    public static Tuple<double, double> GetHeightLimits(string GUID) {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
-      double heightLimit = 0;
+      double upperHeightLimit = 0;
+      double lowerHeightLimit = 0;
      
       int activefloor = 0;
 
       Dictionary<int, double> floorHeights = new Dictionary<int, double>();
+      Dictionary<int, double> ceilingHeights = new Dictionary<int, double>();
+
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
@@ -190,6 +194,7 @@ namespace GMEPPlumbing
                   var pc = entity.DynamicBlockReferencePropertyCollection;
                   string basePointId = "";
                   double floorHeight = 0;
+                  double ceilingHeight = 0;
                   int floor = 0;
                   foreach (DynamicBlockReferenceProperty prop in pc) {
                     if (prop.PropertyName == "id") {
@@ -198,12 +203,17 @@ namespace GMEPPlumbing
                     if (prop.PropertyName == "floor_height") {
                       floorHeight = Convert.ToDouble(prop.Value);
                     }
+                    if (prop.PropertyName == "ceiling_height") {
+                      ceilingHeight = Convert.ToDouble(prop.Value);
+                    }
                     if (prop.PropertyName == "floor") {
                       floor = Convert.ToInt32(prop.Value);
                     }
+
                   }
                   if (basePointId != "") {
                     floorHeights[floor] = floorHeight;
+                    ceilingHeights[floor] = ceilingHeight;
                   }
                   if (basePointId == GUID) {
                     activefloor = floor;
@@ -216,21 +226,27 @@ namespace GMEPPlumbing
       }
       if (floorHeights.Count == 0) {
         ed.WriteMessage("\nNo base points found in the drawing.");
-        return 0;
+        return new Tuple<double, double>(0, 0);
       }
       if (floorHeights.ContainsKey(activefloor)) {
         if (activefloor != floorHeights.Count) {
-          heightLimit = floorHeights[activefloor + 1] - floorHeights[activefloor];
+          upperHeightLimit = floorHeights[activefloor + 1] - floorHeights[activefloor];
         }
         else {
-          heightLimit = 10000;
+          upperHeightLimit = 10000;
+        }
+        if (activefloor != 1) {
+          lowerHeightLimit = floorHeights[activefloor] - ceilingHeights[activefloor - 1];
+        }
+        else {
+          lowerHeightLimit = -10000;
         }
       }
       else {
         ed.WriteMessage("\nNo height limit found for the active base point.");
-        return 0;
+        return new Tuple<double, double>(0, 0);
       }
-      return heightLimit;
+      return new Tuple<double, double>(lowerHeightLimit, upperHeightLimit);
     }
 
     [CommandMethod("SetScale")]
