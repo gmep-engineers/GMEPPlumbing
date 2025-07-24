@@ -236,7 +236,7 @@ namespace GMEPPlumbing
           upperHeightLimit = 10000;
         }
         if (activefloor != 1) {
-          lowerHeightLimit = floorHeights[activefloor] - ceilingHeights[activefloor - 1];
+          lowerHeightLimit = ceilingHeights[activefloor - 1] - floorHeights[activefloor];
         }
         else {
           lowerHeightLimit = -10000;
