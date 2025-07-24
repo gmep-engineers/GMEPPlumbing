@@ -613,7 +613,7 @@ namespace GMEPPlumbing
               prop.Value = verticalRouteId;
             }
             if (prop.PropertyName == "length") {
-              prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[startFloor]) - CADObjectCommands.GetPlumbingRouteHeight();
+              prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item2 - CADObjectCommands.GetPlumbingRouteHeight();
             }
             if (prop.PropertyName == "start_height") {
               prop.Value = CADObjectCommands.GetPlumbingRouteHeight(); 
@@ -654,7 +654,7 @@ namespace GMEPPlumbing
                 prop.Value = verticalRouteId;
               }
               if (prop.PropertyName == "length") {
-                prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[i]);
+                prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
               }
             }
           }
@@ -672,10 +672,12 @@ namespace GMEPPlumbing
             PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
             if (promptDoubleResult.Status == PromptStatus.OK) {
               height = promptDoubleResult.Value;
-              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]);
-              if (height >= heightLimit) {
-                ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.");
-                promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.";
+              Tuple<double, double> heightLimits = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]);
+              double upperHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]).Item2;
+              double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]).Item1;
+              if (height > upperHeightLimit || height < lowerHeightLimit) {
+                ed.WriteMessage($"\nHeight cannot exceed {upperHeightLimit} or be less than {lowerHeightLimit}. Please enter a valid height.");
+                promptDoubleOptions.Message = $"\nHeight cannot exceed {upperHeightLimit} or be less than {lowerHeightLimit}. Please enter a valid height.";
                 continue;
               }
               else if (promptDoubleResult.Status == PromptStatus.Cancel) {
@@ -810,7 +812,7 @@ namespace GMEPPlumbing
                 prop.Value = verticalRouteId;
               }
               if (prop.PropertyName == "length") {
-                prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[i]);
+                prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
               }
             }
           }
@@ -828,10 +830,12 @@ namespace GMEPPlumbing
             PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
             if (promptDoubleResult.Status == PromptStatus.OK) {
               height = promptDoubleResult.Value;
-              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]);
-              if (height >= heightLimit) {
-                ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.");
-                promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.";
+              Tuple<double, double> heightLimits = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]);
+              double upperHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]).Item2;
+              double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]).Item1;
+              if (height > upperHeightLimit || height < lowerHeightLimit) {
+                ed.WriteMessage($"\nHeight cannot exceed {upperHeightLimit} or be less than {lowerHeightLimit}. Please enter a valid height.");
+                promptDoubleOptions.Message = $"\nHeight cannot exceed {upperHeightLimit} or be less than {lowerHeightLimit}. Please enter a valid height.";
                 continue;
               }
               break;
@@ -875,7 +879,7 @@ namespace GMEPPlumbing
               prop.Value = verticalRouteId;
             }
             if (prop.PropertyName == "length") {
-              prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]) - height;
+              prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]).Item2 - height;
             }
             if (prop.PropertyName == "start_height") {
               prop.Value = height;
@@ -911,22 +915,23 @@ namespace GMEPPlumbing
           if (pdr2.Status == PromptStatus.OK) {
             length = pdr2.Value;
             if (direction2 == "Up") {
-              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[startFloor]);
+              double heightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item2;
               double height = CADObjectCommands.GetPlumbingRouteHeight();
               double limit = heightLimit - height;
-              if (length >= limit) {
-                ed.WriteMessage($"\nFull height of fixture cannot meet or exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.");
-                pdo2.Message = $"\nFull height of fixture cannot meet or exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.";
+              if (length > limit) {
+                ed.WriteMessage($"\nFull height of fixture cannot exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.");
+                pdo2.Message = $"\nFull height of fixture cannot exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.";
                 continue;
               }
             }
             if (direction2 == "Down") {
-                double height = CADObjectCommands.GetPlumbingRouteHeight();
-                if (length >= height) {
-                  ed.WriteMessage($"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.");
-                  pdo2.Message = $"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.";
-                  continue;
-                }
+              double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item1;
+              double height = CADObjectCommands.GetPlumbingRouteHeight();
+              if (length > height - lowerHeightLimit) {
+                ed.WriteMessage($"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.");
+                pdo2.Message = $"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.";
+                continue;
+              }
             }
           }
           else if (pdr2.Status == PromptStatus.Error) {

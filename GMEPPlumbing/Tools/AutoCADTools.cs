@@ -91,7 +91,7 @@ namespace GMEPPlumbing
 
       // 2. Prompt for new value (outside transaction)
       PromptDoubleOptions promptDoubleOptions = new PromptDoubleOptions("\nEnter the plumbing route height: ");
-      promptDoubleOptions.AllowNegative = false;
+      promptDoubleOptions.AllowNegative = true;
       promptDoubleOptions.DefaultValue = routeHeight;
 
       while (true) {
