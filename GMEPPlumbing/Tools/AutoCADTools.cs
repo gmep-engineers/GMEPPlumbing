@@ -56,7 +56,7 @@ namespace GMEPPlumbing
       Database db = doc.Database;
 
       string GUID = GetActiveView();
-      double heightLimit = GetHeightLimit(GUID);
+      Tuple<double, double> heightLimits = GetHeightLimits(GUID);
       double routeHeight = 0;
       double? newHeight = null;
 
@@ -97,14 +97,9 @@ namespace GMEPPlumbing
       while (true) {
         PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
         if (promptDoubleResult.Status == PromptStatus.OK) {
-          if (promptDoubleResult.Value <= 0) {
-            ed.WriteMessage("\nHeight must be greater than zero.");
-            promptDoubleOptions.Message = "\nHeight must be greater than zero. Please enter a valid height: ";
-            continue;
-          }
-          if (promptDoubleResult.Value >= heightLimit) {
-            ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}.");
-            promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height: ";
+          if (promptDoubleResult.Value > heightLimits.Item2 ||  promptDoubleResult.Value < heightLimits.Item1) {
+            ed.WriteMessage($"\nHeight cannot be more than {heightLimits.Item2} or less than {heightLimits.Item1}.");
+            promptDoubleOptions.Message = $"\nHeight cannot be more than {heightLimits.Item2} or less than {heightLimits.Item1}. Please enter a valid height: ";
             continue;
           }
           newHeight = promptDoubleResult.Value;
@@ -168,12 +163,12 @@ namespace GMEPPlumbing
       return ActiveRouteHeight;
     }
 
-    public static double GetHeightLimit(string GUID) {
+    public static Tuple<double, double> GetHeightLimits(string GUID) {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
-      double heightLimit = 0;
-     
+      Tuple<double, double> heightLimits = new Tuple<double, double>(0, 0);
+
       int activefloor = 0;
 
       Dictionary<int, double> floorHeights = new Dictionary<int, double>();
@@ -216,21 +211,30 @@ namespace GMEPPlumbing
       }
       if (floorHeights.Count == 0) {
         ed.WriteMessage("\nNo base points found in the drawing.");
-        return 0;
+        return new Tuple<double, double>(0,0);
       }
       if (floorHeights.ContainsKey(activefloor)) {
+        double upperHeightLimit = 0;
+        double lowerHeightLimit = 0;
         if (activefloor != floorHeights.Count) {
-          heightLimit = floorHeights[activefloor + 1] - floorHeights[activefloor];
+          upperHeightLimit = floorHeights[activefloor + 1] - floorHeights[activefloor];
         }
         else {
-          heightLimit = 10000;
+          upperHeightLimit = 10000;
         }
+        if (activefloor == 1) {
+          lowerHeightLimit = -10000;
+        }
+        heightLimits = new Tuple<double, double>(
+          lowerHeightLimit,
+          upperHeightLimit
+        );
       }
       else {
         ed.WriteMessage("\nNo height limit found for the active base point.");
-        return 0;
+        return new Tuple<double, double>(0, 0);
       }
-      return heightLimit;
+      return heightLimits;
     }
 
     [CommandMethod("SetScale")]
