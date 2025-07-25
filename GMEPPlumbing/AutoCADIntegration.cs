@@ -1838,123 +1838,132 @@ namespace GMEPPlumbing
           continue;
         }
       }
+      PlumbingFixture plumbingFixture = null;
       double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
 
       var routeHeightDisplay = new RouteHeightDisplay(ed);
       routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       if (!String.IsNullOrEmpty(selectedFixtureType.BlockName)) {
-        ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
-        ObjectId blockId;
-        string blockName = selectedFixtureType.BlockName;
-        Point3d point;
-        double rotation = 0;
-        int number = 0;
-        string GUID = Guid.NewGuid().ToString();
-        try {
-          using (Transaction tr = db.TransactionManager.StartTransaction()) {
-            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-            BlockTableRecord btr;
-            BlockReference br = CADObjectCommands.CreateBlockReference(
-              tr,
-              bt,
-              blockName,
-              "Plumbing Fixture " + selectedFixtureType.Name,
-              out btr,
-              out point
-            );
-            if (br != null) {
-              BlockTableRecord curSpace = (BlockTableRecord)
-                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-              RotateJig rotateJig = new RotateJig(br);
-              PromptResult rotatePromptResult = ed.Drag(rotateJig);
+        List<string> blockNames = new List<string>();
+        blockNames.Add(selectedFixtureType.BlockName);
+        if (selectedCatalogItem != null && (selectedCatalogItem.Id == 2 || selectedCatalogItem.Id == 3 || selectedCatalogItem.Id == 25)) {
+          blockNames.Add("GMEP PLUMBING GAS OUTPUT");
+        }
+        foreach (string blockName in blockNames) {
+          // ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
+          ObjectId blockId;
+          //string blockName = selectedFixtureType.BlockName;
+          Point3d point;
+          double rotation = 0;
+          int number = 0;
+          string GUID = Guid.NewGuid().ToString();
+          try {
+            using (Transaction tr = db.TransactionManager.StartTransaction()) {
+              BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+              BlockTableRecord btr;
+              BlockReference br = CADObjectCommands.CreateBlockReference(
+                tr,
+                bt,
+                blockName,
+                "Plumbing Fixture " + selectedFixtureType.Name,
+                out btr,
+                out point
+              );
+              if (br != null) {
+                BlockTableRecord curSpace = (BlockTableRecord)
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+                RotateJig rotateJig = new RotateJig(br);
+                PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
-              if (rotatePromptResult.Status != PromptStatus.OK) {
-                ed.WriteMessage("\nRotation cancelled.");
+                if (rotatePromptResult.Status != PromptStatus.OK) {
+                  ed.WriteMessage("\nRotation cancelled.");
+                  routeHeightDisplay.Disable();
+                  return;
+                }
+                br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
+                rotation = br.Rotation;
+
+                curSpace.AppendEntity(br);
+                tr.AddNewlyCreatedDBObject(br, true);
+              }
+              else {
+                ed.WriteMessage("\nBlock reference could not be created.");
                 routeHeightDisplay.Disable();
                 return;
               }
-              br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
-              rotation = br.Rotation;
 
-              curSpace.AppendEntity(br);
-              tr.AddNewlyCreatedDBObject(br, true);
+              blockId = br.Id;
+              tr.Commit();
             }
-            else {
-              ed.WriteMessage("\nBlock reference could not be created.");
-              routeHeightDisplay.Disable();
-              return;
+            using (Transaction tr = db.TransactionManager.StartTransaction()) {
+              BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+              var modelSpace = (BlockTableRecord)
+                tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+              BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+              DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+              foreach (DynamicBlockReferenceProperty prop in pc) {
+                if (prop.PropertyName == "id") {
+                  prop.Value = GUID;
+                }
+                if (prop.PropertyName == "gmep_plumbing_fixture_demand" && selectedCatalogItem != null) {
+                  prop.Value = (double)selectedCatalogItem.FixtureDemand;
+                }
+                if (prop.PropertyName == "gmep_plumbing_fixture_hot_demand" && selectedCatalogItem != null) {
+                  prop.Value = (double)selectedCatalogItem.HotDemand;
+                }
+                if (prop.PropertyName == "base_point_id") {
+                  prop.Value = basePointId;
+                }
+                if (prop.PropertyName == "type_abbreviation") {
+                  prop.Value = selectedFixtureType.Abbreviation;
+                }
+                if (prop.PropertyName == "catalog_id" && selectedCatalogItem != null) {
+                  prop.Value = selectedCatalogItem.Id;
+                }
+              }
+              int catalogId = selectedCatalogItem != null ? selectedCatalogItem.Id : 0;
+              PlumbingFixture fixture = new PlumbingFixture(
+                GUID,
+                projectId,
+                point,
+                rotation,
+                catalogId,
+                selectedFixtureType.Abbreviation,
+                0,
+                basePointId,
+                blockName
+              );
+              foreach (DynamicBlockReferenceProperty prop in pc) {
+                if (prop.PropertyName == "number") {
+                  number = DetermineFixtureNumber(fixture);
+                  prop.Value = number;
+                }
+              }
+              tr.Commit();
             }
-
-            blockId = br.Id;
-            tr.Commit();
-          }
-          using (Transaction tr = db.TransactionManager.StartTransaction()) {
-            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
-            var modelSpace = (BlockTableRecord)
-              tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-            BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
-            DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
-            foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "id") {
-                prop.Value = GUID;
-              }
-              if (prop.PropertyName == "gmep_plumbing_fixture_demand" && selectedCatalogItem != null) {
-                prop.Value = (double)selectedCatalogItem.FixtureDemand;
-              }
-              if (prop.PropertyName == "gmep_plumbing_fixture_hot_demand" && selectedCatalogItem != null) {
-                prop.Value = (double)selectedCatalogItem.HotDemand;
-              }
-              if (prop.PropertyName == "base_point_id") {
-                prop.Value = basePointId;
-              }
-              if (prop.PropertyName == "type_abbreviation") {
-                prop.Value = selectedFixtureType.Abbreviation;
-              }
-              if (prop.PropertyName == "catalog_id" && selectedCatalogItem != null) {
-                prop.Value = selectedCatalogItem.Id;
-              }
-            }
-            int catalogId = selectedCatalogItem != null ? selectedCatalogItem.Id : 0;
-            PlumbingFixture fixture = new PlumbingFixture(
-             GUID,
-             projectId,
-             point,
-             rotation,
-             catalogId,
-             selectedFixtureType.Abbreviation,
-             0,
-             basePointId,
-             blockName
+            int catalogId2 = selectedCatalogItem != null ? selectedCatalogItem.Id : 0;
+            plumbingFixture = new PlumbingFixture(
+              GUID,
+              projectId,
+              point,
+              rotation,
+              catalogId2,
+              selectedFixtureType.Abbreviation,
+              number,
+              basePointId,
+              blockName
             );
-            foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "number") {
-                number = DetermineFixtureNumber(fixture);
-                prop.Value = number;
-              }
-            }
-            tr.Commit();
-          }
-          int catalogId2 = selectedCatalogItem != null ? selectedCatalogItem.Id : 0;
-          PlumbingFixture plumbingFixture = new PlumbingFixture(
-            GUID,
-            projectId,
-            point,
-            rotation,
-            catalogId2,
-            selectedFixtureType.Abbreviation,
-            number,
-            basePointId,
-            blockName
-          );
 
-          MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
+            
+          }
+          catch (System.Exception ex) {
+            ed.WriteMessage(ex.ToString());
+            routeHeightDisplay.Disable();
+            Console.WriteLine(ex.ToString());
+          }
         }
-        catch (System.Exception ex) {
-          ed.WriteMessage(ex.ToString());
-          routeHeightDisplay.Disable();
-          Console.WriteLine(ex.ToString());
-        }
+        MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
       }
       routeHeightDisplay.Disable();
     }
