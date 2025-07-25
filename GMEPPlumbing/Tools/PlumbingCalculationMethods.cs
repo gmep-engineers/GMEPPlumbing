@@ -315,7 +315,12 @@ namespace GMEPPlumbing {
           break;
         case "IWH":
         case "WH":
-          types.Add("Cold Water");
+          if (fixture.BlockName == "GMEP PLUMBING GAS OUTPUT") {
+            types.Add("Gas");
+          }
+          else {
+            types.Add("Cold Water");
+          }
           break;
         case "L":
         case "U":
