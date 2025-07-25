@@ -1672,11 +1672,7 @@ namespace GMEPPlumbing
     public void PlumbingFixture() {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
-      double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
-      
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight(), CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
-
+    
       doc = Application.DocumentManager.MdiActiveDocument;
       db = doc.Database;
       ed = doc.Editor;
@@ -1696,7 +1692,6 @@ namespace GMEPPlumbing
 
       if (keywordResult.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
-        routeHeightDisplay.Disable();
         return;
       }
       string keywordResultString = keywordResult.StringResult;
@@ -1750,7 +1745,6 @@ namespace GMEPPlumbing
           keywordResult = ed.GetKeywords(keywordOptions);
           if (keywordResult.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
-            routeHeightDisplay.Disable();
             return;
           }
           string whSize = keywordResult.StringResult;
@@ -1775,7 +1769,6 @@ namespace GMEPPlumbing
           keywordResult = ed.GetKeywords(keywordOptions);
           if (keywordResult.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
-            routeHeightDisplay.Disable();
             return;
           }
           string fsSize = keywordResult.StringResult.Replace("\"", "");
@@ -1801,7 +1794,6 @@ namespace GMEPPlumbing
           keywordResult = ed.GetKeywords(keywordOptions);
           if (keywordResult.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
-            routeHeightDisplay.Disable();
             return;
           }
           string coStyle = keywordResult.StringResult.Replace("\"", "");
@@ -1815,7 +1807,41 @@ namespace GMEPPlumbing
           );
         }
       }
+      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the vertical route from the floor (in feet): ");
+      pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
+      double routeHeight = 0;
+      while (true) {
+        try {
+          PromptDoubleResult pdr = ed.GetDouble(pdo);
+          if (pdr.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+          }
+          if (pdr.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+            continue;
+          }
+          routeHeight = pdr.Value;
+          // GetHeightLimits returns Tuple<double, double> (min, max)
+          var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+          double minHeight = heightLimits.Item1;
+          double maxHeight = heightLimits.Item2;
+          if (routeHeight < minHeight || routeHeight > maxHeight) {
+            ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
+            pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
+            continue;
+          }
+          break; // Valid input
+        }
+        catch (System.Exception ex) {
+          ed.WriteMessage($"\nError: {ex.Message}");
+          continue;
+        }
+      }
+      double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
 
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       if (!String.IsNullOrEmpty(selectedFixtureType.BlockName)) {
         ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
