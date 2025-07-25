@@ -338,6 +338,13 @@ namespace GMEPPlumbing {
         case "VE":
           types.Add("Vent");
           break;
+        case "FRY":
+        case "GRD":
+        case "GSLM":
+        case "CHR":
+        case "6BRN":
+          types.Add("Gas");
+          break;
       }
       return types;
     }

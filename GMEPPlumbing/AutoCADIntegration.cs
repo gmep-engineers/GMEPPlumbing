@@ -3234,7 +3234,8 @@ namespace GMEPPlumbing
           "GMEP RPBFP",
           "GMEP IWH",
           "GMEP SOURCE",
-          "GMEP PLUMBING VENT EXIT"
+          "GMEP PLUMBING VENT EXIT",
+          "GMEP PLUMBING GAS OUTPUT"
           //"GMEP WCO STRAIGHT",
           //"GMEP WCO ANGLED",
           //"GMEP WCO FLOOR",
