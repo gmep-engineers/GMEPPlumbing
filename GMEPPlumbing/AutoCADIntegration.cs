@@ -355,7 +355,7 @@ namespace GMEPPlumbing
       // Call the method with a null parameter to avoid ambiguity
       VerticalRoute();
     }
-    public async void VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null) {
+    public async void VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null) {
       
       string basePointGUID = CADObjectCommands.GetActiveView();
     
@@ -982,46 +982,49 @@ namespace GMEPPlumbing
           }
           direction = pr3.StringResult;
         }
-        PromptDoubleOptions pdo2 = new PromptDoubleOptions(
-          $"\nHow Far {direction}(Ft)?"
-        );
-        pdo2.AllowNegative = false;
-        pdo2.AllowZero = false;
-        pdo2.DefaultValue = 3;
-        double length = 0;
-        while (true) {
-          PromptDoubleResult pdr2 = ed.GetDouble(pdo2);
-          if (pdr2.Status == PromptStatus.OK) {
-            length = pdr2.Value;
-            if (direction == "Up") {
-              double heightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item2;
-              double height = (double)routeHeight;
-              double limit = heightLimit - height;
-              if (length > limit) {
-                ed.WriteMessage($"\nFull height of fixture cannot exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.");
-                pdo2.Message = $"\nFull height of fixture cannot exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.";
-                continue;
+        if (length == null) {
+          PromptDoubleOptions pdo2 = new PromptDoubleOptions(
+            $"\nHow Far {direction}(Ft)?"
+          );
+          pdo2.AllowNegative = false;
+          pdo2.AllowZero = false;
+          pdo2.DefaultValue = 3;
+          length = 0;
+
+          while (true) {
+            PromptDoubleResult pdr2 = ed.GetDouble(pdo2);
+            if (pdr2.Status == PromptStatus.OK) {
+              length = pdr2.Value;
+              if (direction == "Up") {
+                double heightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item2;
+                double height = (double)routeHeight;
+                double limit = heightLimit - height;
+                if (length > limit) {
+                  ed.WriteMessage($"\nFull height of fixture cannot exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.");
+                  pdo2.Message = $"\nFull height of fixture cannot exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.";
+                  continue;
+                }
+              }
+              if (direction == "Down") {
+                double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item1;
+                double height = (double)routeHeight;
+                if (length > height - lowerHeightLimit) {
+                  ed.WriteMessage($"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.");
+                  pdo2.Message = $"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.";
+                  continue;
+                }
               }
             }
-            if (direction == "Down") {
-              double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item1;
-              double height = (double)routeHeight;
-              if (length > height - lowerHeightLimit) {
-                ed.WriteMessage($"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.");
-                pdo2.Message = $"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.";
-                continue;
-              }
+            else if (pdr2.Status == PromptStatus.Error) {
+              ed.WriteMessage("\nError in input. Please try again.");
+              continue;
             }
+            else if (pdr2.Status == PromptStatus.Cancel) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            break;
           }
-          else if (pdr2.Status == PromptStatus.Error) {
-            ed.WriteMessage("\nError in input. Please try again.");
-            continue;
-          }
-          else if (pdr2.Status == PromptStatus.Cancel) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
-          }
-          break;
         }
 
         Point3d labelPoint3 = Point3d.Origin;
@@ -1044,7 +1047,7 @@ namespace GMEPPlumbing
             return;
           }
           if (direction == "Up") {
-            zIndex += length * 12;
+            zIndex += (double)length * 12;
           }
           upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, zIndex);
           upBlockRef3.Layer = layer;
@@ -3361,16 +3364,29 @@ namespace GMEPPlumbing
       return nextNumber;
     }
 
-    [CommandMethod("Up")]
+    [CommandMethod("UP")]
     public async void Up() {
       CADObjectCommands.GetActiveView();
-      VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "Up");
+      VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "Up", null);
     }
 
     [CommandMethod("DOWN")]
     public async void Down() {
       CADObjectCommands.GetActiveView();
-      VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "Down");
+      VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "Down", null);
+    }
+
+    [CommandMethod("UPTOCEILING")]
+    public async void UpToCeiling() {
+      string guid = CADObjectCommands.GetActiveView();
+      Tuple<double, double> heightLimit = CADObjectCommands.GetHeightLimits(guid);
+      //VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "UpToCeiling");
+    }
+
+    [CommandMethod("DOWNTOFLOOR")]
+    public async void DownToFloor() {
+      //CADObjectCommands.GetActiveView();
+      //VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "DownToFloor");
     }
 
   }
