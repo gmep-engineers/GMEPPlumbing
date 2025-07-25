@@ -96,11 +96,7 @@ namespace GMEPPlumbing
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute() {
       string BasePointId = CADObjectCommands.GetActiveView();
-      double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
-
-      //Beginning display
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight(), CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+  
 
       List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
@@ -121,7 +117,6 @@ namespace GMEPPlumbing
       PromptResult pr = ed.GetKeywords(pko);
       if (pr.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
-        routeHeightDisplay.Disable();
         return;
       }
       string result = pr.StringResult;
@@ -157,10 +152,52 @@ namespace GMEPPlumbing
       PromptResult pr2 = ed.GetKeywords(pko2);
       if (pr2.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
-        routeHeightDisplay.Disable();
         return;
       }
       string direction = pr2.StringResult;
+
+      //start of placement logic
+
+      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the horizontal route from the floor (in feet): ");
+      pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
+
+      double routeHeight = 0;
+      while (true) {
+        try {
+          PromptDoubleResult pdr = ed.GetDouble(pdo);
+          if (pdr.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+          }
+          if (pdr.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+            continue;
+          }
+
+          routeHeight = pdr.Value;
+          // GetHeightLimits returns Tuple<double, double> (min, max)
+          var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+          double minHeight = heightLimits.Item1;
+          double maxHeight = heightLimits.Item2;
+
+          if (routeHeight < minHeight || routeHeight > maxHeight) {
+            ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
+            pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
+            continue;
+          }
+          break; // Valid input
+        }
+        catch (System.Exception ex) {
+          ed.WriteMessage($"\nError: {ex.Message}");
+          continue;
+        }
+      }
+
+      double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
+
+      //Beginning display
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
 
       PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
@@ -317,11 +354,7 @@ namespace GMEPPlumbing
     public async void PlumbingVerticalRoute() {
       
       string basePointGUID = CADObjectCommands.GetActiveView();
-      double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
-
-      //beginning display
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight(), CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+    
 
       SettingObjects = true;
       string layer = "Defpoints";
@@ -352,7 +385,6 @@ namespace GMEPPlumbing
       PromptResult pr = ed.GetKeywords(pko);
       if (pr.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
-        routeHeightDisplay.Disable();
         return;
       }
       string result = pr.StringResult;
@@ -381,6 +413,43 @@ namespace GMEPPlumbing
           ed.WriteMessage("\nInvalid route type selected.");
           return;
       }
+
+      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the vertical route from the floor (in feet): ");
+      pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
+      double routeHeight = 0;
+      while (true) {
+        try {
+          PromptDoubleResult pdr = ed.GetDouble(pdo);
+          if (pdr.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+          }
+          if (pdr.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+            continue;
+          }
+          routeHeight = pdr.Value;
+          // GetHeightLimits returns Tuple<double, double> (min, max)
+          var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+          double minHeight = heightLimits.Item1;
+          double maxHeight = heightLimits.Item2;
+          if (routeHeight < minHeight || routeHeight > maxHeight) {
+            ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
+            pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
+            continue;
+          }
+          break; // Valid input
+        }
+        catch (System.Exception ex) {
+          ed.WriteMessage($"\nError: {ex.Message}");
+          continue;
+        }
+      }
+      double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
+
+      //beginning display
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         //retrieving the view of the basepoint
@@ -613,10 +682,10 @@ namespace GMEPPlumbing
               prop.Value = verticalRouteId;
             }
             if (prop.PropertyName == "length") {
-              prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[startFloor]) - CADObjectCommands.GetPlumbingRouteHeight();
+              prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item2 - routeHeight;
             }
             if (prop.PropertyName == "start_height") {
-              prop.Value = CADObjectCommands.GetPlumbingRouteHeight(); 
+              prop.Value = routeHeight; 
             }
           }
 
@@ -654,7 +723,7 @@ namespace GMEPPlumbing
                 prop.Value = verticalRouteId;
               }
               if (prop.PropertyName == "length") {
-                prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[i]);
+                prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
               }
             }
           }
@@ -672,10 +741,12 @@ namespace GMEPPlumbing
             PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
             if (promptDoubleResult.Status == PromptStatus.OK) {
               height = promptDoubleResult.Value;
-              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]);
-              if (height >= heightLimit) {
-                ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.");
-                promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.";
+              Tuple<double, double> heightLimits = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]);
+              double upperHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]).Item2;
+              double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]).Item1;
+              if (height > upperHeightLimit || height < lowerHeightLimit) {
+                ed.WriteMessage($"\nHeight cannot exceed {upperHeightLimit} or be less than {lowerHeightLimit}. Please enter a valid height.");
+                promptDoubleOptions.Message = $"\nHeight cannot exceed {upperHeightLimit} or be less than {lowerHeightLimit}. Please enter a valid height.";
                 continue;
               }
               else if (promptDoubleResult.Status == PromptStatus.Cancel) {
@@ -771,10 +842,10 @@ namespace GMEPPlumbing
               prop.Value = verticalRouteId;
             }
             if (prop.PropertyName == "length") {
-              prop.Value = CADObjectCommands.GetPlumbingRouteHeight();
+              prop.Value = routeHeight;
             }
             if (prop.PropertyName == "start_height") {
-              prop.Value = CADObjectCommands.GetPlumbingRouteHeight();
+              prop.Value = routeHeight;
             }
           }
           tr.Commit();
@@ -810,7 +881,7 @@ namespace GMEPPlumbing
                 prop.Value = verticalRouteId;
               }
               if (prop.PropertyName == "length") {
-                prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[i]);
+                prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
               }
             }
           }
@@ -828,10 +899,12 @@ namespace GMEPPlumbing
             PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
             if (promptDoubleResult.Status == PromptStatus.OK) {
               height = promptDoubleResult.Value;
-              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]);
-              if (height >= heightLimit) {
-                ed.WriteMessage($"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.");
-                promptDoubleOptions.Message = $"\nHeight cannot meet or exceed {heightLimit}. Please enter a valid height.";
+              Tuple<double, double> heightLimits = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]);
+              double upperHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]).Item2;
+              double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]).Item1;
+              if (height > upperHeightLimit || height < lowerHeightLimit) {
+                ed.WriteMessage($"\nHeight cannot exceed {upperHeightLimit} or be less than {lowerHeightLimit}. Please enter a valid height.");
+                promptDoubleOptions.Message = $"\nHeight cannot exceed {upperHeightLimit} or be less than {lowerHeightLimit}. Please enter a valid height.";
                 continue;
               }
               break;
@@ -875,7 +948,7 @@ namespace GMEPPlumbing
               prop.Value = verticalRouteId;
             }
             if (prop.PropertyName == "length") {
-              prop.Value = CADObjectCommands.GetHeightLimit(BasePointGUIDs[endFloor]) - height;
+              prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[endFloor]).Item2 - height;
             }
             if (prop.PropertyName == "start_height") {
               prop.Value = height;
@@ -911,22 +984,23 @@ namespace GMEPPlumbing
           if (pdr2.Status == PromptStatus.OK) {
             length = pdr2.Value;
             if (direction2 == "Up") {
-              double heightLimit = CADObjectCommands.GetHeightLimit(BasePointGUIDs[startFloor]);
-              double height = CADObjectCommands.GetPlumbingRouteHeight();
+              double heightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item2;
+              double height = routeHeight;
               double limit = heightLimit - height;
-              if (length >= limit) {
-                ed.WriteMessage($"\nFull height of fixture cannot meet or exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.");
-                pdo2.Message = $"\nFull height of fixture cannot meet or exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.";
+              if (length > limit) {
+                ed.WriteMessage($"\nFull height of fixture cannot exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.");
+                pdo2.Message = $"\nFull height of fixture cannot exceed {heightLimit}. Current fixture height is {height}. Please enter a valid length.";
                 continue;
               }
             }
             if (direction2 == "Down") {
-                double height = CADObjectCommands.GetPlumbingRouteHeight();
-                if (length >= height) {
-                  ed.WriteMessage($"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.");
-                  pdo2.Message = $"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.";
-                  continue;
-                }
+              double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item1;
+              double height = routeHeight;
+              if (length > height - lowerHeightLimit) {
+                ed.WriteMessage($"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.");
+                pdo2.Message = $"\nCurrent Height is {height} feet from the floor. Cannot go further. Please enter a valid length.";
+                continue;
+              }
             }
           }
           else if (pdr2.Status == PromptStatus.Error) {
@@ -984,10 +1058,10 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "start_height") {
               if (direction2 == "Up") {
-                prop.Value = CADObjectCommands.GetPlumbingRouteHeight() + length;
+                prop.Value = routeHeight + length;
               }
               else if (direction2 == "Down") {
-                prop.Value = CADObjectCommands.GetPlumbingRouteHeight(); ;
+                prop.Value = routeHeight;
               }
             }
           }
@@ -1598,11 +1672,7 @@ namespace GMEPPlumbing
     public void PlumbingFixture() {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
-      double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
-      
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight(), CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
-
+    
       doc = Application.DocumentManager.MdiActiveDocument;
       db = doc.Database;
       ed = doc.Editor;
@@ -1622,7 +1692,6 @@ namespace GMEPPlumbing
 
       if (keywordResult.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
-        routeHeightDisplay.Disable();
         return;
       }
       string keywordResultString = keywordResult.StringResult;
@@ -1676,7 +1745,6 @@ namespace GMEPPlumbing
           keywordResult = ed.GetKeywords(keywordOptions);
           if (keywordResult.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
-            routeHeightDisplay.Disable();
             return;
           }
           string whSize = keywordResult.StringResult;
@@ -1701,7 +1769,6 @@ namespace GMEPPlumbing
           keywordResult = ed.GetKeywords(keywordOptions);
           if (keywordResult.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
-            routeHeightDisplay.Disable();
             return;
           }
           string fsSize = keywordResult.StringResult.Replace("\"", "");
@@ -1727,7 +1794,6 @@ namespace GMEPPlumbing
           keywordResult = ed.GetKeywords(keywordOptions);
           if (keywordResult.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
-            routeHeightDisplay.Disable();
             return;
           }
           string coStyle = keywordResult.StringResult.Replace("\"", "");
@@ -1741,7 +1807,41 @@ namespace GMEPPlumbing
           );
         }
       }
+      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the vertical route from the floor (in feet): ");
+      pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
+      double routeHeight = 0;
+      while (true) {
+        try {
+          PromptDoubleResult pdr = ed.GetDouble(pdo);
+          if (pdr.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+          }
+          if (pdr.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+            continue;
+          }
+          routeHeight = pdr.Value;
+          // GetHeightLimits returns Tuple<double, double> (min, max)
+          var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+          double minHeight = heightLimits.Item1;
+          double maxHeight = heightLimits.Item2;
+          if (routeHeight < minHeight || routeHeight > maxHeight) {
+            ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
+            pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
+            continue;
+          }
+          break; // Valid input
+        }
+        catch (System.Exception ex) {
+          ed.WriteMessage($"\nError: {ex.Message}");
+          continue;
+        }
+      }
+      double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
 
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       if (!String.IsNullOrEmpty(selectedFixtureType.BlockName)) {
         ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
@@ -1863,10 +1963,6 @@ namespace GMEPPlumbing
     public void CreatePlumbingSource() {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
-      double zIndex = (CADObjectCommands.GetPlumbingRouteHeight() + CADObjectCommands.ActiveFloorHeight) * 12;
-
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(CADObjectCommands.GetPlumbingRouteHeight(), CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       doc = Application.DocumentManager.MdiActiveDocument;
       db = doc.Database;
@@ -1887,7 +1983,6 @@ namespace GMEPPlumbing
       PromptResult keywordResult = ed.GetKeywords(keywordOptions);
       if (keywordResult.Status != PromptStatus.OK) {
         ed.WriteMessage("\nOperation cancelled.");
-        routeHeightDisplay.Disable();
         return;
       }
 
@@ -1901,15 +1996,52 @@ namespace GMEPPlumbing
       }
 
       if (selectedSourceType.Type == "Water Heater") {
-        routeHeightDisplay.Disable();
         ed.Command("PlumbingFixture", "WH");
         return;
       }
       if (selectedSourceType.Type == "Insta-hot Water Heater") {
-        routeHeightDisplay.Disable();
         ed.Command("PlumbingFixture", "IWH");
         return;
       }
+
+      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the source from the floor (in feet): ");
+      pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
+
+      double routeHeight = 0;
+      while (true) {
+        try {
+          PromptDoubleResult pdr = ed.GetDouble(pdo);
+          if (pdr.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+          }
+          if (pdr.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+            continue;
+          }
+
+          routeHeight = pdr.Value;
+          // GetHeightLimits returns Tuple<double, double> (min, max)
+          var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+          double minHeight = heightLimits.Item1;
+          double maxHeight = heightLimits.Item2;
+
+          if (routeHeight < minHeight || routeHeight > maxHeight) {
+            ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
+            pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
+            continue;
+          }
+          break; // Valid input
+        }
+        catch (System.Exception ex) {
+          ed.WriteMessage($"\nError: {ex.Message}");
+          continue;
+        }
+      }
+      double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
+
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       ed.WriteMessage("\nSelect base point for plumbing source");
       ObjectId blockId;
@@ -3287,7 +3419,7 @@ namespace GMEPPlumbing
 
       string viewNameText = $"View: {_viewName}";
       string floorText = $"Floor: {_floor}";
-      string routeHeightText = $"Route Height: {_routeHeight:0.##} ft";
+      string routeHeightText = $"Height: {_routeHeight:0.##} ft";
 
       double textHeight = view.Height / 70;
       double lineSpacing = textHeight * 1.2;
