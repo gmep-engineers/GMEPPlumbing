@@ -212,6 +212,7 @@ namespace GMEPPlumbing {
     public double StartHeight;
     public double Length;
     public int NodeTypeId;
+    public double Width;
 
     public PlumbingVerticalRoute(
       string id,
@@ -223,7 +224,8 @@ namespace GMEPPlumbing {
       string basePointId,
       double startHeight,
       double length,
-      int nodeTypeId
+      int nodeTypeId,
+      double width
     ) {
       Id = id;
       ProjectId = projectId;
@@ -235,6 +237,7 @@ namespace GMEPPlumbing {
       Length = length;
       NodeTypeId = nodeTypeId;
       Type = type;
+      Width = width;
     }
   }
 }

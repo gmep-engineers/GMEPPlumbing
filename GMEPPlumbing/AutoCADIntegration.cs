@@ -431,6 +431,18 @@ namespace GMEPPlumbing
           ed.WriteMessage("\nInvalid route type selected.");
           return;
       }
+
+      PromptDoubleOptions pdo3 = new PromptDoubleOptions("\nEnter the width of the pipe of the vertical route (in inches): ");
+      pdo3.AllowNegative = false;
+      pdo3.AllowZero = false;
+      pdo3.DefaultValue = 2;
+      PromptDoubleResult pdr3 = ed.GetDouble(pdo3);
+      if (pdr3.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        return;
+      }
+      double pipeWidth = pdr3.Value;
+
       if (routeHeight == null) {
         PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the vertical route from the floor (in feet): ");
         pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
@@ -708,6 +720,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "start_height") {
               prop.Value = routeHeight; 
             }
+            if (prop.PropertyName == "width") {
+              prop.Value = pipeWidth;
+            }
           }
 
           // Set the vertical route ID
@@ -745,6 +760,9 @@ namespace GMEPPlumbing
               }
               if (prop.PropertyName == "length") {
                 prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
+              }
+              if (prop.PropertyName == "width") {
+                prop.Value = pipeWidth;
               }
             }
           }
@@ -817,6 +835,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "start_height") {
               prop.Value = height;
             }
+            if (prop.PropertyName == "width") {
+              prop.Value = pipeWidth;
+            }
           }
           tr.Commit();
         }
@@ -868,6 +889,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "start_height") {
               prop.Value = routeHeight;
             }
+            if (prop.PropertyName == "width") {
+              prop.Value = pipeWidth;
+            }
           }
           tr.Commit();
         }
@@ -903,6 +927,9 @@ namespace GMEPPlumbing
               }
               if (prop.PropertyName == "length") {
                 prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
+              }
+              if (prop.PropertyName == "width") {
+                prop.Value = pipeWidth;
               }
             }
           }
@@ -973,6 +1000,9 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "start_height") {
               prop.Value = height;
+            }
+            if (prop.PropertyName == "width") {
+              prop.Value = pipeWidth;
             }
           }
           tr.Commit();
@@ -1112,6 +1142,9 @@ namespace GMEPPlumbing
               else if (direction == "Down" || direction == "DownToFloor") {
                 prop.Value = routeHeight;
               }
+            }
+            if (prop.PropertyName == "width") {
+              prop.Value = pipeWidth;
             }
           }
           tr.Commit();
@@ -3005,6 +3038,7 @@ namespace GMEPPlumbing
                       double pointY = 0;
                       double startHeight = 0;
                       double length = 0;
+                      double width = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
 
@@ -3028,6 +3062,9 @@ namespace GMEPPlumbing
                         }
                         if (prop.PropertyName == "length") {
                           length = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "width") {
+                          width = Convert.ToDouble(prop.Value);
                         }
                       }
                       if (Id != "0") {
@@ -3077,7 +3114,8 @@ namespace GMEPPlumbing
                           BasePointId,
                           startHeight,
                           length,
-                          nodeTypeId
+                          nodeTypeId,
+                          width
                         );
                         routes.Add(route);
                       }

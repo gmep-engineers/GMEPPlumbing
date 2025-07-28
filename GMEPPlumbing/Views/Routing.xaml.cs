@@ -151,7 +151,8 @@ namespace GMEPPlumbing.Views
                     vr.BasePointId,
                     vr.StartHeight,
                     vr.Length,
-                    vr.NodeTypeId
+                    vr.NodeTypeId,
+                    vr.Width
                 );
                 newFullRoute.RouteItems.Add(copy);
               }
