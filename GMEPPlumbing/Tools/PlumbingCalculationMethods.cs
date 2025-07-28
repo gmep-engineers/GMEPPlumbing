@@ -108,7 +108,8 @@ namespace GMEPPlumbing {
            route.Type,
            route.StartPoint,
            getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value),
-           route.BasePointId
+           route.BasePointId,
+           route.Width
           );
           routeObjectsTemp.Add(adjustedRoute);
           TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
@@ -136,7 +137,8 @@ namespace GMEPPlumbing {
           verticalRoute.BasePointId,
           verticalRoute.StartHeight,
           newLength2,
-          verticalRoute.NodeTypeId
+          verticalRoute.NodeTypeId,
+          verticalRoute.Width
         );
         if (adjustedRoute.NodeTypeId == 3) {
           adjustedRoute.Position = verticalRoute.Position;
@@ -170,7 +172,8 @@ namespace GMEPPlumbing {
           verticalRoute.BasePointId,
           verticalRoute.StartHeight,
           newLength2,
-          verticalRoute.NodeTypeId
+          verticalRoute.NodeTypeId,
+          verticalRoute.Width
         );
         if (adjustedRoute.NodeTypeId != 3) {
           adjustedRoute.Position = verticalRoute.Position;
@@ -266,7 +269,8 @@ namespace GMEPPlumbing {
           route.BasePointId,
           route.StartHeight,
           newLength,
-          route.NodeTypeId
+          route.NodeTypeId,
+          route.Width
         );
         if (isUpward != isUpRoute) {
           adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
@@ -396,7 +400,8 @@ namespace GMEPPlumbing {
                 route.Type,
                 closestPoint, // new start point
                 route.EndPoint,
-                route.BasePointId
+                route.BasePointId,
+                route.Width
             );
             result[adjustedRoute] = targetRoute.StartPoint.DistanceTo(targetRoute.EndPoint);
             continue;
@@ -418,7 +423,8 @@ namespace GMEPPlumbing {
                 route.Type,
                 closestPoint, // new start point
                 route.EndPoint,
-                route.BasePointId
+                route.BasePointId,
+                route.Width
             );
             result[adjustedRoute] = segLen;
             continue;
@@ -435,7 +441,8 @@ namespace GMEPPlumbing {
                 route.Type,
                 intersectionPoint, // new start point
                 route.EndPoint,
-                route.BasePointId
+                route.BasePointId,
+                route.Width
             );
           result[adjustedRoute] = segLen;
         }

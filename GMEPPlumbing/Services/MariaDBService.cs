@@ -803,8 +803,8 @@ namespace GMEPPlumbing.Services
         if (routes.Count > 0) {
           string upsertQuery = @"
               INSERT INTO plumbing_horizontal_routes
-              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, start_pos_z, end_pos_z, base_point_id, type)
-              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @startPosZ, @endPosZ, @basePointId, @type)
+              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, start_pos_z, end_pos_z, base_point_id, type, width)
+              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @startPosZ, @endPosZ, @basePointId, @type, @width)
               ON DUPLICATE KEY UPDATE
                   start_pos_x = @startPosX,
                   end_pos_x = @endPosX,
@@ -813,7 +813,8 @@ namespace GMEPPlumbing.Services
                   start_pos_z = @startPosZ,
                   end_pos_z = @endPosZ,
                   base_point_id = @basePointId,
-                  type = @type
+                  type = @type,
+                  width = @width
           ";
           foreach (var route in routes) {
             MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -827,6 +828,7 @@ namespace GMEPPlumbing.Services
             command.Parameters.AddWithValue("@endPosZ", route.EndPoint.Z);
             command.Parameters.AddWithValue("@basePointId", route.BasePointId);
             command.Parameters.AddWithValue("@type", route.Type);
+            command.Parameters.AddWithValue("@width", route.Width);
             await command.ExecuteNonQueryAsync();
           }
         }
@@ -866,8 +868,8 @@ namespace GMEPPlumbing.Services
       if (routes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_vertical_routes
-              (id, project_id, pos_x, pos_y, pos_z, connection_pos_x, connection_pos_y, connection_pos_z, vertical_route_id, base_point_id, start_height, length, node_type_id, type)
-              VALUES (@id, @projectId, @posX, @posY, @posZ, @connectionPosX, @connectionPosY, @connectionPosZ, @verticalRouteId, @basePointId, @startHeight, @length, @nodeTypeId, @type)
+              (id, project_id, pos_x, pos_y, pos_z, connection_pos_x, connection_pos_y, connection_pos_z, vertical_route_id, base_point_id, start_height, length, node_type_id, type, width)
+              VALUES (@id, @projectId, @posX, @posY, @posZ, @connectionPosX, @connectionPosY, @connectionPosZ, @verticalRouteId, @basePointId, @startHeight, @length, @nodeTypeId, @type, @width)
               ON DUPLICATE KEY UPDATE
               pos_x = @posX,
               pos_y = @posy,
@@ -880,7 +882,8 @@ namespace GMEPPlumbing.Services
               start_height = @startHeight,
               length = @length,
               node_type_id = @nodeTypeId,
-              type = @type
+              type = @type,
+              width = @width
           ";
         foreach (var route in routes) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -898,6 +901,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@length", route.Length);
           command.Parameters.AddWithValue("@nodeTypeId", route.NodeTypeId);
           command.Parameters.AddWithValue("@type", route.Type);
+          command.Parameters.AddWithValue("@width", route.Width);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1103,7 +1107,8 @@ namespace GMEPPlumbing.Services
             reader.GetDouble("end_pos_y"),
             reader.GetDouble("end_pos_z")
           ),
-         reader.GetString("base_point_id")
+         reader.GetString("base_point_id"),
+         reader.GetDouble("width")
         );
         routes.Add(route);
       }
@@ -1140,7 +1145,8 @@ namespace GMEPPlumbing.Services
           reader.GetString("base_point_id"),
           reader.GetDouble("start_height"),
           reader.GetDouble("length"), 
-          reader.GetInt32("node_type_id")
+          reader.GetInt32("node_type_id"),
+          reader.GetDouble("width")
         );
         routes.Add(verticalRoute);
       }
