@@ -608,6 +608,7 @@ namespace GMEPPlumbing
   {
     private Vector3d _direction;
     private Point3d _rotationRefPoint;
+    private double _baseRotation;
     private readonly BlockReference _blockRef;
 
     public RotateJig(BlockReference blockRef)
@@ -615,6 +616,7 @@ namespace GMEPPlumbing
     {
       _blockRef = blockRef;
       _rotationRefPoint = blockRef.Position;
+      _baseRotation = blockRef.Rotation;
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
@@ -643,7 +645,8 @@ namespace GMEPPlumbing
     {
       if (_direction.Length > Tolerance.Global.EqualPoint)
       {
-        ((BlockReference)Entity).Rotation = Math.Atan2(_direction.Y, _direction.X) - Math.PI / 2;
+        double angle = Math.Atan2(_direction.Y, _direction.X) - Math.PI / 2;
+        ((BlockReference)Entity).Rotation = _baseRotation + angle;
       }
       return true;
     }
