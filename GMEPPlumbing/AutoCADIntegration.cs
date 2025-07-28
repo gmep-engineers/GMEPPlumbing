@@ -972,7 +972,9 @@ namespace GMEPPlumbing
         if (direction == null) {
           PromptKeywordOptions pko3 = new PromptKeywordOptions("\nUp or Down?");
           pko3.Keywords.Add("Up");
+          pko3.Keywords.Add("UpToCeiling");
           pko3.Keywords.Add("Down");
+          pko3.Keywords.Add("DownToFloor");
 
           PromptResult pr3 = ed.GetKeywords(pko3);
           if (pr3.Status != PromptStatus.OK) {
@@ -982,9 +984,16 @@ namespace GMEPPlumbing
           }
           direction = pr3.StringResult;
         }
-        if (length == null) {
+        if (length == null && (direction == "Up" || direction == "Down" || (direction == "DownToFloor" && CADObjectCommands.ActiveFloor == 1) || (direction == "UpToCeiling" && CADObjectCommands.ActiveFloor == floorHeights.Values.Max()))){
+          string tempDirection = direction;
+          if (tempDirection == "UpToCeiling") {
+            tempDirection = "Up";
+          }
+          else if (tempDirection == "DownToFloor") {
+            tempDirection = "Down";
+          }
           PromptDoubleOptions pdo2 = new PromptDoubleOptions(
-            $"\nHow Far {direction}(Ft)?"
+            $"\nHow Far {tempDirection}(Ft)?"
           );
           pdo2.AllowNegative = false;
           pdo2.AllowZero = false;
@@ -1027,6 +1036,18 @@ namespace GMEPPlumbing
           }
         }
 
+        if (direction == "UpToCeiling") {
+          double heightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item2;
+          double height = (double)routeHeight;
+          length = heightLimit - height;
+        }
+        else if (direction == "DownToFloor") {
+          double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item1;
+          double height = (double)routeHeight;
+          length = height - lowerHeightLimit;
+        }
+        
+
         Point3d labelPoint3 = Point3d.Origin;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           //delete previous start pipe
@@ -1041,6 +1062,9 @@ namespace GMEPPlumbing
           BlockTableRecord curSpace3 = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
           BlockReference upBlockRef3 = new BlockReference(newUpPointLocation3, blockDef3.ObjectId);
+          if (direction == "Up" || direction == "UpToCeiling") {
+            upBlockRef3.Rotation = Math.PI;
+          }
           RotateJig rotateJig = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
           if (rotatePromptResult.Status != PromptStatus.OK) {
@@ -1070,10 +1094,10 @@ namespace GMEPPlumbing
               prop.Value = length;
             }
             if (prop.PropertyName == "start_height") {
-              if (direction == "Up") {
+              if (direction == "Up" || direction == "UpToCeiling") {
                 prop.Value = routeHeight + length;
               }
-              else if (direction == "Down") {
+              else if (direction == "Down" || direction == "DownToFloor") {
                 prop.Value = routeHeight;
               }
             }
@@ -3378,15 +3402,14 @@ namespace GMEPPlumbing
 
     [CommandMethod("UPTOCEILING")]
     public async void UpToCeiling() {
-      string guid = CADObjectCommands.GetActiveView();
-      Tuple<double, double> heightLimit = CADObjectCommands.GetHeightLimits(guid);
-      //VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "UpToCeiling");
+      CADObjectCommands.GetActiveView();
+      VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "UpToCeiling");
     }
 
     [CommandMethod("DOWNTOFLOOR")]
     public async void DownToFloor() {
-      //CADObjectCommands.GetActiveView();
-      //VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "DownToFloor");
+      CADObjectCommands.GetActiveView();
+      VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "DownToFloor");
     }
 
   }
