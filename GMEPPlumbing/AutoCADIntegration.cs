@@ -3130,6 +3130,33 @@ namespace GMEPPlumbing
       }
       return routes;
     }
+    [CommandMethod("ToggleFixtureVisibility")]
+    public static void ToggleFixtureVisibility() {
+      PromptSelectionOptions options = new PromptSelectionOptions();
+      PromptSelectionResult result = Application.DocumentManager.MdiActiveDocument.Editor.GetSelection(options);
+
+      PromptKeywordOptions keywordOptions = new PromptKeywordOptions("\nSelect visibility option: ");
+      keywordOptions.Keywords.Add("Visible");
+      keywordOptions.Keywords.Add("Hidden");
+      PromptResult keywordResult = Application.DocumentManager.MdiActiveDocument.Editor.GetKeywords(keywordOptions);
+      if (keywordResult.Status != PromptStatus.OK) {
+        return;
+      }
+      string visibilityOption = keywordResult.StringResult;
+      foreach (SelectedObject selectedObject in result.Value) {
+        using (Transaction tr = Application.DocumentManager.MdiActiveDocument.Database.TransactionManager.StartTransaction()) {
+          BlockReference blockRef = tr.GetObject(selectedObject.ObjectId, OpenMode.ForWrite) as BlockReference;
+          if (blockRef.DynamicBlockReferencePropertyCollection != null) {
+            foreach (DynamicBlockReferenceProperty prop in blockRef.DynamicBlockReferencePropertyCollection) {
+              if (prop.PropertyName == "Visibility") {
+                prop.Value = visibilityOption;
+              }
+            }
+          }
+          tr.Commit();
+        }
+      }
+    }
   
     public static List<PlumbingPlanBasePoint> GetPlumbingBasePointsFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
