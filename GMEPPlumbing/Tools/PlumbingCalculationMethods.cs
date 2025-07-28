@@ -108,7 +108,8 @@ namespace GMEPPlumbing {
            route.Type,
            route.StartPoint,
            getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value),
-           route.BasePointId
+           route.BasePointId,
+           route.Width
           );
           routeObjectsTemp.Add(adjustedRoute);
           TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
@@ -396,7 +397,8 @@ namespace GMEPPlumbing {
                 route.Type,
                 closestPoint, // new start point
                 route.EndPoint,
-                route.BasePointId
+                route.BasePointId,
+                route.Width
             );
             result[adjustedRoute] = targetRoute.StartPoint.DistanceTo(targetRoute.EndPoint);
             continue;
@@ -418,7 +420,8 @@ namespace GMEPPlumbing {
                 route.Type,
                 closestPoint, // new start point
                 route.EndPoint,
-                route.BasePointId
+                route.BasePointId,
+                route.Width
             );
             result[adjustedRoute] = segLen;
             continue;
@@ -435,7 +438,8 @@ namespace GMEPPlumbing {
                 route.Type,
                 intersectionPoint, // new start point
                 route.EndPoint,
-                route.BasePointId
+                route.BasePointId,
+                route.Width
             );
           result[adjustedRoute] = segLen;
         }
