@@ -18,6 +18,7 @@ namespace GMEPPlumbing {
     public int Number;
     public string BasePointId;
     public string BlockName;
+    public int FlowTypeId;
     public PlumbingFixture(
       string id,
       string projectId,
@@ -27,7 +28,8 @@ namespace GMEPPlumbing {
       string typeAbbreviation,
       int number,
       string basePointId,
-      string blockName
+      string blockName,
+      int flowTypeId
     ) {
       Id = id;
       ProjectId = projectId;
@@ -38,6 +40,7 @@ namespace GMEPPlumbing {
       Number = number;
       BasePointId = basePointId;
       BlockName = blockName;
+      FlowTypeId = flowTypeId;
     }
   }
   

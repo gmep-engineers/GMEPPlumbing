@@ -1056,14 +1056,15 @@ namespace GMEPPlumbing.Services
       if (fixtures.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_fixtures
-              (id, project_id, catalog_id, number, base_point_id, type_abbreviation, rotation, block_name, pos_x, pos_y, pos_z)
-              VALUES (@id, @projectId, @catalogId, @number, @basePointId, @typeAbbreviation, @rotation, @blockName, @posX, @posY, @posZ)
+              (id, project_id, catalog_id, number, base_point_id, type_abbreviation, rotation, block_name, flow_type_id, pos_x, pos_y, pos_z)
+              VALUES (@id, @projectId, @catalogId, @number, @basePointId, @typeAbbreviation, @rotation, @blockName, @flowTypeId, @posX, @posY, @posZ)
               ON DUPLICATE KEY UPDATE
                   pos_x = @posX,
                   pos_y = @posY,
                   pos_z = @posZ,
                   rotation = @rotation,
-                  number = @number
+                  number = @number,
+                  flow_type_id = @flowTypeId
           ";
         foreach (var component in fixtures.Select(list => list)) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -1078,6 +1079,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@posX", component.Position.X);
           command.Parameters.AddWithValue("@posY", component.Position.Y);
           command.Parameters.AddWithValue("@posZ", component.Position.Z);
+          command.Parameters.AddWithValue("@flowTypeId", component.FlowTypeId);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1211,7 +1213,8 @@ namespace GMEPPlumbing.Services
           reader.GetString("type_abbreviation"),
           reader.GetInt32("number"),
           reader.GetString("base_point_id"),
-          reader.GetString("block_name")
+          reader.GetString("block_name"),
+          reader.GetInt32("flow_type_id")
         );
         fixtures.Add(fixture);
       }

@@ -1807,6 +1807,15 @@ namespace GMEPPlumbing
           i => i.Id.ToString() == keywordResultString
         );
       }
+      PromptKeywordOptions keywordOptions2 = new PromptKeywordOptions("");
+      keywordOptions2.Message = "\nSelect the flow type for the fixture:";
+      keywordOptions2.Keywords.Add("Flush Tank");
+      keywordOptions2.Keywords.Add("Flush Valve");
+      keywordOptions2.Keywords.Default = "Flush Tank";
+      keywordOptions2.AllowNone = false;
+      PromptResult keywordResult2 = ed.GetKeywords(keywordOptions2);
+      int flowTypeId = 0;
+      flowTypeId = keywordResult2.StringResult == "Flush Tank" ? 1 : 2;
 
       if (selectedFixtureType.BlockName.Contains("%WHSIZE%")) {
         if (selectedFixtureType.Abbreviation == "WH") {
@@ -1995,6 +2004,9 @@ namespace GMEPPlumbing
                 if (prop.PropertyName == "catalog_id" && selectedCatalogItem != null) {
                   prop.Value = selectedCatalogItem.Id;
                 }
+                if (prop.PropertyName == "flow_type_id") {
+                  prop.Value = flowTypeId;
+                }
               }
               int catalogId = selectedCatalogItem != null ? selectedCatalogItem.Id : 0;
               PlumbingFixture fixture = new PlumbingFixture(
@@ -2006,7 +2018,8 @@ namespace GMEPPlumbing
                 selectedFixtureType.Abbreviation,
                 0,
                 basePointId,
-                blockName
+                blockName,
+                flowTypeId
               );
               foreach (DynamicBlockReferenceProperty prop in pc) {
                 if (prop.PropertyName == "number") {
@@ -2026,7 +2039,8 @@ namespace GMEPPlumbing
               selectedFixtureType.Abbreviation,
               number,
               basePointId,
-              blockName
+              blockName,
+              flowTypeId
             );
 
             
@@ -3413,6 +3427,7 @@ namespace GMEPPlumbing
                       double coldWaterY = 0;
                       int number = 0;
                       int sourceTypeId = 0;
+                      int flowTypeId = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
                         if (prop.PropertyName == "id") {
@@ -3439,6 +3454,9 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "type_id") {
                           sourceTypeId = Convert.ToInt32(prop.Value);
                         }
+                        if (prop.PropertyName == "flow_type_id") {
+                          flowTypeId = Convert.ToInt32(prop.Value);
+                        }
 
                       }
                  
@@ -3462,7 +3480,8 @@ namespace GMEPPlumbing
                           selectedFixtureTypeAbbr,
                           number,
                           basePointId,
-                          name
+                          name,
+                          flowTypeId
                         );
                         
                         fixtures.Add(fixture);
