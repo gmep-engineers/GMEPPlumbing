@@ -78,12 +78,12 @@ namespace GMEPPlumbing {
         }
       }
     }
-    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+    public double TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
       if (!visited.Add(route.Id))
-        return;
+        return 0 ;
 
       if (routeObjects == null)
         routeObjects = new List<Object>();
@@ -95,6 +95,9 @@ namespace GMEPPlumbing {
       var ed = doc.Editor;
 
       ed.WriteMessage($"\nTraversing horizontal route: {route.Id} from {route.StartPoint} to {route.EndPoint}");
+
+      double totalWSFU = 0;
+
       Dictionary<PlumbingHorizontalRoute, double> childRoutes = FindNearbyHorizontalRoutes(route);
       List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
       List<PlumbingFixture> fixtures = FindNearbyFixtures(route);
@@ -146,13 +149,13 @@ namespace GMEPPlumbing {
           adjustedRoute.Length = newLength;
         }
 
-        TraverseVerticalRoute(verticalRoute, entryPointZ, 1, visited, length, routeObjectsTemp);
+        totalWSFU += TraverseVerticalRoute(verticalRoute, entryPointZ, 1, visited, length, routeObjectsTemp);
         routeObjectsTemp.Add(adjustedRoute);
         length += adjustedRoute.Length * 12;
 
         for (int i = matchingKey + 1; i <= verticalRouteObjects.Keys.Max(); i++) {
           if (!verticalRouteObjects.ContainsKey(i)) continue;
-          TraverseVerticalRoute(verticalRouteObjects[i], verticalRouteObjects[i].Position.Z, 2, visited, length, routeObjectsTemp);
+          totalWSFU += TraverseVerticalRoute(verticalRouteObjects[i], verticalRouteObjects[i].Position.Z, 2, visited, length, routeObjectsTemp);
           routeObjectsTemp.Add(verticalRouteObjects[i]);
           length += verticalRouteObjects[i].Length * 12;
         }
@@ -191,6 +194,7 @@ namespace GMEPPlumbing {
         }
       }
       foreach(var fixture in fixtures) {
+        totalWSFU += GetFixtureWSFU(fixture);
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
         routeObjectsTemp.Add(route);
         routeObjectsTemp.Add(fixture);
@@ -216,13 +220,16 @@ namespace GMEPPlumbing {
         int inches = (int)Math.Round(lengthInInches % 12);
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
+      route.DownstreamWSFU = totalWSFU;
+
+      return totalWSFU;
     }
-    public void TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, int direction, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+    public double TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, int direction, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
       if (!visited.Add(route.Id))
-        return;
+        return 0 ;
 
       if (routeObjects == null)
         routeObjects = new List<Object>();
@@ -239,6 +246,7 @@ namespace GMEPPlumbing {
       }
     
       ed.WriteMessage($"\nTraversing vertical route: {route.Id} at position {route.Position}");
+      double totalWSFU = 0;
 
       List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
         .Where(r => r.Type == route.Type && r.BasePointId == route.BasePointId && (r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || (routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= startHeight && r.EndPoint.Z <= endHeight)))
@@ -279,8 +287,9 @@ namespace GMEPPlumbing {
         }
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
-        TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length*12), routeObjectsTemp);
+        totalWSFU += TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length*12), routeObjectsTemp);
       }
+      return totalWSFU;
     }
     private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
       var direction = end - start;
@@ -569,6 +578,14 @@ namespace GMEPPlumbing {
     public static double WSFUToGPM(double wsfu) {
       if (wsfu <= 0) return 0;
       return Math.Round(2.98 * Math.Pow(wsfu, 0.287), 2);
+    }
+    private double GetFixtureWSFU(PlumbingFixture fixture) {
+      // Find the catalog item for this fixture
+      var catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemsByType(fixture.CatalogId)
+          .FirstOrDefault();
+      if (catalogItem != null)
+        return (double)catalogItem.FixtureDemand;
+      return 0;
     }
   }
 }

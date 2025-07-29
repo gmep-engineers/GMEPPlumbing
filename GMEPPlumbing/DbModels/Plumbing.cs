@@ -183,6 +183,7 @@ namespace GMEPPlumbing {
     public Point3d EndPoint;
     public string BasePointId;
     public double Width;
+    public double DownstreamWSFU { get; set; } 
     public PlumbingHorizontalRoute(
       string id,
       string projectId,
