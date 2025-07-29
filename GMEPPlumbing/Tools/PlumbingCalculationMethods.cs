@@ -566,5 +566,9 @@ namespace GMEPPlumbing {
 
       return new SortedDictionary<int, PlumbingVerticalRoute>(dict);
     }
+    public static double WSFUToGPM(double wsfu) {
+      if (wsfu <= 0) return 0;
+      return Math.Round(2.98 * Math.Pow(wsfu, 0.287), 2);
+    }
   }
 }
