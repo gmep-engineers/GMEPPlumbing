@@ -138,7 +138,8 @@ namespace GMEPPlumbing.Views
                     hr.BasePointId,
                     hr.Width
                 );
-                newFullRoute.RouteItems.Add(copy);
+              copy.DownstreamWSFU = hr.DownstreamWSFU;
+              newFullRoute.RouteItems.Add(copy);
               }
               else if (item is PlumbingVerticalRoute vr) {
                 var copy = new PlumbingVerticalRoute(
@@ -264,7 +265,7 @@ namespace GMEPPlumbing.Views
 
           var textModel = new TextVisual3D {
             Position = new Point3D(midX, midY, midZ),
-            Text = $"{feet}' {inches}\"",
+            Text = $"{feet}' {inches}\" - WSFU: {horizontalRoute.DownstreamWSFU}",
             Height = 8,
             Foreground = Brushes.Black,
             Background = Brushes.White,

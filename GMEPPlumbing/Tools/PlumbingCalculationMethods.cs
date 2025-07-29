@@ -580,11 +580,16 @@ namespace GMEPPlumbing {
       return Math.Round(2.98 * Math.Pow(wsfu, 0.287), 2);
     }
     private double GetFixtureWSFU(PlumbingFixture fixture) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
       // Find the catalog item for this fixture
-      var catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemsByType(fixture.CatalogId)
+      var catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemsById(fixture.CatalogId)
           .FirstOrDefault();
-      if (catalogItem != null)
+      if (catalogItem != null) {
+        ed.WriteMessage($"\nFound catalog item(id {catalogItem.Id}) for fixture {fixture.Id} and with WSFU: {catalogItem.FixtureDemand}");
         return (double)catalogItem.FixtureDemand;
+      }
       return 0;
     }
   }
