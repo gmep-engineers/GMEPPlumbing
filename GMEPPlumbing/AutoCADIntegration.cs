@@ -2086,7 +2086,6 @@ namespace GMEPPlumbing
       if (selectedSourceType == null) {
         selectedSourceType = plumbingSourceTypes.FirstOrDefault(t => t.Type == "Water Meter");
       }
-
       if (selectedSourceType.Type == "Water Heater") {
         ed.Command("PlumbingFixture", "WH");
         return;
@@ -2094,6 +2093,34 @@ namespace GMEPPlumbing
       if (selectedSourceType.Type == "Insta-hot Water Heater") {
         ed.Command("PlumbingFixture", "IWH");
         return;
+      }
+
+      double pressure = 0;
+      if (selectedSourceType.Type == "Water Meter" || selectedSourceType.Type == "Water Meter") {
+        PromptDoubleOptions pdo2 = new PromptDoubleOptions("\nEnter the PSI of the source");
+        pdo2.DefaultValue = 60;
+        pdo2.AllowNone = false;
+        pdo2.AllowNegative = false;
+        pdo2.AllowZero = false;
+        while (true) {
+          try {
+            PromptDoubleResult pdr2 = ed.GetDouble(pdo2);
+            if (pdr2.Status == PromptStatus.Cancel) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            if (pdr2.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+              continue;
+            }
+            pressure = pdr2.Value;
+            break;
+          }
+          catch (System.Exception ex) {
+            ed.WriteMessage($"\nError: {ex.Message}");
+            continue;
+          }
+        }
       }
 
       PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the source from the floor (in feet): ");
@@ -2197,6 +2224,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "base_point_id") {
               prop.Value = basePointGUID;
             }
+            if (prop.PropertyName == "pressure") {
+              prop.Value = pressure;
+            }
           }
           tr.Commit();
         }
@@ -2205,7 +2235,8 @@ namespace GMEPPlumbing
           projectId,
           point,
           selectedSourceType.Id,
-          basePointGUID
+          basePointGUID,
+          pressure
         );
         //MariaDBService.CreatePlumbingSource(plumbingSource);
         MakePlumbingSourceLabel(plumbingSource, selectedSourceType);
@@ -3278,6 +3309,7 @@ namespace GMEPPlumbing
                       int Floor = 0;
                       double hotWaterX = 0;
                       double hotWaterY = 0;
+                      double pressure = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
                         if (prop.PropertyName == "id") {
@@ -3295,6 +3327,10 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "Hot Water Y") {
                           hotWaterY = Convert.ToDouble(prop.Value);
                         }
+                        if (prop.PropertyName == "pressure") {
+                          pressure = Convert.ToDouble(prop.Value);
+                        }
+
                       }
                       if (typeId == 4) {
                         continue;
@@ -3318,7 +3354,8 @@ namespace GMEPPlumbing
                           ProjectId,
                           position,
                           typeId,
-                          basePointId
+                          basePointId,
+                          pressure
                         );
                         sources.Add(source);
                       }
