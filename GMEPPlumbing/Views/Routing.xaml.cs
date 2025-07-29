@@ -136,7 +136,7 @@ namespace GMEPPlumbing.Views
                     new Point3d(hr.StartPoint.X, hr.StartPoint.Y, hr.StartPoint.Z),
                     new Point3d(hr.EndPoint.X, hr.EndPoint.Y, hr.EndPoint.Z),
                     hr.BasePointId,
-                    hr.Width
+                    hr.PipeType
                 );
                 newFullRoute.RouteItems.Add(copy);
               }
@@ -152,7 +152,7 @@ namespace GMEPPlumbing.Views
                     vr.StartHeight,
                     vr.Length,
                     vr.NodeTypeId,
-                    vr.Width
+                    vr.PipeType
                 );
                 newFullRoute.RouteItems.Add(copy);
               }

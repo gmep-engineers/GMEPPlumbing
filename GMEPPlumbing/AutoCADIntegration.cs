@@ -146,17 +146,12 @@ namespace GMEPPlumbing
           ed.WriteMessage("\nInvalid route type selected.");
           return;
       }
-
-      PromptDoubleOptions pdo2 = new PromptDoubleOptions("\nEnter the width of the pipe of the horizontal route (in inches): ");
-      pdo2.AllowNegative = false;
-      pdo2.AllowZero = false;
-      pdo2.DefaultValue = 2;
-      PromptDoubleResult pdr2 = ed.GetDouble(pdo2);
-      if (pdr2.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nCommand cancelled.");
-        return;
-      }
-      double pipeWidth = pdr2.Value;
+      PromptKeywordOptions pko3 = new PromptKeywordOptions("\nSelect Pipe Type: ");
+      pko3.Keywords.Add("PEX");
+      pko3.Keywords.Add("CPVC");
+      pko3.Keywords.Add("Copper");
+      PromptResult pr3 = ed.GetKeywords(pko3);
+      string pipeType = pr3.StringResult;
 
       PromptKeywordOptions pko2 = new PromptKeywordOptions("\nForward or Backward?");
       pko2.Keywords.Add("Forward");
@@ -254,7 +249,7 @@ namespace GMEPPlumbing
         tr2.Commit();
       }
       routeGUIDS.Add(LineGUID2);
-      AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeWidth);
+      AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType);
       AddArrowsToLine(addedLineId2, LineGUID2);
 
       while (true) {
@@ -356,7 +351,7 @@ namespace GMEPPlumbing
           tr.Commit();
         }
         routeGUIDS.Add(LineGUID);
-        AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeWidth);
+        AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType);
         AddArrowsToLine(addedLineId, LineGUID);
       }
       routeHeightDisplay.Disable();
@@ -431,17 +426,13 @@ namespace GMEPPlumbing
           ed.WriteMessage("\nInvalid route type selected.");
           return;
       }
+      PromptKeywordOptions pko2 = new PromptKeywordOptions("\nSelect Pipe Type: ");
+      pko2.Keywords.Add("PEX");
+      pko2.Keywords.Add("CPVC");
+      pko2.Keywords.Add("Copper");
+      PromptResult pr2 = ed.GetKeywords(pko2);
+      string pipeType  = pr2.StringResult;
 
-      PromptDoubleOptions pdo3 = new PromptDoubleOptions("\nEnter the width of the pipe of the vertical route (in inches): ");
-      pdo3.AllowNegative = false;
-      pdo3.AllowZero = false;
-      pdo3.DefaultValue = 2;
-      PromptDoubleResult pdr3 = ed.GetDouble(pdo3);
-      if (pdr3.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nCommand cancelled.");
-        return;
-      }
-      double pipeWidth = pdr3.Value;
 
       if (routeHeight == null) {
         PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the vertical route from the floor (in feet): ");
@@ -720,8 +711,8 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "start_height") {
               prop.Value = routeHeight; 
             }
-            if (prop.PropertyName == "width") {
-              prop.Value = pipeWidth;
+            if (prop.PropertyName == "pipe_type") {
+              prop.Value = pipeType;
             }
           }
 
@@ -761,8 +752,8 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "length") {
                 prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
               }
-              if (prop.PropertyName == "width") {
-                prop.Value = pipeWidth;
+              if (prop.PropertyName == "pipe_type") {
+                prop.Value = pipeType;
               }
             }
           }
@@ -835,8 +826,8 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "start_height") {
               prop.Value = height;
             }
-            if (prop.PropertyName == "width") {
-              prop.Value = pipeWidth;
+            if (prop.PropertyName == "pipe_type") {
+              prop.Value = pipeType;
             }
           }
           tr.Commit();
@@ -889,8 +880,8 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "start_height") {
               prop.Value = routeHeight;
             }
-            if (prop.PropertyName == "width") {
-              prop.Value = pipeWidth;
+            if (prop.PropertyName == "pipe_type") {
+              prop.Value = pipeType;
             }
           }
           tr.Commit();
@@ -928,8 +919,8 @@ namespace GMEPPlumbing
               if (prop.PropertyName == "length") {
                 prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
               }
-              if (prop.PropertyName == "width") {
-                prop.Value = pipeWidth;
+              if (prop.PropertyName == "pipe_type") {
+                prop.Value = pipeType;
               }
             }
           }
@@ -1001,8 +992,8 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "start_height") {
               prop.Value = height;
             }
-            if (prop.PropertyName == "width") {
-              prop.Value = pipeWidth;
+            if (prop.PropertyName == "pipe_type") {
+              prop.Value = pipeType;
             }
           }
           tr.Commit();
@@ -1143,8 +1134,8 @@ namespace GMEPPlumbing
                 prop.Value = routeHeight;
               }
             }
-            if (prop.PropertyName == "width") {
-              prop.Value = pipeWidth;
+            if (prop.PropertyName == "pipe_type") {
+              prop.Value = pipeType;
             }
           }
           tr.Commit();
@@ -1478,7 +1469,7 @@ namespace GMEPPlumbing
       }
     }
 
-    private void AttachRouteXData(ObjectId lineId, string id, string basePointId, double width) {
+    private void AttachRouteXData(ObjectId lineId, string id, string basePointId, string pipeType) {
       ed.WriteMessage("Id: " + id + " basePointId: " + basePointId);
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
@@ -1495,7 +1486,7 @@ namespace GMEPPlumbing
           new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
           new TypedValue(1000, id),
           new TypedValue(1000, basePointId),
-          new TypedValue(1040, width)
+          new TypedValue(1000, pipeType)
         );
         line.XData = rb;
         rb.Dispose();
@@ -3018,7 +3009,7 @@ namespace GMEPPlumbing
               if (xdata != null && xdata.AsArray().Length > 2) {
                 TypedValue[] values = xdata.AsArray();
 
-                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), (double)values[3].Value);
+                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), values[3].Value.ToString());
                 routes.Add(route);
               }
             }
@@ -3070,6 +3061,7 @@ namespace GMEPPlumbing
                       double startHeight = 0;
                       double length = 0;
                       double width = 0;
+                      string pipeType = string.Empty;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
 
@@ -3094,8 +3086,8 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "length") {
                           length = Convert.ToDouble(prop.Value);
                         }
-                        if (prop.PropertyName == "width") {
-                          width = Convert.ToDouble(prop.Value);
+                        if (prop.PropertyName == "pipe_type") {
+                          pipeType = prop.Value?.ToString();
                         }
                       }
                       if (Id != "0") {
@@ -3146,7 +3138,7 @@ namespace GMEPPlumbing
                           startHeight,
                           length,
                           nodeTypeId,
-                          width
+                          pipeType
                         );
                         routes.Add(route);
                       }
