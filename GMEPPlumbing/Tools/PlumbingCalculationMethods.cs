@@ -49,7 +49,6 @@ namespace GMEPPlumbing {
           var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= 13.0 && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
           foreach (var matchingRoute in matchingRoutes) {
             double fixtureUnits = TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
-            //matchingRoute.FixtureUnits = fixtureUnits;
           }
         }
         ed.WriteMessage("\nPlumbing fixture calculation completed successfully.");
@@ -104,7 +103,13 @@ namespace GMEPPlumbing {
 
       //Fixtures
       foreach (var fixture in fixtures) {
+
+        PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(fixture.CatalogId);
+        ed.WriteMessage($"\nFixture {fixture.Id} has a demand of {catalogItem.FixtureDemand} fixture units.");
+        fixtureUnits += (double)catalogItem.FixtureDemand;
+
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
+        route.FixtureUnits = fixtureUnits;
         routeObjectsTemp.Add(route);
         routeObjectsTemp.Add(fixture);
 
@@ -129,9 +134,7 @@ namespace GMEPPlumbing {
         int inches = (int)Math.Round(lengthInInches % 12);
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
 
-        PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(fixture.CatalogId);
-        ed.WriteMessage($"\nFixture {fixture.Id} has a demand of {catalogItem.FixtureDemand} fixture units.");
-        fixtureUnits += (double)catalogItem.FixtureDemand;
+       
       }
 
       //Vertical Routes
