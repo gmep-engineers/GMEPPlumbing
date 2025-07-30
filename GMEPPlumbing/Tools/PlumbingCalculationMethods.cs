@@ -78,12 +78,12 @@ namespace GMEPPlumbing {
         }
       }
     }
-    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+    public double TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
       if (!visited.Add(route.Id))
-        return;
+        return 0;
 
       if (routeObjects == null)
         routeObjects = new List<Object>();
@@ -99,22 +99,38 @@ namespace GMEPPlumbing {
       List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
       List<PlumbingFixture> fixtures = FindNearbyFixtures(route);
 
-      foreach (var childRoute in childRoutes) {
-        if (childRoute.Key.Id != route.Id) {
-          var routeObjectsTemp = new List<Object>(routeObjects);
-          var adjustedRoute = new PlumbingHorizontalRoute(
-           route.Id,
-           route.ProjectId,
-           route.Type,
-           route.StartPoint,
-           getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value),
-           route.BasePointId,
-           route.PipeType
-          );
-          routeObjectsTemp.Add(adjustedRoute);
-          TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
+      double fixtureUnits = 0;
+
+      foreach (var fixture in fixtures) {
+        List<Object> routeObjectsTemp = new List<Object>(routeObjects);
+        routeObjectsTemp.Add(route);
+        routeObjectsTemp.Add(fixture);
+
+        int typeId = 0;
+        if (routeObjectsTemp[0] is PlumbingSource source) {
+          typeId = source.TypeId;
         }
+
+        double lengthInInches = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+        PlumbingFullRoute fullRoute = new PlumbingFullRoute();
+        fullRoute.Length = lengthInInches;
+        fullRoute.RouteItems = routeObjectsTemp;
+        fullRoute.TypeId = typeId;
+
+        if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
+          FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
+        }
+
+        FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
+
+        int feet = (int)(lengthInInches / 12);
+        int inches = (int)Math.Round(lengthInInches % 12);
+        ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
+
+        PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(fixture.CatalogId);
+        fixtureUnits += (double)catalogItem.FixtureDemand;
       }
+
       foreach (var verticalRoute in verticalRoutes) {
         double length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
@@ -190,32 +206,27 @@ namespace GMEPPlumbing {
           length += verticalRouteObjects[i].Length * 12;
         }
       }
-      foreach (var fixture in fixtures) {
-        List<Object> routeObjectsTemp = new List<Object>(routeObjects);
-        routeObjectsTemp.Add(route);
-        routeObjectsTemp.Add(fixture);
 
-        int typeId = 0;
-        if (routeObjectsTemp[0] is PlumbingSource source) {
-          typeId = source.TypeId;
+      foreach (var childRoute in childRoutes) {
+        if (childRoute.Key.Id != route.Id) {
+          var routeObjectsTemp = new List<Object>(routeObjects);
+          var adjustedRoute = new PlumbingHorizontalRoute(
+           route.Id,
+           route.ProjectId,
+           route.Type,
+           route.StartPoint,
+           getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value),
+           route.BasePointId,
+           route.PipeType
+          );
+          
+          fixtureUnits += TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
+          //add fixutre units from downstream
+          routeObjectsTemp.Add(adjustedRoute);
         }
-
-        double lengthInInches = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
-        PlumbingFullRoute fullRoute = new PlumbingFullRoute();
-        fullRoute.Length = lengthInInches;
-        fullRoute.RouteItems = routeObjectsTemp;
-        fullRoute.TypeId = typeId;
-
-        if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
-          FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
-        }
-
-        FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
-
-        int feet = (int)(lengthInInches / 12);
-        int inches = (int)Math.Round(lengthInInches % 12);
-        ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
+      return fixtureUnits;
+     
     }
     public void TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, int direction, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
@@ -447,7 +458,7 @@ namespace GMEPPlumbing {
           result[adjustedRoute] = segLen;
         }
       }
-      result.OrderBy(kvp => kvp.Value); // Sort by distance
+      result.OrderByDescending(kvp => kvp.Value); // Sort by distance
       return result;
     }
     // Helper: Find the closest point on a segment to a given point
