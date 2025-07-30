@@ -249,11 +249,6 @@ namespace GMEPPlumbing.Views
             Fill = TypeToBrushColor(horizontalRoute.Type)
           };
 
-          // Calculate midpoint and offset
-          var midX = (horizontalRoute.StartPoint.X + horizontalRoute.EndPoint.X) / 2.0;
-          var midY = (horizontalRoute.StartPoint.Y + horizontalRoute.EndPoint.Y) / 2.0;
-          var midZ = (horizontalRoute.StartPoint.Z + horizontalRoute.EndPoint.Z) / 2.0 + 4; // Offset above the line
-
           var dirX = horizontalRoute.EndPoint.X - horizontalRoute.StartPoint.X;
           var dirY = horizontalRoute.EndPoint.Y - horizontalRoute.StartPoint.Y;
           var dirZ = horizontalRoute.EndPoint.Z - horizontalRoute.StartPoint.Z;
@@ -264,11 +259,23 @@ namespace GMEPPlumbing.Views
           double length = horizontalRoute.StartPoint.DistanceTo(horizontalRoute.EndPoint);
           int feet = (int)(length / 12);
           int inches = (int)Math.Round(length % 12);
+          double fixtureUnits = horizontalRoute.FixtureUnits;
+
+          double textHeight = 8;
+          string textString = $"{feet}' {inches}\"\n Fixture Units: {horizontalRoute.FixtureUnits}";
+          double textWidth = textHeight * textString.Length * 0.15;
+
+          // Offset so the back of the text aligns with the end point
+          var textPos = new Point3D(
+              horizontalRoute.EndPoint.X - (direction.X * (textWidth / 2)),
+              horizontalRoute.EndPoint.Y - (direction.Y * (textWidth / 2)),
+              horizontalRoute.EndPoint.Z + 5 // +5 for vertical offset
+          );
 
           var textModel = new TextVisual3D {
-            Position = new Point3D(midX, midY, midZ),
-            Text = $"{feet}' {inches}\", Fixture Units: {horizontalRoute.FixtureUnits}",
-            Height = 8,
+            Position = textPos,
+            Text = textString,
+            Height = textHeight,
             Foreground = Brushes.Black,
             Background = Brushes.White,
             UpDirection = new Vector3D(0, 0, 1),

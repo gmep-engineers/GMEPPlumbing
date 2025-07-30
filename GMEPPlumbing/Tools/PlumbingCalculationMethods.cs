@@ -109,7 +109,8 @@ namespace GMEPPlumbing {
         fixtureUnits += (double)catalogItem.FixtureDemand;
 
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
-        route.FixtureUnits = fixtureUnits;
+        //will change later to include all fixture units for fixtures on the horizontal route(although is that possible?). For now, just single fixture.
+        route.FixtureUnits = (double)catalogItem.FixtureDemand;
         routeObjectsTemp.Add(route);
         routeObjectsTemp.Add(fixture);
 
