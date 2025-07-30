@@ -189,6 +189,8 @@ namespace GMEPPlumbing {
     public Point3d EndPoint;
     public string BasePointId;
     public string PipeType;
+    public double FixtureUnits { get; set; } = 0;
+    public int FlowTypeId { get; set; } = 1;
     public PlumbingHorizontalRoute(
       string id,
       string projectId,

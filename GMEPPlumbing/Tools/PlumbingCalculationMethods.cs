@@ -447,6 +447,7 @@ namespace GMEPPlumbing {
           result[adjustedRoute] = segLen;
         }
       }
+      result.OrderBy(kvp => kvp.Value); // Sort by distance
       return result;
     }
     // Helper: Find the closest point on a segment to a given point
