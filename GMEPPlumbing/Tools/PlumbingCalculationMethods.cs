@@ -221,7 +221,7 @@ namespace GMEPPlumbing {
           );
           
           fixtureUnits += TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
-          //add fixutre units from downstream
+          adjustedRoute.FixtureUnits = fixtureUnits;
           routeObjectsTemp.Add(adjustedRoute);
         }
       }
