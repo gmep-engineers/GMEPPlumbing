@@ -138,6 +138,7 @@ namespace GMEPPlumbing.Views
                     hr.BasePointId,
                     hr.PipeType
                 );
+                copy.FixtureUnits = hr.FixtureUnits;
                 newFullRoute.RouteItems.Add(copy);
               }
               else if (item is PlumbingVerticalRoute vr) {
@@ -266,7 +267,7 @@ namespace GMEPPlumbing.Views
 
           var textModel = new TextVisual3D {
             Position = new Point3D(midX, midY, midZ),
-            Text = $"{feet}' {inches}\"",
+            Text = $"{feet}' {inches}\", Fixture Units: {horizontalRoute.FixtureUnits}",
             Height = 8,
             Foreground = Brushes.Black,
             Background = Brushes.White,
