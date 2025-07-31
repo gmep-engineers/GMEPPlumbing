@@ -265,6 +265,11 @@ namespace GMEPPlumbing {
 
       List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
         .Where(r => r.Type == route.Type && r.BasePointId == route.BasePointId && (r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || (routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= startHeight && r.EndPoint.Z <= endHeight)))
+        .Where( r =>
+          (direction == 1 && r.StartPoint.Z >= entryPointZ) ||
+          (direction == 2 && r.StartPoint.Z <= entryPointZ) ||
+          (direction == 3)
+        )
         .ToList();
 
       bool isUpRoute = (route.NodeTypeId == 1 || route.NodeTypeId == 2);
