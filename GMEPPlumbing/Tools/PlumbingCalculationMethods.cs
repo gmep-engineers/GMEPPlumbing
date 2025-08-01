@@ -273,7 +273,6 @@ namespace GMEPPlumbing {
         endZ = startHeight;
       }
 
-
       ed.WriteMessage($"\nTraversing vertical route: {route.Id} at position {route.Position}");
 
       List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
@@ -305,11 +304,11 @@ namespace GMEPPlumbing {
           route.PipeType,
           route.IsUp
         );
-        /*if (route.IsUp != isUpRoute) {
-          //adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
-          //adjustedRoute.ConnectionPosition = new Point3d(childRoute.StartPoint.X, childRoute.StartPoint.Y, childRoute.StartPoint.Z);
-          //adjustedRoute.Length = newLength2;
-        }*/
+        if (route.IsUp != isUpRoute) {
+          adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
+          adjustedRoute.ConnectionPosition = new Point3d(childRoute.StartPoint.X, childRoute.StartPoint.Y, childRoute.StartPoint.Z);
+          adjustedRoute.Length = newLength2;
+        }
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
         TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length * 12), routeObjectsTemp);
