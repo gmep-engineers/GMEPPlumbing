@@ -3107,6 +3107,7 @@ namespace GMEPPlumbing
                       double length = 0;
                       double width = 0;
                       string pipeType = string.Empty;
+                      bool isUp = false;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
 
@@ -3133,6 +3134,9 @@ namespace GMEPPlumbing
                         }
                         if (prop.PropertyName == "pipe_type") {
                           pipeType = prop.Value?.ToString();
+                        }
+                        if (prop.PropertyName == "is_up") {
+                          isUp = Convert.ToDouble(prop.Value) == 1.0;
                         }
                       }
                       if (Id != "0") {
@@ -3183,7 +3187,8 @@ namespace GMEPPlumbing
                           startHeight,
                           length,
                           nodeTypeId,
-                          pipeType
+                          pipeType,
+                          isUp
                         );
                         routes.Add(route);
                       }
