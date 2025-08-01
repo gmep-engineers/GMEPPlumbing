@@ -901,8 +901,8 @@ namespace GMEPPlumbing.Services
       if (routes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_vertical_routes
-              (id, project_id, pos_x, pos_y, pos_z, connection_pos_x, connection_pos_y, connection_pos_z, vertical_route_id, base_point_id, start_height, length, node_type_id, type, pipe_type)
-              VALUES (@id, @projectId, @posX, @posY, @posZ, @connectionPosX, @connectionPosY, @connectionPosZ, @verticalRouteId, @basePointId, @startHeight, @length, @nodeTypeId, @type, @pipeType)
+              (id, project_id, pos_x, pos_y, pos_z, connection_pos_x, connection_pos_y, connection_pos_z, vertical_route_id, base_point_id, start_height, length, node_type_id, type, pipe_type, is_up)
+              VALUES (@id, @projectId, @posX, @posY, @posZ, @connectionPosX, @connectionPosY, @connectionPosZ, @verticalRouteId, @basePointId, @startHeight, @length, @nodeTypeId, @type, @pipeType, @isUp)
               ON DUPLICATE KEY UPDATE
               pos_x = @posX,
               pos_y = @posy,
@@ -916,7 +916,8 @@ namespace GMEPPlumbing.Services
               length = @length,
               node_type_id = @nodeTypeId,
               type = @type,
-              pipe_type = @pipeType
+              pipe_type = @pipeType,
+              is_up = @isUp
           ";
         foreach (var route in routes) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -935,6 +936,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@nodeTypeId", route.NodeTypeId);
           command.Parameters.AddWithValue("@type", route.Type);
           command.Parameters.AddWithValue("@pipeType", route.PipeType);
+          command.Parameters.AddWithValue("@isUp", route.IsUp);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1183,7 +1185,8 @@ namespace GMEPPlumbing.Services
           reader.GetDouble("start_height"),
           reader.GetDouble("length"), 
           reader.GetInt32("node_type_id"),
-          reader.GetString("pipe_type")
+          reader.GetString("pipe_type"),
+          reader.GetBoolean("is_up")
         );
         routes.Add(verticalRoute);
       }

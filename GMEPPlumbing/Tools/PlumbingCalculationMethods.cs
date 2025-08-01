@@ -162,7 +162,8 @@ namespace GMEPPlumbing {
           verticalRoute.StartHeight,
           newLength2,
           verticalRoute.NodeTypeId,
-          verticalRoute.PipeType
+          verticalRoute.PipeType,
+          verticalRoute.IsUp
         );
         if (adjustedRoute.NodeTypeId == 3) {
           adjustedRoute.Position = verticalRoute.Position;
@@ -197,7 +198,8 @@ namespace GMEPPlumbing {
           verticalRoute.StartHeight,
           newLength2,
           verticalRoute.NodeTypeId,
-          verticalRoute.PipeType
+          verticalRoute.PipeType,
+          verticalRoute.IsUp
         );
         if (adjustedRoute.NodeTypeId != 3) {
           adjustedRoute.Position = verticalRoute.Position;
@@ -298,7 +300,8 @@ namespace GMEPPlumbing {
           route.StartHeight,
           newLength,
           route.NodeTypeId,
-          route.PipeType
+          route.PipeType,
+          route.IsUp
         );
         if (isUpward != isUpRoute) {
           adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
