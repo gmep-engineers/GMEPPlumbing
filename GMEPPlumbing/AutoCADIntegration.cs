@@ -378,6 +378,7 @@ namespace GMEPPlumbing
       ObjectId gmepTextStyleId;
       string viewGUID = "";
       int typeId = 0;
+      bool isUp = false;
       Dictionary<int, double> floorHeights = new Dictionary<int, double>();
 
       if (type == null) {
@@ -664,6 +665,7 @@ namespace GMEPPlumbing
       routeHeightDisplay.Disable();
 
       if (endFloor > startFloor) {
+        isUp = true;
         Point3d labelPoint = Point3d.Origin;
         Point3d labelPoint2 = Point3d.Origin;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -714,6 +716,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "pipe_type") {
               prop.Value = pipeType;
             }
+            if (prop.PropertyName == "is_up") {
+              prop.Value = isUp ? 1 : 0;
+            }
           }
 
           // Set the vertical route ID
@@ -754,6 +759,9 @@ namespace GMEPPlumbing
               }
               if (prop.PropertyName == "pipe_type") {
                 prop.Value = pipeType;
+              }
+              if (prop.PropertyName == "is_up") {
+                prop.Value = isUp ? 1 : 0;
               }
             }
           }
@@ -829,12 +837,16 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "pipe_type") {
               prop.Value = pipeType;
             }
+            if (prop.PropertyName == "is_up") {
+              prop.Value = isUp ? 1 : 0;
+            }
           }
           tr.Commit();
         }
         MakeVerticalRouteLabel(labelPoint2, "UP FROM LOWER");
       }
       else if (endFloor < startFloor) {
+        isUp = false;
         Point3d labelPoint = Point3d.Origin;
         Point3d labelPoint2 = Point3d.Origin;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -883,6 +895,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "pipe_type") {
               prop.Value = pipeType;
             }
+            if (prop.PropertyName == "is_up") {
+              prop.Value = isUp ? 1 : 0;
+            }
           }
           tr.Commit();
         }
@@ -921,6 +936,9 @@ namespace GMEPPlumbing
               }
               if (prop.PropertyName == "pipe_type") {
                 prop.Value = pipeType;
+              }
+              if (prop.PropertyName == "is_up") {
+                prop.Value = isUp ? 1 : 0;
               }
             }
           }
@@ -995,6 +1013,9 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "pipe_type") {
               prop.Value = pipeType;
             }
+            if (prop.PropertyName == "is_up") {
+              prop.Value = isUp ? 1 : 0;
+            }
           }
           tr.Commit();
         }
@@ -1025,6 +1046,7 @@ namespace GMEPPlumbing
           else if (tempDirection == "DownToFloor") {
             tempDirection = "Down";
           }
+        
           PromptDoubleOptions pdo2 = new PromptDoubleOptions(
             $"\nHow Far {tempDirection}(Ft)?"
           );
@@ -1067,6 +1089,12 @@ namespace GMEPPlumbing
             }
             break;
           }
+        }
+        if (direction == "Up" || direction == "UpToCeiling") {
+          isUp = true;
+        }
+        else if (direction == "Down" || direction == "DownToFloor") {
+          isUp = false;
         }
 
         if (direction == "UpToCeiling") {
@@ -1136,6 +1164,9 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "pipe_type") {
               prop.Value = pipeType;
+            }
+            if (prop.PropertyName == "is_up") {
+              prop.Value = isUp ? 1 : 0;
             }
           }
           tr.Commit();
