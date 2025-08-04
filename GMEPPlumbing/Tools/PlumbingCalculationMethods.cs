@@ -149,6 +149,8 @@ namespace GMEPPlumbing {
 
         double entryPointZ = route.EndPoint.Z;
         double newLength = Math.Abs(verticalRoute.Position.Z - entryPointZ) / 12.0;
+        double newLength2 = ((verticalRoute.Length * 12) - Math.Abs(verticalRoute.Position.Z - entryPointZ)) / 12.0;
+
 
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
          verticalRoute.Id,
@@ -159,7 +161,7 @@ namespace GMEPPlumbing {
          verticalRoute.VerticalRouteId,
          verticalRoute.BasePointId,
          verticalRoute.StartHeight,
-         newLength,
+         newLength2,
          verticalRoute.NodeTypeId,
          verticalRoute.PipeType,
          verticalRoute.IsUp
@@ -167,7 +169,7 @@ namespace GMEPPlumbing {
        TraverseVerticalRoute(verticalRoute, entryPointZ, 1, visited, length, routeObjectsTemp);
        routeObjectsTemp.Add(adjustedRoute);
        //adding all entries to be taken away from
-       foreach(var kvp in verticalRouteObjects) {
+       foreach(var kvp in verticalRouteObjects.Reverse()) {
           routeObjectsTemp.Add(kvp.Value);
           length += kvp.Value.Length * 12;
       }
@@ -189,10 +191,11 @@ namespace GMEPPlumbing {
               entryPointZ = adjustedRoute.Position.Z + (adjustedRoute.Length * 12);
             }
           }
-          TraverseVerticalRoute(verticalRoute2, entryPointZ, 1, visited, length, routeObjectsTemp);
 
           routeObjectsTemp.Remove(routeObjectsTemp.Last());
           length -= kvp.Value.Length * 12;
+
+          TraverseVerticalRoute(verticalRoute2, entryPointZ, 1, visited, length, routeObjectsTemp);
         }
       }
 
@@ -286,7 +289,13 @@ namespace GMEPPlumbing {
         if (route.IsUp != isUpRoute) {
           adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
           adjustedRoute.ConnectionPosition = new Point3d(childRoute.StartPoint.X, childRoute.StartPoint.Y, childRoute.StartPoint.Z);
-          adjustedRoute.Length = newLength2;
+
+          if (adjustedRoute.NodeTypeId == 3) {
+            adjustedRoute.Length = newLength;
+          }
+          else {
+            adjustedRoute.Length = newLength2;
+          }
         }
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
