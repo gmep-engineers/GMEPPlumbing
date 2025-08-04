@@ -148,26 +148,47 @@ namespace GMEPPlumbing {
         int matchingKey = verticalRouteObjects.FirstOrDefault(kvp => kvp.Value.Id == verticalRoute.Id).Key;
 
         double entryPointZ = route.EndPoint.Z;
-        double newLength = Math.Abs(verticalRoute.Position.Z - entryPointZ) / 12.0;
-        double newLength2 = ((verticalRoute.Length * 12) - Math.Abs(verticalRoute.Position.Z - entryPointZ)) / 12.0;
 
+        double endVerticalRoute = 0;
+        if (verticalRoute.IsUp) {
+          if (verticalRoute.NodeTypeId != 3) {
+            endVerticalRoute = verticalRoute.Position.Z + (verticalRoute.Length * 12);
+          }
+          else {
+            endVerticalRoute = verticalRoute.Position.Z;
+          }
+        }
+        else {
+          if (verticalRoute.NodeTypeId == 3) {
+            endVerticalRoute = verticalRoute.Position.Z - (verticalRoute.Length * 12);
+          }
+          else {
+            endVerticalRoute = verticalRoute.Position.Z;
+          }
+        }
+        double newLength = Math.Abs(endVerticalRoute - entryPointZ) / 12.0;
 
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
          verticalRoute.Id,
          verticalRoute.ProjectId,
          verticalRoute.Type,
-         new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ),
-         new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ),
+         verticalRoute.Position,
+         verticalRoute.ConnectionPosition,
          verticalRoute.VerticalRouteId,
          verticalRoute.BasePointId,
          verticalRoute.StartHeight,
-         newLength2,
+         newLength,
          verticalRoute.NodeTypeId,
          verticalRoute.PipeType,
          verticalRoute.IsUp
        );
-       TraverseVerticalRoute(verticalRoute, entryPointZ, 1, visited, length, routeObjectsTemp);
-       routeObjectsTemp.Add(adjustedRoute);
+        bool isUpRoute = (verticalRoute.NodeTypeId == 1 || verticalRoute.NodeTypeId == 2);
+        if (verticalRoute.IsUp == isUpRoute) {
+          adjustedRoute.Position = new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ);
+          adjustedRoute.ConnectionPosition = new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ);
+        }
+        TraverseVerticalRoute(verticalRoute, entryPointZ, 1, visited, length, routeObjectsTemp);
+        routeObjectsTemp.Add(adjustedRoute);
        //adding all entries to be taken away from
        foreach(var kvp in verticalRouteObjects.Reverse()) {
           routeObjectsTemp.Add(kvp.Value);
@@ -177,18 +198,18 @@ namespace GMEPPlumbing {
           var verticalRoute2 = kvp.Value;
           if (adjustedRoute.IsUp) {
             if (verticalRoute2.NodeTypeId == 3) {
-              entryPointZ = adjustedRoute.Position.Z - (adjustedRoute.Length * 12);
+              entryPointZ = verticalRoute2.Position.Z - (verticalRoute2.Length * 12);
             }
             else {
-              entryPointZ = adjustedRoute.Position.Z;
+              entryPointZ = verticalRoute2.Position.Z;
             }
           }
           else {
             if (verticalRoute2.NodeTypeId == 3) {
-              entryPointZ = adjustedRoute.Position.Z;
+              entryPointZ = verticalRoute2.Position.Z;
             }
             else {
-              entryPointZ = adjustedRoute.Position.Z + (adjustedRoute.Length * 12);
+              entryPointZ = verticalRoute2.Position.Z + (verticalRoute2.Length * 12);
             }
           }
 
@@ -264,20 +285,14 @@ namespace GMEPPlumbing {
 
       bool isUpRoute = (route.NodeTypeId == 1 || route.NodeTypeId == 2);
       foreach (var childRoute in childRoutes) {
-        double newLength = Math.Abs(startHeight - childRoute.StartPoint.Z) / 12.0;
-        double newLength2 = ((route.Length * 12) - Math.Abs(startHeight - childRoute.StartPoint.Z)) / 12;
-
-        Point3d connectionPosition = route.ConnectionPosition;
-
-        if (route.NodeTypeId != 3) {
-          connectionPosition = new Point3d(childRoute.StartPoint.X, childRoute.StartPoint.Y, startHeight);
-        }
+        double newLength = Math.Abs(startZ - childRoute.StartPoint.Z) / 12.0;
+  
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
           route.Id,
           route.ProjectId,
           route.Type,
-          new Point3d(route.Position.X, route.Position.Y, startHeight),
-          connectionPosition,
+          route.Position,
+          route.ConnectionPosition,
           route.VerticalRouteId,
           route.BasePointId,
           route.StartHeight,
@@ -288,15 +303,9 @@ namespace GMEPPlumbing {
         );
         if (route.IsUp != isUpRoute) {
           adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
-          adjustedRoute.ConnectionPosition = new Point3d(childRoute.StartPoint.X, childRoute.StartPoint.Y, childRoute.StartPoint.Z);
-
-          if (adjustedRoute.NodeTypeId == 3) {
-            adjustedRoute.Length = newLength;
-          }
-          else {
-            adjustedRoute.Length = newLength2;
-          }
+          adjustedRoute.ConnectionPosition = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
         }
+
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
         TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length * 12), routeObjectsTemp);
