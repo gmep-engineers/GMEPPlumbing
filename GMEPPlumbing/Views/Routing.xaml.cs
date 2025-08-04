@@ -330,34 +330,38 @@ namespace GMEPPlumbing.Views
 
           var start = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z);
           var end = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length);
-          var mid = new Point3D(
-              (start.X + end.X) / 2.0,
-              (start.Y + end.Y) / 2.0,
-              (start.Z + end.Z) / 2.0
-          );
 
-          // Offset 2 units in the positive X direction (right side)
-          var textPos = new Point3D(mid.X + 4, mid.Y, mid.Z);
-
-          // Text direction is down (negative Z)
-          var textDirection = new Vector3D(0, 0, -1);
-
-          // Up direction is positive X (right side)
-          var upDirection = new Vector3D(1, 0, 0);
+          if (verticalRoute.NodeTypeId == 3) {
+            start = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length);
+            end = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z);
+          }
 
           // Calculate pipe length in feet/inches
           double pipeLength = start.DistanceTo(end);
           int feet = (int)(pipeLength / 12);
           int inches = (int)Math.Round(pipeLength % 12);
+          string textString = $"{feet}' {inches}\"";
+          int textHeight = 8;
+          double textWidth = textHeight * textString.Length * 0.4;
+
+          // Place text at the top if IsUp, at the bottom if not
+          var textPos = verticalRoute.IsUp ? end : start;
+
+          // Optionally offset the text slightly above/below the pipe for clarity
+          double offset = textWidth / 2;
+          if (verticalRoute.IsUp)
+            textPos = new Point3D(textPos.X + 4, textPos.Y, textPos.Z - offset);
+          else
+            textPos = new Point3D(textPos.X + 4, textPos.Y, textPos.Z + offset);
 
           var textModel = new TextVisual3D {
             Position = textPos,
-            Text = $"{feet}' {inches}\"",
-            Height = 8,
+            Text = textString,
+            Height = textHeight,
             Foreground = Brushes.Black,
             Background = Brushes.White,
-            TextDirection = textDirection,
-            UpDirection = upDirection
+            TextDirection = new Vector3D(0, 0, -1),
+            UpDirection = new Vector3D(1, 0, 0)
           };
 
           textVisuals.Add(textModel);
