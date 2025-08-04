@@ -185,7 +185,7 @@ namespace GMEPPlumbing {
         bool isUpRoute = (verticalRoute.NodeTypeId == 1 || verticalRoute.NodeTypeId == 2);
         if (verticalRoute.IsUp == isUpRoute) {
           adjustedRoute.Position = new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ);
-          adjustedRoute.ConnectionPosition = new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ);
+          adjustedRoute.ConnectionPosition = route.EndPoint;
         }
         TraverseVerticalRoute(verticalRoute, entryPointZ, 1, visited, length, routeObjectsTemp);
         routeObjectsTemp.Add(adjustedRoute);
@@ -303,7 +303,7 @@ namespace GMEPPlumbing {
         );
         if (route.IsUp != isUpRoute) {
           adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
-          adjustedRoute.ConnectionPosition = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
+          adjustedRoute.ConnectionPosition = childRoute.StartPoint;
         }
 
         List<object> routeObjectsTemp = new List<object>(routeObjects);
