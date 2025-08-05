@@ -220,6 +220,7 @@ namespace GMEPPlumbing {
         routeObjectsTemp.Remove(routeObjectsTemp.Last());
         length -= adjustedRoute.Length * 12;
         fixtureUnits += TraverseVerticalRoute(verticalRoute, entryPointZ, fixtureUnits, visited, length, routeObjectsTemp);
+        route.FixtureUnits = fixtureUnits;
       }
 
       //Horizontal Routes
