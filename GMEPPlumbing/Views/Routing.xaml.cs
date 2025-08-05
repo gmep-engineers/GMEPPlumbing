@@ -414,7 +414,7 @@ namespace GMEPPlumbing.Views
           pos = new Point3D(pos.X + 5, pos.Y, pos.Z + offset);
 
         var textModel = new TextVisual3D {
-          Position = (Point3D)pos,
+          Position = pos,
           Text = textString,
           Height = textHeight,
           Foreground = Brushes.Black,
