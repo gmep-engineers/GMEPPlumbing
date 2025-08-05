@@ -136,8 +136,9 @@ namespace GMEPPlumbing.Views
                     new Point3d(hr.StartPoint.X, hr.StartPoint.Y, hr.StartPoint.Z),
                     new Point3d(hr.EndPoint.X, hr.EndPoint.Y, hr.EndPoint.Z),
                     hr.BasePointId,
-                    hr.Width
+                    hr.PipeType
                 );
+                copy.FixtureUnits = hr.FixtureUnits;
                 newFullRoute.RouteItems.Add(copy);
               }
               else if (item is PlumbingVerticalRoute vr) {
@@ -152,8 +153,10 @@ namespace GMEPPlumbing.Views
                     vr.StartHeight,
                     vr.Length,
                     vr.NodeTypeId,
-                    vr.Width
+                    vr.PipeType,
+                    vr.IsUp
                 );
+                copy.FixtureUnits = vr.FixtureUnits;
                 newFullRoute.RouteItems.Add(copy);
               }
               else if (item is PlumbingSource plumbingSource) {
@@ -162,7 +165,8 @@ namespace GMEPPlumbing.Views
                     plumbingSource.ProjectId,
                     new Point3d(plumbingSource.Position.X, plumbingSource.Position.Y, plumbingSource.Position.Z),
                     plumbingSource.TypeId,
-                    plumbingSource.BasePointId
+                    plumbingSource.BasePointId,
+                    plumbingSource.Pressure
                 );
                 newFullRoute.RouteItems.Add(copy);
               }
@@ -176,7 +180,8 @@ namespace GMEPPlumbing.Views
                     plumbingFixture.TypeAbbreviation,
                     plumbingFixture.Number,
                     plumbingFixture.BasePointId,
-                    plumbingFixture.BlockName
+                    plumbingFixture.BlockName,
+                    plumbingFixture.FlowTypeId
                 );
                 newFullRoute.RouteItems.Add(copy);
               }
@@ -223,6 +228,7 @@ namespace GMEPPlumbing.Views
     public void BuildScene() {
       RouteVisuals.Clear();
       List<TextVisual3D> textVisuals = new List<TextVisual3D>();
+      Dictionary<string, List<PlumbingVerticalRoute>> fullVerticalRoutes = new Dictionary<string, List<PlumbingVerticalRoute>>();
       foreach (var item in RouteItems) {
         Visual3D model = null;
          if (item is PlumbingHorizontalRoute horizontalRoute) {
@@ -246,11 +252,6 @@ namespace GMEPPlumbing.Views
             Fill = TypeToBrushColor(horizontalRoute.Type)
           };
 
-          // Calculate midpoint and offset
-          var midX = (horizontalRoute.StartPoint.X + horizontalRoute.EndPoint.X) / 2.0;
-          var midY = (horizontalRoute.StartPoint.Y + horizontalRoute.EndPoint.Y) / 2.0;
-          var midZ = (horizontalRoute.StartPoint.Z + horizontalRoute.EndPoint.Z) / 2.0 + 4; // Offset above the line
-
           var dirX = horizontalRoute.EndPoint.X - horizontalRoute.StartPoint.X;
           var dirY = horizontalRoute.EndPoint.Y - horizontalRoute.StartPoint.Y;
           var dirZ = horizontalRoute.EndPoint.Z - horizontalRoute.StartPoint.Z;
@@ -261,11 +262,23 @@ namespace GMEPPlumbing.Views
           double length = horizontalRoute.StartPoint.DistanceTo(horizontalRoute.EndPoint);
           int feet = (int)(length / 12);
           int inches = (int)Math.Round(length % 12);
+          double fixtureUnits = horizontalRoute.FixtureUnits;
+
+          double textHeight = 8;
+          string textString = $"{feet}' {inches}\"\n Fixture Units: {horizontalRoute.FixtureUnits}";
+          double textWidth = textHeight * textString.Length * 0.15;
+
+          // Offset so the back of the text aligns with the end point
+          var textPos = new Point3D(
+              horizontalRoute.EndPoint.X - (direction.X * (textWidth / 2)),
+              horizontalRoute.EndPoint.Y - (direction.Y * (textWidth / 2)),
+              horizontalRoute.EndPoint.Z + 5 // +5 for vertical offset
+          );
 
           var textModel = new TextVisual3D {
-            Position = new Point3D(midX, midY, midZ),
-            Text = $"{feet}' {inches}\"",
-            Height = 8,
+            Position = textPos,
+            Text = textString,
+            Height = textHeight,
             Foreground = Brushes.Black,
             Background = Brushes.White,
             UpDirection = new Vector3D(0, 0, 1),
@@ -281,8 +294,13 @@ namespace GMEPPlumbing.Views
           BasePointIds.Add(horizontalRoute.BasePointId);
         }
         else if (item is PlumbingVerticalRoute verticalRoute) {
-          ModelVisual3D fullModel = new ModelVisual3D();
+          if (!fullVerticalRoutes.ContainsKey(verticalRoute.VerticalRouteId)) {
+            fullVerticalRoutes[verticalRoute.VerticalRouteId] = new List<PlumbingVerticalRoute>();
+          }
 
+          fullVerticalRoutes[verticalRoute.VerticalRouteId].Add(verticalRoute);
+
+          ModelVisual3D fullModel = new ModelVisual3D();
           var ballModel = new SphereVisual3D {
             Center = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
             Radius = 1,
@@ -316,40 +334,6 @@ namespace GMEPPlumbing.Views
             fullModel.Children.Add(connectionTubeModel);
             fullModel.Children.Add(ballModel);
           }
-
-          var start = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z);
-          var end = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length);
-          var mid = new Point3D(
-              (start.X + end.X) / 2.0,
-              (start.Y + end.Y) / 2.0,
-              (start.Z + end.Z) / 2.0
-          );
-
-          // Offset 2 units in the positive X direction (right side)
-          var textPos = new Point3D(mid.X + 4, mid.Y, mid.Z);
-
-          // Text direction is down (negative Z)
-          var textDirection = new Vector3D(0, 0, -1);
-
-          // Up direction is positive X (right side)
-          var upDirection = new Vector3D(1, 0, 0);
-
-          // Calculate pipe length in feet/inches
-          double pipeLength = start.DistanceTo(end);
-          int feet = (int)(pipeLength / 12);
-          int inches = (int)Math.Round(pipeLength % 12);
-
-          var textModel = new TextVisual3D {
-            Position = textPos,
-            Text = $"{feet}' {inches}\"",
-            Height = 8,
-            Foreground = Brushes.Black,
-            Background = Brushes.White,
-            TextDirection = textDirection,
-            UpDirection = upDirection
-          };
-
-          textVisuals.Add(textModel);
 
           model = fullModel;
           BasePointIds.Add(verticalRoute.BasePointId);
@@ -390,6 +374,56 @@ namespace GMEPPlumbing.Views
         if (model != null) {
           RouteVisuals.Add(model);
         }
+      }
+      foreach (var kvp in fullVerticalRoutes) {
+        List<PlumbingVerticalRoute> verticalRoutes = kvp.Value
+        .OrderBy(vr => BasePoints.TryGetValue(vr.BasePointId, out var bp) ? bp.Floor : 0)
+        .ToList();
+
+        Point3D pos = new Point3D(0, 0, 0);
+        if (verticalRoutes.First().IsUp) {
+          pos = new Point3D(verticalRoutes.Last().Position.X, verticalRoutes.Last().Position.Y, verticalRoutes.Last().Position.Z + verticalRoutes.Last().Length * 12);
+          if (verticalRoutes.Last().NodeTypeId == 3) {
+            pos = new Point3D(verticalRoutes.Last().Position.X, verticalRoutes.Last().Position.Y, verticalRoutes.Last().Position.Z);
+          }
+        }
+        else {
+          pos = new Point3D(verticalRoutes.First().Position.X, verticalRoutes.First().Position.Y, verticalRoutes.First().Position.Z);
+          if (verticalRoutes.First().NodeTypeId == 3) {
+            pos = new Point3D(verticalRoutes.First().Position.X, verticalRoutes.First().Position.Y, verticalRoutes.First().Position.Z - verticalRoutes.First().Length * 12);
+          }
+        }
+
+        double pipeLength = 0;
+        double pipeFixtureUnits = 0;
+        foreach (var verticalRoute in verticalRoutes) {
+          pipeLength += verticalRoute.Length * 12; // Convert to inches
+          pipeFixtureUnits += verticalRoute.FixtureUnits;
+        }
+        // Calculate pipe length in feet/inches
+        int feet = (int)(pipeLength / 12);
+        int inches = (int)Math.Round(pipeLength % 12);
+        string textString = $"{feet}' {inches}\"\n Fixture Units: {pipeFixtureUnits}";
+        int textHeight = 8;
+        double textWidth = textHeight * textString.Length * 0.15;
+
+        double offset = textWidth / 2;
+        if (verticalRoutes[0].IsUp)
+          pos = new Point3D(pos.X + 5, pos.Y, pos.Z - offset);
+        else
+          pos = new Point3D(pos.X + 5, pos.Y, pos.Z + offset);
+
+        var textModel = new TextVisual3D {
+          Position = pos,
+          Text = textString,
+          Height = textHeight,
+          Foreground = Brushes.Black,
+          Background = Brushes.White,
+          TextDirection = new Vector3D(0, 0, -1),
+          UpDirection = new Vector3D(1, 0, 0)
+        };
+
+        textVisuals.Add(textModel);
       }
       foreach (var basePoint in BasePointIds) {
         var basePointModel = new RectangleVisual3D {

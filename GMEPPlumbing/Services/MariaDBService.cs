@@ -630,59 +630,92 @@ namespace GMEPPlumbing.Services
       CloseConnectionSync();
       return items;
     }
-
-   /* public void CreatePlumbingFixture(PlumbingFixture fixture) {
-      // 1 get the count of different types of the same fixture
-      string query =
-        @"
-        SELECT DISTINCT plumbing_fixture_catalog.id, plumbing_fixtures.number FROM plumbing_fixtures
-        LEFT JOIN plumbing_fixture_catalog ON plumbing_fixture_catalog.id = plumbing_fixtures.catalog_id
-        LEFT JOIN plumbing_fixture_types ON plumbing_fixture_types.id = plumbing_fixture_catalog.type_id
-        WHERE plumbing_fixtures.project_id = @projectId
-        AND plumbing_fixture_types.abbreviation = @abbreviation
-        ";
-      int count = 0;
+    public PlumbingFixtureCatalogItem GetPlumbingFixtureCatalogItemById(int id) {
+      List<PlumbingFixtureCatalogItem> items = new List<PlumbingFixtureCatalogItem>();
       OpenConnectionSync();
+      string query =
+        "SELECT * FROM plumbing_fixture_catalog WHERE id = @id ORDER BY description";
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@projectId", fixture.ProjectId);
-      command.Parameters.AddWithValue("@abbreviation", fixture.TypeAbbreviation);
+      command.Parameters.AddWithValue("@id", id);
       MySqlDataReader reader = command.ExecuteReader();
-      List<int> addedCatalogIds = new List<int>();
-      List<int> addedFixtureNumbers = new List<int>();
-      while (reader.Read()) {
-        addedCatalogIds.Add(GetSafeInt(reader, "id"));
-        addedFixtureNumbers.Add(GetSafeInt(reader, "number"));
-      }
-      if (addedCatalogIds.Count == 0) {
-        count = 1;
-      }
-      for (int i = 0; i < addedCatalogIds.Count; i++) {
-        if (addedCatalogIds[i] == fixture.CatalogId) {
-          count = addedFixtureNumbers[i];
-        }
-      }
-      if (count == 0) {
-        count = addedCatalogIds.Count + 1;
-      }
+      reader.Read();
+
+     PlumbingFixtureCatalogItem item =  new PlumbingFixtureCatalogItem(
+        GetSafeInt(reader, "id"),
+        GetSafeInt(reader, "type_id"),
+        GetSafeString(reader, "description"),
+        GetSafeString(reader, "make"),
+        GetSafeString(reader, "model"),
+        GetSafeDecimal(reader, "trap"),
+        GetSafeDecimal(reader, "waste"),
+        GetSafeDecimal(reader, "vent"),
+        GetSafeDecimal(reader, "cold_water"),
+        GetSafeDecimal(reader, "hot_water"),
+        GetSafeString(reader, "remarks"),
+        GetSafeDecimal(reader, "fixture_demand"),
+        GetSafeDecimal(reader, "hot_demand"),
+        GetSafeInt(reader, "dfu"),
+        GetSafeString(reader, "water_gas_block_name"),
+        GetSafeString(reader, "waste_vent_block_name")
+      );
+      
       reader.Close();
-      fixture.Number = count;
-      query =
-        @"
-        INSERT INTO plumbing_fixtures
-        (id, project_id, pos_x, pos_y, catalog_id, number)
-        VALUES
-        (@id, @projectId, @posX, @posY, @catalogId, @number)
-        ";
-      command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@id", fixture.Id);
-      command.Parameters.AddWithValue("@projectId", fixture.ProjectId);
-      command.Parameters.AddWithValue("@posX", fixture.Position.X);
-      command.Parameters.AddWithValue("@posY", fixture.Position.Y);
-      command.Parameters.AddWithValue("@catalogId", fixture.CatalogId);
-      command.Parameters.AddWithValue("@number", fixture.Number);
-      command.ExecuteNonQuery();
       CloseConnectionSync();
-    }*/
+      return item;
+    }
+
+    /* public void CreatePlumbingFixture(PlumbingFixture fixture) {
+       // 1 get the count of different types of the same fixture
+       string query =
+         @"
+         SELECT DISTINCT plumbing_fixture_catalog.id, plumbing_fixtures.number FROM plumbing_fixtures
+         LEFT JOIN plumbing_fixture_catalog ON plumbing_fixture_catalog.id = plumbing_fixtures.catalog_id
+         LEFT JOIN plumbing_fixture_types ON plumbing_fixture_types.id = plumbing_fixture_catalog.type_id
+         WHERE plumbing_fixtures.project_id = @projectId
+         AND plumbing_fixture_types.abbreviation = @abbreviation
+         ";
+       int count = 0;
+       OpenConnectionSync();
+       MySqlCommand command = new MySqlCommand(query, Connection);
+       command.Parameters.AddWithValue("@projectId", fixture.ProjectId);
+       command.Parameters.AddWithValue("@abbreviation", fixture.TypeAbbreviation);
+       MySqlDataReader reader = command.ExecuteReader();
+       List<int> addedCatalogIds = new List<int>();
+       List<int> addedFixtureNumbers = new List<int>();
+       while (reader.Read()) {
+         addedCatalogIds.Add(GetSafeInt(reader, "id"));
+         addedFixtureNumbers.Add(GetSafeInt(reader, "number"));
+       }
+       if (addedCatalogIds.Count == 0) {
+         count = 1;
+       }
+       for (int i = 0; i < addedCatalogIds.Count; i++) {
+         if (addedCatalogIds[i] == fixture.CatalogId) {
+           count = addedFixtureNumbers[i];
+         }
+       }
+       if (count == 0) {
+         count = addedCatalogIds.Count + 1;
+       }
+       reader.Close();
+       fixture.Number = count;
+       query =
+         @"
+         INSERT INTO plumbing_fixtures
+         (id, project_id, pos_x, pos_y, catalog_id, number)
+         VALUES
+         (@id, @projectId, @posX, @posY, @catalogId, @number)
+         ";
+       command = new MySqlCommand(query, Connection);
+       command.Parameters.AddWithValue("@id", fixture.Id);
+       command.Parameters.AddWithValue("@projectId", fixture.ProjectId);
+       command.Parameters.AddWithValue("@posX", fixture.Position.X);
+       command.Parameters.AddWithValue("@posY", fixture.Position.Y);
+       command.Parameters.AddWithValue("@catalogId", fixture.CatalogId);
+       command.Parameters.AddWithValue("@number", fixture.Number);
+       command.ExecuteNonQuery();
+       CloseConnectionSync();
+     }*/
 
     public List<PlumbingSourceType> GetPlumbingSourceTypes() {
       List<PlumbingSourceType> types = new List<PlumbingSourceType>();
@@ -803,8 +836,8 @@ namespace GMEPPlumbing.Services
         if (routes.Count > 0) {
           string upsertQuery = @"
               INSERT INTO plumbing_horizontal_routes
-              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, start_pos_z, end_pos_z, base_point_id, type, width)
-              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @startPosZ, @endPosZ, @basePointId, @type, @width)
+              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, start_pos_z, end_pos_z, base_point_id, type, pipe_type)
+              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @startPosZ, @endPosZ, @basePointId, @type, @pipeType)
               ON DUPLICATE KEY UPDATE
                   start_pos_x = @startPosX,
                   end_pos_x = @endPosX,
@@ -814,7 +847,7 @@ namespace GMEPPlumbing.Services
                   end_pos_z = @endPosZ,
                   base_point_id = @basePointId,
                   type = @type,
-                  width = @width
+                  pipe_type = @pipeType
           ";
           foreach (var route in routes) {
             MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -828,7 +861,7 @@ namespace GMEPPlumbing.Services
             command.Parameters.AddWithValue("@endPosZ", route.EndPoint.Z);
             command.Parameters.AddWithValue("@basePointId", route.BasePointId);
             command.Parameters.AddWithValue("@type", route.Type);
-            command.Parameters.AddWithValue("@width", route.Width);
+            command.Parameters.AddWithValue("@pipeType", route.PipeType);
             await command.ExecuteNonQueryAsync();
           }
         }
@@ -868,8 +901,8 @@ namespace GMEPPlumbing.Services
       if (routes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_vertical_routes
-              (id, project_id, pos_x, pos_y, pos_z, connection_pos_x, connection_pos_y, connection_pos_z, vertical_route_id, base_point_id, start_height, length, node_type_id, type, width)
-              VALUES (@id, @projectId, @posX, @posY, @posZ, @connectionPosX, @connectionPosY, @connectionPosZ, @verticalRouteId, @basePointId, @startHeight, @length, @nodeTypeId, @type, @width)
+              (id, project_id, pos_x, pos_y, pos_z, connection_pos_x, connection_pos_y, connection_pos_z, vertical_route_id, base_point_id, start_height, length, node_type_id, type, pipe_type, is_up)
+              VALUES (@id, @projectId, @posX, @posY, @posZ, @connectionPosX, @connectionPosY, @connectionPosZ, @verticalRouteId, @basePointId, @startHeight, @length, @nodeTypeId, @type, @pipeType, @isUp)
               ON DUPLICATE KEY UPDATE
               pos_x = @posX,
               pos_y = @posy,
@@ -883,7 +916,8 @@ namespace GMEPPlumbing.Services
               length = @length,
               node_type_id = @nodeTypeId,
               type = @type,
-              width = @width
+              pipe_type = @pipeType,
+              is_up = @isUp
           ";
         foreach (var route in routes) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -901,7 +935,8 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@length", route.Length);
           command.Parameters.AddWithValue("@nodeTypeId", route.NodeTypeId);
           command.Parameters.AddWithValue("@type", route.Type);
-          command.Parameters.AddWithValue("@width", route.Width);
+          command.Parameters.AddWithValue("@pipeType", route.PipeType);
+          command.Parameters.AddWithValue("@isUp", route.IsUp);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -999,14 +1034,15 @@ namespace GMEPPlumbing.Services
       if (sources.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_sources
-              (id, project_id, pos_x, pos_y, pos_z, type_id, base_point_id)
-              VALUES (@id, @projectId, @posX, @posY, @posZ, @typeId, @basePointId)
+              (id, project_id, pos_x, pos_y, pos_z, type_id, base_point_id, pressure)
+              VALUES (@id, @projectId, @posX, @posY, @posZ, @typeId, @basePointId, @pressure)
               ON DUPLICATE KEY UPDATE
                   pos_x = @posX,
                   pos_y = @posY,
                   pos_z = @posZ,
                   type_id = @typeId,
-                  base_point_id = @basePointId
+                  base_point_id = @basePointId,
+                  pressure = @pressure
           ";
         foreach (var source in sources) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -1017,6 +1053,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@posZ", source.Position.Z);
           command.Parameters.AddWithValue("@typeId", source.TypeId);
           command.Parameters.AddWithValue("@basePointId", source.BasePointId);
+          command.Parameters.AddWithValue("@pressure", source.Pressure);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1054,14 +1091,15 @@ namespace GMEPPlumbing.Services
       if (fixtures.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_fixtures
-              (id, project_id, catalog_id, number, base_point_id, type_abbreviation, rotation, block_name, pos_x, pos_y, pos_z)
-              VALUES (@id, @projectId, @catalogId, @number, @basePointId, @typeAbbreviation, @rotation, @blockName, @posX, @posY, @posZ)
+              (id, project_id, catalog_id, number, base_point_id, type_abbreviation, rotation, block_name, flow_type_id, pos_x, pos_y, pos_z)
+              VALUES (@id, @projectId, @catalogId, @number, @basePointId, @typeAbbreviation, @rotation, @blockName, @flowTypeId, @posX, @posY, @posZ)
               ON DUPLICATE KEY UPDATE
                   pos_x = @posX,
                   pos_y = @posY,
                   pos_z = @posZ,
                   rotation = @rotation,
-                  number = @number
+                  number = @number,
+                  flow_type_id = @flowTypeId
           ";
         foreach (var component in fixtures.Select(list => list)) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -1076,6 +1114,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@posX", component.Position.X);
           command.Parameters.AddWithValue("@posY", component.Position.Y);
           command.Parameters.AddWithValue("@posZ", component.Position.Z);
+          command.Parameters.AddWithValue("@flowTypeId", component.FlowTypeId);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1108,7 +1147,7 @@ namespace GMEPPlumbing.Services
             reader.GetDouble("end_pos_z")
           ),
          reader.GetString("base_point_id"),
-         reader.GetDouble("width")
+         reader.GetString("pipe_type")
         );
         routes.Add(route);
       }
@@ -1146,7 +1185,8 @@ namespace GMEPPlumbing.Services
           reader.GetDouble("start_height"),
           reader.GetDouble("length"), 
           reader.GetInt32("node_type_id"),
-          reader.GetDouble("width")
+          reader.GetString("pipe_type"),
+          reader.GetBoolean("is_up")
         );
         routes.Add(verticalRoute);
       }
@@ -1175,7 +1215,8 @@ namespace GMEPPlumbing.Services
             reader.GetDouble("pos_z")
           ),
           reader.GetInt32("type_id"),
-          reader.GetString("base_point_id")
+          reader.GetString("base_point_id"),
+          reader.GetDouble("pressure")
         );
         sources.Add(source);
       }
@@ -1208,7 +1249,8 @@ namespace GMEPPlumbing.Services
           reader.GetString("type_abbreviation"),
           reader.GetInt32("number"),
           reader.GetString("base_point_id"),
-          reader.GetString("block_name")
+          reader.GetString("block_name"),
+          reader.GetInt32("flow_type_id")
         );
         fixtures.Add(fixture);
       }

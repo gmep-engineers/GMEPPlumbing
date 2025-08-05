@@ -48,7 +48,7 @@ namespace GMEPPlumbing {
           List<string> types = GetSourceOutputTypes(source);
           var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= 13.0 && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
           foreach (var matchingRoute in matchingRoutes) {
-            TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
+            double fixtureUnits = TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
           }
         }
         ed.WriteMessage("\nPlumbing fixture calculation completed successfully.");
@@ -78,12 +78,12 @@ namespace GMEPPlumbing {
         }
       }
     }
-    public void TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+    public double TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
       if (!visited.Add(route.Id))
-        return;
+        return 0;
 
       if (routeObjects == null)
         routeObjects = new List<Object>();
@@ -98,100 +98,20 @@ namespace GMEPPlumbing {
       Dictionary<PlumbingHorizontalRoute, double> childRoutes = FindNearbyHorizontalRoutes(route);
       List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
       List<PlumbingFixture> fixtures = FindNearbyFixtures(route);
-      
-      foreach (var childRoute in childRoutes) {
-        if (childRoute.Key.Id != route.Id) {
-          var routeObjectsTemp = new List<Object>(routeObjects);
-          var adjustedRoute = new PlumbingHorizontalRoute(
-           route.Id,
-           route.ProjectId,
-           route.Type,
-           route.StartPoint,
-           getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value),
-           route.BasePointId,
-           route.Width
-          );
-          routeObjectsTemp.Add(adjustedRoute);
-          TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
-        }
-      }
-      foreach (var verticalRoute in verticalRoutes) {
-        double length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+
+      double fixtureUnits = 0;
+
+
+      //Fixtures
+      foreach (var fixture in fixtures) {
+
+        PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(fixture.CatalogId);
+        ed.WriteMessage($"\nFixture {fixture.Id} has a demand of {catalogItem.FixtureDemand} fixture units.");
+        fixtureUnits += (double)catalogItem.FixtureDemand;
+
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
-        routeObjectsTemp.Add(route);
-        SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects = GetVerticalRoutesByIdOrdered(verticalRoute.VerticalRouteId);
-        int matchingKey = verticalRouteObjects.FirstOrDefault(kvp => kvp.Value.Id == verticalRoute.Id).Key;
-
-        //double newLength = ((verticalRoute.Length * 12) - Math.Abs(verticalRouteObjects[matchingKey].Position.Z - route.EndPoint.Z)) / 12;
-        double entryPointZ = route.EndPoint.Z;
-        double newLength = Math.Abs(verticalRoute.Position.Z - entryPointZ) / 12.0;
-        double newLength2 = Math.Abs(verticalRoute.Length * 12 - Math.Abs(verticalRoute.Position.Z - entryPointZ)) / 12.0;
-
-        PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
-          verticalRoute.Id,
-          verticalRoute.ProjectId,
-          verticalRoute.Type,
-          new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ),
-          new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ),
-          verticalRoute.VerticalRouteId,
-          verticalRoute.BasePointId,
-          verticalRoute.StartHeight,
-          newLength2,
-          verticalRoute.NodeTypeId,
-          verticalRoute.Width
-        );
-        if (adjustedRoute.NodeTypeId == 3) {
-          adjustedRoute.Position = verticalRoute.Position;
-          adjustedRoute.ConnectionPosition = verticalRoute.ConnectionPosition;
-          adjustedRoute.Length = newLength;
-        }
-
-        TraverseVerticalRoute(verticalRoute, entryPointZ, 1, visited, length, routeObjectsTemp);
-        routeObjectsTemp.Add(adjustedRoute);
-        length += adjustedRoute.Length * 12;
-
-        for (int i = matchingKey + 1; i <= verticalRouteObjects.Keys.Max(); i++) {
-          if (!verticalRouteObjects.ContainsKey(i)) continue;
-          TraverseVerticalRoute(verticalRouteObjects[i], verticalRouteObjects[i].Position.Z, 2, visited, length, routeObjectsTemp);
-          routeObjectsTemp.Add(verticalRouteObjects[i]);
-          length += verticalRouteObjects[i].Length * 12;
-        }
-
-        //reset and adjust for going down
-        length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
-        routeObjectsTemp = new List<Object>(routeObjects);
-        routeObjectsTemp.Add(route);
-
-        adjustedRoute = new PlumbingVerticalRoute(
-          verticalRoute.Id,
-          verticalRoute.ProjectId,
-          verticalRoute.Type,
-          new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ),
-          new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ),
-          verticalRoute.VerticalRouteId,
-          verticalRoute.BasePointId,
-          verticalRoute.StartHeight,
-          newLength2,
-          verticalRoute.NodeTypeId,
-          verticalRoute.Width
-        );
-        if (adjustedRoute.NodeTypeId != 3) {
-          adjustedRoute.Position = verticalRoute.Position;
-          adjustedRoute.ConnectionPosition = verticalRoute.ConnectionPosition;
-          adjustedRoute.Length = newLength;
-        }
-        routeObjectsTemp.Add(adjustedRoute);
-        length += adjustedRoute.Length * 12;
-
-        for (int i = matchingKey - 1; i >= verticalRouteObjects.Keys.Min(); i--) {
-          if (!verticalRouteObjects.ContainsKey(i)) continue;
-          TraverseVerticalRoute(verticalRouteObjects[i], verticalRouteObjects[i].Position.Z, 3, visited, length, routeObjectsTemp);
-          routeObjectsTemp.Add(verticalRouteObjects[i]);
-          length += verticalRouteObjects[i].Length * 12;
-        }
-      }
-      foreach(var fixture in fixtures) {
-        List<Object> routeObjectsTemp = new List<Object>(routeObjects);
+        //will change later to include all fixture units for fixtures on the horizontal route(although is that possible?). For now, just single fixture.
+        route.FixtureUnits = (double)catalogItem.FixtureDemand;
         routeObjectsTemp.Add(route);
         routeObjectsTemp.Add(fixture);
 
@@ -216,71 +136,189 @@ namespace GMEPPlumbing {
         int inches = (int)Math.Round(lengthInInches % 12);
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
+
+    
+      //Vertical Routes
+      foreach (var verticalRoute in verticalRoutes) {
+        double length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+        List<Object> routeObjectsTemp = new List<Object>(routeObjects);
+        routeObjectsTemp.Add(route);
+        SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects = GetVerticalRoutesByIdOrdered(verticalRoute.VerticalRouteId, verticalRoute.IsUp, verticalRoute.BasePointId);
+        ed.WriteMessage($"\nTraversing vertical route: {verticalRoute.Id} with {verticalRouteObjects.Count} segments.");
+        int matchingKey = verticalRouteObjects.FirstOrDefault(kvp => kvp.Value.Id == verticalRoute.Id).Key;
+
+        double entryPointZ = route.EndPoint.Z;
+
+        double endVerticalRoute = 0;
+        if (verticalRoute.IsUp) {
+          if (verticalRoute.NodeTypeId != 3) {
+            endVerticalRoute = verticalRoute.Position.Z + (verticalRoute.Length * 12);
+          }
+          else {
+            endVerticalRoute = verticalRoute.Position.Z;
+          }
+        }
+        else {
+          if (verticalRoute.NodeTypeId == 3) {
+            endVerticalRoute = verticalRoute.Position.Z - (verticalRoute.Length * 12);
+          }
+          else {
+            endVerticalRoute = verticalRoute.Position.Z;
+          }
+        }
+        double newLength = Math.Abs(endVerticalRoute - entryPointZ) / 12.0;
+
+        PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
+         verticalRoute.Id,
+         verticalRoute.ProjectId,
+         verticalRoute.Type,
+         verticalRoute.Position,
+         verticalRoute.ConnectionPosition,
+         verticalRoute.VerticalRouteId,
+         verticalRoute.BasePointId,
+         verticalRoute.StartHeight,
+         newLength,
+         verticalRoute.NodeTypeId,
+         verticalRoute.PipeType,
+         verticalRoute.IsUp
+       );
+        bool isUpRoute = (verticalRoute.NodeTypeId == 1 || verticalRoute.NodeTypeId == 2);
+        if (verticalRoute.IsUp == isUpRoute) {
+          adjustedRoute.Position = new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ);
+          adjustedRoute.ConnectionPosition = route.EndPoint;
+        }
+        routeObjectsTemp.Add(adjustedRoute);
+        length += adjustedRoute.Length * 12;
+        //adding all entries to be taken away from
+        foreach (var kvp in verticalRouteObjects.Reverse()) {
+          routeObjectsTemp.Add(kvp.Value);
+          length += kvp.Value.Length * 12;
+      }
+      foreach (var kvp in verticalRouteObjects) {
+          var verticalRoute2 = kvp.Value;
+          if (adjustedRoute.IsUp) {
+            if (verticalRoute2.NodeTypeId == 3) {
+              entryPointZ = verticalRoute2.Position.Z - (verticalRoute2.Length * 12);
+            }
+            else {
+              entryPointZ = verticalRoute2.Position.Z;
+            }
+          }
+          else {
+            if (verticalRoute2.NodeTypeId == 3) {
+              entryPointZ = verticalRoute2.Position.Z;
+            }
+            else {
+              entryPointZ = verticalRoute2.Position.Z + (verticalRoute2.Length * 12);
+            }
+          }
+          routeObjectsTemp.Remove(routeObjectsTemp.Last());
+          length -= kvp.Value.Length * 12;
+          fixtureUnits += TraverseVerticalRoute(verticalRoute2, entryPointZ, fixtureUnits, visited, length, routeObjectsTemp);
+        }
+        entryPointZ = route.EndPoint.Z;
+        routeObjectsTemp.Remove(routeObjectsTemp.Last());
+        length -= adjustedRoute.Length * 12;
+        fixtureUnits += TraverseVerticalRoute(verticalRoute, entryPointZ, fixtureUnits, visited, length, routeObjectsTemp);
+        route.FixtureUnits = fixtureUnits;
+      }
+
+      //Horizontal Routes
+      foreach (var childRoute in childRoutes) {
+        if (childRoute.Key.Id != route.Id) {
+          var routeObjectsTemp = new List<Object>(routeObjects);
+          var adjustedRoute = new PlumbingHorizontalRoute(
+           route.Id,
+           route.ProjectId,
+           route.Type,
+           route.StartPoint,
+           getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value),
+           route.BasePointId,
+           route.PipeType
+          );
+          routeObjectsTemp.Add(adjustedRoute);
+          double downstreamUnits = TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
+          // Add to the total for this route
+          fixtureUnits += downstreamUnits;
+          adjustedRoute.FixtureUnits = fixtureUnits;
+        }
+      }
+
+
+
+      return fixtureUnits;
+     
     }
-    public void TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, int direction, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+    public double TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, double fixtureUnits, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
       if (!visited.Add(route.Id))
-        return;
+        return 0;
 
       if (routeObjects == null)
         routeObjects = new List<Object>();
+
+      double fixtureUnitsSoFar = 0;
 
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
       var routePos = new Point3d(route.Position.X, route.Position.Y, 0);
+      
       double startHeight = route.Position.Z;
       double endHeight = route.Position.Z + (route.Length * 12);
       if (route.NodeTypeId == 3) {
         startHeight = route.Position.Z - (route.Length * 12);
         endHeight = route.Position.Z;
       }
-    
+
+      double startZ = entryPointZ;
+      double endZ = 0;
+      if (route.IsUp) {
+        endZ = endHeight;
+      }
+      else {
+        endZ = startHeight;
+      }
+
       ed.WriteMessage($"\nTraversing vertical route: {route.Id} at position {route.Position}");
 
       List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
-        .Where(r => r.Type == route.Type && r.BasePointId == route.BasePointId && (r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || (routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= startHeight && r.EndPoint.Z <= endHeight)))
+        .Where(r => r.Type == route.Type && r.BasePointId == route.BasePointId && (r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || (routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= Math.Min(startZ, endZ) && r.StartPoint.Z <= Math.Max(startZ, endZ))))
+        .OrderByDescending(r => Math.Abs(r.StartPoint.Z - startZ))
         .ToList();
 
       bool isUpRoute = (route.NodeTypeId == 1 || route.NodeTypeId == 2);
       foreach (var childRoute in childRoutes) {
-        double newLength = Math.Abs(childRoute.StartPoint.Z - entryPointZ) / 12.0;
-        double newLength2 = ((route.Length * 12) - Math.Abs(entryPointZ - childRoute.StartPoint.Z)) / 12;
-
-        bool isUpward = direction == 2;
-        if (direction == 1) {
-          isUpward = childRoute.StartPoint.Z >= entryPointZ;
-          newLength2 = newLength;
-        }
-        Point3d connectionPosition = route.ConnectionPosition;
-        
-        if (route.NodeTypeId != 3) {
-          new Point3d(childRoute.StartPoint.X, childRoute.StartPoint.Y, entryPointZ);
-        }
+        double newLength = Math.Abs(startZ - childRoute.StartPoint.Z) / 12.0;
+  
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
           route.Id,
           route.ProjectId,
           route.Type,
-          new Point3d(route.Position.X, route.Position.Y, entryPointZ),
-          connectionPosition,
+          route.Position,
+          route.ConnectionPosition,
           route.VerticalRouteId,
           route.BasePointId,
           route.StartHeight,
           newLength,
           route.NodeTypeId,
-          route.Width
+          route.PipeType,
+          route.IsUp
         );
-        if (isUpward != isUpRoute) {
+        if (route.IsUp != isUpRoute) {
           adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
-          adjustedRoute.ConnectionPosition = new Point3d(childRoute.StartPoint.X, childRoute.StartPoint.Y, childRoute.StartPoint.Z);
-          adjustedRoute.Length = newLength2;
+          adjustedRoute.ConnectionPosition = childRoute.StartPoint;
         }
+
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
-        TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length*12), routeObjectsTemp);
+
+        fixtureUnitsSoFar += TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length * 12), routeObjectsTemp);
+        adjustedRoute.FixtureUnits = fixtureUnits + fixtureUnitsSoFar;
       }
+      return fixtureUnitsSoFar;
     }
     private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
       var direction = end - start;
@@ -401,7 +439,7 @@ namespace GMEPPlumbing {
                 closestPoint, // new start point
                 route.EndPoint,
                 route.BasePointId,
-                route.Width
+                route.PipeType
             );
             result[adjustedRoute] = targetRoute.StartPoint.DistanceTo(targetRoute.EndPoint);
             continue;
@@ -424,7 +462,7 @@ namespace GMEPPlumbing {
                 closestPoint, // new start point
                 route.EndPoint,
                 route.BasePointId,
-                route.Width
+                route.PipeType
             );
             result[adjustedRoute] = segLen;
             continue;
@@ -442,11 +480,12 @@ namespace GMEPPlumbing {
                 intersectionPoint, // new start point
                 route.EndPoint,
                 route.BasePointId,
-                route.Width
+                route.PipeType
             );
           result[adjustedRoute] = segLen;
         }
       }
+      result.OrderByDescending(kvp => kvp.Value); // Sort by distance
       return result;
     }
     // Helper: Find the closest point on a segment to a given point
@@ -555,16 +594,112 @@ namespace GMEPPlumbing {
 
       return endRoute;
     }*/
-    public SortedDictionary<int, PlumbingVerticalRoute> GetVerticalRoutesByIdOrdered(string verticalRouteId) {
+    public SortedDictionary<int, PlumbingVerticalRoute> GetVerticalRoutesByIdOrdered(string verticalRouteId, bool isUp, string basePointId) {
       var basePointFloorLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp.Floor);
-      var dict = VerticalRoutes
-       .Where(vr => vr.VerticalRouteId == verticalRouteId && basePointFloorLookup.ContainsKey(vr.BasePointId))
-       .ToDictionary(
-           vr => basePointFloorLookup[vr.BasePointId], // floor
-           vr => vr
-       );
 
-      return new SortedDictionary<int, PlumbingVerticalRoute>(dict);
+
+      // Get all routes for this verticalRouteId and with a valid base point
+      var routes = VerticalRoutes
+          .Where(vr => vr.VerticalRouteId == verticalRouteId && basePointFloorLookup.ContainsKey(vr.BasePointId))
+          .ToList();
+
+      if (routes.Count == 0)
+        return new SortedDictionary<int, PlumbingVerticalRoute>();
+
+      // Find the base point floor (use the first route as reference)
+      int basePointFloor = basePointFloorLookup[basePointId];
+
+      // Filter by direction
+      var filtered = routes
+          .Where(vr =>
+              (isUp && basePointFloorLookup[vr.BasePointId] > basePointFloor) ||
+              (!isUp && basePointFloorLookup[vr.BasePointId] < basePointFloor)
+          )
+          .ToDictionary(
+              vr => basePointFloorLookup[vr.BasePointId],
+              vr => vr
+          );
+
+      // Sort accordingly
+      var sorted = isUp
+          ? new SortedDictionary<int, PlumbingVerticalRoute>(filtered, Comparer<int>.Create((a, b) => b.CompareTo(a))) 
+          : new SortedDictionary<int, PlumbingVerticalRoute>(filtered);
+
+      return sorted;
+    }
+
+    public double FixtureUnitsToGallonsPerMinute(double fixtureUnits, int flowTypeId) {
+      // Key: fixture units, Value: gpm
+      // All values from the provided charts
+      SortedDictionary<int, int> flushTankDict = new SortedDictionary<int, int>
+      {
+        // Data from Image 1
+        {0, 1}, {1, 2}, {3, 3}, {4, 4}, {6, 5}, {7, 6}, {8, 7}, {10, 8}, {12, 9}, {13, 10},
+        {15, 11}, {16, 12}, {18, 13}, {20, 14}, {21, 15}, {23, 16}, {24, 17}, {26, 18}, {28, 19},
+        {30, 20}, {32, 21}, {34, 22}, {36, 23}, {39, 24}, {42, 25}, {44, 26}, {46, 27}, {49, 28},
+        {51, 29}, {54, 30}, {56, 31}, {58, 32}, {60, 33}, {63, 34}, {66, 35}, {69, 36}, {74, 37},
+        {78, 38}, {83, 39}, {86, 40}, {90, 41}, {95, 42}, {99, 43}, {103, 44}, {107, 45}, {111, 46},
+        {115, 47}, {119, 48}, {123, 49}, {127, 50}, {130, 51}, {135, 52}, {141, 53}, {146, 54},
+        {151, 55}, {155, 56}, {160, 57}, {165, 58}, {170, 59}, {175, 60}, {185, 62}, {195, 64},
+        {205, 66},
+
+        // Data from Image 2
+        {215, 68}, {225, 70}, {236, 72}, {245, 74}, {254, 76}, {264, 78}, {284, 82}, {294, 84},
+        {305, 86}, {315, 88}, {326, 90}, {337, 92}, {348, 94}, {359, 96}, {370, 98}, {380, 100},
+        {406, 105}, {431, 110}, {455, 115}, {479, 120}, {506, 125}, {533, 130}, {559, 135},
+        {585, 140}, {611, 145}, {638, 150}, {665, 155}, {692, 160}, {719, 165}, {748, 170},
+        {778, 175}, {809, 180}, {840, 185}, {874, 190}, {945, 200}, {1018, 210}, {1091, 220},
+        {1173, 230}, {1254, 240}, {1335, 250}, {1418, 260}, {1500, 270}, {1583, 280}, {1668, 290},
+        {1755, 300}, {1845, 310}, {1926, 320}, {2018, 330}, {2110, 340}, {2204, 350}, {2298, 360},
+        {2388, 370}, {2480, 380}, {2575, 390}, {2670, 400}, {2765, 410}, {2862, 420}, {2960, 430},
+        {3060, 440}, {3150, 450}, {3620, 500}, {4070, 550}, {4480, 600}, {5380, 700}, {6280, 800},
+        {7280, 900},
+
+        // Data from Image 3
+        {8300, 1000}, {9320, 1100}, {10340, 1200}, {11360, 1300}, {12380, 1400}, {13400, 1500},
+        {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
+        {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
+      };
+
+      SortedDictionary<int, int> flushValveDict = new SortedDictionary<int, int>
+      {
+        // Data from Image 1
+        {6, 23}, {7, 24}, {8, 25}, {9, 26}, {10, 27}, {11, 28}, {12, 29}, {13, 30}, {14, 31},
+        {15, 32}, {16, 33}, {18, 34}, {20, 35}, {21, 36}, {23, 37}, {25, 38}, {26, 39}, {28, 40},
+        {30, 41}, {31, 42}, {33, 43}, {35, 44}, {37, 45}, {39, 46}, {42, 47}, {44, 48}, {46, 49},
+        {48, 50}, {50, 51}, {52, 52}, {54, 53}, {57, 54}, {60, 55}, {63, 56}, {66, 57}, {69, 58},
+        {73, 59}, {76, 60}, {82, 62}, {88, 64}, {95, 66},
+
+        // Data from Image 2
+        {102, 68}, {108, 70}, {116, 72}, {124, 74}, {132, 76}, {140, 78}, {158, 82}, {168, 84},
+        {176, 86}, {186, 88}, {195, 90}, {205, 92}, {214, 94}, {223, 96}, {234, 98}, {245, 100},
+        {270, 105}, {295, 110}, {329, 115}, {365, 120}, {396, 125}, {430, 130}, {460, 135},
+        {490, 140}, {521, 145}, {559, 150}, {596, 155}, {631, 160}, {666, 165}, {700, 170},
+        {739, 175}, {775, 180}, {811, 185}, {850, 190}, {931, 200}, {1009, 210}, {1091, 220},
+        {1173, 230}, {1254, 240}, {1335, 250}, {1418, 260}, {1500, 270}, {1583, 280}, {1668, 290},
+        {1755, 300}, {1845, 310}, {1926, 320}, {2018, 330}, {2110, 340}, {2204, 350}, {2298, 360},
+        {2388, 370}, {2480, 380}, {2575, 390}, {2670, 400}, {2765, 410}, {2862, 420}, {2960, 430},
+        {3060, 440}, {3150, 450}, {3620, 500}, {4070, 550}, {4480, 600}, {5380, 700}, {6280, 800},
+        {7280, 900},
+
+        // Data from Image 3
+        {8300, 1000}, {9320, 1100}, {10340, 1200}, {11360, 1300}, {12380, 1400}, {13400, 1500},
+        {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
+        {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
+      };
+
+      var lookup = flowTypeId == 1 ? flushTankDict : flushValveDict;
+
+      if (flowTypeId != 1 && flowTypeId != 2)
+        return 0;
+
+      // Find the minimum gpm for which fixtureUnits <= key
+      foreach (var kvp in lookup) {
+        if (fixtureUnits <= kvp.Key)
+          return kvp.Value;
+      }
+      return lookup.Last().Value;
+
     }
   }
 }
