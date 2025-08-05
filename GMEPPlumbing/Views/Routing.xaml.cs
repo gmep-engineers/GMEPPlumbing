@@ -156,6 +156,7 @@ namespace GMEPPlumbing.Views
                     vr.PipeType,
                     vr.IsUp
                 );
+                copy.FixtureUnits = vr.FixtureUnits;
                 newFullRoute.RouteItems.Add(copy);
               }
               else if (item is PlumbingSource plumbingSource) {
@@ -340,7 +341,7 @@ namespace GMEPPlumbing.Views
           double pipeLength = start.DistanceTo(end);
           int feet = (int)(pipeLength / 12);
           int inches = (int)Math.Round(pipeLength % 12);
-          string textString = $"{feet}' {inches}\"";
+          string textString = $"{feet}' {inches}\"\n Fixture Units: {verticalRoute.FixtureUnits}";
           int textHeight = 8;
           double textWidth = textHeight * textString.Length * 0.4;
 

@@ -101,6 +101,7 @@ namespace GMEPPlumbing {
 
       double fixtureUnits = 0;
 
+
       //Fixtures
       foreach (var fixture in fixtures) {
 
@@ -134,10 +135,9 @@ namespace GMEPPlumbing {
         int feet = (int)(lengthInInches / 12);
         int inches = (int)Math.Round(lengthInInches % 12);
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
-
-       
       }
 
+    
       //Vertical Routes
       foreach (var verticalRoute in verticalRoutes) {
         double length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
@@ -187,10 +187,10 @@ namespace GMEPPlumbing {
           adjustedRoute.Position = new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ);
           adjustedRoute.ConnectionPosition = route.EndPoint;
         }
-        TraverseVerticalRoute(verticalRoute, entryPointZ, 1, visited, length, routeObjectsTemp);
         routeObjectsTemp.Add(adjustedRoute);
-       //adding all entries to be taken away from
-       foreach(var kvp in verticalRouteObjects.Reverse()) {
+        length += adjustedRoute.Length * 12;
+        //adding all entries to be taken away from
+        foreach (var kvp in verticalRouteObjects.Reverse()) {
           routeObjectsTemp.Add(kvp.Value);
           length += kvp.Value.Length * 12;
       }
@@ -212,12 +212,14 @@ namespace GMEPPlumbing {
               entryPointZ = verticalRoute2.Position.Z + (verticalRoute2.Length * 12);
             }
           }
-
           routeObjectsTemp.Remove(routeObjectsTemp.Last());
           length -= kvp.Value.Length * 12;
-
-          TraverseVerticalRoute(verticalRoute2, entryPointZ, 1, visited, length, routeObjectsTemp);
+          fixtureUnits += TraverseVerticalRoute(verticalRoute2, entryPointZ, fixtureUnits, visited, length, routeObjectsTemp);
         }
+        entryPointZ = route.EndPoint.Z;
+        routeObjectsTemp.Remove(routeObjectsTemp.Last());
+        length -= adjustedRoute.Length * 12;
+        fixtureUnits += TraverseVerticalRoute(verticalRoute, entryPointZ, fixtureUnits, visited, length, routeObjectsTemp);
       }
 
       //Horizontal Routes
@@ -240,20 +242,23 @@ namespace GMEPPlumbing {
           adjustedRoute.FixtureUnits = fixtureUnits;
         }
       }
-      
-      
+
+
+
       return fixtureUnits;
      
     }
-    public void TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, int direction, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+    public double TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, double fixtureUnits, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
       if (!visited.Add(route.Id))
-        return;
+        return 0;
 
       if (routeObjects == null)
         routeObjects = new List<Object>();
+
+      double fixtureUnitsSoFar = 0;
 
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
@@ -308,8 +313,11 @@ namespace GMEPPlumbing {
 
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
-        TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length * 12), routeObjectsTemp);
+
+        fixtureUnitsSoFar += TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length * 12), routeObjectsTemp);
+        adjustedRoute.FixtureUnits = fixtureUnits + fixtureUnitsSoFar;
       }
+      return fixtureUnitsSoFar;
     }
     private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
       var direction = end - start;
