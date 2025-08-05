@@ -1191,7 +1191,7 @@ namespace GMEPPlumbing
       }
       bool water = prompt.Water;
       bool gas = prompt.Gas;
-      bool sewerVent = prompt.SewerVent;
+      bool sewerVent = false;
       bool storm = false;
       string planName = prompt.PlanName.ToUpper();
       string floorQtyResult = prompt.FloorQty;
