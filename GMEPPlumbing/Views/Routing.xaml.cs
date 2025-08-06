@@ -139,6 +139,7 @@ namespace GMEPPlumbing.Views
                     hr.PipeType
                 );
                 copy.FixtureUnits = hr.FixtureUnits;
+                copy.FlowTypeId = hr.FlowTypeId;
                 newFullRoute.RouteItems.Add(copy);
               }
               else if (item is PlumbingVerticalRoute vr) {
@@ -157,6 +158,7 @@ namespace GMEPPlumbing.Views
                     vr.IsUp
                 );
                 copy.FixtureUnits = vr.FixtureUnits;
+                copy.FlowTypeId = vr.FlowTypeId;
                 newFullRoute.RouteItems.Add(copy);
               }
               else if (item is PlumbingSource plumbingSource) {
@@ -265,7 +267,7 @@ namespace GMEPPlumbing.Views
           double fixtureUnits = horizontalRoute.FixtureUnits;
 
           double textHeight = 8;
-          string textString = $"{feet}' {inches}\"\n Fixture Units: {horizontalRoute.FixtureUnits}";
+          string textString = $"{feet}' {inches}\"\n Fixture Units: {horizontalRoute.FixtureUnits} FlowTypeId: {horizontalRoute.FlowTypeId}";
           double textWidth = textHeight * textString.Length * 0.15;
 
           // Offset so the back of the text aligns with the end point
@@ -400,10 +402,11 @@ namespace GMEPPlumbing.Views
           pipeLength += verticalRoute.Length * 12; // Convert to inches
           pipeFixtureUnits += verticalRoute.FixtureUnits;
         }
+        int flowTypeId = verticalRoutes.First().FlowTypeId;
         // Calculate pipe length in feet/inches
         int feet = (int)(pipeLength / 12);
         int inches = (int)Math.Round(pipeLength % 12);
-        string textString = $"{feet}' {inches}\"\n Fixture Units: {pipeFixtureUnits}";
+        string textString = $"{feet}' {inches}\"\n Fixture Units: {pipeFixtureUnits} FlowTypeId: {flowTypeId}";
         int textHeight = 8;
         double textWidth = textHeight * textString.Length * 0.15;
 
