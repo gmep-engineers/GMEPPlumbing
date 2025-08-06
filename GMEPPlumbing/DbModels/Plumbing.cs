@@ -85,6 +85,7 @@ namespace GMEPPlumbing {
     public int Dfu;
     public string WaterGasBlockName;
     public string WasteVentBlockName;
+    public int Cfh;
 
     public PlumbingFixtureCatalogItem(
       int id,
@@ -102,7 +103,8 @@ namespace GMEPPlumbing {
       decimal hotDemand,
       int dfu,
       string waterGasBlockName,
-      string wasteVentBlockName
+      string wasteVentBlockName,
+      int cfh
     ) {
       Id = id;
       TypeId = typeId;
@@ -120,6 +122,7 @@ namespace GMEPPlumbing {
       Dfu = dfu;
       WaterGasBlockName = waterGasBlockName;
       WasteVentBlockName = wasteVentBlockName;
+      Cfh = cfh;
     }
   }
 

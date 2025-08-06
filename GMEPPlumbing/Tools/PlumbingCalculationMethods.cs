@@ -108,12 +108,16 @@ namespace GMEPPlumbing {
 
         PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(fixture.CatalogId);
         ed.WriteMessage($"\nFixture {fixture.Id} has a demand of {catalogItem.FixtureDemand} fixture units.");
-        fixtureUnits += (double)catalogItem.FixtureDemand;
+        double units = (double)catalogItem.FixtureDemand;
+        if (GetFixtureInputTypes(fixture).Contains("Gas")) {
+          units = catalogItem.Cfh;
+        }
+        fixtureUnits += units;
         flowTypeId = (flowTypeId == 2) ? 2 : fixture.FlowTypeId;
 
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
         //will change later to include all fixture units for fixtures on the horizontal route(although is that possible?). For now, just single fixture.
-        route.FixtureUnits = (double)catalogItem.FixtureDemand;
+        route.FixtureUnits = units;
         route.FlowTypeId = flowTypeId;
         routeObjectsTemp.Add(route);
         routeObjectsTemp.Add(fixture);
