@@ -195,6 +195,7 @@ namespace GMEPPlumbing {
     public double FixtureUnits { get; set; } = 0;
     public int FlowTypeId { get; set; } = 1;
     public int GPM { get; set; } = 0;
+    public double LongestRunLength { get; set; } = 0;
     public PlumbingHorizontalRoute(
       string id,
       string projectId,
@@ -306,6 +307,7 @@ namespace GMEPPlumbing {
     public double FixtureUnits { get; set; } = 0;
     public int FlowTypeId { get; set; } = 1;
     public int GPM { get; set; } = 0;
+    public double LongestRunLength { get; set; } = 0;
 
     public PlumbingVerticalRoute(
       string id,
