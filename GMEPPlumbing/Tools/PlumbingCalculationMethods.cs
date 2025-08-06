@@ -217,14 +217,14 @@ namespace GMEPPlumbing {
           }
           routeObjectsTemp.Remove(routeObjectsTemp.Last());
           length -= kvp.Value.Length * 12;
-          Tuple<double, int> verticalRoute2Result = TraverseVerticalRoute(verticalRoute2, entryPointZ, fixtureUnits, visited, length, routeObjectsTemp);
+          Tuple<double, int> verticalRoute2Result = TraverseVerticalRoute(verticalRoute2, entryPointZ, fixtureUnits, flowTypeId, visited, length, routeObjectsTemp);
           fixtureUnits += verticalRoute2Result.Item1;
           flowTypeId = (flowTypeId == 2) ? 2 : verticalRoute2Result.Item2;
         }
         entryPointZ = route.EndPoint.Z;
         routeObjectsTemp.Remove(routeObjectsTemp.Last());
         length -= adjustedRoute.Length * 12;
-        Tuple<double, int> verticalRouteResult = TraverseVerticalRoute(adjustedRoute, entryPointZ, fixtureUnits, visited, length, routeObjectsTemp);
+        Tuple<double, int> verticalRouteResult = TraverseVerticalRoute(adjustedRoute, entryPointZ, fixtureUnits, flowTypeId, visited, length, routeObjectsTemp);
         fixtureUnits += verticalRouteResult.Item1;
         flowTypeId = (flowTypeId == 2) ? 2 : verticalRouteResult.Item2;
         route.FixtureUnits = fixtureUnits;
@@ -259,7 +259,7 @@ namespace GMEPPlumbing {
       return new Tuple<double, int>(fixtureUnits, flowTypeId);
      
     }
-    public Tuple<double, int> TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, double fixtureUnits, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+    public Tuple<double, int> TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, double fixtureUnits, int flowTypeId, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
@@ -270,7 +270,7 @@ namespace GMEPPlumbing {
         routeObjects = new List<Object>();
 
       double fixtureUnitsSoFar = 0;
-      int flowTypeId = 1;
+      int flowTypeIdTemp = flowTypeId;
 
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
@@ -328,11 +328,11 @@ namespace GMEPPlumbing {
 
         Tuple<double, int> childRouteResult = TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length * 12), routeObjectsTemp);
         fixtureUnitsSoFar += childRouteResult.Item1;
-        flowTypeId = (flowTypeId == 2) ? 2 : childRouteResult.Item2;
+        flowTypeIdTemp = (flowTypeIdTemp == 2) ? 2 : childRouteResult.Item2;
         adjustedRoute.FixtureUnits = fixtureUnits + fixtureUnitsSoFar;
-        adjustedRoute.FlowTypeId = flowTypeId;
+        adjustedRoute.FlowTypeId = flowTypeIdTemp;
       }
-      return new Tuple<double, int>(fixtureUnitsSoFar, flowTypeId);
+      return new Tuple<double, int>(fixtureUnitsSoFar, flowTypeIdTemp);
     }
     private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
       var direction = end - start;

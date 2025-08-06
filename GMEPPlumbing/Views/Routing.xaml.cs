@@ -403,6 +403,9 @@ namespace GMEPPlumbing.Views
           pipeFixtureUnits += verticalRoute.FixtureUnits;
         }
         int flowTypeId = verticalRoutes.First().FlowTypeId;
+        if (verticalRoutes.First().IsUp) {
+          flowTypeId = verticalRoutes.Last().FlowTypeId;
+        }
         // Calculate pipe length in feet/inches
         int feet = (int)(pipeLength / 12);
         int inches = (int)Math.Round(pipeLength % 12);
