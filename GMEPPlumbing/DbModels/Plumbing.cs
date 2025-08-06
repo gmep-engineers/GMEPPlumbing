@@ -224,6 +224,8 @@ namespace GMEPPlumbing {
     public bool IsUp;
     public double FixtureUnits { get; set; } = 0;
 
+    public int FlowTypeId { get; set; } = 1;
+
     public PlumbingVerticalRoute(
       string id,
       string projectId,
