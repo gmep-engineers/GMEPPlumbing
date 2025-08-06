@@ -264,11 +264,12 @@ namespace GMEPPlumbing.Views
           double length = horizontalRoute.StartPoint.DistanceTo(horizontalRoute.EndPoint);
           int feet = (int)(length / 12);
           int inches = (int)Math.Round(length % 12);
-          double fixtureUnits = horizontalRoute.FixtureUnits;
+          horizontalRoute.GenerateGallonsPerMinute();
+          string flow = (horizontalRoute.FlowTypeId == 1) ? "Flush Tank" : "Flush Valve";
 
           double textHeight = 8;
-          string textString = $"{feet}' {inches}\"\n Fixture Units: {horizontalRoute.FixtureUnits} FlowTypeId: {horizontalRoute.FlowTypeId}";
-          double textWidth = textHeight * textString.Length * 0.15;
+          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM}";
+          double textWidth = textHeight * textString.Length * 0.05;
 
           // Offset so the back of the text aligns with the end point
           var textPos = new Point3D(
@@ -299,7 +300,7 @@ namespace GMEPPlumbing.Views
           if (!fullVerticalRoutes.ContainsKey(verticalRoute.VerticalRouteId)) {
             fullVerticalRoutes[verticalRoute.VerticalRouteId] = new List<PlumbingVerticalRoute>();
           }
-
+          verticalRoute.GenerateGallonsPerMinute();
           fullVerticalRoutes[verticalRoute.VerticalRouteId].Add(verticalRoute);
 
           ModelVisual3D fullModel = new ModelVisual3D();
@@ -403,15 +404,19 @@ namespace GMEPPlumbing.Views
           pipeFixtureUnits += verticalRoute.FixtureUnits;
         }
         int flowTypeId = verticalRoutes.First().FlowTypeId;
+        int gpm = verticalRoutes.First().GPM;
         if (verticalRoutes.First().IsUp) {
           flowTypeId = verticalRoutes.Last().FlowTypeId;
+          gpm = verticalRoutes.Last().GPM;
         }
+        string flow = (flowTypeId == 1) ? "Flush Tank" : "Flush Valve";
+
         // Calculate pipe length in feet/inches
         int feet = (int)(pipeLength / 12);
         int inches = (int)Math.Round(pipeLength % 12);
-        string textString = $"{feet}' {inches}\"\n Fixture Units: {pipeFixtureUnits} FlowTypeId: {flowTypeId}";
+        string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm}";
         int textHeight = 8;
-        double textWidth = textHeight * textString.Length * 0.15;
+        double textWidth = textHeight * textString.Length * 0.05;
 
         double offset = textWidth / 2;
         if (verticalRoutes[0].IsUp)
@@ -425,8 +430,8 @@ namespace GMEPPlumbing.Views
           Height = textHeight,
           Foreground = Brushes.Black,
           Background = Brushes.White,
-          TextDirection = new Vector3D(0, 0, -1),
-          UpDirection = new Vector3D(1, 0, 0)
+          TextDirection = new Vector3D(1, 0, 0),
+          UpDirection = new Vector3D(0, 0, 1)
         };
 
         textVisuals.Add(textModel);
