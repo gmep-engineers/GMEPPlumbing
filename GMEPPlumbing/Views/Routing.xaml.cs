@@ -264,10 +264,10 @@ namespace GMEPPlumbing.Views
           double length = horizontalRoute.StartPoint.DistanceTo(horizontalRoute.EndPoint);
           int feet = (int)(length / 12);
           int inches = (int)Math.Round(length % 12);
-          double fixtureUnits = horizontalRoute.FixtureUnits;
+          horizontalRoute.GenerateGallonsPerMinute();
 
           double textHeight = 8;
-          string textString = $"{feet}' {inches}\"\n Fixture Units: {horizontalRoute.FixtureUnits} FlowTypeId: {horizontalRoute.FlowTypeId}";
+          string textString = $"{feet}' {inches}\"\n Fixture Units: {horizontalRoute.FixtureUnits} FlowTypeId: {horizontalRoute.FlowTypeId} GPM: {horizontalRoute.GPM}";
           double textWidth = textHeight * textString.Length * 0.15;
 
           // Offset so the back of the text aligns with the end point
@@ -299,7 +299,7 @@ namespace GMEPPlumbing.Views
           if (!fullVerticalRoutes.ContainsKey(verticalRoute.VerticalRouteId)) {
             fullVerticalRoutes[verticalRoute.VerticalRouteId] = new List<PlumbingVerticalRoute>();
           }
-
+          verticalRoute.GenerateGallonsPerMinute();
           fullVerticalRoutes[verticalRoute.VerticalRouteId].Add(verticalRoute);
 
           ModelVisual3D fullModel = new ModelVisual3D();
@@ -403,13 +403,15 @@ namespace GMEPPlumbing.Views
           pipeFixtureUnits += verticalRoute.FixtureUnits;
         }
         int flowTypeId = verticalRoutes.First().FlowTypeId;
+        int gpm = verticalRoutes.First().GPM;
         if (verticalRoutes.First().IsUp) {
           flowTypeId = verticalRoutes.Last().FlowTypeId;
+          gpm = verticalRoutes.Last().GPM;
         }
         // Calculate pipe length in feet/inches
         int feet = (int)(pipeLength / 12);
         int inches = (int)Math.Round(pipeLength % 12);
-        string textString = $"{feet}' {inches}\"\n Fixture Units: {pipeFixtureUnits} FlowTypeId: {flowTypeId}";
+        string textString = $"{feet}' {inches}\"\n Fixture Units: {pipeFixtureUnits} FlowTypeId: {flowTypeId} GPM: {gpm}";
         int textHeight = 8;
         double textWidth = textHeight * textString.Length * 0.15;
 
