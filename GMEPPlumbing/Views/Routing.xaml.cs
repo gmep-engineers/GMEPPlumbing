@@ -273,7 +273,10 @@ namespace GMEPPlumbing.Views
           int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
 
           double textHeight = 8;
-          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n Longest Run: {longestRunFeet}' {longestRunInches}\"";
+          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM}";
+         if (horizontalRoute.Type == "Gas") {
+            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\"";
+          }
           double textWidth = textHeight * textString.Length * 0.05;
 
           // Offset so the back of the text aligns with the end point
@@ -422,7 +425,10 @@ namespace GMEPPlumbing.Views
         // Calculate pipe length in feet/inches
         int feet = (int)(pipeLength / 12);
         int inches = (int)Math.Round(pipeLength % 12);
-        string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\"";
+        string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n";
+        if (verticalRoutes.First().Type == "Gas") {
+          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\"";
+        }
         int textHeight = 8;
         double textWidth = textHeight * textString.Length * 0.05;
 
