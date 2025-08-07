@@ -78,12 +78,12 @@ namespace GMEPPlumbing {
         }
       }
     }
-    public Tuple<double, int> TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+    public Tuple<double, int, double> TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
       if (!visited.Add(route.Id))
-        return new Tuple<double, int>(0, 1);
+        return new Tuple<double, int, double>(0, 1, 0);
 
       if (routeObjects == null)
         routeObjects = new List<Object>();
@@ -101,11 +101,11 @@ namespace GMEPPlumbing {
 
       double fixtureUnits = 0;
       int flowTypeId = 1;
+      double longestRunLength = 0;
 
 
       //Fixtures
       foreach (var fixture in fixtures) {
-
         PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(fixture.CatalogId);
         ed.WriteMessage($"\nFixture {fixture.Id} has a demand of {catalogItem.FixtureDemand} fixture units.");
         double units = (double)catalogItem.FixtureDemand;
@@ -128,6 +128,9 @@ namespace GMEPPlumbing {
         }
 
         double lengthInInches = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+        longestRunLength = Math.Max(longestRunLength, lengthInInches);
+        route.LongestRunLength = longestRunLength;
+
         PlumbingFullRoute fullRoute = new PlumbingFullRoute();
         fullRoute.Length = lengthInInches;
         fullRoute.RouteItems = routeObjectsTemp;
@@ -221,18 +224,21 @@ namespace GMEPPlumbing {
           }
           routeObjectsTemp.Remove(routeObjectsTemp.Last());
           length -= kvp.Value.Length * 12;
-          Tuple<double, int> verticalRoute2Result = TraverseVerticalRoute(verticalRoute2, entryPointZ, fixtureUnits, flowTypeId, visited, length, routeObjectsTemp);
+          Tuple<double, int, double> verticalRoute2Result = TraverseVerticalRoute(verticalRoute2, entryPointZ, fixtureUnits, flowTypeId, visited, length, routeObjectsTemp);
           fixtureUnits += verticalRoute2Result.Item1;
           flowTypeId = (flowTypeId == 2) ? 2 : verticalRoute2Result.Item2;
+          longestRunLength = Math.Max(longestRunLength, verticalRoute2Result.Item3);
         }
         entryPointZ = route.EndPoint.Z;
         routeObjectsTemp.Remove(routeObjectsTemp.Last());
         length -= adjustedRoute.Length * 12;
-        Tuple<double, int> verticalRouteResult = TraverseVerticalRoute(adjustedRoute, entryPointZ, fixtureUnits, flowTypeId, visited, length, routeObjectsTemp);
+        Tuple<double, int, double> verticalRouteResult = TraverseVerticalRoute(adjustedRoute, entryPointZ, fixtureUnits, flowTypeId, visited, length, routeObjectsTemp);
         fixtureUnits += verticalRouteResult.Item1;
         flowTypeId = (flowTypeId == 2) ? 2 : verticalRouteResult.Item2;
+        longestRunLength = Math.Max(longestRunLength, verticalRouteResult.Item3);
         route.FixtureUnits = fixtureUnits;
         route.FlowTypeId = flowTypeId;
+        route.LongestRunLength = longestRunLength;
       }
 
       //Horizontal Routes
@@ -249,32 +255,35 @@ namespace GMEPPlumbing {
            route.PipeType
           );
           routeObjectsTemp.Add(adjustedRoute);
-          Tuple<double, int> childRouteResult = TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
+          Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
           // Add to the total for this route
           fixtureUnits += childRouteResult.Item1;
           flowTypeId = (flowTypeId == 2) ? 2 : childRouteResult.Item2;
+          longestRunLength = Math.Max(longestRunLength, childRouteResult.Item3);
           adjustedRoute.FixtureUnits = fixtureUnits;
           adjustedRoute.FlowTypeId = flowTypeId;
+          adjustedRoute.LongestRunLength = longestRunLength;
         }
       }
 
 
 
-      return new Tuple<double, int>(fixtureUnits, flowTypeId);
+      return new Tuple<double, int, double>(fixtureUnits, flowTypeId, longestRunLength);
      
     }
-    public Tuple<double, int> TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, double fixtureUnits, int flowTypeId, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+    public Tuple<double, int, double> TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, double fixtureUnits, int flowTypeId, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
       if (!visited.Add(route.Id))
-        return new Tuple<double, int>(0, 1);
+        return new Tuple<double, int, double>(0, 1, 0);
 
       if (routeObjects == null)
         routeObjects = new List<Object>();
 
       double fixtureUnitsSoFar = 0;
       int flowTypeIdTemp = flowTypeId;
+      double longestRunLength = 0; 
 
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
@@ -330,13 +339,15 @@ namespace GMEPPlumbing {
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
 
-        Tuple<double, int> childRouteResult = TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length * 12), routeObjectsTemp);
+        Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length * 12), routeObjectsTemp);
         fixtureUnitsSoFar += childRouteResult.Item1;
         flowTypeIdTemp = (flowTypeIdTemp == 2) ? 2 : childRouteResult.Item2;
+        longestRunLength = Math.Max(longestRunLength, childRouteResult.Item3);
         adjustedRoute.FixtureUnits = fixtureUnits + fixtureUnitsSoFar;
         adjustedRoute.FlowTypeId = flowTypeIdTemp;
+        adjustedRoute.LongestRunLength = longestRunLength;
       }
-      return new Tuple<double, int>(fixtureUnitsSoFar, flowTypeIdTemp);
+      return new Tuple<double, int, double>(fixtureUnitsSoFar, flowTypeIdTemp, longestRunLength);
     }
     private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
       var direction = end - start;
