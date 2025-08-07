@@ -622,7 +622,8 @@ namespace GMEPPlumbing.Services
             GetSafeDecimal(reader, "hot_demand"),
             GetSafeInt(reader, "dfu"),
             GetSafeString(reader, "water_gas_block_name"),
-            GetSafeString(reader, "waste_vent_block_name")
+            GetSafeString(reader, "waste_vent_block_name"),
+            GetSafeInt(reader, "cfh")
           )
         );
       }
@@ -656,7 +657,8 @@ namespace GMEPPlumbing.Services
         GetSafeDecimal(reader, "hot_demand"),
         GetSafeInt(reader, "dfu"),
         GetSafeString(reader, "water_gas_block_name"),
-        GetSafeString(reader, "waste_vent_block_name")
+        GetSafeString(reader, "waste_vent_block_name"),
+        GetSafeInt(reader, "cfh")
       );
       
       reader.Close();
