@@ -34,34 +34,42 @@
                     <Grid Height="{Binding RelativeSource={RelativeSource AncestorType=ListBox}, Path=ActualHeight}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Key, StringFormat=View: {0}}" Margin="0,0,0,5"/>
-                        <TabControl TabStripPlacement="Left" Grid.Row="1"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                            <TabItem Header="Main" Style="{StaticResource RotatedTabHeaderStyle}">
-                                <local:Scene3DView DataContext="{Binding Value.Item1}" Margin="5"/>
-                            </TabItem>
-                            <TabItem Header="Fixture Routes" Style="{StaticResource RotatedTabHeaderStyle}">
-                                <TabControl AlternationCount="1000"  ItemsSource="{Binding Value.Item2}">
-                                    <TabControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock>
-                                                <TextBlock.Text>
-                                                    <MultiBinding StringFormat="Fixture {0}">
-                                                        <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=TabItem}" Path="(ItemsControl.AlternationIndex)" Converter="{StaticResource AddOneConverter}" />
-                                                    </MultiBinding>
-                                                </TextBlock.Text>
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </TabControl.ItemTemplate>
-                                    <TabControl.ContentTemplate>
-                                        <DataTemplate>
-                                            <local:Scene3DView Margin="5"/>
-                                        </DataTemplate>
-                                    </TabControl.ContentTemplate>
-                                </TabControl>
-                            </TabItem>
-                        </TabControl>
+                        <Expander Grid.Row="1" Header="Calculations and Losses" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+                            <Expander.Content>
+                                <TextBlock Text="MEOW" Margin="10" TextWrapping="Wrap" Foreground="#FFFFFF"/>
+                            </Expander.Content>
+                        </Expander>
+                        <Grid Grid.Row="2">
+                            <TabControl TabStripPlacement="Left" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                <TabItem Header="Main" Style="{StaticResource RotatedTabHeaderStyle}">
+                                    <local:Scene3DView DataContext="{Binding Value.Item1}" Margin="5"/>
+                                </TabItem>
+                                <TabItem Header="Fixture Routes" Style="{StaticResource RotatedTabHeaderStyle}">
+                                    <TabControl AlternationCount="1000"  ItemsSource="{Binding Value.Item2}">
+                                        <TabControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock>
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="Fixture {0}">
+                                                            <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=TabItem}" Path="(ItemsControl.AlternationIndex)" Converter="{StaticResource AddOneConverter}" />
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </TabControl.ItemTemplate>
+                                        <TabControl.ContentTemplate>
+                                            <DataTemplate>
+                                                <local:Scene3DView Margin="5"/>
+                                            </DataTemplate>
+                                        </TabControl.ContentTemplate>
+                                    </TabControl>
+                                </TabItem>
+                            </TabControl>
+                        </Grid>
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
