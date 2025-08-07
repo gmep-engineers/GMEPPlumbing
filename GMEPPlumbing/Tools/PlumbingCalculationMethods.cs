@@ -224,7 +224,7 @@ namespace GMEPPlumbing {
           }
           routeObjectsTemp.Remove(routeObjectsTemp.Last());
           length -= kvp.Value.Length * 12;
-          Tuple<double, int, double> verticalRoute2Result = TraverseVerticalRoute(verticalRoute2, entryPointZ, fixtureUnits, flowTypeId, visited, length, routeObjectsTemp);
+          Tuple<double, int, double> verticalRoute2Result = TraverseVerticalRoute(verticalRoute2, entryPointZ, fixtureUnits, flowTypeId, longestRunLength, visited, length, routeObjectsTemp);
           fixtureUnits += verticalRoute2Result.Item1;
           flowTypeId = (flowTypeId == 2) ? 2 : verticalRoute2Result.Item2;
           longestRunLength = Math.Max(longestRunLength, verticalRoute2Result.Item3);
@@ -232,7 +232,7 @@ namespace GMEPPlumbing {
         entryPointZ = route.EndPoint.Z;
         routeObjectsTemp.Remove(routeObjectsTemp.Last());
         length -= adjustedRoute.Length * 12;
-        Tuple<double, int, double> verticalRouteResult = TraverseVerticalRoute(adjustedRoute, entryPointZ, fixtureUnits, flowTypeId, visited, length, routeObjectsTemp);
+        Tuple<double, int, double> verticalRouteResult = TraverseVerticalRoute(adjustedRoute, entryPointZ, fixtureUnits, flowTypeId, longestRunLength, visited, length, routeObjectsTemp);
         fixtureUnits += verticalRouteResult.Item1;
         flowTypeId = (flowTypeId == 2) ? 2 : verticalRouteResult.Item2;
         longestRunLength = Math.Max(longestRunLength, verticalRouteResult.Item3);
@@ -271,7 +271,7 @@ namespace GMEPPlumbing {
       return new Tuple<double, int, double>(fixtureUnits, flowTypeId, longestRunLength);
      
     }
-    public Tuple<double, int, double> TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, double fixtureUnits, int flowTypeId, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+    public Tuple<double, int, double> TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, double fixtureUnits, int flowTypeId, double longestRunLength, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
         visited = new HashSet<string>();
 
@@ -283,7 +283,6 @@ namespace GMEPPlumbing {
 
       double fixtureUnitsSoFar = 0;
       int flowTypeIdTemp = flowTypeId;
-      double longestRunLength = 0; 
 
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
