@@ -37,7 +37,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" FontWeight="Bold" Text="Meow" Margin="0,0,0,5"/>
+                        <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Name}" Margin="0,0,0,5"/>
                         <Expander Grid.Row="1" Header="Calculations and Losses" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                             <Expander.Content>
                                 <TextBlock Text="MEOW" Margin="10" TextWrapping="Wrap" Foreground="#FFFFFF"/>
