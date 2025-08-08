@@ -415,12 +415,12 @@ namespace GMEPPlumbing {
     }
   }
   public class WaterCalculator {
-    public string Description;
-    public double MinSourcePressure;
-    public double AvailableFrictionPressure;
-    public double SystemLength;
-    public double DevelopedSystemLength;
-    public double AveragePressureDrop;
+    public string Description { get; set; }
+    public double MinSourcePressure { get; set; }
+    public double AvailableFrictionPressure { get; set; }
+    public double SystemLength { get; set; }
+    public double DevelopedSystemLength { get; set; }
+    public double AveragePressureDrop { get; set; }
 
     public List<WaterLoss> Losses = new List<WaterLoss>();
     public List<WaterAddition> Additions = new List<WaterAddition>();

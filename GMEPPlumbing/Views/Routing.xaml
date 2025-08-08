@@ -40,7 +40,36 @@
                         <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Name}" Margin="0,0,0,5"/>
                         <Expander Grid.Row="1" Header="Calculations and Losses" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                             <Expander.Content>
-                                <TextBlock Text="MEOW" Margin="10" TextWrapping="Wrap" Foreground="#FFFFFF"/>
+                                <ListBox ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="*"/>
+                                                </Grid.RowDefinitions>
+                                                <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                    <TextBlock Text="{Binding Value.Description}"/>
+                                                </Border>
+                                                <Border Grid.Row="1" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                    <TextBlock Text="{Binding Value.MinSourcePressure}"/>
+                                                </Border>
+                                                <Border Grid.Row="2" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                    <TextBlock Text="{Binding Value.SystemLength}"/>
+                                                </Border>
+                                                <Border Grid.Row="3" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                    <TextBlock Text="{Binding Value.DevelopedSystemLength}"/>
+                                                </Border>
+                                                <Border Grid.Row="4" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                    <TextBlock Text="{Binding Value.AveragePressureDrop}"/>
+                                                </Border>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
                             </Expander.Content>
                         </Expander>
                         <Grid Grid.Row="2">
