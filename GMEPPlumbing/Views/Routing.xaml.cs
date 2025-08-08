@@ -25,178 +25,23 @@ namespace GMEPPlumbing.Views
     /// <summary>
     /// Interaction logic for Routing.xaml
     /// </summary>
-    public partial class Routing : UserControl
+  public partial class Routing : UserControl
+  {
+    public List<View> Views { get; set; } = new List<View>();
+    public Routing(Dictionary<string, List<PlumbingFullRoute>> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup)
     {
-      public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
-
-      public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
-
-      public Dictionary<string, Tuple<Scene, List<Scene>>> Scenes { get; set; } = new Dictionary<string, Tuple<Scene, List<Scene>>>();
-      public Routing(Dictionary<string, List<PlumbingFullRoute>> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup)
-      {
-        FullRoutes = DeepCopyFullRoutes(fullRoutes);
-        BasePointLookup = basePointLookup;
-        NormalizeRoutes();
-        GenerateScenes();
-        InitializeComponent();
-        DataContext = this;
-      }
-      public void GenerateScenes() {
-        Scenes.Clear();
-        foreach (var route in FullRoutes) {
-          Scene fullScene = new Scene();
-          List<Scene> sceneList = new List<Scene>();  
-          List<Scene> sceneList2 = new List<Scene>();
-          foreach (var fullRoute in route.Value) {
-            var scene = new Scene(fullRoute, BasePointLookup);
-            var scene2 = new Scene(fullRoute, BasePointLookup);
-            sceneList.Add(scene);
-            sceneList2.Add(scene2);
-          }
-          foreach (var scene in sceneList2) {
-            foreach(var visual in scene.RouteVisuals) {
-              fullScene.RouteVisuals.Add(visual);
-            }
-            fullScene.RemoveDuplicateRouteVisuals();
-            Scenes[route.Key] = new Tuple<Scene, List<Scene>>(fullScene, sceneList);
-        }
-        }
-      }
-
-      public void NormalizeRoutes() {
-        foreach (var fullRoute in FullRoutes.Values) {
-          foreach (var route in fullRoute) {
-            foreach (var item in route.RouteItems) {
-              if (item is PlumbingHorizontalRoute horizontalRoute) {
-                if (BasePointLookup.TryGetValue(horizontalRoute.BasePointId, out var basePoint)) {
-                  horizontalRoute.StartPoint = new Point3d(
-                    horizontalRoute.StartPoint.X - basePoint.Point.X,
-                    horizontalRoute.StartPoint.Y - basePoint.Point.Y,
-                    horizontalRoute.StartPoint.Z
-                  );
-                  horizontalRoute.EndPoint = new Point3d(
-                    horizontalRoute.EndPoint.X - basePoint.Point.X,
-                    horizontalRoute.EndPoint.Y - basePoint.Point.Y,
-                    horizontalRoute.EndPoint.Z
-                  );
-                }
-              }
-              else if (item is PlumbingVerticalRoute verticalRoute) {
-                if (BasePointLookup.TryGetValue(verticalRoute.BasePointId, out var basePoint)) {
-                  verticalRoute.Position = new Point3d(
-                    verticalRoute.Position.X - basePoint.Point.X,
-                    verticalRoute.Position.Y - basePoint.Point.Y,
-                    verticalRoute.Position.Z
-                  );
-                  verticalRoute.ConnectionPosition = new Point3d(
-                    verticalRoute.ConnectionPosition.X - basePoint.Point.X,
-                    verticalRoute.ConnectionPosition.Y - basePoint.Point.Y,
-                    verticalRoute.ConnectionPosition.Z
-                  );
-                }
-              }
-              else if (item is PlumbingSource plumbingSource) {
-                if (BasePointLookup.TryGetValue(plumbingSource.BasePointId, out var basePoint)) {
-                  plumbingSource.Position = new Point3d(
-                    plumbingSource.Position.X - basePoint.Point.X,
-                    plumbingSource.Position.Y - basePoint.Point.Y,
-                    plumbingSource.Position.Z
-                  );
-                }
-              }
-              else if  (item is PlumbingFixture plumbingFixture) {
-                if (BasePointLookup.TryGetValue(plumbingFixture.BasePointId, out var basePoint)) {
-                plumbingFixture.Position = new Point3d(
-                  plumbingFixture.Position.X - basePoint.Point.X,
-                  plumbingFixture.Position.Y - basePoint.Point.Y,
-                  plumbingFixture.Position.Z
-                );
-              }
-            }
-            }
-          }
-        }
-      }
-      public static Dictionary<string, List<PlumbingFullRoute>> DeepCopyFullRoutes(Dictionary<string, List<PlumbingFullRoute>> original) {
-        var result = new Dictionary<string, List<PlumbingFullRoute>>();
-        foreach (var kvp in original) {
-          var newList = new List<PlumbingFullRoute>();
-          foreach (var fullRoute in kvp.Value) {
-            var newFullRoute = new PlumbingFullRoute {
-              Length = fullRoute.Length,
-              RouteItems = new List<object>(),
-              TypeId = fullRoute.TypeId,
-            };
-            foreach (var item in fullRoute.RouteItems) {
-              if (item is PlumbingHorizontalRoute hr) {
-                var copy = new PlumbingHorizontalRoute(
-                    hr.Id,
-                    hr.ProjectId,
-                    hr.Type,
-                    new Point3d(hr.StartPoint.X, hr.StartPoint.Y, hr.StartPoint.Z),
-                    new Point3d(hr.EndPoint.X, hr.EndPoint.Y, hr.EndPoint.Z),
-                    hr.BasePointId,
-                    hr.PipeType
-                );
-                copy.FixtureUnits = hr.FixtureUnits;
-                copy.FlowTypeId = hr.FlowTypeId;
-                copy.LongestRunLength = hr.LongestRunLength;
-                newFullRoute.RouteItems.Add(copy);
-              }
-              else if (item is PlumbingVerticalRoute vr) {
-                var copy = new PlumbingVerticalRoute(
-                    vr.Id,
-                    vr.ProjectId,
-                    vr.Type,
-                    new Point3d(vr.Position.X, vr.Position.Y, vr.Position.Z),
-                    new Point3d(vr.ConnectionPosition.X, vr.ConnectionPosition.Y, vr.ConnectionPosition.Z),
-                    vr.VerticalRouteId,
-                    vr.BasePointId,
-                    vr.StartHeight,
-                    vr.Length,
-                    vr.NodeTypeId,
-                    vr.PipeType,
-                    vr.IsUp
-                );
-                copy.FixtureUnits = vr.FixtureUnits;
-                copy.FlowTypeId = vr.FlowTypeId;
-                copy.LongestRunLength = vr.LongestRunLength;
-                newFullRoute.RouteItems.Add(copy);
-              }
-              else if (item is PlumbingSource plumbingSource) {
-                var copy = new PlumbingSource(
-                    plumbingSource.Id,
-                    plumbingSource.ProjectId,
-                    new Point3d(plumbingSource.Position.X, plumbingSource.Position.Y, plumbingSource.Position.Z),
-                    plumbingSource.TypeId,
-                    plumbingSource.BasePointId,
-                    plumbingSource.Pressure
-                );
-                newFullRoute.RouteItems.Add(copy);
-              }
-              else if (item is PlumbingFixture plumbingFixture) {
-                var copy = new PlumbingFixture(
-                    plumbingFixture.Id,
-                    plumbingFixture.ProjectId,
-                    new Point3d(plumbingFixture.Position.X, plumbingFixture.Position.Y, plumbingFixture.Position.Z),
-                    plumbingFixture.Rotation,
-                    plumbingFixture.CatalogId,
-                    plumbingFixture.TypeAbbreviation,
-                    plumbingFixture.Number,
-                    plumbingFixture.BasePointId,
-                    plumbingFixture.BlockName,
-                    plumbingFixture.FlowTypeId
-                );
-                newFullRoute.RouteItems.Add(copy);
-              }
-            }
-            newList.Add(newFullRoute);
-          }
-          result[kvp.Key] = newList;
-        }
-        return result;
+      GenerateViews(fullRoutes, basePointLookup);
+      InitializeComponent();
+      DataContext = this;
+    }
+    public void GenerateViews(Dictionary<string, List<PlumbingFullRoute>> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup) {
+      Views.Clear();
+      foreach (var routeScene in fullRoutes) {
+        View view = new View(routeScene.Value, basePointLookup);
+        Views.Add(view);
       }
     }
+  }
     
     public class Scene {
       public List<object> RouteItems { get; set; } = new List<object>();
@@ -522,6 +367,182 @@ namespace GMEPPlumbing.Views
 
       foreach (var visual in toRemove)
         RouteVisuals.Remove(visual);
+    }
+  }
+  public class View {
+    public List<PlumbingFullRoute> FullRoutes { get; set; } = new List<PlumbingFullRoute>();
+    public Tuple<Scene, List<Scene>> Scenes { get; set; } = new Tuple<Scene, List<Scene>>(new Scene(), new List<Scene>());
+    public Dictionary<string, WaterCalculator> WaterCalculators { get; set; } = new Dictionary<string, WaterCalculator>();
+    public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
+    public View(List<PlumbingFullRoute> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup) {
+      BasePointLookup = basePointLookup;
+      FullRoutes = DeepCopyFullRoutes(fullRoutes);
+      NormalizeRoutes();
+      GenerateWaterCalculators();
+      GenerateScenes();
+    }
+
+    public void GenerateWaterCalculators() {
+      WaterCalculators.Clear();
+      foreach (var fullRoute in FullRoutes) {
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
+          if (!WaterCalculators.ContainsKey(plumbingSource.Id)) {
+            List<WaterLoss> waterLosses = new List<WaterLoss>();
+            List<WaterAddition> waterAdditions = new List<WaterAddition>();
+            double maxLength = FullRoutes
+              .Where(r => r.RouteItems.Count > 0
+                  && r.RouteItems[0] is PlumbingSource src
+                  && src.Id == plumbingSource.Id)
+              .Max(r => r.Length);
+            WaterCalculators[plumbingSource.Id] = new WaterCalculator("", plumbingSource.Pressure, 0, maxLength, maxLength * 1.3, 0, waterLosses, waterAdditions);
+          }
+        }
+      }
+    }
+    public void GenerateScenes() {
+      Scenes = new Tuple<Scene, List<Scene>>(new Scene(), new List<Scene>());
+      Scene fullScene = new Scene();
+      List<Scene> sceneList = new List<Scene>();
+      foreach (var fullRoute in FullRoutes) {
+        var scene = new Scene(fullRoute, BasePointLookup);
+        var scene2 = new Scene(fullRoute, BasePointLookup);
+        sceneList.Add(scene);
+        foreach (var visual in scene2.RouteVisuals) {
+          fullScene.RouteVisuals.Add(visual);
+        }
+      }
+      fullScene.RemoveDuplicateRouteVisuals();
+      Scenes = new Tuple<Scene, List<Scene>>(fullScene, sceneList);
+
+    }
+    public void NormalizeRoutes() {
+      foreach (var route in FullRoutes) {
+        foreach (var item in route.RouteItems) {
+          if (item is PlumbingHorizontalRoute horizontalRoute) {
+            if (BasePointLookup.TryGetValue(horizontalRoute.BasePointId, out var basePoint)) {
+              horizontalRoute.StartPoint = new Point3d(
+                horizontalRoute.StartPoint.X - basePoint.Point.X,
+                horizontalRoute.StartPoint.Y - basePoint.Point.Y,
+                horizontalRoute.StartPoint.Z
+              );
+              horizontalRoute.EndPoint = new Point3d(
+                horizontalRoute.EndPoint.X - basePoint.Point.X,
+                horizontalRoute.EndPoint.Y - basePoint.Point.Y,
+                horizontalRoute.EndPoint.Z
+              );
+            }
+          }
+          else if (item is PlumbingVerticalRoute verticalRoute) {
+            if (BasePointLookup.TryGetValue(verticalRoute.BasePointId, out var basePoint)) {
+              verticalRoute.Position = new Point3d(
+                verticalRoute.Position.X - basePoint.Point.X,
+                verticalRoute.Position.Y - basePoint.Point.Y,
+                verticalRoute.Position.Z
+              );
+              verticalRoute.ConnectionPosition = new Point3d(
+                verticalRoute.ConnectionPosition.X - basePoint.Point.X,
+                verticalRoute.ConnectionPosition.Y - basePoint.Point.Y,
+                verticalRoute.ConnectionPosition.Z
+              );
+            }
+          }
+          else if (item is PlumbingSource plumbingSource) {
+            if (BasePointLookup.TryGetValue(plumbingSource.BasePointId, out var basePoint)) {
+              plumbingSource.Position = new Point3d(
+                plumbingSource.Position.X - basePoint.Point.X,
+                plumbingSource.Position.Y - basePoint.Point.Y,
+                plumbingSource.Position.Z
+              );
+            }
+          }
+          else if (item is PlumbingFixture plumbingFixture) {
+            if (BasePointLookup.TryGetValue(plumbingFixture.BasePointId, out var basePoint)) {
+              plumbingFixture.Position = new Point3d(
+                plumbingFixture.Position.X - basePoint.Point.X,
+                plumbingFixture.Position.Y - basePoint.Point.Y,
+                plumbingFixture.Position.Z
+              );
+            }
+          }
+        }
+      }
+    }
+    public static List<PlumbingFullRoute> DeepCopyFullRoutes(List<PlumbingFullRoute> original) {
+      var result = new List<PlumbingFullRoute>();
+      var newList = new List<PlumbingFullRoute>();
+      foreach (var fullRoute in original) {
+        var newFullRoute = new PlumbingFullRoute {
+          Length = fullRoute.Length,
+          RouteItems = new List<object>(),
+          TypeId = fullRoute.TypeId,
+        };
+        foreach (var item in fullRoute.RouteItems) {
+          if (item is PlumbingHorizontalRoute hr) {
+            var copy = new PlumbingHorizontalRoute(
+                hr.Id,
+                hr.ProjectId,
+                hr.Type,
+                new Point3d(hr.StartPoint.X, hr.StartPoint.Y, hr.StartPoint.Z),
+                new Point3d(hr.EndPoint.X, hr.EndPoint.Y, hr.EndPoint.Z),
+                hr.BasePointId,
+                hr.PipeType
+            );
+            copy.FixtureUnits = hr.FixtureUnits;
+            copy.FlowTypeId = hr.FlowTypeId;
+            copy.LongestRunLength = hr.LongestRunLength;
+            newFullRoute.RouteItems.Add(copy);
+          }
+          else if (item is PlumbingVerticalRoute vr) {
+            var copy = new PlumbingVerticalRoute(
+                vr.Id,
+                vr.ProjectId,
+                vr.Type,
+                new Point3d(vr.Position.X, vr.Position.Y, vr.Position.Z),
+                new Point3d(vr.ConnectionPosition.X, vr.ConnectionPosition.Y, vr.ConnectionPosition.Z),
+                vr.VerticalRouteId,
+                vr.BasePointId,
+                vr.StartHeight,
+                vr.Length,
+                vr.NodeTypeId,
+                vr.PipeType,
+                vr.IsUp
+            );
+            copy.FixtureUnits = vr.FixtureUnits;
+            copy.FlowTypeId = vr.FlowTypeId;
+            copy.LongestRunLength = vr.LongestRunLength;
+            newFullRoute.RouteItems.Add(copy);
+          }
+          else if (item is PlumbingSource plumbingSource) {
+            var copy = new PlumbingSource(
+                plumbingSource.Id,
+                plumbingSource.ProjectId,
+                new Point3d(plumbingSource.Position.X, plumbingSource.Position.Y, plumbingSource.Position.Z),
+                plumbingSource.TypeId,
+                plumbingSource.BasePointId,
+                plumbingSource.Pressure
+            );
+            newFullRoute.RouteItems.Add(copy);
+          }
+          else if (item is PlumbingFixture plumbingFixture) {
+            var copy = new PlumbingFixture(
+                plumbingFixture.Id,
+                plumbingFixture.ProjectId,
+                new Point3d(plumbingFixture.Position.X, plumbingFixture.Position.Y, plumbingFixture.Position.Z),
+                plumbingFixture.Rotation,
+                plumbingFixture.CatalogId,
+                plumbingFixture.TypeAbbreviation,
+                plumbingFixture.Number,
+                plumbingFixture.BasePointId,
+                plumbingFixture.BlockName,
+                plumbingFixture.FlowTypeId
+            );
+            newFullRoute.RouteItems.Add(copy);
+          }
+        }
+        newList.Add(newFullRoute);
+      }
+      result = newList;
+      return result;
     }
   }
   public class AddOneConverter : IValueConverter {

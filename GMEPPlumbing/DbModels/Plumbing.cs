@@ -414,4 +414,55 @@ namespace GMEPPlumbing {
       return;
     }
   }
+  public class WaterCalculator {
+    public string Description;
+    public double MinSourcePressure;
+    public double AvailableFrictionPressure;
+    public double SystemLength;
+    public double DevelopedSystemLength;
+    public double AveragePressureDrop;
+
+    public List<WaterLoss> Losses = new List<WaterLoss>();
+    public List<WaterAddition> Additions = new List<WaterAddition>();
+    public WaterCalculator(string description, 
+      double minSourcePressure, 
+      double availableFrictionPressure, 
+      double systemLength, 
+      double developedSystemLength, 
+      double averagePressureDrop,
+      List<WaterLoss> losses,
+      List<WaterAddition> additions) 
+    {
+      Description = description;
+      MinSourcePressure = minSourcePressure;
+      AvailableFrictionPressure = availableFrictionPressure;
+      SystemLength = systemLength;
+      DevelopedSystemLength = developedSystemLength;
+      AveragePressureDrop = averagePressureDrop;
+      Losses = losses;
+      Additions = additions;
+    }
+  }
+  public class WaterLoss {
+    public int Number;
+    public string Name;
+    public double Value;
+    public WaterLoss(int number, string name, double value) {
+      Number = number;
+      Name = name;
+      Value = value;
+    }
+  }
+
+  public class WaterAddition
+  {
+    public int Number;
+    public string Name;
+    public double Value;
+    public WaterAddition(int number, string name, double value) {
+      Number = number;
+      Name = name;
+      Value = value;
+    }
+  }
 }

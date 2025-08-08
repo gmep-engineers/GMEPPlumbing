@@ -28,7 +28,7 @@
         </Style>
     </UserControl.Resources>
     <Grid Background="#FF2D2D30">
-        <ListBox ItemsSource="{Binding Scenes}" HorizontalContentAlignment="Stretch" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+        <ListBox ItemsSource="{Binding Views}" HorizontalContentAlignment="Stretch" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <Grid Height="{Binding RelativeSource={RelativeSource AncestorType=ListBox}, Path=ActualHeight}">
@@ -37,7 +37,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Key, StringFormat=View: {0}}" Margin="0,0,0,5"/>
+                        <TextBlock Grid.Row="0" FontWeight="Bold" Text="Meow" Margin="0,0,0,5"/>
                         <Expander Grid.Row="1" Header="Calculations and Losses" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                             <Expander.Content>
                                 <TextBlock Text="MEOW" Margin="10" TextWrapping="Wrap" Foreground="#FFFFFF"/>
@@ -46,10 +46,10 @@
                         <Grid Grid.Row="2">
                             <TabControl TabStripPlacement="Left" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
                                 <TabItem Header="Main" Style="{StaticResource RotatedTabHeaderStyle}">
-                                    <local:Scene3DView DataContext="{Binding Value.Item1}" Margin="5"/>
+                                    <local:Scene3DView DataContext="{Binding Scenes.Item1}" Margin="5"/>
                                 </TabItem>
                                 <TabItem Header="Fixture Routes" Style="{StaticResource RotatedTabHeaderStyle}">
-                                    <TabControl AlternationCount="1000"  ItemsSource="{Binding Value.Item2}">
+                                    <TabControl AlternationCount="1000"  ItemsSource="{Binding Scenes.Item2}">
                                         <TabControl.ItemTemplate>
                                             <DataTemplate>
                                                 <TextBlock>
