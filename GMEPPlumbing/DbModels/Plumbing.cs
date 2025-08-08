@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -422,16 +423,16 @@ namespace GMEPPlumbing {
     public double DevelopedSystemLength { get; set; }
     public double AveragePressureDrop { get; set; }
 
-    public List<WaterLoss> Losses = new List<WaterLoss>();
-    public List<WaterAddition> Additions = new List<WaterAddition>();
+    public ObservableCollection<WaterLoss> Losses  = new ObservableCollection<WaterLoss>();
+    public ObservableCollection<WaterAddition> Additions  = new ObservableCollection<WaterAddition>();
     public WaterCalculator(string description, 
       double minSourcePressure, 
       double availableFrictionPressure, 
       double systemLength, 
       double developedSystemLength, 
       double averagePressureDrop,
-      List<WaterLoss> losses,
-      List<WaterAddition> additions) 
+      ObservableCollection<WaterLoss> losses,
+      ObservableCollection<WaterAddition> additions) 
     {
       Description = description;
       MinSourcePressure = minSourcePressure;
@@ -444,25 +445,27 @@ namespace GMEPPlumbing {
     }
   }
   public class WaterLoss {
-    public int Number;
-    public string Name;
-    public double Value;
-    public WaterLoss(int number, string name, double value) {
-      Number = number;
-      Name = name;
+    public string Description { get; set; } = "";
+    public double Value { get; set; } = 0.0;
+    public WaterLoss(string description, double value) {
+      Description = description;
       Value = value;
+    }
+    public WaterLoss() {
+      //:3
     }
   }
 
   public class WaterAddition
   {
-    public int Number;
-    public string Name;
-    public double Value;
-    public WaterAddition(int number, string name, double value) {
-      Number = number;
-      Name = name;
+    public string Description { get; set; } = "";
+    public double Value { get; set; } = 0.0;
+    public WaterAddition(string description, double value) {
+      Description = description;
       Value = value;
+    }
+    public WaterAddition() {
+      //:3
     }
   }
 }

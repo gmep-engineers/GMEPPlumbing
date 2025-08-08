@@ -393,8 +393,8 @@ namespace GMEPPlumbing.Views
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
           if (!WaterCalculators.ContainsKey(plumbingSource.Id)) {
-            List<WaterLoss> waterLosses = new List<WaterLoss>();
-            List<WaterAddition> waterAdditions = new List<WaterAddition>();
+            ObservableCollection<WaterLoss> waterLosses = new ObservableCollection<WaterLoss>();
+            ObservableCollection<WaterAddition> waterAdditions = new ObservableCollection<WaterAddition>();
             double maxLength = FullRoutes
               .Where(r => r.RouteItems.Count > 0
                   && r.RouteItems[0] is PlumbingSource src

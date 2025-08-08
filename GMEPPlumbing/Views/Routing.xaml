@@ -38,9 +38,9 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Name}" Margin="0,0,0,5"/>
-                        <Expander Grid.Row="1" Header="Calculations and Losses" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+                        <Expander Grid.Row="1" Header="Water Calculations" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                             <Expander.Content>
-                                <ListBox ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch">
+                                <ListBox FontSize="15" FontWeight="Bold" ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <Grid>
@@ -49,22 +49,55 @@
                                                     <RowDefinition Height="*"/>
                                                     <RowDefinition Height="*"/>
                                                     <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
                                                     <RowDefinition Height="*"/>
                                                 </Grid.RowDefinitions>
                                                 <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                    <TextBlock Text="{Binding Value.Description}"/>
+                                                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                        <TextBlock Text="Name: " Margin="5,0,0,0"/>
+                                                        <TextBox Text="{Binding Value.Description, Mode=TwoWay}" MinWidth="100"/>
+                                                    </StackPanel>
                                                 </Border>
                                                 <Border Grid.Row="1" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                    <TextBlock Text="{Binding Value.MinSourcePressure}"/>
+                                                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                        <TextBlock Text="Min Source Pressure: " Margin="5,0,0,0"/>
+                                                        <TextBox IsEnabled="False" Text="{Binding Value.MinSourcePressure, Mode=TwoWay}"/>
+                                                    </StackPanel>
                                                 </Border>
                                                 <Border Grid.Row="2" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                    <TextBlock Text="{Binding Value.SystemLength}"/>
+                                                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                        <TextBlock Text="System Length: " Margin="5,0,0,0"/>
+                                                        <TextBox IsEnabled="False" Text="{Binding Value.SystemLength}"/>
+                                                    </StackPanel>
                                                 </Border>
                                                 <Border Grid.Row="3" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                    <TextBlock Text="{Binding Value.DevelopedSystemLength}"/>
+                                                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                        <TextBlock Text="Developed System Length: " Margin="5,0,0,0"/>
+                                                        <TextBox IsEnabled="False" Text="{Binding Value.DevelopedSystemLength}"/>
+                                                    </StackPanel>
                                                 </Border>
-                                                <Border Grid.Row="4" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                    <TextBlock Text="{Binding Value.AveragePressureDrop}"/>
+                                                <Expander Grid.Row="4" HorizontalAlignment="Stretch" Header="Losses" IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+                                                    <Expander.Content>
+                                                        <DataGrid ItemsSource="{Binding Value.Losses}" AutoGenerateColumns="False">
+                                                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False" Width="*"/>
+                                                            <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}"/>
+                                                        </DataGrid>
+                                                    </Expander.Content>
+                                                </Expander>
+                                                <Expander Grid.Row="5" HorizontalAlignment="Stretch" Header="Additions" IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+                                                    <Expander.Content>
+                                                        <DataGrid ItemsSource="{Binding Value.Additions}" AutoGenerateColumns="False">
+                                                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False" Width="*"/>
+                                                            <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}"/>
+                                                        </DataGrid>
+                                                    </Expander.Content>
+                                                </Expander>
+                                                <Border Grid.Row="6" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                        <TextBlock Text="Average Pressure Drop: " Margin="5,0,0,0"/>
+                                                        <TextBox IsEnabled="False" Text="{Binding Value.AveragePressureDrop}"/>
+                                                    </StackPanel>
                                                 </Border>
                                             </Grid>
                                         </DataTemplate>
