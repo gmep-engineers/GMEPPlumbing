@@ -77,19 +77,23 @@
                                                         <TextBox IsEnabled="False" Text="{Binding Value.DevelopedSystemLength}"/>
                                                     </StackPanel>
                                                 </Border>
-                                                <Expander Grid.Row="4" HorizontalAlignment="Stretch" Header="Losses" IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+                                                <Expander Grid.Row="4" HorizontalAlignment="Stretch" Header="Losses"  IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                                                     <Expander.Content>
                                                         <DataGrid ItemsSource="{Binding Value.Losses}" AutoGenerateColumns="False">
-                                                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False" Width="*"/>
-                                                            <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}"/>
+                                                            <DataGrid.Columns>
+                                                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False" Width="*"/>
+                                                                <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}" Width="*"/>
+                                                            </DataGrid.Columns>
                                                         </DataGrid>
                                                     </Expander.Content>
                                                 </Expander>
-                                                <Expander Grid.Row="5" HorizontalAlignment="Stretch" Header="Additions" IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+                                                <Expander Grid.Row="5"  HorizontalAlignment="Stretch" Header="Additions" IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                                                     <Expander.Content>
                                                         <DataGrid ItemsSource="{Binding Value.Additions}" AutoGenerateColumns="False">
-                                                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False" Width="*"/>
-                                                            <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}"/>
+                                                            <DataGrid.Columns>
+                                                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False" Width="*"/>
+                                                                <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}" Width="*"/>
+                                                            </DataGrid.Columns>
                                                         </DataGrid>
                                                     </Expander.Content>
                                                 </Expander>

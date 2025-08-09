@@ -423,8 +423,8 @@ namespace GMEPPlumbing {
     public double DevelopedSystemLength { get; set; }
     public double AveragePressureDrop { get; set; }
 
-    public ObservableCollection<WaterLoss> Losses  = new ObservableCollection<WaterLoss>();
-    public ObservableCollection<WaterAddition> Additions  = new ObservableCollection<WaterAddition>();
+    public ObservableCollection<WaterLoss> Losses { get; }  = new ObservableCollection<WaterLoss>();
+    public ObservableCollection<WaterAddition> Additions { get; }  = new ObservableCollection<WaterAddition>();
     public WaterCalculator(string description, 
       double minSourcePressure, 
       double availableFrictionPressure, 
@@ -440,8 +440,12 @@ namespace GMEPPlumbing {
       SystemLength = systemLength;
       DevelopedSystemLength = developedSystemLength;
       AveragePressureDrop = averagePressureDrop;
-      Losses = losses;
-      Additions = additions;
+      foreach (var loss in losses) {
+        Losses.Add(loss);
+      }
+      foreach (var addition in additions) {
+        Additions.Add(addition);
+      }
     }
   }
   public class WaterLoss {
