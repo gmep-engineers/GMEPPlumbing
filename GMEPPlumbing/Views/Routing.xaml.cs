@@ -389,6 +389,26 @@ namespace GMEPPlumbing.Views
       GenerateScenes();
     }
 
+    /*public void GeneratePipeSizing() {
+      foreach (var fullRoute in FullRoutes) {
+        if (fullRoute.RouteItems.Count == 0) continue;
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
+          string sourceId = plumbingSource.Id;
+        }
+        foreach (var item in fullRoute.RouteItems) {
+          if (item is PlumbingHorizontalRoute horizontalRoute) {
+            horizontalRoute.GenerateGallonsPerMinute();
+          }
+          else if (item is PlumbingVerticalRoute verticalRoute) {
+            verticalRoute.GenerateGallonsPerMinute();
+          }
+        }
+      }
+    }
+    private void CalculateClicked(object sender, RoutedEventArgs e) {
+      
+    }*/
+
     public void GenerateWaterCalculators() {
       WaterCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
@@ -552,6 +572,12 @@ namespace GMEPPlumbing.Views
       result = newList;
       return result;
     }
+
+    public void GetWaterSizingChart(string pipeType, double psi) {
+
+    }
+    
+    
   }
   public class AddOneConverter : IValueConverter {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
@@ -563,4 +589,5 @@ namespace GMEPPlumbing.Views
       throw new NotImplementedException();
     }
   }
+  
 }
