@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -415,61 +417,161 @@ namespace GMEPPlumbing {
       return;
     }
   }
-  public class WaterCalculator {
-    public string Description { get; set; }
-    public double MinSourcePressure { get; set; }
-    public double AvailableFrictionPressure { get; set; }
-    public double SystemLength { get; set; }
-    public double DevelopedSystemLength { get; set; }
-    public double AveragePressureDrop { get; set; }
+  public class WaterCalculator : INotifyPropertyChanged {
+    private string _description;
+    private double _minSourcePressure;
+    private double _availableFrictionPressure;
+    private double _systemLength;
+    private double _developedSystemLength;
+    private double _averagePressureDrop;
 
-    public ObservableCollection<WaterLoss> Losses { get; }  = new ObservableCollection<WaterLoss>();
-    public ObservableCollection<WaterAddition> Additions { get; }  = new ObservableCollection<WaterAddition>();
-    public WaterCalculator(string description, 
-      double minSourcePressure, 
-      double availableFrictionPressure, 
-      double systemLength, 
-      double developedSystemLength, 
-      double averagePressureDrop,
-      ObservableCollection<WaterLoss> losses,
-      ObservableCollection<WaterAddition> additions) 
-    {
+    public string Description {
+      get => _description;
+      set { if (_description != value) { _description = value; OnPropertyChanged(); } }
+    }
+    public double MinSourcePressure {
+      get => _minSourcePressure;
+      set { if (_minSourcePressure != value) { _minSourcePressure = value; OnPropertyChanged(); } }
+    }
+    public double AvailableFrictionPressure {
+      get => _availableFrictionPressure;
+      set { if (_availableFrictionPressure != value) { _availableFrictionPressure = value; OnPropertyChanged(); } }
+    }
+    public double SystemLength {
+      get => _systemLength;
+      set { if (_systemLength != value) { _systemLength = value; OnPropertyChanged(); } }
+    }
+    public double DevelopedSystemLength {
+      get => _developedSystemLength;
+      set { if (_developedSystemLength != value) { _developedSystemLength = value; OnPropertyChanged(); } }
+    }
+    public double AveragePressureDrop {
+      get => _averagePressureDrop;
+      set { if (_averagePressureDrop != value) { _averagePressureDrop = value; OnPropertyChanged(); } }
+    }
+
+    public ObservableCollection<WaterLoss> Losses { get; } = new ObservableCollection<WaterLoss>();
+    public ObservableCollection<WaterAddition> Additions { get; } = new ObservableCollection<WaterAddition>();
+
+
+    public WaterCalculator(string description,
+        double minSourcePressure,
+        double availableFrictionPressure,
+        double systemLength,
+        double developedSystemLength,
+        double averagePressureDrop,
+        ObservableCollection<WaterLoss> losses,
+        ObservableCollection<WaterAddition> additions) {
       Description = description;
       MinSourcePressure = minSourcePressure;
       AvailableFrictionPressure = availableFrictionPressure;
       SystemLength = systemLength;
       DevelopedSystemLength = developedSystemLength;
       AveragePressureDrop = averagePressureDrop;
-      foreach (var loss in losses) {
-        Losses.Add(loss);
+      if (losses != null)
+        foreach (var loss in losses) Losses.Add(loss);
+      if (additions != null)
+        foreach (var addition in additions) Additions.Add(addition);
+      Losses.CollectionChanged += Losses_CollectionChanged;
+      Additions.CollectionChanged += Additions_CollectionChanged;
+      DeterminePressure();
+    }
+    public void DeterminePressure() {
+      // Calculate the total pressure loss
+      double totalLoss = Losses.Sum(l => l.Value);
+      double totalAddition = Additions.Sum(a => a.Value);
+      double totalPressure = MinSourcePressure + totalAddition - totalLoss;
+      AvailableFrictionPressure = totalPressure;
+      // Update the average pressure drop
+      AveragePressureDrop = (totalPressure / DevelopedSystemLength) * 100;
+    }
+
+    private void Losses_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {
+      if (e.NewItems != null) {
+        foreach (WaterLoss item in e.NewItems)
+          item.PropertyChanged += LossItem_PropertyChanged;
       }
-      foreach (var addition in additions) {
-        Additions.Add(addition);
+      if (e.OldItems != null) {
+        foreach (WaterLoss item in e.OldItems)
+          item.PropertyChanged -= LossItem_PropertyChanged;
+        DeterminePressure();
+      }
+      // Optionally, handle Reset (e.Action == Reset) if you clear the collection
+    }
+
+    private void Additions_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {
+      if (e.NewItems != null) {
+        foreach (WaterAddition item in e.NewItems)
+          item.PropertyChanged += AdditionItem_PropertyChanged;
+      }
+      if (e.OldItems != null) {
+        foreach (WaterAddition item in e.OldItems)
+          item.PropertyChanged -= AdditionItem_PropertyChanged;
+        DeterminePressure();
+      }
+      // Optionally, handle Reset (e.Action == Reset) if you clear the collection
+    }
+    private void LossItem_PropertyChanged(object sender, PropertyChangedEventArgs e) {
+      if (e.PropertyName == nameof(WaterLoss.Value)) {
+        DeterminePressure();
       }
     }
+
+    private void AdditionItem_PropertyChanged(object sender, PropertyChangedEventArgs e) {
+      if (e.PropertyName == nameof(WaterAddition.Value)) {
+        DeterminePressure();
+      }
+    }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
   }
-  public class WaterLoss {
-    public string Description { get; set; } = "";
-    public double Value { get; set; } = 0.0;
+  public class WaterLoss : INotifyPropertyChanged {
+    private string _description = "";
+    private double _value = 0.0;
+
+    public string Description {
+      get => _description;
+      set { if (_description != value) { _description = value; OnPropertyChanged(); } }
+    }
+    public double Value {
+      get => _value;
+      set { if (_value != value) { _value = value; OnPropertyChanged(); } }
+    }
+
     public WaterLoss(string description, double value) {
       Description = description;
       Value = value;
     }
-    public WaterLoss() {
-      //:3
-    }
+    public WaterLoss() { }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
   }
 
-  public class WaterAddition
-  {
-    public string Description { get; set; } = "";
-    public double Value { get; set; } = 0.0;
+  public class WaterAddition : INotifyPropertyChanged {
+    private string _description = "";
+    private double _value = 0.0;
+
+    public string Description {
+      get => _description;
+      set { if (_description != value) { _description = value; OnPropertyChanged(); } }
+    }
+    public double Value {
+      get => _value;
+      set { if (_value != value) { _value = value; OnPropertyChanged(); } }
+    }
+
     public WaterAddition(string description, double value) {
       Description = description;
       Value = value;
     }
-    public WaterAddition() {
-      //:3
-    }
+    public WaterAddition() { }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
   }
 }

@@ -400,7 +400,7 @@ namespace GMEPPlumbing.Views
                   && r.RouteItems[0] is PlumbingSource src
                   && src.Id == plumbingSource.Id)
               .Max(r => r.Length);
-            WaterCalculators[plumbingSource.Id] = new WaterCalculator("", plumbingSource.Pressure, 0, maxLength, maxLength * 1.3, 0, waterLosses, waterAdditions);
+            WaterCalculators[plumbingSource.Id] = new WaterCalculator("", plumbingSource.Pressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
           }
         }
       }

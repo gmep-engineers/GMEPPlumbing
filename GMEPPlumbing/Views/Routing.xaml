@@ -52,6 +52,8 @@
                                                     <RowDefinition Height="Auto"/>
                                                     <RowDefinition Height="Auto"/>
                                                     <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
                                                 </Grid.RowDefinitions>
                                                 <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
                                                     <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
@@ -81,8 +83,8 @@
                                                     <Expander.Content>
                                                         <DataGrid ItemsSource="{Binding Value.Losses}" ColumnWidth="*" AutoGenerateColumns="False">
                                                             <DataGrid.Columns>
-                                                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False"/>
-                                                                <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}"/>
+                                                                <DataGridTextColumn Header="Description" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="False"/>
+                                                                <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}"/>
                                                             </DataGrid.Columns>
                                                         </DataGrid>
                                                     </Expander.Content>
@@ -91,17 +93,26 @@
                                                     <Expander.Content>
                                                         <DataGrid ItemsSource="{Binding Value.Additions}" ColumnWidth="*" AutoGenerateColumns="False">
                                                             <DataGrid.Columns>
-                                                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False"/>
-                                                                <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}"/>
+                                                                <DataGridTextColumn Header="Description" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="False"/>
+                                                                <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}"/>
                                                             </DataGrid.Columns>
                                                         </DataGrid>
                                                     </Expander.Content>
                                                 </Expander>
                                                 <Border Grid.Row="6" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
                                                     <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                        <TextBlock Text="Pressure Available For Friction: " Margin="5,0,0,0"/>
+                                                        <TextBox IsEnabled="False" Text="{Binding Value.AvailableFrictionPressure}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <Border Grid.Row="7" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
                                                         <TextBlock Text="Average Pressure Drop: " Margin="5,0,0,0"/>
                                                         <TextBox IsEnabled="False" Text="{Binding Value.AveragePressureDrop}"/>
                                                     </StackPanel>
+                                                </Border>
+                                                <Border Grid.Row="8" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70" Background="#FF4E4E52">
+                                                    <Button HorizontalAlignment="Center" Margin="5" Content="Calculate"/>
                                                 </Border>
                                             </Grid>
                                         </DataTemplate>
