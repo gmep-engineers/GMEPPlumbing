@@ -372,6 +372,7 @@ namespace GMEPPlumbing.Views
   public class View {
     public List<PlumbingFullRoute> FullRoutes { get; set; } = new List<PlumbingFullRoute>();
     public Tuple<Scene, List<Scene>> Scenes { get; set; } = new Tuple<Scene, List<Scene>>(new Scene(), new List<Scene>());
+    public bool IsWaterCalculatorEnabled { get; set; } = false;
     public Dictionary<string, WaterCalculator> WaterCalculators { get; set; } = new Dictionary<string, WaterCalculator>();
     public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
     public string Name { get; set; } = "";
@@ -392,6 +393,7 @@ namespace GMEPPlumbing.Views
       WaterCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
+          IsWaterCalculatorEnabled = true;
           if (!WaterCalculators.ContainsKey(plumbingSource.Id)) {
             ObservableCollection<WaterLoss> waterLosses = new ObservableCollection<WaterLoss>();
             ObservableCollection<WaterAddition> waterAdditions = new ObservableCollection<WaterAddition>();

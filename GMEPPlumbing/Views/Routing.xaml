@@ -34,7 +34,18 @@
                     <Grid Height="{Binding RelativeSource={RelativeSource AncestorType=ListBox}, Path=ActualHeight}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
+                            <RowDefinition>
+                                <RowDefinition.Style>
+                                    <Style TargetType="RowDefinition">
+                                        <Setter Property="Height" Value="Auto"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsWaterCalculatorEnabled}" Value="False">
+                                                <Setter Property="Height" Value="0"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </RowDefinition.Style>
+                            </RowDefinition>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Name}" Margin="0,0,0,5"/>
