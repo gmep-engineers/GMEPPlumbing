@@ -28,7 +28,7 @@
         </Style>
     </UserControl.Resources>
     <Grid Background="#FF2D2D30">
-        <ListBox ItemsSource="{Binding Views}" HorizontalContentAlignment="Stretch" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+        <ListBox ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding Views}" HorizontalContentAlignment="Stretch" Margin="10,10,10,10" Background="#FF3E3E42" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <Grid Height="{Binding RelativeSource={RelativeSource AncestorType=ListBox}, Path=ActualHeight}">
@@ -40,7 +40,7 @@
                         <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Name}" Margin="0,0,0,5"/>
                         <Expander Grid.Row="1" Header="Water Calculations" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                             <Expander.Content>
-                                <ListBox FontSize="15" FontWeight="Bold" ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch">
+                                <ListBox ScrollViewer.HorizontalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <Grid>
@@ -79,20 +79,20 @@
                                                 </Border>
                                                 <Expander Grid.Row="4" HorizontalAlignment="Stretch" Header="Losses"  IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                                                     <Expander.Content>
-                                                        <DataGrid ItemsSource="{Binding Value.Losses}" AutoGenerateColumns="False">
+                                                        <DataGrid ItemsSource="{Binding Value.Losses}" ColumnWidth="*" AutoGenerateColumns="False">
                                                             <DataGrid.Columns>
-                                                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False" Width="*"/>
-                                                                <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}" Width="*"/>
+                                                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False"/>
+                                                                <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}"/>
                                                             </DataGrid.Columns>
                                                         </DataGrid>
                                                     </Expander.Content>
                                                 </Expander>
                                                 <Expander Grid.Row="5"  HorizontalAlignment="Stretch" Header="Additions" IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                                                     <Expander.Content>
-                                                        <DataGrid ItemsSource="{Binding Value.Additions}" AutoGenerateColumns="False">
+                                                        <DataGrid ItemsSource="{Binding Value.Additions}" ColumnWidth="*" AutoGenerateColumns="False">
                                                             <DataGrid.Columns>
-                                                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False" Width="*"/>
-                                                                <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}" Width="*"/>
+                                                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="False"/>
+                                                                <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value}"/>
                                                             </DataGrid.Columns>
                                                         </DataGrid>
                                                     </Expander.Content>
