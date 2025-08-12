@@ -19,6 +19,9 @@ using System.Windows.Media.Media3D;
 using System.Collections;
 using System.Collections.ObjectModel;
 using HelixToolkit.Wpf;
+using GMEPPlumbing.Tools;
+using System.Windows.Input;
+using System.ComponentModel;
 
 namespace GMEPPlumbing.Views
 {
@@ -42,8 +45,8 @@ namespace GMEPPlumbing.Views
       }
     }
   }
-    
-    public class Scene {
+
+  public class Scene {
       public List<object> RouteItems { get; set; } = new List<object>();
       public double Length { get; set; } = 0;
       public ObservableCollection<Visual3D> RouteVisuals { get; set; } = new ObservableCollection<Visual3D>();
@@ -118,9 +121,9 @@ namespace GMEPPlumbing.Views
           int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
 
           double textHeight = 8;
-          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM}";
+          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n Pipe Size: {horizontalRoute.PipeSize}\n";
          if (horizontalRoute.Type == "Gas") {
-            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\"";
+            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\" \n";
           }
           double textWidth = textHeight * textString.Length * 0.05;
 
@@ -128,7 +131,7 @@ namespace GMEPPlumbing.Views
           var textPos = new Point3D(
               horizontalRoute.EndPoint.X - (direction.X * (textWidth / 2)),
               horizontalRoute.EndPoint.Y - (direction.Y * (textWidth / 2)),
-              horizontalRoute.EndPoint.Z + 5 // +5 for vertical offset
+              horizontalRoute.EndPoint.Z + 6 // +5 for vertical offset
           );
 
           var textModel = new TextVisual3D {
@@ -258,19 +261,21 @@ namespace GMEPPlumbing.Views
         }
         int flowTypeId = verticalRoutes.First().FlowTypeId;
         int gpm = verticalRoutes.First().GPM;
+        string pipeSize = verticalRoutes.First().PipeSize;
         double longestLength = verticalRoutes.Max(vr => vr.LongestRunLength);
         int longestLengthFeet = (int)(longestLength / 12); // Convert to feet
         int longestLengthInches = (int)Math.Round(longestLength % 12); // Remaining inches
         if (verticalRoutes.First().IsUp) {
           flowTypeId = verticalRoutes.Last().FlowTypeId;
           gpm = verticalRoutes.Last().GPM;
+          pipeSize = verticalRoutes.Last().PipeSize;
         }
         string flow = (flowTypeId == 1) ? "Flush Tank" : "Flush Valve";
 
         // Calculate pipe length in feet/inches
         int feet = (int)(pipeLength / 12);
         int inches = (int)Math.Round(pipeLength % 12);
-        string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n";
+        string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n Pipe Size: {pipeSize}";
         if (verticalRoutes.First().Type == "Gas") {
           textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\"";
         }
@@ -279,9 +284,9 @@ namespace GMEPPlumbing.Views
 
         double offset = textWidth / 2;
         if (verticalRoutes[0].IsUp)
-          pos = new Point3D(pos.X + 5, pos.Y, pos.Z - offset);
+          pos = new Point3D(pos.X + 6, pos.Y, pos.Z - offset);
         else
-          pos = new Point3D(pos.X + 5, pos.Y, pos.Z + offset);
+          pos = new Point3D(pos.X + 6, pos.Y, pos.Z + offset);
 
         var textModel = new TextVisual3D {
           Position = pos,
@@ -369,14 +374,27 @@ namespace GMEPPlumbing.Views
         RouteVisuals.Remove(visual);
     }
   }
-  public class View {
+  public class View : INotifyPropertyChanged {
     public List<PlumbingFullRoute> FullRoutes { get; set; } = new List<PlumbingFullRoute>();
-    public Tuple<Scene, List<Scene>> Scenes { get; set; } = new Tuple<Scene, List<Scene>>(new Scene(), new List<Scene>());
+    public Tuple<Scene, List<Scene>> _scenes { get; set; } = new Tuple<Scene, List<Scene>>(new Scene(), new List<Scene>());
+    public Tuple<Scene, List<Scene>> Scenes {
+      get => _scenes;
+      set {
+        if (_scenes != value) {
+          _scenes = value;
+          OnPropertyChanged(nameof(Scenes));
+        }
+      }
+    }
+
     public bool IsWaterCalculatorEnabled { get; set; } = false;
     public Dictionary<string, WaterCalculator> WaterCalculators { get; set; } = new Dictionary<string, WaterCalculator>();
     public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
     public string Name { get; set; } = "";
+    public ICommand CalculateCommand { get; }
     public View(List<PlumbingFullRoute> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup) {
+
+      CalculateCommand = new RelayCommand(ExecuteCalculate);
       PlumbingSource source1 = fullRoutes[0].RouteItems[0] as PlumbingSource;
       if (source1 != null) {
         Name = basePointLookup[source1.BasePointId].Plan + ": " + basePointLookup[source1.BasePointId].Type;
@@ -387,6 +405,53 @@ namespace GMEPPlumbing.Views
       NormalizeRoutes();
       GenerateWaterCalculators();
       GenerateScenes();
+    }
+
+
+    public void GenerateWaterPipeSizing() {
+      WaterPipeSizingChart chart = new WaterPipeSizingChart();
+      foreach (var fullRoute in FullRoutes) {
+        if (fullRoute.RouteItems.Count == 0) continue;
+        double psi = 0;
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
+          string sourceId = plumbingSource.Id;
+          psi = WaterCalculators[sourceId].AveragePressureDrop;
+        }
+        foreach (var item in fullRoute.RouteItems) {
+          if (item is PlumbingHorizontalRoute horizontalRoute && (horizontalRoute.Type == "Cold Water" || horizontalRoute.Type == "Hot Water")) {
+            bool isHot = false;
+            if (horizontalRoute.Type == "Hot Water") {
+              isHot = true;
+            }
+            horizontalRoute.GenerateGallonsPerMinute();
+            horizontalRoute.PipeSize = chart.FindSize(
+              horizontalRoute.PipeType,
+              psi,
+              isHot,
+              horizontalRoute.GPM
+            ).Item1;
+          }
+          else if (item is PlumbingVerticalRoute verticalRoute && (verticalRoute.Type == "Cold Water" || verticalRoute.Type == "Hot Water")) {
+            bool isHot = false;
+            if (verticalRoute.Type == "Hot Water") {
+              isHot = true;
+            }
+            verticalRoute.GenerateGallonsPerMinute();
+            verticalRoute.PipeSize = chart.FindSize(
+              verticalRoute.PipeType,
+              psi,
+              isHot,
+              verticalRoute.GPM
+            ).Item1;
+          }
+        }
+      }
+      GenerateScenes();
+    }
+    private void ExecuteCalculate(object parameter) {
+      var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
+      ed.WriteMessage("\nCalculating pipe sizes...");
+      GenerateWaterPipeSizing();
     }
 
     public void GenerateWaterCalculators() {
@@ -552,6 +617,14 @@ namespace GMEPPlumbing.Views
       result = newList;
       return result;
     }
+
+    public void GetWaterSizingChart(string pipeType, double psi) {
+
+    }
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void OnPropertyChanged(string propertyName) {
+      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
   }
   public class AddOneConverter : IValueConverter {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
@@ -563,4 +636,21 @@ namespace GMEPPlumbing.Views
       throw new NotImplementedException();
     }
   }
+  public class RelayCommand : ICommand {
+    private readonly Action<object> _execute;
+    private readonly Func<object, bool> _canExecute;
+
+    public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null) {
+      _execute = execute;
+      _canExecute = canExecute;
+    }
+
+    public bool CanExecute(object parameter) => _canExecute == null || _canExecute(parameter);
+    public void Execute(object parameter) => _execute(parameter);
+    public event EventHandler CanExecuteChanged {
+      add { CommandManager.RequerySuggested += value; }
+      remove { CommandManager.RequerySuggested -= value; }
+    }
+  }
+
 }

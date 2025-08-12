@@ -148,8 +148,9 @@ namespace GMEPPlumbing
       }
       PromptKeywordOptions pko3 = new PromptKeywordOptions("\nSelect Pipe Type: ");
       pko3.Keywords.Add("PEX");
-      pko3.Keywords.Add("CPVC");
-      pko3.Keywords.Add("Copper");
+      pko3.Keywords.Add("CPVC SCH80");
+      pko3.Keywords.Add("CPVC SDR II");
+      pko3.Keywords.Add("Copper Type L");
       PromptResult pr3 = ed.GetKeywords(pko3);
       string pipeType = pr3.StringResult;
 
@@ -429,8 +430,9 @@ namespace GMEPPlumbing
       }
       PromptKeywordOptions pko2 = new PromptKeywordOptions("\nSelect Pipe Type: ");
       pko2.Keywords.Add("PEX");
-      pko2.Keywords.Add("CPVC");
-      pko2.Keywords.Add("Copper");
+      pko2.Keywords.Add("CPVC SDR II");
+      pko2.Keywords.Add("CPVC SCH80");
+      pko2.Keywords.Add("Copper Type L");
       PromptResult pr2 = ed.GetKeywords(pko2);
       string pipeType  = pr2.StringResult;
 
