@@ -21,6 +21,7 @@ using System.Collections.ObjectModel;
 using HelixToolkit.Wpf;
 using GMEPPlumbing.Tools;
 using System.Windows.Input;
+using System.ComponentModel;
 
 namespace GMEPPlumbing.Views
 {
@@ -124,9 +125,9 @@ namespace GMEPPlumbing.Views
           int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
 
           double textHeight = 8;
-          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM}";
+          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n Pipe Size {horizontalRoute.PipeSize}\n";
          if (horizontalRoute.Type == "Gas") {
-            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\" \n Pipe Size: {horizontalRoute.PipeSize}";
+            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\" \n";
           }
           double textWidth = textHeight * textString.Length * 0.05;
 
@@ -134,7 +135,7 @@ namespace GMEPPlumbing.Views
           var textPos = new Point3D(
               horizontalRoute.EndPoint.X - (direction.X * (textWidth / 2)),
               horizontalRoute.EndPoint.Y - (direction.Y * (textWidth / 2)),
-              horizontalRoute.EndPoint.Z + 5 // +5 for vertical offset
+              horizontalRoute.EndPoint.Z + 6 // +5 for vertical offset
           );
 
           var textModel = new TextVisual3D {
@@ -287,9 +288,9 @@ namespace GMEPPlumbing.Views
 
         double offset = textWidth / 2;
         if (verticalRoutes[0].IsUp)
-          pos = new Point3D(pos.X + 5, pos.Y, pos.Z - offset);
+          pos = new Point3D(pos.X + 6, pos.Y, pos.Z - offset);
         else
-          pos = new Point3D(pos.X + 5, pos.Y, pos.Z + offset);
+          pos = new Point3D(pos.X + 6, pos.Y, pos.Z + offset);
 
         var textModel = new TextVisual3D {
           Position = pos,
@@ -377,9 +378,19 @@ namespace GMEPPlumbing.Views
         RouteVisuals.Remove(visual);
     }
   }
-  public class View {
+  public class View : INotifyPropertyChanged {
     public List<PlumbingFullRoute> FullRoutes { get; set; } = new List<PlumbingFullRoute>();
-    public Tuple<Scene, List<Scene>> Scenes { get; set; } = new Tuple<Scene, List<Scene>>(new Scene(), new List<Scene>());
+    public Tuple<Scene, List<Scene>> _scenes { get; set; } = new Tuple<Scene, List<Scene>>(new Scene(), new List<Scene>());
+    public Tuple<Scene, List<Scene>> Scenes {
+      get => _scenes;
+      set {
+        if (_scenes != value) {
+          _scenes = value;
+          OnPropertyChanged(nameof(Scenes));
+        }
+      }
+    }
+
     public bool IsWaterCalculatorEnabled { get; set; } = false;
     public Dictionary<string, WaterCalculator> WaterCalculators { get; set; } = new Dictionary<string, WaterCalculator>();
     public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
@@ -614,8 +625,10 @@ namespace GMEPPlumbing.Views
     public void GetWaterSizingChart(string pipeType, double psi) {
 
     }
-    
-    
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void OnPropertyChanged(string propertyName) {
+      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
   }
   public class AddOneConverter : IValueConverter {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
