@@ -370,6 +370,9 @@ namespace GMEPPlumbing {
         case 4:
           types.Add("Waste");
           break;
+        case 5:
+          types.Add("Vent");
+          break;
       }
       return types;
     }
@@ -377,9 +380,6 @@ namespace GMEPPlumbing {
     private List<string> GetFixtureInputTypes(PlumbingFixture fixture) {
       var types = new List<string>();
       switch (fixture.TypeAbbreviation) {
-        case "DF":
-          types.Add("Cold Water");
-          break;
         case "CP":
           types.Add("Hot Water");
           break;
@@ -394,6 +394,7 @@ namespace GMEPPlumbing {
           break;
         case "L":
         case "U":
+        case "DF":
         case "WC":
           types.Add("Cold Water");
           types.Add("Waste");

@@ -21,7 +21,7 @@ namespace GMEPPlumbing.Views
     {
         public bool Water => WaterCheck.IsChecked == true;
         public bool Gas => GasCheck.IsChecked == true;
-        //public bool SewerVent => SewerVentCheck.IsChecked == true;
+        public bool SewerVent => SewerVentCheck.IsChecked == true;
         //public bool Storm => StormCheck.IsChecked == true;
         public string PlanName => PlanNameText.Text;
         public string FloorQty => FloorQtyText.Text;
