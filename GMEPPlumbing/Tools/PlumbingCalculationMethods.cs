@@ -112,6 +112,9 @@ namespace GMEPPlumbing {
         if (GetFixtureInputTypes(fixture).Contains("Gas")) {
           units = catalogItem.Cfh;
         }
+        if (GetFixtureInputTypes(fixture).Contains("Waste")) {
+          units = catalogItem.Dfu;
+        }
         fixtureUnits += units;
         flowTypeId = (flowTypeId == 2) ? 2 : fixture.FlowTypeId;
 
