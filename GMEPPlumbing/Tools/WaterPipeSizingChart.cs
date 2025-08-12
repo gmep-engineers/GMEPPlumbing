@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GMEPPlumbing.Tools
 {
-  
+
   public class WaterPipeSizingChart {
     public List<WaterPipeSizingEntry> PEXChart { get; set; } = new List<WaterPipeSizingEntry>() {
       //Pex PSI 1
@@ -240,7 +240,7 @@ namespace GMEPPlumbing.Tools
       new WaterPipeSizingEntry { PressureLossPer100Ft = 20, PipeSize = "1-1/2\"", ColdGPM=30.3, HotGPM=18.9 },
       new WaterPipeSizingEntry { PressureLossPer100Ft = 20, PipeSize = "2\"", ColdGPM=51.9, HotGPM=32.4},
     };
-    public List<WaterPipeSizingEntry> CPVCSDRIIChart  { get; set; } = new List<WaterPipeSizingEntry>() {
+    public List<WaterPipeSizingEntry> CPVCSDRIIChart { get; set; } = new List<WaterPipeSizingEntry>() {
 
       //CPVC SDR II PSI 1
       new WaterPipeSizingEntry { PressureLossPer100Ft = 1, PipeSize = "1/2\"", InnerDiameter="0.496\"", ColdGPM=0.9, HotGPM=0.9 },
@@ -837,8 +837,40 @@ namespace GMEPPlumbing.Tools
 
     };
 
-    public string FindSize(string pipeType, double psi, bool isHot, double gpm) {
-      return "";
+    public Tuple<string, string> FindSize(string pipeType, double psi, bool isHot, double gpm) {
+      List<WaterPipeSizingEntry> searchChart = null;
+      if (pipeType == "Copper Type L") {
+        searchChart = CopperTypeLChart;
+      }
+      else if (pipeType == "PEX") {
+        searchChart = PEXChart;
+      }
+      else if (pipeType == "CPVC SCH80") {
+        searchChart = CPVCSCH80Chart;
+      }
+      else if (pipeType == "CPVC SDR II") {
+        searchChart = CPVCSDRIIChart;
+      }
+      double selectedPSI = searchChart.Where(e => e.PressureLossPer100Ft <= psi).OrderByDescending(e => e.PressureLossPer100Ft).Select(e => e.PressureLossPer100Ft).FirstOrDefault();
+
+      WaterPipeSizingEntry result = null;
+      if (isHot) {
+        result = searchChart
+            .Where(e => e.HotGPM >= gpm && e.PressureLossPer100Ft == selectedPSI)
+            .OrderBy(e => e.PressureLossPer100Ft)
+            .FirstOrDefault();
+      }
+      else {
+        result = searchChart
+            .Where(e => e.ColdGPM >= gpm && e.PressureLossPer100Ft == selectedPSI)
+            .OrderBy(e => e.PressureLossPer100Ft)
+            .FirstOrDefault();
+      }
+      return new Tuple<string, string>(
+          result?.PipeSize ?? "Not Found",
+          result?.InnerDiameter ?? ""
+      );
+
     }
   }
   public class WaterPipeSizingEntry {
