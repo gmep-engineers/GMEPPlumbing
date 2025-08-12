@@ -44,10 +44,6 @@ namespace GMEPPlumbing.Views
         Views.Add(view);
       }
     }
-
-    private void Button_Click(object sender, RoutedEventArgs e) {
-
-    }
   }
 
   public class Scene {
@@ -125,7 +121,7 @@ namespace GMEPPlumbing.Views
           int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
 
           double textHeight = 8;
-          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n Pipe Size {horizontalRoute.PipeSize}\n";
+          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n Pipe Size: {horizontalRoute.PipeSize}\n";
          if (horizontalRoute.Type == "Gas") {
             textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\" \n";
           }
@@ -412,7 +408,7 @@ namespace GMEPPlumbing.Views
     }
 
 
-    public void GeneratePipeSizing() {
+    public void GenerateWaterPipeSizing() {
       WaterPipeSizingChart chart = new WaterPipeSizingChart();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems.Count == 0) continue;
@@ -435,7 +431,7 @@ namespace GMEPPlumbing.Views
               horizontalRoute.GPM
             ).Item1;
           }
-          else if (item is PlumbingVerticalRoute verticalRoute) {
+          else if (item is PlumbingVerticalRoute verticalRoute && (verticalRoute.Type == "Cold Water" || verticalRoute.Type == "Hot Water")) {
             bool isHot = false;
             if (verticalRoute.Type == "Hot Water") {
               isHot = true;
@@ -455,7 +451,7 @@ namespace GMEPPlumbing.Views
     private void ExecuteCalculate(object parameter) {
       var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
       ed.WriteMessage("\nCalculating pipe sizes...");
-      GeneratePipeSizing();
+      GenerateWaterPipeSizing();
     }
 
     public void GenerateWaterCalculators() {
