@@ -75,7 +75,7 @@
                                                     <Border Grid.Row="1" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
                                                         <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
                                                             <TextBlock Text="Min Source Pressure: " Margin="5,0,0,0"/>
-                                                            <TextBox IsEnabled="False" Text="{Binding Value.MinSourcePressure, Mode=TwoWay}"/>
+                                                            <TextBox Text="{Binding Value.MinSourcePressure, Mode=TwoWay}"/>
                                                         </StackPanel>
                                                     </Border>
                                                     <Border Grid.Row="2" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">

@@ -433,7 +433,7 @@ namespace GMEPPlumbing {
     }
     public double MinSourcePressure {
       get => _minSourcePressure;
-      set { if (_minSourcePressure != value) { _minSourcePressure = value; OnPropertyChanged(); } }
+      set { if (_minSourcePressure != value) { _minSourcePressure = value; OnPropertyChanged(); DeterminePressure(); } }
     }
     public double AvailableFrictionPressure {
       get => _availableFrictionPressure;

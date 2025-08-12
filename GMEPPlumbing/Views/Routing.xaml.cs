@@ -413,7 +413,7 @@ namespace GMEPPlumbing.Views
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems.Count == 0) continue;
         double psi = 0;
-        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
           string sourceId = plumbingSource.Id;
           psi = WaterCalculators[sourceId].AveragePressureDrop;
         }
@@ -457,7 +457,7 @@ namespace GMEPPlumbing.Views
     public void GenerateWaterCalculators() {
       WaterCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
-        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
           IsWaterCalculatorEnabled = true;
           if (!WaterCalculators.ContainsKey(plumbingSource.Id)) {
             ObservableCollection<WaterLoss> waterLosses = new ObservableCollection<WaterLoss>();
@@ -467,7 +467,23 @@ namespace GMEPPlumbing.Views
                   && r.RouteItems[0] is PlumbingSource src
                   && src.Id == plumbingSource.Id)
               .Max(r => r.Length);
-            WaterCalculators[plumbingSource.Id] = new WaterCalculator("", plumbingSource.Pressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
+            string name = "";
+            switch(plumbingSource.TypeId) {
+              case 1:
+                name = "Water Meter";
+                break;
+              case 2:
+                name = "Water Heater";
+                break;
+              case 3:
+                name = "Gas Meter";
+                break;
+              case 4:
+                name = "Waste Output";
+                break;
+            }
+
+            WaterCalculators[plumbingSource.Id] = new WaterCalculator(name, plumbingSource.Pressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
           }
         }
       }
