@@ -52,10 +52,10 @@
                         <Expander Grid.Row="1" Header="Water Calculations" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                             <Expander.Content>
                                 <StackPanel Orientation="Vertical">
-                                    <ListBox ScrollViewer.HorizontalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch">
+                                    <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
-                                                <Grid>
+                                                <Grid Background="White" Margin="0 0 0 20">
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="*"/>
                                                         <RowDefinition Height="*"/>
