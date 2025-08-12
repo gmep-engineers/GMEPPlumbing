@@ -418,7 +418,7 @@ namespace GMEPPlumbing.Views
             }
             horizontalRoute.GenerateGallonsPerMinute();
             horizontalRoute.PipeSize = chart.FindSize(
-              horizontalRoute.Type,
+              horizontalRoute.PipeType,
               psi,
               isHot,
               horizontalRoute.GPM
@@ -431,7 +431,7 @@ namespace GMEPPlumbing.Views
             }
             verticalRoute.GenerateGallonsPerMinute();
             verticalRoute.PipeSize = chart.FindSize(
-              verticalRoute.Type,
+              verticalRoute.PipeType,
               psi,
               isHot,
               verticalRoute.GPM
