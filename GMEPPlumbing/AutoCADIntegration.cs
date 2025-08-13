@@ -1736,6 +1736,9 @@ namespace GMEPPlumbing
         );
         return;
       }
+      if (fixture.TypeAbbreviation == "VS") {
+        return;
+      }
 
       if (fixture.TypeAbbreviation != "CO") {
         CADObjectCommands.CreateTextWithJig(
@@ -1810,7 +1813,7 @@ namespace GMEPPlumbing
       }
 
       PlumbingFixtureCatalogItem selectedCatalogItem = null;
-      if (selectedFixtureType.Abbreviation != "CO" && selectedFixtureType.Abbreviation != "VE") {
+      if (selectedFixtureType.Abbreviation != "CO" && selectedFixtureType.Abbreviation != "VE" && selectedFixtureType.Abbreviation != "VS") {
         List<PlumbingFixtureCatalogItem> plumbingFixtureCatalogItems =
           MariaDBService.GetPlumbingFixtureCatalogItemsByType(selectedFixtureType.Id);
 
@@ -3441,7 +3444,8 @@ namespace GMEPPlumbing
           "GMEP FD",
           "GMEP RPBFP",
           "GMEP IWH",
-          "GMEP PLUMBING GAS OUTPUT"
+          "GMEP PLUMBING GAS OUTPUT",
+          "GMEP PLUMBING VENT START"
         };
         foreach (string name in blockNames) {
           BlockTableRecord fixtureBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
