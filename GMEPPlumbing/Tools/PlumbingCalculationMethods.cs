@@ -571,7 +571,7 @@ namespace GMEPPlumbing {
       Point3d endPoint = new Point3d(targetRoute.EndPoint.X, targetRoute.EndPoint.Y, 0);
 
       return VerticalRoutes.Where(route => {
-        if (route.BasePointId == targetRoute.BasePointId && (route.Type == targetRoute.Type || (route.Type == "Vent" && targetRoute.Type == "Waste"))) {
+        if (route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type ) {
           ed.WriteMessage($"\nChecking vertical route {route.Id} for target route {targetRoute.Id}");
           if (targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) < 3.0) {
             return true;
