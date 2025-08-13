@@ -2132,6 +2132,10 @@ namespace GMEPPlumbing
         ed.Command("PlumbingFixture", "IWH");
         return;
       }
+      if (selectedSourceType.Type == "Vent Exit") {
+        ed.Command("PlumbingFixture", "VE");
+        return;
+      }
 
       double pressure = 0;
       if (selectedSourceType.Type == "Water Meter" || selectedSourceType.Type == "Water Meter") {
