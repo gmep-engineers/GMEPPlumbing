@@ -112,6 +112,9 @@ namespace GMEPPlumbing {
         if (GetFixtureInputTypes(fixture).Contains("Gas")) {
           units = catalogItem.Cfh;
         }
+        if (GetFixtureInputTypes(fixture).Contains("Waste")) {
+          units = catalogItem.Dfu;
+        }
         fixtureUnits += units;
         flowTypeId = (flowTypeId == 2) ? 2 : fixture.FlowTypeId;
 
@@ -370,6 +373,9 @@ namespace GMEPPlumbing {
         case 4:
           types.Add("Waste");
           break;
+        case 5:
+          types.Add("Vent");
+          break;
       }
       return types;
     }
@@ -377,9 +383,6 @@ namespace GMEPPlumbing {
     private List<string> GetFixtureInputTypes(PlumbingFixture fixture) {
       var types = new List<string>();
       switch (fixture.TypeAbbreviation) {
-        case "DF":
-          types.Add("Cold Water");
-          break;
         case "CP":
           types.Add("Hot Water");
           break;
@@ -394,6 +397,7 @@ namespace GMEPPlumbing {
           break;
         case "L":
         case "U":
+        case "DF":
         case "WC":
           types.Add("Cold Water");
           types.Add("Waste");
@@ -410,6 +414,7 @@ namespace GMEPPlumbing {
         case "SWR":
           types.Add("Waste");
           break;
+        case "VS":
         case "VE":
           types.Add("Vent");
           break;
@@ -567,7 +572,7 @@ namespace GMEPPlumbing {
       Point3d endPoint = new Point3d(targetRoute.EndPoint.X, targetRoute.EndPoint.Y, 0);
 
       return VerticalRoutes.Where(route => {
-        if (route.BasePointId == targetRoute.BasePointId && (route.Type == targetRoute.Type || (route.Type == "Vent" && targetRoute.Type == "Waste"))) {
+        if (route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type ) {
           ed.WriteMessage($"\nChecking vertical route {route.Id} for target route {targetRoute.Id}");
           if (targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) < 3.0) {
             return true;

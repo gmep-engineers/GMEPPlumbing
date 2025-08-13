@@ -632,37 +632,37 @@ namespace GMEPPlumbing.Services
       return items;
     }
     public PlumbingFixtureCatalogItem GetPlumbingFixtureCatalogItemById(int id) {
-      List<PlumbingFixtureCatalogItem> items = new List<PlumbingFixtureCatalogItem>();
-      OpenConnectionSync();
-      string query =
-        "SELECT * FROM plumbing_fixture_catalog WHERE id = @id ORDER BY description";
-      MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@id", id);
-      MySqlDataReader reader = command.ExecuteReader();
-      reader.Read();
-
-     PlumbingFixtureCatalogItem item =  new PlumbingFixtureCatalogItem(
-        GetSafeInt(reader, "id"),
-        GetSafeInt(reader, "type_id"),
-        GetSafeString(reader, "description"),
-        GetSafeString(reader, "make"),
-        GetSafeString(reader, "model"),
-        GetSafeDecimal(reader, "trap"),
-        GetSafeDecimal(reader, "waste"),
-        GetSafeDecimal(reader, "vent"),
-        GetSafeDecimal(reader, "cold_water"),
-        GetSafeDecimal(reader, "hot_water"),
-        GetSafeString(reader, "remarks"),
-        GetSafeDecimal(reader, "fixture_demand"),
-        GetSafeDecimal(reader, "hot_demand"),
-        GetSafeInt(reader, "dfu"),
-        GetSafeString(reader, "water_gas_block_name"),
-        GetSafeString(reader, "waste_vent_block_name"),
-        GetSafeInt(reader, "cfh")
-      );
-      
-      reader.Close();
-      CloseConnectionSync();
+      PlumbingFixtureCatalogItem item = null;
+      using (var conn = new MySqlConnection(ConnectionString)) {
+        conn.Open();
+        string query = "SELECT * FROM plumbing_fixture_catalog WHERE id = @id ORDER BY description";
+        using (var command = new MySqlCommand(query, conn)) {
+          command.Parameters.AddWithValue("@id", id);
+          using (var reader = command.ExecuteReader()) {
+            if (reader.Read()) {
+              item = new PlumbingFixtureCatalogItem(
+                  GetSafeInt(reader, "id"),
+                  GetSafeInt(reader, "type_id"),
+                  GetSafeString(reader, "description"),
+                  GetSafeString(reader, "make"),
+                  GetSafeString(reader, "model"),
+                  GetSafeDecimal(reader, "trap"),
+                  GetSafeDecimal(reader, "waste"),
+                  GetSafeDecimal(reader, "vent"),
+                  GetSafeDecimal(reader, "cold_water"),
+                  GetSafeDecimal(reader, "hot_water"),
+                  GetSafeString(reader, "remarks"),
+                  GetSafeDecimal(reader, "fixture_demand"),
+                  GetSafeDecimal(reader, "hot_demand"),
+                  GetSafeInt(reader, "dfu"),
+                  GetSafeString(reader, "water_gas_block_name"),
+                  GetSafeString(reader, "waste_vent_block_name"),
+                  GetSafeInt(reader, "cfh")
+              );
+            }
+          }
+        }
+      }
       return item;
     }
 

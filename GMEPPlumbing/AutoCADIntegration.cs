@@ -1193,7 +1193,7 @@ namespace GMEPPlumbing
       }
       bool water = prompt.Water;
       bool gas = prompt.Gas;
-      bool sewerVent = false;
+      bool sewerVent = prompt.SewerVent;
       bool storm = false;
       string planName = prompt.PlanName.ToUpper();
       string floorQtyResult = prompt.FloorQty;
@@ -1736,6 +1736,9 @@ namespace GMEPPlumbing
         );
         return;
       }
+      if (fixture.TypeAbbreviation == "VS") {
+        return;
+      }
 
       if (fixture.TypeAbbreviation != "CO") {
         CADObjectCommands.CreateTextWithJig(
@@ -2130,6 +2133,10 @@ namespace GMEPPlumbing
       }
       if (selectedSourceType.Type == "Insta-hot Water Heater") {
         ed.Command("PlumbingFixture", "IWH");
+        return;
+      }
+      if (selectedSourceType.Type == "Vent Exit") {
+        ed.Command("PlumbingFixture", "VE");
         return;
       }
 
@@ -3057,6 +3064,9 @@ namespace GMEPPlumbing
                 TypedValue[] values = xdata.AsArray();
 
                 PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), values[3].Value.ToString());
+                if (route.Type == "Waste" || route.Type == "Vent") {
+                  route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.EndPoint, line.StartPoint, values[2].Value.ToString(), values[3].Value.ToString());
+                }
                 routes.Add(route);
               }
             }
@@ -3192,6 +3202,9 @@ namespace GMEPPlumbing
                           pipeType,
                           isUp
                         );
+                        if (route.Type == "Waste" || route.Type == "Vent") {
+                          route.IsUp = !route.IsUp; 
+                        }
                         routes.Add(route);
                       }
                     }
@@ -3330,10 +3343,7 @@ namespace GMEPPlumbing
           "GMEP WH 80",
           "GMEP WH 50",
           "GMEP IWH",
-          "GMEP DRAIN",
-          "GMEP FS 12",
-          "GMEP FS 6",
-          "GMEP FD"
+          "GMEP PLUMBING VENT EXIT"
         };
         foreach (string name in blockNames) {
           BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
@@ -3374,16 +3384,12 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "pressure") {
                           pressure = Convert.ToDouble(prop.Value);
                         }
-
-                      }
-                      if (typeId == 4) {
-                        continue;
                       }
                       if (name == "GMEP WH 50" || name == "GMEP WH 80" || name == "GMEP IWH") {
                         typeId = 2;
                       }
-                      if (name == "GMEP DRAIN" || name == "GMEP FS 12" || name == "GMEP FS 6" || name == "GMEP FD") {
-                        typeId = 4;
+                      if (name == "GMEP PLUMBING VENT EXIT") {
+                        typeId = 5;
                       }
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
                         Point3d position = entity.Position;
@@ -3438,12 +3444,8 @@ namespace GMEPPlumbing
           "GMEP FD",
           "GMEP RPBFP",
           "GMEP IWH",
-          "GMEP SOURCE",
-          "GMEP PLUMBING VENT EXIT",
-          "GMEP PLUMBING GAS OUTPUT"
-          //"GMEP WCO STRAIGHT",
-          //"GMEP WCO ANGLED",
-          //"GMEP WCO FLOOR",
+          "GMEP PLUMBING GAS OUTPUT",
+          "GMEP PLUMBING VENT START"
         };
         foreach (string name in blockNames) {
           BlockTableRecord fixtureBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
@@ -3464,7 +3466,6 @@ namespace GMEPPlumbing
                       double coldWaterX = 0;
                       double coldWaterY = 0;
                       int number = 0;
-                      int sourceTypeId = 0;
                       int flowTypeId = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
@@ -3489,25 +3490,19 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "number") {
                           number = Convert.ToInt32(prop.Value);
                         }
-                        if (prop.PropertyName == "type_id") {
-                          sourceTypeId = Convert.ToInt32(prop.Value);
-                        }
                         if (prop.PropertyName == "flow_type_id") {
                           flowTypeId = Convert.ToInt32(prop.Value);
                         }
 
                       }
                  
-                      if (!string.IsNullOrEmpty(GUID) && GUID != "0" && (sourceTypeId == 0 || sourceTypeId == 4)) {
+                      if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
                         Point3d position = entity.Position;
                         if (coldWaterX != 0 && coldWaterY != 0) {
                           double rotation = entity.Rotation;
                           double rotatedX = coldWaterX * Math.Cos(rotation) - coldWaterY * Math.Sin(rotation);
                           double rotatedY = coldWaterX * Math.Sin(rotation) + coldWaterY * Math.Cos(rotation);
                           position = new Point3d(entity.Position.X + rotatedX, entity.Position.Y + rotatedY, entity.Position.Z);
-                        }
-                        if (sourceTypeId == 4) {
-                          selectedFixtureTypeAbbr = "SWR";
                         }
                         PlumbingFixture fixture = new PlumbingFixture(
                           GUID,
