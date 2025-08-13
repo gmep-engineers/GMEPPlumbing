@@ -49,7 +49,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Name}" Margin="0,0,0,5"/>
-                        <Expander Grid.Row="1" Header="Water Calculations" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+                        <Expander Grid.Row="1" Header="Pressure Calculations" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                             <Expander.Content>
                                 <StackPanel Orientation="Vertical">
                                     <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding Calculators}" HorizontalContentAlignment="Stretch">
