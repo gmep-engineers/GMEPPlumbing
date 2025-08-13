@@ -399,8 +399,8 @@ namespace GMEPPlumbing.Views
       }
     }
 
-    public bool IsWaterCalculatorEnabled { get; set; } = false;
-    public Dictionary<string, WaterCalculator> WaterCalculators { get; set; } = new Dictionary<string, WaterCalculator>();
+    public bool IsCalculatorEnabled { get; set; } = false;
+    public Dictionary<string, Calculator> Calculators { get; set; } = new Dictionary<string, Calculator>();
     public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
     public string Name { get; set; } = "";
     public ICommand CalculateCommand { get; }
@@ -415,19 +415,19 @@ namespace GMEPPlumbing.Views
       BasePointLookup = basePointLookup;
       FullRoutes = DeepCopyFullRoutes(fullRoutes);
       NormalizeRoutes();
-      GenerateWaterCalculators();
+      GenerateCalculators();
       GenerateScenes();
     }
 
 
-    public void GenerateWaterPipeSizing() {
+    public void GeneratePipeSizing() {
       WaterPipeSizingChart chart = new WaterPipeSizingChart();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems.Count == 0) continue;
         double psi = 0;
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
           string sourceId = plumbingSource.Id;
-          psi = WaterCalculators[sourceId].AveragePressureDrop;
+          psi = Calculators[sourceId].AveragePressureDrop;
         }
         foreach (var item in fullRoute.RouteItems) {
           if (item is PlumbingHorizontalRoute horizontalRoute && (horizontalRoute.Type == "Cold Water" || horizontalRoute.Type == "Hot Water")) {
@@ -463,17 +463,17 @@ namespace GMEPPlumbing.Views
     private void ExecuteCalculate(object parameter) {
       var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
       ed.WriteMessage("\nCalculating pipe sizes...");
-      GenerateWaterPipeSizing();
+      GeneratePipeSizing();
     }
 
-    public void GenerateWaterCalculators() {
-      WaterCalculators.Clear();
+    public void GenerateCalculators() {
+      Calculators.Clear();
       foreach (var fullRoute in FullRoutes) {
-        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
-          IsWaterCalculatorEnabled = true;
-          if (!WaterCalculators.ContainsKey(plumbingSource.Id)) {
-            ObservableCollection<WaterLoss> waterLosses = new ObservableCollection<WaterLoss>();
-            ObservableCollection<WaterAddition> waterAdditions = new ObservableCollection<WaterAddition>();
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource) {
+          IsCalculatorEnabled = true;
+          if (!Calculators.ContainsKey(plumbingSource.Id)) {
+            ObservableCollection<Loss> Losses = new ObservableCollection<Loss>();
+            ObservableCollection<Addition> Additions = new ObservableCollection<Addition>();
             double maxLength = FullRoutes
               .Where(r => r.RouteItems.Count > 0
                   && r.RouteItems[0] is PlumbingSource src
@@ -495,7 +495,7 @@ namespace GMEPPlumbing.Views
                 break;
             }
 
-            WaterCalculators[plumbingSource.Id] = new WaterCalculator(name, plumbingSource.Pressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
+            Calculators[plumbingSource.Id] = new Calculator(name, plumbingSource.Pressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, Losses, Additions);
           }
         }
       }

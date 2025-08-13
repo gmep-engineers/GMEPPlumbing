@@ -419,7 +419,7 @@ namespace GMEPPlumbing {
       return;
     }
   }
-  public class WaterCalculator : INotifyPropertyChanged {
+  public class Calculator : INotifyPropertyChanged {
     private string _description;
     private double _minSourcePressure;
     private double _availableFrictionPressure;
@@ -452,18 +452,18 @@ namespace GMEPPlumbing {
       set { if (_averagePressureDrop != value) { _averagePressureDrop = value; OnPropertyChanged(); } }
     }
 
-    public ObservableCollection<WaterLoss> Losses { get; } = new ObservableCollection<WaterLoss>();
-    public ObservableCollection<WaterAddition> Additions { get; } = new ObservableCollection<WaterAddition>();
+    public ObservableCollection<Loss> Losses { get; } = new ObservableCollection<Loss>();
+    public ObservableCollection<Addition> Additions { get; } = new ObservableCollection<Addition>();
 
 
-    public WaterCalculator(string description,
+    public Calculator(string description,
         double minSourcePressure,
         double availableFrictionPressure,
         double systemLength,
         double developedSystemLength,
         double averagePressureDrop,
-        ObservableCollection<WaterLoss> losses,
-        ObservableCollection<WaterAddition> additions) {
+        ObservableCollection<Loss> losses,
+        ObservableCollection<Addition> additions) {
       Description = description;
       MinSourcePressure = minSourcePressure;
       AvailableFrictionPressure = availableFrictionPressure;
@@ -490,11 +490,11 @@ namespace GMEPPlumbing {
 
     private void Losses_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {
       if (e.NewItems != null) {
-        foreach (WaterLoss item in e.NewItems)
+        foreach (Loss item in e.NewItems)
           item.PropertyChanged += LossItem_PropertyChanged;
       }
       if (e.OldItems != null) {
-        foreach (WaterLoss item in e.OldItems)
+        foreach (Loss item in e.OldItems)
           item.PropertyChanged -= LossItem_PropertyChanged;
         DeterminePressure();
       }
@@ -503,24 +503,24 @@ namespace GMEPPlumbing {
 
     private void Additions_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {
       if (e.NewItems != null) {
-        foreach (WaterAddition item in e.NewItems)
+        foreach (Addition item in e.NewItems)
           item.PropertyChanged += AdditionItem_PropertyChanged;
       }
       if (e.OldItems != null) {
-        foreach (WaterAddition item in e.OldItems)
+        foreach (Addition item in e.OldItems)
           item.PropertyChanged -= AdditionItem_PropertyChanged;
         DeterminePressure();
       }
       // Optionally, handle Reset (e.Action == Reset) if you clear the collection
     }
     private void LossItem_PropertyChanged(object sender, PropertyChangedEventArgs e) {
-      if (e.PropertyName == nameof(WaterLoss.Value)) {
+      if (e.PropertyName == nameof(Loss.Value)) {
         DeterminePressure();
       }
     }
 
     private void AdditionItem_PropertyChanged(object sender, PropertyChangedEventArgs e) {
-      if (e.PropertyName == nameof(WaterAddition.Value)) {
+      if (e.PropertyName == nameof(Addition.Value)) {
         DeterminePressure();
       }
     }
@@ -529,7 +529,7 @@ namespace GMEPPlumbing {
     protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
   }
-  public class WaterLoss : INotifyPropertyChanged {
+  public class Loss : INotifyPropertyChanged {
     private string _description = "";
     private double _value = 0.0;
 
@@ -542,18 +542,18 @@ namespace GMEPPlumbing {
       set { if (_value != value) { _value = value; OnPropertyChanged(); } }
     }
 
-    public WaterLoss(string description, double value) {
+    public Loss(string description, double value) {
       Description = description;
       Value = value;
     }
-    public WaterLoss() { }
+    public Loss() { }
 
     public event PropertyChangedEventHandler PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
   }
 
-  public class WaterAddition : INotifyPropertyChanged {
+  public class Addition : INotifyPropertyChanged {
     private string _description = "";
     private double _value = 0.0;
 
@@ -566,11 +566,11 @@ namespace GMEPPlumbing {
       set { if (_value != value) { _value = value; OnPropertyChanged(); } }
     }
 
-    public WaterAddition(string description, double value) {
+    public Addition(string description, double value) {
       Description = description;
       Value = value;
     }
-    public WaterAddition() { }
+    public Addition() { }
 
     public event PropertyChangedEventHandler PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
