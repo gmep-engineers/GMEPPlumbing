@@ -414,6 +414,7 @@ namespace GMEPPlumbing {
         case "SWR":
           types.Add("Waste");
           break;
+        case "VS":
         case "VE":
           types.Add("Vent");
           break;

@@ -1813,7 +1813,7 @@ namespace GMEPPlumbing
       }
 
       PlumbingFixtureCatalogItem selectedCatalogItem = null;
-      if (selectedFixtureType.Abbreviation != "CO" && selectedFixtureType.Abbreviation != "VE" && selectedFixtureType.Abbreviation != "VS") {
+      if (selectedFixtureType.Abbreviation != "CO" && selectedFixtureType.Abbreviation != "VE") {
         List<PlumbingFixtureCatalogItem> plumbingFixtureCatalogItems =
           MariaDBService.GetPlumbingFixtureCatalogItemsByType(selectedFixtureType.Id);
 
