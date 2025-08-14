@@ -93,6 +93,19 @@ namespace GMEPPlumbing
       db.SaveComplete += Db_DocumentSaved;
       // ... attach other handlers as needed ...
     }
+    public static void DetachHandlers(Document doc) {
+      var db = doc.Database;
+
+      db.BeginSave -= (s, e) => IsSaving = true;
+      db.SaveComplete -= (s, e) => IsSaving = false;
+      db.AbortSave -= (s, e) => IsSaving = false;
+
+      db.ObjectErased -= Db_VerticalRouteErased;
+      db.ObjectModified -= Db_VerticalRouteModified;
+      db.ObjectModified -= Db_BasePointModified;
+      db.SaveComplete -= Db_DocumentSaved;
+      // ... detach other handlers as needed ...
+    }
 
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute() {
@@ -2628,8 +2641,12 @@ namespace GMEPPlumbing
           && !SettingObjects
           && !IsSaving
           && e.DBObject is BlockReference blockRef
-          && IsVerticalRouteBlock(blockRef)
         ) {
+          if (blockRef == null || blockRef.IsErased || blockRef.IsDisposed)
+            return;
+          if (!IsVerticalRouteBlock(blockRef)) {
+            return;
+          }
           ed.WriteMessage($"\nObject {e.DBObject.ObjectId} was erased.");
 
           string VerticalRouteId = string.Empty;
@@ -2702,10 +2719,12 @@ namespace GMEPPlumbing
         !SettingObjects
         && !IsSaving
         && e.DBObject is BlockReference blockRef
-        && IsVerticalRouteBlock(blockRef)
       ) {
         if (blockRef == null || blockRef.IsErased || blockRef.IsDisposed)
           return;
+        if (!IsVerticalRouteBlock(blockRef)) {
+          return;
+        }
         var dynamicProperties = blockRef.DynamicBlockReferencePropertyCollection;
         if (dynamicProperties == null || dynamicProperties.Count == 0) return;
         
@@ -2893,10 +2912,12 @@ namespace GMEPPlumbing
         !SettingObjects
         && !IsSaving
         && e.DBObject is BlockReference blockRef
-        && IsPlumbingBasePointBlock(blockRef)
       ) {
         if (blockRef == null || blockRef.IsErased || blockRef.IsDisposed)
           return;
+        if (!IsPlumbingBasePointBlock(blockRef)) {
+          return;
+        }
         var properties = blockRef.DynamicBlockReferencePropertyCollection;
         if (properties == null || properties.Count == 0) return;
 
@@ -3004,25 +3025,29 @@ namespace GMEPPlumbing
       var ed = doc.Editor;
       MariaDBService mariaDBService = new MariaDBService();
       ed.WriteMessage("\nDocument saved, updating plumbing data...");
-      try {
-        string projectNo = CADObjectCommands.GetProjectNoFromFileName();
-        string ProjectId = await mariaDBService.GetProjectId(projectNo);
 
-        List<PlumbingHorizontalRoute> horizontalRoutes = GetHorizontalRoutesFromCAD(ProjectId);
-        List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
-        List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
-        List<PlumbingSource> sources = GetPlumbingSourcesFromCAD(ProjectId);
-        List<PlumbingFixture> fixtures = GetPlumbingFixturesFromCAD(ProjectId);
+      // Always lock the document for any DB access
+      using (var docLock = doc.LockDocument()) {
+        try {
+          string projectNo = CADObjectCommands.GetProjectNoFromFileName();
+          string ProjectId = await mariaDBService.GetProjectId(projectNo);
 
-        await mariaDBService.UpdatePlumbingHorizontalRoutes(horizontalRoutes, ProjectId);
-        await mariaDBService.UpdatePlumbingVerticalRoutes(verticalRoutes, ProjectId);
-        await mariaDBService.UpdatePlumbingPlanBasePoints(basePoints, ProjectId);
-        await mariaDBService.UpdatePlumbingSources(sources, ProjectId);
-        await mariaDBService.UpdatePlumbingFixtures(fixtures, ProjectId);
-      }
-      catch (System.Exception ex) {
-        ed.WriteMessage("\nError getting ProjectId: " + ex.Message);
-        return;
+          List<PlumbingHorizontalRoute> horizontalRoutes = GetHorizontalRoutesFromCAD(ProjectId);
+          List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
+          List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
+          List<PlumbingSource> sources = GetPlumbingSourcesFromCAD(ProjectId);
+          List<PlumbingFixture> fixtures = GetPlumbingFixturesFromCAD(ProjectId);
+
+          await mariaDBService.UpdatePlumbingHorizontalRoutes(horizontalRoutes, ProjectId);
+          await mariaDBService.UpdatePlumbingVerticalRoutes(verticalRoutes, ProjectId);
+          await mariaDBService.UpdatePlumbingPlanBasePoints(basePoints, ProjectId);
+          await mariaDBService.UpdatePlumbingSources(sources, ProjectId);
+          await mariaDBService.UpdatePlumbingFixtures(fixtures, ProjectId);
+        }
+        catch (System.Exception ex) {
+          ed.WriteMessage("\nError getting ProjectId: " + ex.Message);
+          return;
+        }
       }
 
     }
@@ -3595,7 +3620,14 @@ namespace GMEPPlumbing
 
     public void Terminate()
     {
-      // Clean up if needed
+      // Detach from document events
+      Application.DocumentManager.DocumentCreated -= DocumentManager_DocumentCreated;
+      Application.DocumentManager.DocumentActivated -= DocumentManager_DocumentActivated;
+
+      // Detach handlers from all open documents
+      foreach (Document doc in Application.DocumentManager) {
+        AutoCADIntegration.DetachHandlers(doc);
+      }
     }
 
     private void DocumentManager_DocumentCreated(object sender, DocumentCollectionEventArgs e)
