@@ -1,4 +1,7 @@
-﻿Length,(1/2,SDR7,0.445),(1,SDR11,0.927)
+﻿Nominal OD,1/2,1
+Designation,SDR 7,SDR 11
+Actual ID,0.445,0.927
+Length,Capacity In Cubic Feet Of Gas Per Hour
 10,72,490
 20,49,337
 30,39,271
