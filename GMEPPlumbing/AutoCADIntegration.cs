@@ -54,17 +54,14 @@ namespace GMEPPlumbing
     private DateTime newCreationTime;
 
     public MariaDBService MariaDBService { get; set; } = new MariaDBService();
-    public Document doc { get; private set; }
-    public Database db { get; private set; }
-    public Editor ed { get; private set; }
+    //public Document doc { get; private set; }
+    //public Database db { get; private set; }
+    //public Editor ed { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
     public static bool IsSaving { get; private set; }
     public static bool SettingObjects { get; set; }
 
     public AutoCADIntegration() {
-      doc = Application.DocumentManager.MdiActiveDocument;
-      db = doc.Database;
-      ed = doc.Editor;
       SettingObjects = false;
       IsSaving = false;
     }
@@ -110,7 +107,11 @@ namespace GMEPPlumbing
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute() {
       string BasePointId = CADObjectCommands.GetActiveView();
-  
+
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
 
       List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
@@ -377,7 +378,11 @@ namespace GMEPPlumbing
       VerticalRoute();
     }
     public async void VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null) {
-      
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+
       string basePointGUID = CADObjectCommands.GetActiveView();
     
 
@@ -1194,6 +1199,10 @@ namespace GMEPPlumbing
 
     [CommandMethod("SETPLUMBINGBASEPOINT")]
     public async void SetPlumbingBasePoint() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       SettingObjects = true;
       var prompt = new Views.BasePointPromptWindow();
       bool? result = prompt.ShowDialog();
@@ -1424,10 +1433,18 @@ namespace GMEPPlumbing
     }
 
     public void WriteMessage(string message) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       ed.WriteMessage(message);
     }
 
     private void AddArrowsToLine(ObjectId lineId, string lineGUID) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       while (true) {
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
@@ -1474,6 +1491,10 @@ namespace GMEPPlumbing
     }
 
     public void RetrieveOrCreateDrawingId() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         try {
           DateTime creationTime = RetrieveXRecordId(db, tr);
@@ -1516,6 +1537,10 @@ namespace GMEPPlumbing
     }
 
     private void AttachRouteXData(ObjectId lineId, string id, string basePointId, string pipeType) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       ed.WriteMessage("Id: " + id + " basePointId: " + basePointId);
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
@@ -1541,6 +1566,10 @@ namespace GMEPPlumbing
     }
 
     private void UpdateXRecordId(Transaction tr, string newId, DateTime newCreationTime) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       DBDictionary namedObjDict = (DBDictionary)
         tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForWrite);
       if (namedObjDict.Contains(XRecordKey)) {
@@ -1560,6 +1589,10 @@ namespace GMEPPlumbing
     }
 
     private void UpdateXRecordAfterDataLoad() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       using (DocumentLock docLock = doc.LockDocument()) {
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           try {
@@ -1718,6 +1751,10 @@ namespace GMEPPlumbing
     }
 
     private DateTime GetFileCreationTime() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       if (doc != null && !string.IsNullOrEmpty(doc.Name)) {
         FileInfo fileInfo = new FileInfo(doc.Name);
         return fileInfo.CreationTime.ToUniversalTime();
@@ -1796,9 +1833,9 @@ namespace GMEPPlumbing
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
     
-      doc = Application.DocumentManager.MdiActiveDocument;
-      db = doc.Database;
-      ed = doc.Editor;
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
 
       string basePointId = CADObjectCommands.GetActiveView();
 
@@ -2110,9 +2147,9 @@ namespace GMEPPlumbing
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
 
-      doc = Application.DocumentManager.MdiActiveDocument;
-      db = doc.Database;
-      ed = doc.Editor;
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
 
       string basePointGUID = CADObjectCommands.GetActiveView();
 
@@ -3557,6 +3594,10 @@ namespace GMEPPlumbing
       return fixtures;
     }
     public int DetermineFixtureNumber(PlumbingFixture fixture) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       var fixtures = GetPlumbingFixturesFromCAD(fixture.ProjectId)
         .Where(f => f.TypeAbbreviation == fixture.TypeAbbreviation && f.Id != fixture.Id)
         .ToList();
