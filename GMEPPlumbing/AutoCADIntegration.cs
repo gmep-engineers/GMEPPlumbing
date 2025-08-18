@@ -45,26 +45,22 @@ namespace GMEPPlumbing
 {
   public class AutoCADIntegration {
     private const string XRecordKey = "GMEPPlumbingID";
-    private PaletteSet pw;
-    private UserInterface myControl;
+    //private PaletteSet pw;
+    //private UserInterface myControl;
     private string currentDrawingId;
-    private WaterSystemViewModel viewModel;
-    private bool needsXRecordUpdate = false;
+    //private WaterSystemViewModel viewModel;
+   // private bool needsXRecordUpdate = false;
     private string newDrawingId;
     private DateTime newCreationTime;
 
     public MariaDBService MariaDBService { get; set; } = new MariaDBService();
-    public Document doc { get; private set; }
-    public Database db { get; private set; }
-    public Editor ed { get; private set; }
+    //public Document doc { get; private set; }
+    //public Database db { get; private set; }
     public string ProjectId { get; private set; } = string.Empty;
     public static bool IsSaving { get; private set; }
     public static bool SettingObjects { get; set; }
 
     public AutoCADIntegration() {
-      doc = Application.DocumentManager.MdiActiveDocument;
-      db = doc.Database;
-      ed = doc.Editor;
       SettingObjects = false;
       IsSaving = false;
     }
@@ -109,6 +105,10 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingHorizontalRoute")]
     public async void PlumbingHorizontalRoute() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       string BasePointId = CADObjectCommands.GetActiveView();
   
 
@@ -377,7 +377,10 @@ namespace GMEPPlumbing
       VerticalRoute();
     }
     public async void VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null) {
-      
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       string basePointGUID = CADObjectCommands.GetActiveView();
     
 
@@ -1194,6 +1197,10 @@ namespace GMEPPlumbing
 
     [CommandMethod("SETPLUMBINGBASEPOINT")]
     public async void SetPlumbingBasePoint() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       SettingObjects = true;
       var prompt = new Views.BasePointPromptWindow();
       bool? result = prompt.ShowDialog();
@@ -1384,18 +1391,18 @@ namespace GMEPPlumbing
     }
 
 
-    [CommandMethod("Water")]
+    /*[CommandMethod("Water")]
     public async void Water() {
       //MongoDBService.Initialize();
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       ProjectId = await MariaDBService.GetProjectId(projectNo);
 
-      RetrieveOrCreateDrawingId();
-      InitializeUserInterface();
-      LoadDataAsync();
+      //RetrieveOrCreateDrawingId();
+      //InitializeUserInterface();
+      //LoadDataAsync();
 
       pw.Focus();
-    }
+    }*/
 
     public static void ZoomToBlock(Editor ed, BlockReference blockRef) {
       Extents3d ext = blockRef.GeometricExtents;
@@ -1424,10 +1431,18 @@ namespace GMEPPlumbing
     }
 
     public void WriteMessage(string message) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       ed.WriteMessage(message);
     }
 
     private void AddArrowsToLine(ObjectId lineId, string lineGUID) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       while (true) {
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
@@ -1473,7 +1488,7 @@ namespace GMEPPlumbing
       }
     }
 
-    public void RetrieveOrCreateDrawingId() {
+    /*public void RetrieveOrCreateDrawingId() {
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         try {
           DateTime creationTime = RetrieveXRecordId(db, tr);
@@ -1513,9 +1528,13 @@ namespace GMEPPlumbing
           tr.Abort();
         }
       }
-    }
+    }*/
 
     private void AttachRouteXData(ObjectId lineId, string id, string basePointId, string pipeType) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       ed.WriteMessage("Id: " + id + " basePointId: " + basePointId);
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         Line line = (Line)tr.GetObject(lineId, OpenMode.ForWrite);
@@ -1540,7 +1559,7 @@ namespace GMEPPlumbing
       }
     }
 
-    private void UpdateXRecordId(Transaction tr, string newId, DateTime newCreationTime) {
+    /*private void UpdateXRecordId(Transaction tr, string newId, DateTime newCreationTime) {
       DBDictionary namedObjDict = (DBDictionary)
         tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForWrite);
       if (namedObjDict.Contains(XRecordKey)) {
@@ -1557,9 +1576,9 @@ namespace GMEPPlumbing
         // If the XRecord doesn't exist, create a new one
         CreateXRecordId(db, tr, newId);
       }
-    }
+    }*/
 
-    private void UpdateXRecordAfterDataLoad() {
+    /*private void UpdateXRecordAfterDataLoad() {
       using (DocumentLock docLock = doc.LockDocument()) {
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           try {
@@ -1601,9 +1620,9 @@ namespace GMEPPlumbing
       DateTime creationTime = new DateTime(1899, 12, 30).AddDays(acadDate);
 
       return creationTime;
-    }
+    }*/
 
-    public void CreateXRecordId(Database db, Transaction tr, string drawingId) {
+    /*public void CreateXRecordId(Database db, Transaction tr, string drawingId) {
       RegAppTable regAppTable = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForWrite);
       if (!regAppTable.Has(XRecordKey)) {
         RegAppTableRecord regAppTableRecord = new RegAppTableRecord { Name = XRecordKey };
@@ -1629,9 +1648,9 @@ namespace GMEPPlumbing
 
       namedObjDict.SetAt(XRecordKey, xRec);
       tr.AddNewlyCreatedDBObject(xRec, true);
-    }
+    }*/
 
-    private void InitializeUserInterface() {
+    /*private void InitializeUserInterface() {
       // Create the viewModel & get the data off mongoDB
       viewModel = new WaterSystemViewModel(
         new WaterMeterLossCalculationService(),
@@ -1665,9 +1684,9 @@ namespace GMEPPlumbing
 
       // Add event handler for PaletteSet closing
       pw.StateChanged += Pw_StateChanged;
-    }
+    }*/
 
-    private async void LoadDataAsync() {
+    /*private async void LoadDataAsync() {
       try {
         //var data = await MongoDBService.GetDrawingDataAsync(currentDrawingId);
         var data = await MariaDBService.GetWaterSystemData(ProjectId);
@@ -1690,9 +1709,9 @@ namespace GMEPPlumbing
           $"\nError loading data from MongoDB: {ex.Message}\n"
         );
       }
-    }
+    }*/
 
-    private async void Pw_StateChanged(object sender, PaletteSetStateEventArgs e) {
+    /*private async void Pw_StateChanged(object sender, PaletteSetStateEventArgs e) {
       if (e.NewState == StateEventIndex.Hide) {
         try {
           WaterSystemData data = viewModel.GetWaterSystemData();
@@ -1715,9 +1734,13 @@ namespace GMEPPlumbing
           );
         }
       }
-    }
+    }*/
 
     private DateTime GetFileCreationTime() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       if (doc != null && !string.IsNullOrEmpty(doc.Name)) {
         FileInfo fileInfo = new FileInfo(doc.Name);
         return fileInfo.CreationTime.ToUniversalTime();
@@ -1796,9 +1819,9 @@ namespace GMEPPlumbing
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
     
-      doc = Application.DocumentManager.MdiActiveDocument;
-      db = doc.Database;
-      ed = doc.Editor;
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
 
       string basePointId = CADObjectCommands.GetActiveView();
 
@@ -2110,9 +2133,9 @@ namespace GMEPPlumbing
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
 
-      doc = Application.DocumentManager.MdiActiveDocument;
-      db = doc.Database;
-      ed = doc.Editor;
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
 
       string basePointGUID = CADObjectCommands.GetActiveView();
 
@@ -3557,6 +3580,10 @@ namespace GMEPPlumbing
       return fixtures;
     }
     public int DetermineFixtureNumber(PlumbingFixture fixture) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
       var fixtures = GetPlumbingFixturesFromCAD(fixture.ProjectId)
         .Where(f => f.TypeAbbreviation == fixture.TypeAbbreviation && f.Id != fixture.Id)
         .ToList();
