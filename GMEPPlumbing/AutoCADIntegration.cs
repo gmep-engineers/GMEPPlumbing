@@ -65,20 +65,21 @@ namespace GMEPPlumbing
       SettingObjects = false;
       IsSaving = false;
     }
-
+    private static void SaveStart(object s, EventArgs e) => IsSaving = true;
+    private static void SaveEnd(object s, EventArgs e) => IsSaving = false;
     public static void AttachHandlers(Document doc) {
       var db = doc.Database;
       var ed = doc.Editor;
 
       // Prevent multiple attachments
 
-      db.BeginSave -= (s, e) => IsSaving = true;
-      db.SaveComplete -= (s, e) => IsSaving = false;
-      db.AbortSave -= (s, e) => IsSaving = false;
+      db.BeginSave -= SaveStart;
+      db.SaveComplete -= SaveEnd;
+      db.AbortSave -= SaveEnd;
 
-      db.BeginSave += (s, e) => IsSaving = true;
-      db.SaveComplete += (s, e) => IsSaving = false;
-      db.AbortSave += (s, e) => IsSaving = false;
+      db.BeginSave += SaveStart;
+      db.SaveComplete += SaveEnd;
+      db.AbortSave += SaveEnd;
 
       db.ObjectErased -= Db_VerticalRouteErased;
       db.ObjectErased += Db_VerticalRouteErased;
@@ -93,9 +94,9 @@ namespace GMEPPlumbing
     public static void DetachHandlers(Document doc) {
       var db = doc.Database;
 
-      db.BeginSave -= (s, e) => IsSaving = true;
-      db.SaveComplete -= (s, e) => IsSaving = false;
-      db.AbortSave -= (s, e) => IsSaving = false;
+      db.BeginSave -= SaveStart;
+      db.SaveComplete -= SaveEnd;
+      db.AbortSave -= SaveEnd;
 
       db.ObjectErased -= Db_VerticalRouteErased;
       db.ObjectModified -= Db_VerticalRouteModified;
