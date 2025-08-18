@@ -1,405 +1,157 @@
-﻿using System;
+﻿using SharpCompress.Common;
+using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GMEPPlumbing.Tools
-{
-    class GasPipeSizingChart
-    {
-      public List<GasChart> Charts { get; set; } = new List<GasChart>() {
-         new GasChart() { 
-            MetalType = "Schedule 40 Metallic", 
-            PressureDrop = "0.5 in w.c.",
-            Entries = new Dictionary<int, Dictionary<double, string>> {
-              [10] = new Dictionary<double, string> {
-                [172] = "1/2", [360] = "3/4", [678] = "1", [1390] = "1-1/4", [2090] = "1-1/2", [4020] = "2",
-                [6400] = "2-1/2", [11300] = "3", [23100] = "4", [41800] = "5", [67600] = "6", [139000] = "8",
-                [252000] = "10", [399000] = "12"
-              },
-              [20] = new Dictionary<double, string> {
-                  [118] = "1/2", [247] = "3/4", [466] = "1", [957] = "1-1/4", [1430] = "1-1/2", [2760] = "2",
-                  [4400] = "2-1/2", [7780] = "3", [15900] = "4", [28700] = "5", [46500] = "6", [95500] = "8",
-                  [173000] = "10", [275000] = "12"
-              },
-              [30] = new Dictionary<double, string> {
-                  [95] = "1/2", [199] = "3/4", [374] = "1", [768] = "1-1/4", [1150] = "1-1/2", [2220] = "2",
-                  [3530] = "2-1/2", [6250] = "3", [12700] = "4", [23000] = "5", [37300] = "6", [76700] = "8",
-                  [139000] = "10", [220000] = "12"
-              },
-              [40] = new Dictionary<double, string> {
-                  [81] = "1/2", [170] = "3/4", [320] = "1", [657] = "1-1/4", [985] = "1-1/2", [1900] = "2",
-                  [3020] = "2-1/2", [5350] = "3", [10900] = "4", [19700] = "5", [31900] = "6", [65600] = "8",
-                  [119000] = "10", [189000] = "12"
-              },
-              [50] = new Dictionary<double, string> {
-                  [72] = "1/2", [151] = "3/4", [284] = "1", [583] = "1-1/4", [873] = "1-1/2", [1680] = "2",
-                  [2680] = "2-1/2", [4740] = "3", [9660] = "4", [17500] = "5", [28300] = "6", [58200] = "8",
-                  [106000] = "10", [167000] = "12"
-              },
-              [60] = new Dictionary<double, string> {
-                  [65] = "1/2", [137] = "3/4", [257] = "1", [528] = "1-1/4", [791] = "1-1/2", [1520] = "2",
-                  [2430] = "2-1/2", [4290] = "3", [8760] = "4", [15800] = "5", [25600] = "6", [52700] = "8",
-                  [95700] = "10", [152000] = "12"
-              },
-              [70] = new Dictionary<double, string> {
-                  [60] = "1/2", [126] = "3/4", [237] = "1", [486] = "1-1/4", [728] = "1-1/2", [1400] = "2",
-                  [2230] = "2-1/2", [3950] = "3", [8050] = "4", [14600] = "5", [23600] = "6", [48500] = "8",
-                  [88100] = "10", [139000] = "12"
-              },
-              [80] = new Dictionary<double, string> {
-                  [56] = "1/2", [117] = "3/4", [220] = "1", [452] = "1-1/4", [677] = "1-1/2", [1300] = "2",
-                  [2080] = "2-1/2", [3670] = "3", [7490] = "4", [13600] = "5", [22000] = "6", [45100] = "8",
-                  [81900] = "10", [130000] = "12"
-              },
-              [90] = new Dictionary<double, string> {
-                  [52] = "1/2", [110] = "3/4", [207] = "1", [424] = "1-1/4", [635] = "1-1/2", [1220] = "2",
-                  [1950] = "2-1/2", [3450] = "3", [7030] = "4", [12700] = "5", [20600] = "6", [42300] = "8",
-                  [76900] = "10", [122000] = "12"
-              },
-              [100] = new Dictionary<double, string> {
-                  [50] = "1/2", [104] = "3/4", [195] = "1", [400] = "1-1/4", [600] = "1-1/2", [1160] = "2",
-                  [1840] = "2-1/2", [3260] = "3", [6640] = "4", [12000] = "5", [19500] = "6", [40000] = "8",
-                  [72600] = "10", [115000] = "12"
-              },
-              [125] = new Dictionary<double, string> {
-                  [44] = "1/2", [92] = "3/4", [173] = "1", [355] = "1-1/4", [532] = "1-1/2", [1020] = "2",
-                  [1630] = "2-1/2", [2890] = "3", [5890] = "4", [10600] = "5", [17200] = "6", [35400] = "8",
-                  [64300] = "10", [102000] = "12"
-              },
-              [150] = new Dictionary<double, string> {
-                  [40] = "1/2", [83] = "3/4", [157] = "1", [322] = "1-1/4", [482] = "1-1/2", [928] = "2",
-                  [1480] = "2-1/2", [2610] = "3", [5330] = "4", [9650] = "5", [15600] = "6", [32100] = "8",
-                  [58300] = "10", [92300] = "12"
-              },
-              [175] = new Dictionary<double, string> {
-                  [37] = "1/2", [77] = "3/4", [144] = "1", [296] = "1-1/4", [443] = "1-1/2", [854] = "2",
-                  [1360] = "2-1/2", [2410] = "3", [4910] = "4", [8880] = "5", [14400] = "6", [29500] = "8",
-                  [53600] = "10", [84900] = "12"
-              },
-              [200] = new Dictionary<double, string> {
-                  [34] = "1/2", [71] = "3/4", [134] = "1", [275] = "1-1/4", [412] = "1-1/2", [794] = "2",
-                  [1270] = "2-1/2", [2240] = "3", [4560] = "4", [8260] = "5", [13400] = "6", [27500] = "8",
-                  [49900] = "10", [79000] = "12"
-              },
-              [250] = new Dictionary<double, string> {
-                  [30] = "1/2", [63] = "3/4", [119] = "1", [244] = "1-1/4", [366] = "1-1/2", [704] = "2",
-                  [1120] = "2-1/2", [1980] = "3", [4050] = "4", [7320] = "5", [11900] = "6", [24300] = "8",
-                  [44200] = "10", [70000] = "12"
-              },
-              [300] = new Dictionary<double, string> {
-                  [27] = "1/2", [57] = "3/4", [108] = "1", [221] = "1-1/4", [331] = "1-1/2", [638] = "2",
-                  [1020] = "2-1/2", [1800] = "3", [3670] = "4", [6630] = "5", [10700] = "6", [22100] = "8",
-                  [40100] = "10", [63400] = "12"
-              },
-              [350] = new Dictionary<double, string> {
-                  [25] = "1/2", [53] = "3/4", [99] = "1", [203] = "1-1/4", [305] = "1-1/2", [587] = "2",
-                  [935] = "2-1/2", [1650] = "3", [3370] = "4", [6100] = "5", [9880] = "6", [20300] = "8",
-                  [36900] = "10", [58400] = "12"
-              },
-              [400] = new Dictionary<double, string> {
-                  [23] = "1/2", [49] = "3/4", [92] = "1", [189] = "1-1/4", [283] = "1-1/2", [546] = "2",
-                  [870] = "2-1/2", [1540] = "3", [3140] = "4", [5680] = "5", [9190] = "6", [18900] = "8",
-                  [34300] = "10", [54300] = "12"
-              },
-              [450] = new Dictionary<double, string> {
-                  [22] = "1/2", [46] = "3/4", [86] = "1", [177] = "1-1/4", [266] = "1-1/2", [512] = "2",
-                  [816] = "2-1/2", [1440] = "3", [2940] = "4", [5330] = "5", [8620] = "6", [17700] = "8",
-                  [32200] = "10", [50900] = "12"
-              },
-              [500] = new Dictionary<double, string> {
-                  [21] = "1/2", [43] = "3/4", [82] = "1", [168] = "1-1/4", [251] = "1-1/2", [484] = "2",
-                  [771] = "2-1/2", [1360] = "3", [2780] = "4", [5030] = "5", [8150] = "6", [16700] = "8",
-                  [30400] = "10", [48100] = "12"
-              },
-              [550] = new Dictionary<double, string> {
-                  [20] = "1/2", [41] = "3/4", [78] = "1", [159] = "1-1/4", [239] = "1-1/2", [459] = "2",
-                  [732] = "2-1/2", [1290] = "3", [2640] = "4", [4780] = "5", [7740] = "6", [15900] = "8",
-                  [28900] = "10", [45700] = "12"
-              },
-              [600] = new Dictionary<double, string> {
-                  [19] = "1/2", [39] = "3/4", [74] = "1", [152] = "1-1/4", [228] = "1-1/2", [438] = "2",
-                  [699] = "2-1/2", [1240] = "3", [2520] = "4", [4560] = "5", [7380] = "6", [15200] = "8",
-                  [27500] = "10", [43600] = "12"
-              },
-              [650] = new Dictionary<double, string> {
-                  [18] = "1/2", [38] = "3/4", [71] = "1", [145] = "1-1/4", [218] = "1-1/2", [420] = "2",
-                  [669] = "2-1/2", [1180] = "3", [2410] = "4", [4360] = "5", [7070] = "6", [14500] = "8",
-                  [26400] = "10", [41800] = "12"
-              },
-              [700] = new Dictionary<double, string> {
-                  [17] = "1/2", [36] = "3/4", [68] = "1", [140] = "1-1/4", [209] = "1-1/2", [403] = "2",
-                  [643] = "2-1/2", [1140] = "3", [2320] = "4", [4190] = "5", [6790] = "6", [14000] = "8",
-                  [25300] = "10", [40100] = "12"
-              },
-              [750] = new Dictionary<double, string> {
-                  [17] = "1/2", [35] = "3/4", [66] = "1", [135] = "1-1/4", [202] = "1-1/2", [389] = "2",
-                  [619] = "2-1/2", [1090] = "3", [2230] = "4", [4040] = "5", [6540] = "6", [13400] = "8",
-                  [24400] = "10", [38600] = "12"
-              },
-              [800] = new Dictionary<double, string> {
-                  [16] = "1/2", [34] = "3/4", [63] = "1", [130] = "1-1/4", [195] = "1-1/2", [375] = "2",
-                  [598] = "2-1/2", [1060] = "3", [2160] = "4", [3900] = "5", [6320] = "6", [13000] = "8",
-                  [23600] = "10", [37300] = "12"
-              },
-              [850] = new Dictionary<double, string> {
-                  [16] = "1/2", [33] = "3/4", [61] = "1", [126] = "1-1/4", [189] = "1-1/2", [363] = "2",
-                  [579] = "2-1/2", [1020] = "3", [2090] = "4", [3780] = "5", [6110] = "6", [12600] = "8",
-                  [22800] = "10", [36100] = "12"
-              },
-              [900] = new Dictionary<double, string> {
-                  [15] = "1/2", [32] = "3/4", [59] = "1", [122] = "1-1/4", [183] = "1-1/2", [352] = "2",
-                  [561] = "2-1/2", [992] = "3", [2020] = "4", [3660] = "5", [5930] = "6", [12200] = "8",
-                  [22100] = "10", [35000] = "12"
-              },
-              [950] = new Dictionary<double, string> {
-                  [15] = "1/2", [31] = "3/4", [58] = "1", [118] = "1-1/4", [178] = "1-1/2", [342] = "2",
-                  [545] = "2-1/2", [963] = "3", [1960] = "4", [3550] = "5", [5760] = "6", [11800] = "8",
-                  [21500] = "10", [34000] = "12"
-              },
-              [1000] = new Dictionary<double, string> {
-                  [14] = "1/2", [30] = "3/4", [56] = "1", [115] = "1-1/4", [173] = "1-1/2", [333] = "2",
-                  [530] = "2-1/2", [937] = "3", [1910] = "4", [3460] = "5", [5600] = "6", [11500] = "8",
-                  [20900] = "10", [33100] = "12"
-              },
-              [1100] = new Dictionary<double, string> {
-                  [14] = "1/2", [28] = "3/4", [53] = "1", [109] = "1-1/4", [164] = "1-1/2", [316] = "2",
-                  [503] = "2-1/2", [890] = "3", [1810] = "4", [3280] = "5", [5320] = "6", [10900] = "8",
-                  [19800] = "10", [31400] = "12"
-              },
-              [1200] = new Dictionary<double, string> {
-                  [13] = "1/2", [27] = "3/4", [51] = "1", [104] = "1-1/4", [156] = "1-1/2", [301] = "2",
-                  [480] = "2-1/2", [849] = "3", [1730] = "4", [3130] = "5", [5070] = "6", [10400] = "8",
-                  [18900] = "10", [30000] = "12"
-              },
-              [1300] = new Dictionary<double, string> {
-                  [12] = "1/2", [26] = "3/4", [49] = "1", [100] = "1-1/4", [150] = "1-1/2", [289] = "2",
-                  [460] = "2-1/2", [813] = "3", [1660] = "4", [3000] = "5", [4860] = "6", [9980] = "8",
-                  [18100] = "10", [28700] = "12"
-              },
-              [1400] = new Dictionary<double, string> {
-                  [12] = "1/2", [25] = "3/4", [47] = "1", [96] = "1-1/4", [144] = "1-1/2", [277] = "2",
-                  [442] = "2-1/2", [781] = "3", [1590] = "4", [2880] = "5", [4670] = "6", [9590] = "8",
-                  [17400] = "10", [27600] = "12"
-              },
-              [1500] = new Dictionary<double, string> {
-                  [11] = "1/2", [24] = "3/4", [45] = "1", [93] = "1-1/4", [139] = "1-1/2", [267] = "2",
-                  [426] = "2-1/2", [752] = "3", [1530] = "4", [2780] = "5", [4500] = "6", [9240] = "8",
-                  [16800] = "10", [26600] = "12"
-              },
-              [1600] = new Dictionary<double, string> {
-                  [11] = "1/2", [23] = "3/4", [44] = "1", [89] = "1-1/4", [134] = "1-1/2", [258] = "2",
-                  [411] = "2-1/2", [727] = "3", [1480] = "4", [2680] = "5", [4340] = "6", [8920] = "8",
-                  [16200] = "10", [25600] = "12"
-              },
-              [1700] = new Dictionary<double, string> {
-                  [11] = "1/2", [22] = "3/4", [42] = "1", [86] = "1-1/4", [130] = "1-1/2", [250] = "2",
-                  [398] = "2-1/2", [703] = "3", [1430] = "4", [2590] = "5", [4200] = "6", [8630] = "8",
-                  [15700] = "10", [24800] = "12"
-              },
-              [1800] = new Dictionary<double, string> {
-                  [10] = "1/2", [22] = "3/4", [41] = "1", [84] = "1-1/4", [126] = "1-1/2", [242] = "2",
-                  [386] = "2-1/2", [682] = "3", [1390] = "4", [2520] = "5", [4070] = "6", [8370] = "8",
-                  [15200] = "10", [24100] = "12"
-              },
-              [1900] = new Dictionary<double, string> {
-                  [10] = "1/2", [21] = "3/4", [40] = "1", [81] = "1-1/4", [122] = "1-1/2", [235] = "2",
-                  [375] = "2-1/2", [662] = "3", [1350] = "4", [2440] = "5", [3960] = "6", [8130] = "8",
-                  [14800] = "10", [23400] = "12"
-              },
-              [2000] = new Dictionary<double, string> {
-                  [20] = "3/4", [39] = "1", [79] = "1-1/4", [119] = "1-1/2", [229] = "2", [364] = "2-1/2",
-                  [644] = "3", [1310] = "4", [2380] = "5", [3850] = "6", [7910] = "8", [14400] = "10",
-                  [22700] = "12"
+namespace GMEPPlumbing.Tools {
+  class GasPipeSizingChart {
+    public string FilePath { get; set; } = string.Empty;
+    public string PipeType { get; set; } = string.Empty;
+    public GasPipeSizingChart(string gasType, string pipeType, int chartIndex) {
+      SetChartPath(gasType, pipeType, chartIndex);
+    }
+    public void SetChartPath(string gasType, string pipeType, int chartIndex) {
+      string directory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+      string filePath = System.IO.Path.Combine(directory, "Charts", "Gas");
+      if (gasType == "Natural Gas") {
+        filePath = System.IO.Path.Combine(filePath, "NaturalGas");
+      }
+      else if (gasType == "Propane") {
+        filePath = System.IO.Path.Combine(filePath, "Propane");
+      }
+      if (pipeType == "Semi-Rigid Copper Tubing") {
+        filePath = System.IO.Path.Combine(filePath, "Semi-RigidCopper");
+      }
+      else if (pipeType == "Schedule 40 Metallic Pipe") {
+        filePath = System.IO.Path.Combine(filePath, "Schedule40Metal");
+      }
+      else if (pipeType == "Corrugated Stainless Steel Tubing") {
+        filePath = System.IO.Path.Combine(filePath, "CorrugatedStainlessSteel");
+      }
+      else if (pipeType == "Polyethylene Plastic Pipe") {
+        filePath = System.IO.Path.Combine(filePath, "PolyethylenePlastic");
+      }
+      string chart = "Chart" + chartIndex.ToString() + ".csv";
+      filePath = System.IO.Path.Combine(filePath, chart);
+
+      FilePath = filePath;
+      PipeType = pipeType;
+    }
+    public GasEntry GetData(int length, double cfh) {
+      GasEntry gasEntry = null;
+      int startRow = 0;
+      if (PipeType == "Semi-Rigid Copper Tubing") {
+        startRow = 5;
+      }
+      else if (PipeType == "Schedule 40 Metallic Pipe") {
+        startRow = 3;
+      }
+      else if (PipeType == "Corrugated Stainless Steel Tubing") {
+        startRow = 2;
+      }
+      else if (PipeType == "Polyethylene Plastic Pipe") {
+        startRow = 4;
+      }
+
+      var rows = new List<string[]>();
+      using (var reader = new StreamReader(FilePath, Encoding.UTF8)) {
+        string line;
+        int currentRow = 0;
+        List<string> headerLines = new List<string>();
+        while ((line = reader.ReadLine()) != null) {
+          if (currentRow++ < startRow) {
+            headerLines.Add(line);
+            continue; // Skip header or irrelevant rows
+          }
+
+          var values = line.Split(',');
+          int lengthVal;
+          if (int.TryParse(values[0], out lengthVal)) {
+            if (length <= lengthVal) {
+              for (int i = 1; i < values.Length; i++) {
+                int cfhVal;
+                if (int.TryParse(values[i], out cfhVal)) {
+                  if (cfh <= cfhVal) {
+                    if (PipeType == "Semi-Rigid Copper Tubing") {
+                      SemiRigidCopperGasEntry entry = new SemiRigidCopperGasEntry() {
+                        NominalKL = headerLines[0].Split(',')[i],
+                        NominalACR = headerLines[1].Split(',')[i],
+                        OutsideDiameter = headerLines[2].Split(',')[i],
+                        InsideDiameter = headerLines[3].Split(',')[i]
+                      };
+                      gasEntry = entry;
+                    }
+                    else if (PipeType == "Schedule 40 Metallic Pipe") {
+                      Schedule40MetalGasEntry entry = new Schedule40MetalGasEntry() {
+                        NominalSize = headerLines[0].Split(',')[i],
+                        ActualID = headerLines[1].Split(',')[i]
+                      };
+                      gasEntry = entry;
+                    }
+                    else if (PipeType == "Corrugated Stainless Steel Tubing") {
+                      StainlessSteelGasEntry entry = new StainlessSteelGasEntry() {
+                        FlowDesignation = headerLines[0].Split(',')[i]
+                      };
+                      gasEntry = entry;
+                    }
+                    else if (PipeType == "Polyethylene Plastic Pipe") {
+                      PolyethylenePlasticGasEntry entry = new PolyethylenePlasticGasEntry() {
+                        NominalOD = headerLines[0].Split(',')[i],
+                        Designation = headerLines[1].Split(',')[i],
+                        ActualID = headerLines[2].Split(',')[i]
+                      };
+                      gasEntry = entry;
+                    }
+                  }
+                }
               }
             }
-         },
-          new GasChart() {
-              MetalType = "Schedule 80 Metallic",
-              PressureDrop = "0.5 in w.c.",
-
-              Entries = new Dictionary<int, Dictionary<double, string>>
-              {
-                  [10] = new Dictionary<double, string> {
-                      [454] = "1/2", [949] = "3/4", [1790] = "1", [3670] = "1 1/4", [5500] = "1 1/2", [10600] = "2",
-                      [16900] = "2 1/2", [29800] = "3", [60800] = "4"
-                  },
-                  [20] = new Dictionary<double, string> {
-                      [312] = "1/2", [652] = "3/4", [1230] = "1", [2520] = "1 1/4", [3780] = "1 1/2", [7280] = "2",
-                      [11600] = "2 1/2", [20500] = "3", [41800] = "4"
-                  },
-                  [30] = new Dictionary<double, string> {
-                      [250] = "1/2", [524] = "3/4", [986] = "1", [2030] = "1 1/4", [3030] = "1 1/2", [5840] = "2",
-                      [9310] = "2 1/2", [16500] = "3", [33600] = "4"
-                  },
-                  [40] = new Dictionary<double, string> {
-                      [214] = "1/2", [448] = "3/4", [844] = "1", [1730] = "1 1/4", [2600] = "1 1/2", [5000] = "2",
-                      [7970] = "2 1/2", [14100] = "3", [28700] = "4"
-                  },
-                  [50] = new Dictionary<double, string> {
-                      [190] = "1/2", [397] = "3/4", [748] = "1", [1540] = "1 1/4", [2300] = "1 1/2", [4430] = "2",
-                      [7060] = "2 1/2", [12500] = "3", [25500] = "4"
-                  },
-                  [60] = new Dictionary<double, string> {
-                      [172] = "1/2", [360] = "3/4", [678] = "1", [1390] = "1 1/4", [2090] = "1 1/2", [4020] = "2",
-                      [6400] = "2 1/2", [11300] = "3", [23100] = "4"
-                  },
-                  [70] = new Dictionary<double, string> {
-                      [158] = "1/2", [331] = "3/4", [624] = "1", [1280] = "1 1/4", [1920] = "1 1/2", [3690] = "2",
-                      [5890] = "2 1/2", [10400] = "3", [21200] = "4"
-                  },
-                  [80] = new Dictionary<double, string> {
-                      [147] = "1/2", [308] = "3/4", [580] = "1", [1190] = "1 1/4", [1790] = "1 1/2", [3440] = "2",
-                      [5480] = "2 1/2", [9690] = "3", [19800] = "4"
-                  },
-                  [90] = new Dictionary<double, string> {
-                      [138] = "1/2", [289] = "3/4", [544] = "1", [1120] = "1 1/4", [1670] = "1 1/2", [3230] = "2",
-                      [5140] = "2 1/2", [9090] = "3", [18500] = "4"
-                  },
-                  [100] = new Dictionary<double, string> {
-                      [131] = "1/2", [273] = "3/4", [514] = "1", [1060] = "1 1/4", [1580] = "1 1/2", [3050] = "2",
-                      [4860] = "2 1/2", [8580] = "3", [17500] = "4"
-                  },
-                  [125] = new Dictionary<double, string> {
-                      [116] = "1/2", [242] = "3/4", [456] = "1", [936] = "1 1/4", [1400] = "1 1/2", [2700] = "2",
-                      [4300] = "2 1/2", [7610] = "3", [15500] = "4"
-                  },
-                  [150] = new Dictionary<double, string> {
-                      [105] = "1/2", [219] = "3/4", [413] = "1", [848] = "1 1/4", [1270] = "1 1/2", [2450] = "2",
-                      [3900] = "2 1/2", [6890] = "3", [14100] = "4"
-                  },
-                  [175] = new Dictionary<double, string> {
-                      [96] = "1/2", [202] = "3/4", [380] = "1", [780] = "1 1/4", [1170] = "1 1/2", [2250] = "2",
-                      [3590] = "2 1/2", [6340] = "3", [12900] = "4"
-                  },
-                  [200] = new Dictionary<double, string> {
-                      [90] = "1/2", [188] = "3/4", [353] = "1", [726] = "1 1/4", [1090] = "1 1/2", [2090] = "2",
-                      [3340] = "2 1/2", [5900] = "3", [12000] = "4"
-                  },
-                  [250] = new Dictionary<double, string> {
-                      [80] = "1/2", [166] = "3/4", [313] = "1", [643] = "1 1/4", [964] = "1 1/2", [1860] = "2",
-                      [2960] = "2 1/2", [5230] = "3", [10700] = "4"
-                  },
-                  [300] = new Dictionary<double, string> {
-                      [72] = "1/2", [151] = "3/4", [284] = "1", [583] = "1 1/4", [873] = "1 1/2", [1680] = "2",
-                      [2680] = "2 1/2", [4740] = "3", [9660] = "4"
-                  },
-                  [350] = new Dictionary<double, string> {
-                      [66] = "1/2", [139] = "3/4", [261] = "1", [536] = "1 1/4", [803] = "1 1/2", [1550] = "2",
-                      [2470] = "2 1/2", [4360] = "3", [8890] = "4"
-                  },
-                  [400] = new Dictionary<double, string> {
-                      [62] = "1/2", [129] = "3/4", [243] = "1", [499] = "1 1/4", [747] = "1 1/2", [1440] = "2",
-                      [2290] = "2 1/2", [4050] = "3", [8270] = "4"
-                  },
-                  [450] = new Dictionary<double, string> {
-                      [58] = "1/2", [121] = "3/4", [228] = "1", [468] = "1 1/4", [701] = "1 1/2", [1350] = "2",
-                      [2150] = "2 1/2", [3800] = "3", [7760] = "4"
-                  },
-                  [500] = new Dictionary<double, string> {
-                      [55] = "1/2", [114] = "3/4", [215] = "1", [442] = "1 1/4", [662] = "1 1/2", [1280] = "2",
-                      [2030] = "2 1/2", [3590] = "3", [7330] = "4"
-                  },
-                  [550] = new Dictionary<double, string> {
-                      [52] = "1/2", [109] = "3/4", [204] = "1", [420] = "1 1/4", [629] = "1 1/2", [1210] = "2",
-                      [1930] = "2 1/2", [3410] = "3", [6960] = "4"
-                  },
-                  [600] = new Dictionary<double, string> {
-                      [50] = "1/2", [104] = "3/4", [195] = "1", [400] = "1 1/4", [600] = "1 1/2", [1160] = "2",
-                      [1840] = "2 1/2", [3260] = "3", [6640] = "4"
-                  },
-                  [650] = new Dictionary<double, string> {
-                      [47] = "1/2", [99] = "3/4", [187] = "1", [384] = "1 1/4", [575] = "1 1/2", [1110] = "2",
-                      [1760] = "2 1/2", [3120] = "3", [6360] = "4"
-                  },
-                  [700] = new Dictionary<double, string> {
-                      [46] = "1/2", [95] = "3/4", [179] = "1", [368] = "1 1/4", [552] = "1 1/2", [1060] = "2",
-                      [1690] = "2 1/2", [3000] = "3", [6110] = "4"
-                  },
-                  [750] = new Dictionary<double, string> {
-                      [44] = "1/2", [92] = "3/4", [173] = "1", [355] = "1 1/4", [532] = "1 1/2", [1020] = "2",
-                      [1630] = "2 1/2", [2890] = "3", [5890] = "4"
-                  },
-                  [800] = new Dictionary<double, string> {
-                      [42] = "1/2", [89] = "3/4", [167] = "1", [343] = "1 1/4", [514] = "1 1/2", [989] = "2",
-                      [1580] = "2 1/2", [2790] = "3", [5680] = "4"
-                  },
-                  [850] = new Dictionary<double, string> {
-                      [41] = "1/2", [86] = "3/4", [162] = "1", [332] = "1 1/4", [497] = "1 1/2", [957] = "2",
-                      [1530] = "2 1/2", [2700] = "3", [5500] = "4"
-                  },
-                  [900] = new Dictionary<double, string> {
-                      [40] = "1/2", [83] = "3/4", [157] = "1", [322] = "1 1/4", [482] = "1 1/2", [928] = "2",
-                      [1480] = "2 1/2", [2610] = "3", [5330] = "4"
-                  },
-                  [950] = new Dictionary<double, string> {
-                      [39] = "1/2", [81] = "3/4", [152] = "1", [312] = "1 1/4", [468] = "1 1/2", [901] = "2",
-                      [1440] = "2 1/2", [2540] = "3", [5180] = "4"
-                  },
-                  [1000] = new Dictionary<double, string> {
-                      [38] = "1/2", [79] = "3/4", [148] = "1", [304] = "1 1/4", [455] = "1 1/2", [877] = "2",
-                      [1400] = "2 1/2", [2470] = "3", [5040] = "4"
-                  },
-                  [1100] = new Dictionary<double, string> {
-                      [36] = "1/2", [75] = "3/4", [141] = "1", [289] = "1 1/4", [432] = "1 1/2", [833] = "2",
-                      [1330] = "2 1/2", [2350] = "3", [4780] = "4"
-                  },
-                  [1200] = new Dictionary<double, string> {
-                      [34] = "1/2", [71] = "3/4", [134] = "1", [275] = "1 1/4", [412] = "1 1/2", [794] = "2",
-                      [1270] = "2 1/2", [2240] = "3", [4560] = "4"
-                  },
-                  [1300] = new Dictionary<double, string> {
-                      [33] = "1/2", [68] = "3/4", [128] = "1", [264] = "1 1/4", [395] = "1 1/2", [761] = "2",
-                      [1210] = "2 1/2", [2140] = "3", [4370] = "4"
-                  },
-                  [1400] = new Dictionary<double, string> {
-                      [31] = "1/2", [65] = "3/4", [123] = "1", [253] = "1 1/4", [379] = "1 1/2", [731] = "2",
-                      [1160] = "2 1/2", [2060] = "3", [4200] = "4"
-                  },
-                  [1500] = new Dictionary<double, string> {
-                      [30] = "1/2", [63] = "3/4", [119] = "1", [244] = "1 1/4", [366] = "1 1/2", [704] = "2",
-                      [1120] = "2 1/2", [1980] = "3", [4050] = "4"
-                  },
-                  [1600] = new Dictionary<double, string> {
-                      [29] = "1/2", [61] = "3/4", [115] = "1", [236] = "1 1/4", [353] = "1 1/2", [680] = "2",
-                      [1080] = "2 1/2", [1920] = "3", [3910] = "4"
-                  },
-                  [1700] = new Dictionary<double, string> {
-                      [28] = "1/2", [59] = "3/4", [111] = "1", [228] = "1 1/4", [342] = "1 1/2", [658] = "2",
-                      [1050] = "2 1/2", [1850] = "3", [3780] = "4"
-                  },
-                  [1800] = new Dictionary<double, string> {
-                      [27] = "1/2", [57] = "3/4", [108] = "1", [221] = "1 1/4", [331] = "1 1/2", [638] = "2",
-                      [1020] = "2 1/2", [1800] = "3", [3670] = "4"
-                  },
-                  [1900] = new Dictionary<double, string> {
-                      [27] = "1/2", [56] = "3/4", [105] = "1", [215] = "1 1/4", [322] = "1 1/2", [619] = "2",
-                      [987] = "2 1/2", [1750] = "3", [3560] = "4"
-                  },
-                  [2000] = new Dictionary<double, string> {
-                      [26] = "1/2", [54] = "3/4", [102] = "1", [209] = "1 1/4", [313] = "1 1/2", [602] = "2",
-                      [960] = "2 1/2", [1700] = "3", [3460] = "4"
-                  }
-              }
-          },
-          new GasChart() {
-              MetalType = "Schedule 40 Metallic",
-              PressureDrop = "0.5 in w.c.",
-              Entries = new Dictionary<int, Dictionary<double, string>>
-              {
-                
-              }
           }
-      };
+        }
+      }
+      return gasEntry;
     }
-  class GasChart {
-    public string MetalType { get; set; }
-
-    public string PressureDrop { get; set; }
-
-    public Dictionary<int, Dictionary<double, string>> Entries { get; set; }
   }
+  public class GasEntry {
+    public string Name { get; set; }
+  }
+  public class StainlessSteelGasEntry : GasEntry {
+    public StainlessSteelGasEntry() {
+      Name = "Corrugated Stainless Steel Tubing";
+    }
+    public string FlowDesignation { get; set; }
+  }
+  public class PolyethylenePlasticGasEntry : GasEntry {
+    
+    public PolyethylenePlasticGasEntry() {
+      Name = "Polyethylene Plastic Pipe";
+    }
+    public string NominalOD { get; set; }
 
+    public string Designation { get; set; }
 
+    public string ActualID { get; set; }
+  }
+  public class Schedule40MetalGasEntry : GasEntry {
+    public Schedule40MetalGasEntry() {
+      Name = "Schedule 40 Metallic Pipe";
+    }
+    public string NominalSize { get; set; }
+    public string ActualID { get; set; }
+
+  }
+  public class SemiRigidCopperGasEntry : GasEntry {
+    public SemiRigidCopperGasEntry() {
+      Name = "Semi-Rigid Copper Tubing";
+    }
+    public string NominalKL { get; set; }
+    public string NominalACR { get; set; }
+    public string OutsideDiameter { get; set; }
+    public string InsideDiameter { get; set; }
+  }
 }

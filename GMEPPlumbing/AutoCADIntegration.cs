@@ -34,6 +34,7 @@ using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
 using Line = Autodesk.AutoCAD.DatabaseServices.Line;
 using static MongoDB.Bson.Serialization.Serializers.SerializerHelper;
 using Google.Protobuf.WellKnownTypes;
+using GMEPPlumbing.Tools;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
@@ -103,6 +104,17 @@ namespace GMEPPlumbing
       db.ObjectModified -= Db_BasePointModified;
       db.SaveComplete -= Db_DocumentSaved;
       // ... detach other handlers as needed ...
+    }
+    [CommandMethod("TestGasChart")]
+    public void TestGasChart() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      GasPipeSizingChart chart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 2);
+      GasEntry entry = chart.GetData(300, 31);
+      if (entry is SemiRigidCopperGasEntry copperEntry) {
+        ed.WriteMessage($"\nNominal KL: {copperEntry.NominalKL}, Nominal ACR: {copperEntry.NominalACR}, Outside: {copperEntry.OutsideDiameter}, Inside: {copperEntry.InsideDiameter}\n");
+      }
     }
 
     [CommandMethod("PlumbingHorizontalRoute")]
