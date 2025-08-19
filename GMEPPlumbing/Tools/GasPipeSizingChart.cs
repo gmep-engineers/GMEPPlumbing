@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace GMEPPlumbing.Tools {
-  class GasPipeSizingChart {
+  public class GasPipeSizingChart {
     public string FilePath { get; set; } = string.Empty;
     public string PipeType { get; set; } = string.Empty;
     public GasPipeSizingChart(string gasType, string pipeType, int chartIndex) {

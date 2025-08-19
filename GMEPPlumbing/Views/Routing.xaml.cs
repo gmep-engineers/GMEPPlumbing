@@ -399,8 +399,9 @@ namespace GMEPPlumbing.Views
       }
     }
 
-    public bool IsWaterCalculatorEnabled { get; set; } = false;
+    public bool IsCalculatorEnabled { get; set; } = false;
     public Dictionary<string, WaterCalculator> WaterCalculators { get; set; } = new Dictionary<string, WaterCalculator>();
+    public Dictionary<string, GasCalculator> GasCalculators { get; set; } = new Dictionary<string, GasCalculator>();
     public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
     public string Name { get; set; } = "";
     public ICommand CalculateCommand { get; }
@@ -416,6 +417,7 @@ namespace GMEPPlumbing.Views
       FullRoutes = DeepCopyFullRoutes(fullRoutes);
       NormalizeRoutes();
       GenerateWaterCalculators();
+
       GenerateScenes();
     }
 
@@ -470,7 +472,7 @@ namespace GMEPPlumbing.Views
       WaterCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
-          IsWaterCalculatorEnabled = true;
+          IsCalculatorEnabled = true;
           if (!WaterCalculators.ContainsKey(plumbingSource.Id)) {
             ObservableCollection<WaterLoss> waterLosses = new ObservableCollection<WaterLoss>();
             ObservableCollection<WaterAddition> waterAdditions = new ObservableCollection<WaterAddition>();
@@ -496,6 +498,33 @@ namespace GMEPPlumbing.Views
             }
 
             WaterCalculators[plumbingSource.Id] = new WaterCalculator(name, plumbingSource.Pressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
+          }
+        }
+      }
+    }
+    public void GenerateGasCalculators() {
+     GasCalculators.Clear();
+      foreach (var fullRoute in FullRoutes) {
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 3) {
+          IsCalculatorEnabled = true;
+          if (!GasCalculators.ContainsKey(plumbingSource.Id)) {
+            string name = "";
+            switch (plumbingSource.TypeId) {
+              case 1:
+                name = "Water Meter";
+                break;
+              case 2:
+                name = "Water Heater";
+                break;
+              case 3:
+                name = "Gas Meter";
+                break;
+              case 4:
+                name = "Waste Output";
+                break;
+            }
+
+            GasCalculators[plumbingSource.Id] = new GasCalculator(name);
           }
         }
       }
@@ -679,6 +708,10 @@ namespace GMEPPlumbing.Views
       add { CommandManager.RequerySuggested += value; }
       remove { CommandManager.RequerySuggested -= value; }
     }
+  }
+  public class MenuItemViewModel {
+    public string Name { get; set; }
+    public ObservableCollection<MenuItemViewModel> Children { get; set; }
   }
 
 }

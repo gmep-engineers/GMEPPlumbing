@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using GMEPPlumbing.Tools;
 
 namespace GMEPPlumbing {
   public class PlumbingFixture {
@@ -418,6 +419,26 @@ namespace GMEPPlumbing {
       GPM = lookup.Last().Value;
       return;
     }
+  }
+  public class GasCalculator: INotifyPropertyChanged {
+    public GasPipeSizingChart _chosenChart;
+    string _description;
+    public GasPipeSizingChart ChosenChart {
+      get => _chosenChart;
+      set { if (_chosenChart != value) { _chosenChart = value; OnPropertyChanged(); } }
+    }
+    public string Description {
+      get => _description;
+      set { if (_description != value) { _description = value; OnPropertyChanged(); } }
+    }
+    public GasCalculator(string description, GasPipeSizingChart chosenChart = null) {
+      Description = description;
+      ChosenChart = chosenChart;
+    }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
   }
   public class WaterCalculator : INotifyPropertyChanged {
     private string _description;
