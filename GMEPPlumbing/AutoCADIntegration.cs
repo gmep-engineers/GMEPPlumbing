@@ -28,7 +28,6 @@ using GMEPPlumbing.Views;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver.Core.Connections;
 using MongoDB.Driver.Core.Misc;
-using Org.BouncyCastle.Bcpg.OpenPgp;
 using SharpCompress.Common;
 using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
 using Line = Autodesk.AutoCAD.DatabaseServices.Line;
