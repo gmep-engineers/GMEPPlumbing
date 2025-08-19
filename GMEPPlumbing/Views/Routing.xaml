@@ -49,7 +49,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Name}" Margin="0,0,0,5"/>
-                        <Expander Grid.Row="1" Header="Water Calculations" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+                        <Expander Grid.Row="1" Header="Calculations" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
                             <Expander.Content>
                                 <StackPanel Orientation="Vertical">
                                     <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch">
@@ -127,7 +127,7 @@
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
                                     </ListBox>
-                                    <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch">
+                                    <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding GasCalculators}" HorizontalContentAlignment="Stretch">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
                                                 <Grid Background="White" Margin="0 0 0 20">
@@ -141,6 +141,13 @@
                                                             <TextBox Text="{Binding Value.Description, Mode=TwoWay}" MinWidth="100"/>
                                                         </StackPanel>
                                                     </Border>
+                                                    <TreeView ItemsSource="{Binding MenuItems}">
+                                                        <TreeView.ItemTemplate>
+                                                            <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                                                <TextBlock Text="{Binding Name}" />
+                                                            </HierarchicalDataTemplate>
+                                                        </TreeView.ItemTemplate>
+                                                    </TreeView>
                                                 </Grid>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>

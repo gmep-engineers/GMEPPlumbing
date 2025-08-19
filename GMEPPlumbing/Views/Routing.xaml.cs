@@ -709,9 +709,6 @@ namespace GMEPPlumbing.Views
       remove { CommandManager.RequerySuggested -= value; }
     }
   }
-  public class MenuItemViewModel {
-    public string Name { get; set; }
-    public ObservableCollection<MenuItemViewModel> Children { get; set; }
-  }
+ 
 
 }
