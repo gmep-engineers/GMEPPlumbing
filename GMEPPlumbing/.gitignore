@@ -39,6 +39,3 @@ bld/
 
 # Ignore appsettings.json as it might contain sensitive information
 appsettings.json
-
-# Ignore project-specific files if they contain sensitive information
-GMEPPlumbing.csproj
