@@ -108,6 +108,8 @@ namespace GMEPPlumbing
     [CommandMethod("TestGasChart")]
     public void TestGasChart() {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
       GasPipeSizingChart chart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 2);
@@ -122,6 +124,8 @@ namespace GMEPPlumbing
       string BasePointId = CADObjectCommands.GetActiveView();
 
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -392,6 +396,8 @@ namespace GMEPPlumbing
     }
     public async void VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -1213,6 +1219,8 @@ namespace GMEPPlumbing
     [CommandMethod("SETPLUMBINGBASEPOINT")]
     public async void SetPlumbingBasePoint() {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -1447,6 +1455,8 @@ namespace GMEPPlumbing
 
     public void WriteMessage(string message) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -1455,6 +1465,8 @@ namespace GMEPPlumbing
 
     private void AddArrowsToLine(ObjectId lineId, string lineGUID) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -1505,6 +1517,8 @@ namespace GMEPPlumbing
 
     public void RetrieveOrCreateDrawingId() {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -1551,6 +1565,8 @@ namespace GMEPPlumbing
 
     private void AttachRouteXData(ObjectId lineId, string id, string basePointId, string pipeType) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -1580,6 +1596,8 @@ namespace GMEPPlumbing
 
     private void UpdateXRecordId(Transaction tr, string newId, DateTime newCreationTime) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -1603,6 +1621,8 @@ namespace GMEPPlumbing
 
     private void UpdateXRecordAfterDataLoad() {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -1765,6 +1785,8 @@ namespace GMEPPlumbing
 
     private DateTime GetFileCreationTime() {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return DateTime.Now;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -1847,6 +1869,8 @@ namespace GMEPPlumbing
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
     
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -2161,6 +2185,8 @@ namespace GMEPPlumbing
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
 
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -2683,8 +2709,11 @@ namespace GMEPPlumbing
 
     public static void Db_VerticalRouteErased(object sender, ObjectErasedEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
+
       try {
         if (
           e.Erased
@@ -2761,6 +2790,8 @@ namespace GMEPPlumbing
 
     public static void Db_VerticalRouteModified(object sender, ObjectEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -2955,6 +2986,8 @@ namespace GMEPPlumbing
     }*/
     public static void Db_BasePointModified(object sender, ObjectEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -3071,8 +3104,11 @@ namespace GMEPPlumbing
 
     public static async void Db_DocumentSaved(object sender, DatabaseIOEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
       var db = doc.Database;
       var ed = doc.Editor;
+
       MariaDBService mariaDBService = new MariaDBService();
       ed.WriteMessage("\nDocument saved, updating plumbing data...");
 
@@ -3104,6 +3140,8 @@ namespace GMEPPlumbing
 
     public static List<PlumbingHorizontalRoute> GetHorizontalRoutesFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return new List<PlumbingHorizontalRoute>();
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -3156,6 +3194,8 @@ namespace GMEPPlumbing
 
     public static List<PlumbingVerticalRoute> GetVerticalRoutesFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return new List<PlumbingVerticalRoute>();
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -3323,6 +3363,8 @@ namespace GMEPPlumbing
   
     public static List<PlumbingPlanBasePoint> GetPlumbingBasePointsFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return new List<PlumbingPlanBasePoint>();
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -3404,6 +3446,8 @@ namespace GMEPPlumbing
 
     public static List<PlumbingSource> GetPlumbingSourcesFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return new List<PlumbingSource>();
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -3500,6 +3544,8 @@ namespace GMEPPlumbing
   
   public static List<PlumbingFixture> GetPlumbingFixturesFromCAD(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return new List<PlumbingFixture>();
+
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -3608,6 +3654,8 @@ namespace GMEPPlumbing
     }
     public int DetermineFixtureNumber(PlumbingFixture fixture) {
       var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return 0;
+
       var db = doc.Database;
       var ed = doc.Editor;
 
