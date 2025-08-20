@@ -129,7 +129,7 @@ namespace GMEPPlumbing.Views
           double textHeight = 8;
           string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n Pipe Size: {horizontalRoute.PipeSize}\n";
           if (horizontalRoute.Type == "Gas") {
-            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\" \n";
+            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\"  {horizontalRoute.PipeSize}\n";
           }
           else if (horizontalRoute.Type == "Waste") {
             textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits} \n";
@@ -289,7 +289,7 @@ namespace GMEPPlumbing.Views
         int inches = (int)Math.Round(pipeLength % 12);
         string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n Pipe Size: {pipeSize}";
         if (verticalRoutes.First().Type == "Gas") {
-          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\"";
+          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\" {pipeSize}";
         }
         else if (verticalRoutes.First().Type == "Waste") {
           textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n";
@@ -481,17 +481,44 @@ namespace GMEPPlumbing.Views
         }
         foreach (var item in fullRoute.RouteItems) {
             if (item is PlumbingHorizontalRoute horizontalRoute && horizontalRoute.Type == "Gas") {
+              string pipeSize = "";
               GasEntry entry = GasCalculators[sourceId].ChosenChart.GetData(
                 horizontalRoute.LongestRunLength,
                 horizontalRoute.FixtureUnits
               );
-
-          }
+              if (entry is SemiRigidCopperGasEntry copperEntry) {
+                pipeSize = "Nominal ACR: " + copperEntry.NominalACR + "\n Nominal KL: " + copperEntry.NominalKL + "\n Outside: " + copperEntry.OutsideDiameter + "\n Inside: " + copperEntry.InsideDiameter;
+              }
+              else if (entry is Schedule40MetalGasEntry metal40Entry) {
+                pipeSize = "Actual ID: " + metal40Entry.ActualID + "\n Nominal Size: " + metal40Entry.NominalSize;
+              }
+              else if (entry is PolyethylenePlasticGasEntry plasticEntry) {
+                pipeSize = "Actual ID: " + plasticEntry.ActualID + "\n Designation: " + plasticEntry.Designation;
+              }
+              else if (entry is StainlessSteelGasEntry stainlessEntry) {
+                pipeSize = "Flow Designation: " + stainlessEntry.FlowDesignation;
+              }
+              horizontalRoute.PipeSize = pipeSize;
+            }
             else if (item is PlumbingVerticalRoute verticalRoute && verticalRoute.Type == "Gas") {
-            GasEntry entry = GasCalculators[sourceId].ChosenChart.GetData(
-              verticalRoute.LongestRunLength,
-              verticalRoute.FixtureUnits
-            );
+              GasEntry entry = GasCalculators[sourceId].ChosenChart.GetData(
+                verticalRoute.LongestRunLength,
+                verticalRoute.FixtureUnits
+              );
+              string pipeSize = "";
+              if (entry is SemiRigidCopperGasEntry copperEntry) {
+                pipeSize = "Nominal ACR: " + copperEntry.NominalACR + "\n Nominal KL: " + copperEntry.NominalKL + "\n Outside: " + copperEntry.OutsideDiameter + "\n Inside: " + copperEntry.InsideDiameter;
+              }
+              else if (entry is Schedule40MetalGasEntry metal40Entry) {
+                pipeSize = "Actual ID: " + metal40Entry.ActualID + "\n Nominal Size: " + metal40Entry.NominalSize;
+              }
+              else if (entry is PolyethylenePlasticGasEntry plasticEntry) {
+                pipeSize = "Actual ID: " + plasticEntry.ActualID + "\n Designation: " + plasticEntry.Designation;
+              }
+              else if (entry is StainlessSteelGasEntry stainlessEntry) {
+                pipeSize = "Flow Designation: " + stainlessEntry.FlowDesignation;
+              }
+              verticalRoute.PipeSize = pipeSize;
             }
           }
       }
