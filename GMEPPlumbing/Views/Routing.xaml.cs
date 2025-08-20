@@ -44,6 +44,12 @@ namespace GMEPPlumbing.Views
         Views.Add(view);
       }
     }
+
+    private void Button_Click(object sender, RoutedEventArgs e) {
+      var item = (sender as Button)?.DataContext as MenuItemViewModel;
+      item?.OnClick();
+      e.Handled = false; 
+    }
   }
 
   public class Scene {
@@ -123,7 +129,7 @@ namespace GMEPPlumbing.Views
           double textHeight = 8;
           string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n Pipe Size: {horizontalRoute.PipeSize}\n";
           if (horizontalRoute.Type == "Gas") {
-            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\" \n";
+            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\"  {horizontalRoute.PipeSize}\n";
           }
           else if (horizontalRoute.Type == "Waste") {
             textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits} \n";
@@ -183,7 +189,7 @@ namespace GMEPPlumbing.Views
           double length = verticalRoute.Length * 12;
 
           if (verticalRoute.NodeTypeId == 3) {
-            length = -length;
+            length = -length;//
           }
           var tubeModel = new TubeVisual3D {
             Path = new Point3DCollection {
@@ -283,7 +289,7 @@ namespace GMEPPlumbing.Views
         int inches = (int)Math.Round(pipeLength % 12);
         string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n Pipe Size: {pipeSize}";
         if (verticalRoutes.First().Type == "Gas") {
-          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\"";
+          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\" {pipeSize}";
         }
         else if (verticalRoutes.First().Type == "Waste") {
           textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n";
@@ -399,8 +405,9 @@ namespace GMEPPlumbing.Views
       }
     }
 
-    public bool IsWaterCalculatorEnabled { get; set; } = false;
+    public bool IsCalculatorEnabled { get; set; } = false;
     public Dictionary<string, WaterCalculator> WaterCalculators { get; set; } = new Dictionary<string, WaterCalculator>();
+    public Dictionary<string, GasCalculator> GasCalculators { get; set; } = new Dictionary<string, GasCalculator>();
     public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
     public string Name { get; set; } = "";
     public ICommand CalculateCommand { get; }
@@ -416,6 +423,7 @@ namespace GMEPPlumbing.Views
       FullRoutes = DeepCopyFullRoutes(fullRoutes);
       NormalizeRoutes();
       GenerateWaterCalculators();
+      GenerateGasCalculators();
       GenerateScenes();
     }
 
@@ -460,17 +468,74 @@ namespace GMEPPlumbing.Views
       }
       GenerateScenes();
     }
+    public void GenerateGasPipeSizing() {
+      foreach (var fullRoute in FullRoutes) {
+        if (fullRoute.RouteItems.Count == 0) continue;
+        double psi = 0;
+        string sourceId = "";
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 3) {
+          sourceId = plumbingSource.Id;
+        }
+        else {
+          continue;
+        }
+        foreach (var item in fullRoute.RouteItems) {
+            if (item is PlumbingHorizontalRoute horizontalRoute && horizontalRoute.Type == "Gas") {
+              string pipeSize = "";
+              GasEntry entry = GasCalculators[sourceId].ChosenChart.GetData(
+                horizontalRoute.LongestRunLength,
+                horizontalRoute.FixtureUnits
+              );
+              if (entry is SemiRigidCopperGasEntry copperEntry) {
+                pipeSize = "Nominal ACR: " + copperEntry.NominalACR + "\n Nominal KL: " + copperEntry.NominalKL + "\n Outside: " + copperEntry.OutsideDiameter + "\n Inside: " + copperEntry.InsideDiameter;
+              }
+              else if (entry is Schedule40MetalGasEntry metal40Entry) {
+                pipeSize = "Actual ID: " + metal40Entry.ActualID + "\n Nominal Size: " + metal40Entry.NominalSize;
+              }
+              else if (entry is PolyethylenePlasticGasEntry plasticEntry) {
+                pipeSize = "Actual ID: " + plasticEntry.ActualID + "\n Designation: " + plasticEntry.Designation;
+              }
+              else if (entry is StainlessSteelGasEntry stainlessEntry) {
+                pipeSize = "Flow Designation: " + stainlessEntry.FlowDesignation;
+              }
+              horizontalRoute.PipeSize = pipeSize;
+            }
+            else if (item is PlumbingVerticalRoute verticalRoute && verticalRoute.Type == "Gas") {
+              GasEntry entry = GasCalculators[sourceId].ChosenChart.GetData(
+                verticalRoute.LongestRunLength,
+                verticalRoute.FixtureUnits
+              );
+              string pipeSize = "";
+              if (entry is SemiRigidCopperGasEntry copperEntry) {
+                pipeSize = "Nominal ACR: " + copperEntry.NominalACR + "\n Nominal KL: " + copperEntry.NominalKL + "\n Outside: " + copperEntry.OutsideDiameter + "\n Inside: " + copperEntry.InsideDiameter;
+              }
+              else if (entry is Schedule40MetalGasEntry metal40Entry) {
+                pipeSize = "Actual ID: " + metal40Entry.ActualID + "\n Nominal Size: " + metal40Entry.NominalSize;
+              }
+              else if (entry is PolyethylenePlasticGasEntry plasticEntry) {
+                pipeSize = "Actual ID: " + plasticEntry.ActualID + "\n Designation: " + plasticEntry.Designation;
+              }
+              else if (entry is StainlessSteelGasEntry stainlessEntry) {
+                pipeSize = "Flow Designation: " + stainlessEntry.FlowDesignation;
+              }
+              verticalRoute.PipeSize = pipeSize;
+            }
+          }
+      }
+      GenerateScenes();
+    }
     private void ExecuteCalculate(object parameter) {
       var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
       ed.WriteMessage("\nCalculating pipe sizes...");
       GenerateWaterPipeSizing();
+      GenerateGasPipeSizing();
     }
 
     public void GenerateWaterCalculators() {
       WaterCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
-          IsWaterCalculatorEnabled = true;
+          IsCalculatorEnabled = true;
           if (!WaterCalculators.ContainsKey(plumbingSource.Id)) {
             ObservableCollection<WaterLoss> waterLosses = new ObservableCollection<WaterLoss>();
             ObservableCollection<WaterAddition> waterAdditions = new ObservableCollection<WaterAddition>();
@@ -496,6 +561,33 @@ namespace GMEPPlumbing.Views
             }
 
             WaterCalculators[plumbingSource.Id] = new WaterCalculator(name, plumbingSource.Pressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
+          }
+        }
+      }
+    }
+    public void GenerateGasCalculators() {
+     GasCalculators.Clear();
+      foreach (var fullRoute in FullRoutes) {
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 3) {
+          IsCalculatorEnabled = true;
+          if (!GasCalculators.ContainsKey(plumbingSource.Id)) {
+            string name = "";
+            switch (plumbingSource.TypeId) {
+              case 1:
+                name = "Water Meter";
+                break;
+              case 2:
+                name = "Water Heater";
+                break;
+              case 3:
+                name = "Gas Meter";
+                break;
+              case 4:
+                name = "Waste Output";
+                break;
+            }
+
+            GasCalculators[plumbingSource.Id] = new GasCalculator(name);
           }
         }
       }
@@ -680,5 +772,14 @@ namespace GMEPPlumbing.Views
       remove { CommandManager.RequerySuggested -= value; }
     }
   }
+  public class BoolToVisibilityConverter : IValueConverter {
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+      return (value is bool b && b) ? Visibility.Visible : Visibility.Collapsed;
+    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+      throw new NotImplementedException();
+    }
+  }
+
 
 }

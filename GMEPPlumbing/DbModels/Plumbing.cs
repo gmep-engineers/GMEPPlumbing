@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using GMEPPlumbing.Tools;
 
 namespace GMEPPlumbing {
   public class PlumbingFixture {
@@ -417,6 +418,114 @@ namespace GMEPPlumbing {
       }
       GPM = lookup.Last().Value;
       return;
+    }
+  }
+  public class GasCalculator: INotifyPropertyChanged {
+    public GasPipeSizingChart _chosenChart;
+
+    public ObservableCollection<MenuItemViewModel> MenuItems { get; set; }
+      
+    string _description;
+    public GasPipeSizingChart ChosenChart {
+      get => _chosenChart;
+      set { if (_chosenChart != value) { _chosenChart = value; OnPropertyChanged(); } }
+    }
+    public string Description {
+      get => _description;
+      set { if (_description != value) { _description = value; OnPropertyChanged(); } }
+    }
+    public GasCalculator(string description, GasPipeSizingChart chosenChart = null) {
+      MenuItems = new ObservableCollection<MenuItemViewModel> {
+        new MenuItemViewModel {
+          Name = "Natural Gas",
+          Children = new ObservableCollection<MenuItemViewModel> {
+            new MenuItemViewModel { Name = "Corrugated Stainless Steel Tubing", Children = new ObservableCollection<MenuItemViewModel>()
+            {
+              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 1)},
+              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 2)},
+              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 3)},
+              new MenuItemViewModel { Name = "Chart 4", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 4)},
+              new MenuItemViewModel { Name = "Chart 5", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 5)},
+            }
+            },
+            new MenuItemViewModel { Name = "Semi-Rigid Copper Tubing", Children = new ObservableCollection<MenuItemViewModel>(){
+              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 1)},
+              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 2)},
+              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 3)},
+              new MenuItemViewModel { Name = "Chart 4", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 4)},
+              new MenuItemViewModel { Name = "Chart 5", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 5)},
+              new MenuItemViewModel { Name = "Chart 6", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 6)},
+              new MenuItemViewModel { Name = "Chart 7", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 7)},
+            } 
+            },
+            new MenuItemViewModel { Name = "Polyethylene Plastic Pipe", Children = new ObservableCollection<MenuItemViewModel>(){
+              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 1)},
+              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 2)},
+              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 3)},
+              new MenuItemViewModel { Name = "Chart 4", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 4)},
+              new MenuItemViewModel { Name = "Chart 5", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 5)},
+            } 
+            },
+            new MenuItemViewModel { Name = "Schedule 40 Metallic Pipe", Children = new ObservableCollection<MenuItemViewModel>(){
+              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 1)},
+              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 2)},
+              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 3)},
+              new MenuItemViewModel { Name = "Chart 4", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 4)},
+              new MenuItemViewModel { Name = "Chart 5", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 5)},
+              new MenuItemViewModel { Name = "Chart 6", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 6)},
+            }
+            },
+          }
+        },
+        new MenuItemViewModel {
+          Name = "Propane",
+          Children = new ObservableCollection<MenuItemViewModel> {
+            new MenuItemViewModel { Name = "Corrugated Stainless Steel Tubing", Children = new ObservableCollection<MenuItemViewModel>()
+            {
+              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Corrugated Stainless Steel Tubing", 1)},
+              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Corrugated Stainless Steel Tubing", 2)},
+              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Corrugated Stainless Steel Tubing", 3)},
+            }
+            },
+            new MenuItemViewModel { Name = "Semi-Rigid Copper Tubing", Children = new ObservableCollection<MenuItemViewModel>(){
+              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Semi-Rigid Copper Tubing", 1)},
+              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Semi-Rigid Copper Tubing", 2)},
+              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Semi-Rigid Copper Tubing", 3)},
+            }
+            },
+            new MenuItemViewModel { Name = "Polyethylene Plastic Pipe", Children = new ObservableCollection<MenuItemViewModel>(){
+              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Polyethylene Plastic Pipe", 1)},
+              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Polyethylene Plastic Pipe", 2)},
+              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Polyethylene Plastic Pipe", 3)},
+            }
+            },
+            new MenuItemViewModel { Name = "Schedule 40 Metallic Pipe", Children = new ObservableCollection<MenuItemViewModel>(){
+              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 1)},
+              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 2)},
+              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 3)},
+              new MenuItemViewModel { Name = "Chart 4", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 4)},
+            }
+            },
+          }
+        }
+      };
+      Description = description;
+      ChosenChart = chosenChart;
+    }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+  }
+  public class MenuItemViewModel {
+    public string Name { get; set; }
+    public ObservableCollection<MenuItemViewModel> Children { get; set; }
+    public bool HasClicked => Clicked != null;
+    public Action Clicked { get; set; } // Add this line
+
+    // Optionally, a method to invoke the click
+    public void OnClick() {
+      Clicked?.Invoke();
     }
   }
   public class WaterCalculator : INotifyPropertyChanged {

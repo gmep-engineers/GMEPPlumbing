@@ -8,9 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace GMEPPlumbing.Tools {
-  class GasPipeSizingChart {
+  public class GasPipeSizingChart {
     public string FilePath { get; set; } = string.Empty;
     public string PipeType { get; set; } = string.Empty;
+    public string GasType { get; set; } = string.Empty;
+    public int ChartIndex { get; set; } = 0;
     public GasPipeSizingChart(string gasType, string pipeType, int chartIndex) {
       SetChartPath(gasType, pipeType, chartIndex);
     }
@@ -41,8 +43,10 @@ namespace GMEPPlumbing.Tools {
 
       FilePath = filePath;
       PipeType = pipeType;
+      GasType = gasType;
+      ChartIndex = chartIndex;
     }
-    public GasEntry GetData(int length, double cfh) {
+    public GasEntry GetData(double length, double cfh) {
       GasEntry gasEntry = null;
       int startRow = 0;
       if (PipeType == "Semi-Rigid Copper Tubing") {
