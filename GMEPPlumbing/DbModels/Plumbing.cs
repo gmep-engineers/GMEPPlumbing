@@ -520,6 +520,7 @@ namespace GMEPPlumbing {
   public class MenuItemViewModel {
     public string Name { get; set; }
     public ObservableCollection<MenuItemViewModel> Children { get; set; }
+    public bool HasClicked => Clicked != null;
     public Action Clicked { get; set; } // Add this line
 
     // Optionally, a method to invoke the click

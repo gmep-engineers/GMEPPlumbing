@@ -9,6 +9,7 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <local:AddOneConverter x:Key="AddOneConverter"/>
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <Style x:Key="RotatedTabHeaderStyle" TargetType="TabItem">
             <Setter Property="HeaderTemplate">
                 <Setter.Value>
@@ -138,14 +139,20 @@
                                                         <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
                                                             <TextBlock Text="Name: " Margin="5,0,0,0"/>
                                                             <TextBox Text="{Binding Value.Description, Mode=TwoWay}" MinWidth="100"/>
+                                                            <TextBlock Text="Gas Type: " Margin="5,0,0,0"/>
+                                                            <TextBox Text="{Binding Value.ChosenChart.GasType}" MinWidth="100"/>
+                                                            <TextBlock Text="Pipe Type: " Margin="5,0,0,0"/>
+                                                            <TextBox Text="{Binding Value.ChosenChart.PipeType}" MinWidth="100"/>
+                                                            <TextBlock Text="Chart: " Margin="5,0,0,0"/>
+                                                            <TextBox Text="{Binding Value.ChosenChart.ChartIndex}" MinWidth="100"/>
                                                         </StackPanel>
                                                     </Border>
                                                     <TreeView Grid.Row="1" ItemsSource="{Binding Value.MenuItems}">
                                                         <TreeView.ItemTemplate>
                                                             <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                                                                 <StackPanel Orientation="Horizontal">
-                                                                    <TextBlock Text="{Binding Name}" />
-                                                                    <Button Click="Button_Click" Content="Select"/>
+                                                                    <TextBlock Text="{Binding Name}" Margin="0 0 10 0" />
+                                                                    <Button Click="Button_Click" Content="Select" Visibility="{Binding HasClicked, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                                                 </StackPanel>
                                                             </HierarchicalDataTemplate>
                                                         </TreeView.ItemTemplate>

@@ -11,6 +11,8 @@ namespace GMEPPlumbing.Tools {
   public class GasPipeSizingChart {
     public string FilePath { get; set; } = string.Empty;
     public string PipeType { get; set; } = string.Empty;
+    public string GasType { get; set; } = string.Empty;
+    public int ChartIndex { get; set; } = 0;
     public GasPipeSizingChart(string gasType, string pipeType, int chartIndex) {
       SetChartPath(gasType, pipeType, chartIndex);
     }
@@ -41,6 +43,8 @@ namespace GMEPPlumbing.Tools {
 
       FilePath = filePath;
       PipeType = pipeType;
+      GasType = gasType;
+      ChartIndex = chartIndex;
     }
     public GasEntry GetData(int length, double cfh) {
       GasEntry gasEntry = null;
