@@ -46,7 +46,7 @@ namespace GMEPPlumbing.Views
     }
 
     private void Button_Click(object sender, RoutedEventArgs e) {
-      var item = (sender as TreeViewItem)?.DataContext as MenuItemViewModel;
+      var item = (sender as Button)?.DataContext as MenuItemViewModel;
       item?.OnClick();
       e.Handled = false; 
     }

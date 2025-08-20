@@ -136,15 +136,21 @@
                                                         <RowDefinition Height="*"/>
                                                     </Grid.RowDefinitions>
                                                     <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
-                                                            <TextBlock Text="Name: " Margin="5,0,0,0"/>
-                                                            <TextBox Text="{Binding Value.Description, Mode=TwoWay}" MinWidth="100"/>
-                                                            <TextBlock Text="Gas Type: " Margin="5,0,0,0"/>
-                                                            <TextBox Text="{Binding Value.ChosenChart.GasType}" MinWidth="100"/>
-                                                            <TextBlock Text="Pipe Type: " Margin="5,0,0,0"/>
-                                                            <TextBox Text="{Binding Value.ChosenChart.PipeType}" MinWidth="100"/>
-                                                            <TextBlock Text="Chart: " Margin="5,0,0,0"/>
-                                                            <TextBox Text="{Binding Value.ChosenChart.ChartIndex}" MinWidth="100"/>
+                                                        <StackPanel HorizontalAlignment="Center" Orientation="Vertical" Margin="0 5 0 5">
+                                                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                                <TextBlock Text="Name: " Margin="5,0,0,0"/>
+                                                                <TextBox Text="{Binding Value.Description, Mode=TwoWay}" MinWidth="100"/>
+                                                            </StackPanel>
+                                                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                                <TextBlock Text="Gas Type: " Margin="5,0,0,0"/>
+                                                                <TextBlock Text="{Binding Value.ChosenChart.GasType}" Margin="5,0,0,0"/>
+                                                                <TextBlock Text=" - " Margin="5,0,0,0"/>
+                                                                <TextBlock Text="Pipe Type: " Margin="5,0,0,0"/>
+                                                                <TextBlock Text="{Binding Value.ChosenChart.PipeType}" Margin="5,0,0,0"/>
+                                                                <TextBlock Text=" - " Margin="5,0,0,0"/>
+                                                                <TextBlock Text="Chart: " Margin="5,0,0,0"/>
+                                                                <TextBlock Text="{Binding Value.ChosenChart.ChartIndex}" Margin="5,0,0,0"/>
+                                                            </StackPanel>
                                                         </StackPanel>
                                                     </Border>
                                                     <TreeView Grid.Row="1" ItemsSource="{Binding Value.MenuItems}">
