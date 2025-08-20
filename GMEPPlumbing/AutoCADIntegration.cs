@@ -177,13 +177,36 @@ namespace GMEPPlumbing
           ed.WriteMessage("\nInvalid route type selected.");
           return;
       }
-      PromptKeywordOptions pko3 = new PromptKeywordOptions("\nSelect Pipe Type: ");
-      pko3.Keywords.Add("PEX");
-      pko3.Keywords.Add("CPVC SCH80");
-      pko3.Keywords.Add("CPVC SDR II");
-      pko3.Keywords.Add("Copper Type L");
-      PromptResult pr3 = ed.GetKeywords(pko3);
-      string pipeType = pr3.StringResult;
+      string pipeType = "";
+      if (result == "ColdWater" || result == "HotWater") {
+        PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
+        pko1.Keywords.Add("Copper Type L");
+        pko1.Keywords.Add("CPVC SCH80");
+        pko1.Keywords.Add("CPVC SDR II");
+        pko1.Keywords.Add("PEX");
+        PromptResult pr1 = ed.GetKeywords(pko1);
+        if (pr1.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+        pipeType = pr1.StringResult;
+      }
+      else if (result == "Gas") {
+        PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
+        pko1.Keywords.Add("Semi-Rigid Copper Tubing");
+        pko1.Keywords.Add("Schedule 40 Metallic Pipe");
+        pko1.Keywords.Add("Corrugated Stainless Steel Tubing");
+        pko1.Keywords.Add("Polyethylene Plastic Pipe");
+        PromptResult pr1 = ed.GetKeywords(pko1);
+        if (pr1.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+        pipeType = pr1.StringResult;
+      }
+    
+
+
 
       PromptKeywordOptions pko2 = new PromptKeywordOptions("\nForward or Backward?");
       pko2.Keywords.Add("Forward");
