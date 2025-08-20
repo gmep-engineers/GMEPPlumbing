@@ -122,7 +122,6 @@
                                                             <TextBox IsEnabled="False" Text="{Binding Value.AveragePressureDrop}"/>
                                                         </StackPanel>
                                                     </Border>
-                                              
                                                 </Grid>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
@@ -144,7 +143,10 @@
                                                     <TreeView Grid.Row="1" ItemsSource="{Binding Value.MenuItems}">
                                                         <TreeView.ItemTemplate>
                                                             <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                                                                <TextBlock Text="{Binding Name}" />
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <TextBlock Text="{Binding Name}" />
+                                                                    <Button Click="Button_Click" Content="Select"/>
+                                                                </StackPanel>
                                                             </HierarchicalDataTemplate>
                                                         </TreeView.ItemTemplate>
                                                     </TreeView>

@@ -44,14 +44,15 @@ namespace GMEPPlumbing.Views
         Views.Add(view);
       }
     }
-    private void TreeViewItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
+
+    private void Button_Click(object sender, RoutedEventArgs e) {
       var item = (sender as TreeViewItem)?.DataContext as MenuItemViewModel;
       item?.OnClick();
-      e.Handled = false; // Or true if you want to stop further processing
+      e.Handled = false; 
     }
   }
 
-    public class Scene {
+  public class Scene {
       public List<object> RouteItems { get; set; } = new List<object>();
       public double Length { get; set; } = 0;
       public ObservableCollection<Visual3D> RouteVisuals { get; set; } = new ObservableCollection<Visual3D>();
@@ -188,7 +189,7 @@ namespace GMEPPlumbing.Views
           double length = verticalRoute.Length * 12;
 
           if (verticalRoute.NodeTypeId == 3) {
-            length = -length;
+            length = -length;//
           }
           var tubeModel = new TubeVisual3D {
             Path = new Point3DCollection {
