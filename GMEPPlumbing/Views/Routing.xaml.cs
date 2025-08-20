@@ -475,28 +475,23 @@ namespace GMEPPlumbing.Views
         string sourceId = "";
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 3) {
           sourceId = plumbingSource.Id;
-          GasCalculators[sourceId].ChosenChart?.GetData(fullRoute.L)
         }
         else {
           continue;
         }
         foreach (var item in fullRoute.RouteItems) {
             if (item is PlumbingHorizontalRoute horizontalRoute && horizontalRoute.Type == "Gas") {
-              
-              
-            }
+              GasEntry entry = GasCalculators[sourceId].ChosenChart.GetData(
+                horizontalRoute.LongestRunLength,
+                horizontalRoute.FixtureUnits
+              );
+
+          }
             else if (item is PlumbingVerticalRoute verticalRoute && verticalRoute.Type == "Gas") {
-              bool isHot = false;
-              if (verticalRoute.Type == "Hot Water") {
-                isHot = true;
-              }
-              verticalRoute.GenerateGallonsPerMinute();
-              verticalRoute.PipeSize = chart.FindSize(
-                verticalRoute.PipeType,
-                psi,
-                isHot,
-                verticalRoute.GPM
-              ).Item1;
+            GasEntry entry = GasCalculators[sourceId].ChosenChart.GetData(
+              verticalRoute.LongestRunLength,
+              verticalRoute.FixtureUnits
+            );
             }
           }
       }
@@ -506,6 +501,7 @@ namespace GMEPPlumbing.Views
       var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
       ed.WriteMessage("\nCalculating pipe sizes...");
       GenerateWaterPipeSizing();
+      GenerateGasPipeSizing();
     }
 
     public void GenerateWaterCalculators() {

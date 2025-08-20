@@ -46,7 +46,7 @@ namespace GMEPPlumbing.Tools {
       GasType = gasType;
       ChartIndex = chartIndex;
     }
-    public GasEntry GetData(int length, double cfh) {
+    public GasEntry GetData(double length, double cfh) {
       GasEntry gasEntry = null;
       int startRow = 0;
       if (PipeType == "Semi-Rigid Copper Tubing") {
