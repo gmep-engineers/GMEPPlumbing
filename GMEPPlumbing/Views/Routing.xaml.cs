@@ -139,7 +139,7 @@ namespace GMEPPlumbing.Views
           }
           double textWidth = textHeight * textString.Length * 0.05;
 
-          // Offset so the back of the text aligns with the end point
+          // Offset so the back of the text aligns with the end point 
           var textPos = new Point3D(
               horizontalRoute.EndPoint.X - (direction.X * (textWidth / 2)),
               horizontalRoute.EndPoint.Y - (direction.Y * (textWidth / 2)),

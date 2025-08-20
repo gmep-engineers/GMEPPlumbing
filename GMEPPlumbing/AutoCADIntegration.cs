@@ -1930,15 +1930,20 @@ namespace GMEPPlumbing
           i => i.Id.ToString() == keywordResultString
         );
       }
-      PromptKeywordOptions keywordOptions2 = new PromptKeywordOptions("");
-      keywordOptions2.Message = "\nSelect the flow type for the fixture:";
-      keywordOptions2.Keywords.Add("Flush Tank");
-      keywordOptions2.Keywords.Add("Flush Valve");
-      keywordOptions2.Keywords.Default = "Flush Tank";
-      keywordOptions2.AllowNone = false;
-      PromptResult keywordResult2 = ed.GetKeywords(keywordOptions2);
-      int flowTypeId = 0;
-      flowTypeId = keywordResult2.StringResult == "Flush Tank" ? 1 : 2;
+      int flowTypeId = 1;
+      if (selectedFixtureType.Abbreviation == "WC") {
+        PromptKeywordOptions keywordOptions2 = new PromptKeywordOptions("");
+        keywordOptions2.Message = "\nSelect the flow type for the fixture:";
+        keywordOptions2.Keywords.Add("Flush Tank");
+        keywordOptions2.Keywords.Add("Flush Valve");
+        keywordOptions2.Keywords.Default = "Flush Tank";
+        keywordOptions2.AllowNone = false;
+        PromptResult keywordResult2 = ed.GetKeywords(keywordOptions2);
+        flowTypeId = keywordResult2.StringResult == "Flush Tank" ? 1 : 2;
+      }
+      else if (selectedFixtureType.Abbreviation == "U") {
+        flowTypeId = 2;
+      }
 
       if (selectedFixtureType.BlockName.Contains("%WHSIZE%")) {
         if (selectedFixtureType.Abbreviation == "WH") {
