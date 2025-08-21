@@ -1967,81 +1967,93 @@ namespace GMEPPlumbing
       else if (selectedFixtureType.Abbreviation == "U") {
         flowTypeId = 2;
       }
+      List<string> selectedBlockNames = new List<string>();
+      string viewType = GetPlumbingBasePointsFromCAD(ProjectId).Where(bp => bp.Id == basePointId).First().Type;
+      if (viewType.Contains("Water")) {
+        selectedBlockNames.AddRange(selectedFixtureType.WaterBlockNames.Split(','));
+      }
+      if (viewType.Contains("Gas")) {
+        //selectedBlockNames.AddRange(selectedFixtureType.WaterBlockNames.Split(','));
+      }
+      if (viewType.Contains("Sewer-Vent")) {
+        selectedBlockNames.AddRange(selectedFixtureType.WasteBlockNames.Split(','));
+      }
+      selectedBlockNames = selectedBlockNames.Distinct().ToList();
 
-      if (selectedFixtureType.BlockName.Contains("%WHSIZE%")) {
-        if (selectedFixtureType.Abbreviation == "WH") {
-          keywordOptions = new PromptKeywordOptions("");
-          keywordOptions.Message = "\nSelect WH size";
-          keywordOptions.Keywords.Add("50 gal.");
-          keywordOptions.Keywords.Add("80 gal.");
-          keywordOptions.Keywords.Default = "50 gal.";
-          keywordOptions.AllowNone = false;
-          keywordResult = ed.GetKeywords(keywordOptions);
-          if (keywordResult.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
+      foreach (string blockName in selectedBlockNames) {
+        if (blockName.Contains("%WHSIZE%")) {
+          if (selectedFixtureType.Abbreviation == "WH") {
+            keywordOptions = new PromptKeywordOptions("");
+            keywordOptions.Message = "\nSelect WH size";
+            keywordOptions.Keywords.Add("50 gal.");
+            keywordOptions.Keywords.Add("80 gal.");
+            keywordOptions.Keywords.Default = "50 gal.";
+            keywordOptions.AllowNone = false;
+            keywordResult = ed.GetKeywords(keywordOptions);
+            if (keywordResult.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            string whSize = keywordResult.StringResult;
+            if (whSize.Contains(' ')) {
+              whSize = whSize.Split(' ')[0];
+            }
+            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+              "%WHSIZE%",
+              whSize
+            );
           }
-          string whSize = keywordResult.StringResult;
-          if (whSize.Contains(' ')) {
-            whSize = whSize.Split(' ')[0];
+        }
+        if (blockName.Contains("%FSSIZE%")) {
+          if (selectedFixtureType.Abbreviation == "FS") {
+            keywordOptions = new PromptKeywordOptions("");
+            keywordOptions.Message = "\nSelect FS size";
+            keywordOptions.Keywords.Add("12\"");
+            keywordOptions.Keywords.Add("6\"");
+            keywordOptions.Keywords.Default = "12\"";
+            keywordOptions.AllowNone = false;
+            keywordResult = ed.GetKeywords(keywordOptions);
+            if (keywordResult.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            string fsSize = keywordResult.StringResult.Replace("\"", "");
+            if (fsSize.Contains(' ')) {
+              fsSize = fsSize.Split(' ')[0];
+            }
+            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+             "%FSSIZE%",
+             fsSize
+            );
           }
-          selectedFixtureType.BlockName = selectedFixtureType.BlockName.Replace(
-            "%WHSIZE%",
-            whSize
-          );
+        }
+        if (blockName.Contains("%COSTYLE%")) {
+          if (selectedFixtureType.Abbreviation == "CO") {
+            // Prompt for WCO style
+            keywordOptions = new PromptKeywordOptions("");
+            keywordOptions.Message = "\nSelect CO style";
+            keywordOptions.Keywords.Add("STRAIGHT");
+            keywordOptions.Keywords.Add("ANGLED");
+            keywordOptions.Keywords.Add("FLOOR");
+            keywordOptions.Keywords.Default = "STRAIGHT";
+            keywordOptions.AllowNone = false;
+            keywordResult = ed.GetKeywords(keywordOptions);
+            if (keywordResult.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            string coStyle = keywordResult.StringResult.Replace("\"", "");
+            if (coStyle.Contains(' ')) {
+              coStyle = coStyle.Split(' ')[0];
+            }
+            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+              "%COSTYLE%",
+              coStyle
+            );
+          }
         }
       }
-
-      if (selectedFixtureType.BlockName.Contains("%FSSIZE%")) {
-        if (selectedFixtureType.Abbreviation == "FS") {
-          keywordOptions = new PromptKeywordOptions("");
-          keywordOptions.Message = "\nSelect FS size";
-          keywordOptions.Keywords.Add("12\"");
-          keywordOptions.Keywords.Add("6\"");
-          keywordOptions.Keywords.Default = "12\"";
-          keywordOptions.AllowNone = false;
-          keywordResult = ed.GetKeywords(keywordOptions);
-          if (keywordResult.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
-          }
-          string fsSize = keywordResult.StringResult.Replace("\"", "");
-          if (fsSize.Contains(' ')) {
-            fsSize = fsSize.Split(' ')[0];
-          }
-          selectedFixtureType.BlockName = selectedFixtureType.BlockName.Replace(
-            "%FSSIZE%",
-            fsSize
-          );
-        }
-      }
-      if (selectedFixtureType.BlockName.Contains("%COSTYLE%")) {
-        if (selectedFixtureType.Abbreviation == "CO") {
-          // Prompt for WCO style
-          keywordOptions = new PromptKeywordOptions("");
-          keywordOptions.Message = "\nSelect CO style";
-          keywordOptions.Keywords.Add("STRAIGHT");
-          keywordOptions.Keywords.Add("ANGLED");
-          keywordOptions.Keywords.Add("FLOOR");
-          keywordOptions.Keywords.Default = "STRAIGHT";
-          keywordOptions.AllowNone = false;
-          keywordResult = ed.GetKeywords(keywordOptions);
-          if (keywordResult.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
-          }
-          string coStyle = keywordResult.StringResult.Replace("\"", "");
-          if (coStyle.Contains(' ')) {
-            coStyle = coStyle.Split(' ')[0];
-          }
-          string blockName = selectedFixtureType.BlockName;
-          selectedFixtureType.BlockName = selectedFixtureType.BlockName.Replace(
-            "%COSTYLE%",
-            coStyle
-          );
-        }
-      }
-      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the vertical route from the floor (in feet): ");
+      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the fixture from the floor (in feet): ");
       pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
       double routeHeight = 0;
       while (true) {
