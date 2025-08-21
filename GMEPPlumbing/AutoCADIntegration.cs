@@ -2090,16 +2090,9 @@ namespace GMEPPlumbing
       var routeHeightDisplay = new RouteHeightDisplay(ed);
       routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
-      if (!String.IsNullOrEmpty(selectedFixtureType.BlockName)) {
-        List<string> blockNames = new List<string>();
-        blockNames.Add(selectedFixtureType.BlockName);
-        if (selectedCatalogItem != null && (selectedCatalogItem.Id == 2 || selectedCatalogItem.Id == 3 || selectedCatalogItem.Id == 25)) {
-          blockNames.Add("GMEP PLUMBING GAS OUTPUT");
-        }
-        foreach (string blockName in blockNames) {
-          // ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
+      if (selectedBlockNames.Count() != 0) {
+        foreach (string blockName in selectedBlockNames) {
           ObjectId blockId;
-          //string blockName = selectedFixtureType.BlockName;
           Point3d point;
           double rotation = 0;
           int number = 0;
