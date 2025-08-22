@@ -1940,6 +1940,9 @@ namespace GMEPPlumbing
     [CommandMethod("PF")]
     [CommandMethod("PlumbingFixture")]
     public void PlumbingFixture() {
+      Fixture();
+    }
+    public void Fixture(string fixtureString = null, string catalogString = null, Point3d? placementPoint = null, double? blockRotation = null) {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
     
@@ -1952,23 +1955,27 @@ namespace GMEPPlumbing
       string basePointId = CADObjectCommands.GetActiveView();
 
       List<PlumbingFixtureType> plumbingFixtureTypes = MariaDBService.GetPlumbingFixtureTypes();
+
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
-      keywordOptions.Message = "\nSelect fixture type:";
+      PromptResult keywordResult;
 
-      plumbingFixtureTypes.ForEach(t => {
-        keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
-      });
-      keywordOptions.Keywords.Default = "WC - Water Closet";
-      keywordOptions.AllowNone = false;
-      PromptResult keywordResult = ed.GetKeywords(keywordOptions);
+      if (fixtureString == null) {
+        keywordOptions.Message = "\nSelect fixture type:";
+        plumbingFixtureTypes.ForEach(t => {
+          keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
+        });
+        keywordOptions.Keywords.Default = "WC - Water Closet";
+        keywordOptions.AllowNone = false;
+        keywordResult = ed.GetKeywords(keywordOptions);
 
-      if (keywordResult.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nCommand cancelled.");
-        return;
+        if (keywordResult.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+       fixtureString = keywordResult.StringResult;
       }
-      string keywordResultString = keywordResult.StringResult;
       PlumbingFixtureType selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t =>
-        keywordResultString.StartsWith(t.Abbreviation)
+        fixtureString.StartsWith(t.Abbreviation)
       );
       if (selectedFixtureType == null) {
         selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t => t.Abbreviation == "WC");
@@ -1979,30 +1986,32 @@ namespace GMEPPlumbing
         List<PlumbingFixtureCatalogItem> plumbingFixtureCatalogItems =
           MariaDBService.GetPlumbingFixtureCatalogItemsByType(selectedFixtureType.Id);
 
-        keywordOptions = new PromptKeywordOptions("");
-        keywordOptions.Message = "\nSelect catalog item:";
-        plumbingFixtureCatalogItems.ForEach(i => {
-          keywordOptions.Keywords.Add(
-            i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model
-          );
-        });
+        if (catalogString == null) {
+          keywordOptions = new PromptKeywordOptions("");
+          keywordOptions.Message = "\nSelect catalog item:";
+          plumbingFixtureCatalogItems.ForEach(i => {
+            keywordOptions.Keywords.Add(
+              i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model
+            );
+          });
 
-        keywordOptions.Keywords.Default =
-          plumbingFixtureCatalogItems[0].Id.ToString()
-          + " - "
-          + plumbingFixtureCatalogItems[0].Description
-          + " - "
-          + plumbingFixtureCatalogItems[0].Make
-          + " "
-          + plumbingFixtureCatalogItems[0].Model;
-        keywordResult = ed.GetKeywords(keywordOptions);
+          keywordOptions.Keywords.Default =
+            plumbingFixtureCatalogItems[0].Id.ToString()
+            + " - "
+            + plumbingFixtureCatalogItems[0].Description
+            + " - "
+            + plumbingFixtureCatalogItems[0].Make
+            + " "
+            + plumbingFixtureCatalogItems[0].Model;
+          keywordResult = ed.GetKeywords(keywordOptions);
 
-        keywordResultString = keywordResult.StringResult;
-        if (keywordResultString.Contains(' ')) {
-          keywordResultString = keywordResultString.Split(' ')[0];
+          catalogString = keywordResult.StringResult;
+        }
+        if (catalogString.Contains(' ')) {
+          catalogString = catalogString.Split(' ')[0];
         }
         selectedCatalogItem = plumbingFixtureCatalogItems.FirstOrDefault(
-          i => i.Id.ToString() == keywordResultString
+          i => i.Id.ToString() == catalogString
         );
       }
       int flowTypeId = 1;
@@ -2153,25 +2162,38 @@ namespace GMEPPlumbing
             using (Transaction tr = db.TransactionManager.StartTransaction()) {
               BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
               BlockTableRecord btr;
-              BlockReference br = CADObjectCommands.CreateBlockReference(
-                tr,
-                bt,
-                blockName,
-                "Plumbing Fixture " + selectedFixtureType.Name,
-                out btr,
-                out point
-              );
 
+              BlockReference br = null;
+              if (placementPoint == null) {
+                br = CADObjectCommands.CreateBlockReference(
+                  tr,
+                  bt,
+                  blockName,
+                  "Plumbing Fixture " + selectedFixtureType.Name,
+                  out btr,
+                  out point
+                );
+              }
+              else {
+                btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                br = new BlockReference((Point3d)placementPoint, btr.ObjectId);
+                point = (Point3d)placementPoint;
+              }
               if (br != null) {
                 BlockTableRecord curSpace = (BlockTableRecord)
                   tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-                RotateJig rotateJig = new RotateJig(br);
-                PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
-                if (rotatePromptResult.Status != PromptStatus.OK) {
-                  ed.WriteMessage("\nRotation cancelled.");
-                  routeHeightDisplay.Disable();
-                  return;
+                if (blockRotation == null) {
+                  RotateJig rotateJig = new RotateJig(br);
+                  PromptResult rotatePromptResult = ed.Drag(rotateJig);
+                  if (rotatePromptResult.Status != PromptStatus.OK) {
+                    ed.WriteMessage("\nRotation cancelled.");
+                    routeHeightDisplay.Disable();
+                    return;
+                  }
+                }
+                else {
+                  br.Rotation = blockRotation.Value;
                 }
                 br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
                 rotation = br.Rotation;
@@ -2255,6 +2277,7 @@ namespace GMEPPlumbing
             if (blockName == "GMEP DRAIN") {
               //logic to attach vent
               Point3d ventPoint = VerticalRoute("Vent", routeHeight);
+              Fixture("VS", "catalogString", ventPoint, 0);
               SpecializedHorizontalRoute(
                 ventPoint, ventPoint, "Vent", "", routeHeight
               );
