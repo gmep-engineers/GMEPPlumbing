@@ -1942,7 +1942,7 @@ namespace GMEPPlumbing
     public void PlumbingFixture() {
       Fixture();
     }
-    public void Fixture(string fixtureString = null, string catalogString = null, Point3d? placementPoint = null, double? blockRotation = null) {
+    public void Fixture(string fixtureString = null, string catalogString = null, Point3d? placementPoint = null, double? blockRotation = null, double? routeHeight = null) {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
     
@@ -2114,42 +2114,44 @@ namespace GMEPPlumbing
           }
         }
       }
-      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the fixture from the floor (in feet): ");
-      pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
-      double routeHeight = 0;
-      while (true) {
-        try {
-          PromptDoubleResult pdr = ed.GetDouble(pdo);
-          if (pdr.Status == PromptStatus.Cancel) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
+      if (routeHeight == null) {
+        PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the fixture from the floor (in feet): ");
+        pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
+        routeHeight = 0;
+        while (true) {
+          try {
+            PromptDoubleResult pdr = ed.GetDouble(pdo);
+            if (pdr.Status == PromptStatus.Cancel) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            if (pdr.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+              continue;
+            }
+            routeHeight = pdr.Value;
+            // GetHeightLimits returns Tuple<double, double> (min, max)
+            var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+            double minHeight = heightLimits.Item1;
+            double maxHeight = heightLimits.Item2;
+            if (routeHeight < minHeight || routeHeight > maxHeight) {
+              ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
+              pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
+              continue;
+            }
+            break; // Valid input
           }
-          if (pdr.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+          catch (System.Exception ex) {
+            ed.WriteMessage($"\nError: {ex.Message}");
             continue;
           }
-          routeHeight = pdr.Value;
-          // GetHeightLimits returns Tuple<double, double> (min, max)
-          var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
-          double minHeight = heightLimits.Item1;
-          double maxHeight = heightLimits.Item2;
-          if (routeHeight < minHeight || routeHeight > maxHeight) {
-            ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
-            pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
-            continue;
-          }
-          break; // Valid input
-        }
-        catch (System.Exception ex) {
-          ed.WriteMessage($"\nError: {ex.Message}");
-          continue;
         }
       }
       PlumbingFixture plumbingFixture = null;
-      double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
+      double zIndex = ((double)routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
 
       var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+      routeHeightDisplay.Enable((double)routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       if (selectedBlockNames.Count() != 0) {
         foreach (string blockName in selectedBlockNames) {
@@ -2276,10 +2278,10 @@ namespace GMEPPlumbing
 
             if (blockName == "GMEP DRAIN") {
               //logic to attach vent
-              Point3d ventPoint = VerticalRoute("Vent", routeHeight);
-              Fixture("VS", "catalogString", ventPoint, 0);
+              Point3d ventPoint = VerticalRoute("Vent", (double)routeHeight);
+              Fixture("VS", "32", ventPoint, 0, (double)routeHeight);
               SpecializedHorizontalRoute(
-                ventPoint, ventPoint, "Vent", "", routeHeight
+                ventPoint, ventPoint, "Vent", "", (double)routeHeight
               );
             }
             else  if (blockName == "GMEP CW FIXTURE POINT") {
