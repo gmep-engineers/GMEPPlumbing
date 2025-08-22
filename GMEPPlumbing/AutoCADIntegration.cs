@@ -35,6 +35,7 @@ using Line = Autodesk.AutoCAD.DatabaseServices.Line;
 using static MongoDB.Bson.Serialization.Serializers.SerializerHelper;
 using Google.Protobuf.WellKnownTypes;
 using GMEPPlumbing.Tools;
+using MySqlX.XDevAPI.Common;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
@@ -401,8 +402,6 @@ namespace GMEPPlumbing
           tr.AddNewlyCreatedDBObject(line, true);
           addedLineId = line.ObjectId;
 
-          //PropagateUpRouteInfo(tr, layer, LineGUID);
-
           tr.Commit();
         }
         routeGUIDS.Add(LineGUID);
@@ -411,15 +410,67 @@ namespace GMEPPlumbing
       }
       routeHeightDisplay.Disable();
     }
+    public async void SpecializedHorizontalRoute(Point3d startPoint, Point3d endPoint, string type, string pipeType, double height) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      //double routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
+      double zIndex = (height + CADObjectCommands.ActiveFloorHeight) * 12;
+      ObjectId addedLineId = ObjectId.Null;
+      string LineGUID = Guid.NewGuid().ToString();
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+        Line line = new Line();
+        line.StartPoint = new Point3d(startPoint.X, startPoint.Y, zIndex);
+        line.EndPoint = new Point3d(endPoint.X, endPoint.Y, zIndex);
+
+        string layer = "";
+
+        switch (type) {
+          case "HotWater":
+            layer = "P-DOMW-HOTW";
+            break;
+          case "ColdWater":
+            layer = "P-DOMW-CWTR";
+            break;
+          case "Gas":
+            layer = "P-GAS";
+            break;
+          case "Waste":
+            layer = "P-GREASE-WASTE";
+            break;
+          case "Vent":
+            layer = "P-WV-VENT";
+            break;
+          /*case "Storm":
+              layer = "GMEP_PLUMBING_STORM";
+              break;*/
+          default:
+            ed.WriteMessage("\nInvalid route type selected.");
+            return;
+        }
+
+        line.Layer = layer;
+        btr.AppendEntity(line);
+        tr.AddNewlyCreatedDBObject(line, true);
+        addedLineId = line.ObjectId;
+        tr.Commit();
+      }
+      AttachRouteXData(addedLineId, LineGUID, CADObjectCommands.GetActiveView(), pipeType);
+      //AddArrowsToLine(addedLineId, LineGUID);
+    }
 
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
       // Call the method with a null parameter to avoid ambiguity
       VerticalRoute();
     }
-    public async void VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null) {
+    public Point3d VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null) {
       var doc = Application.DocumentManager.MdiActiveDocument;
-      if (doc == null) return;
+      if (doc == null) return Point3d.Origin;
 
       var db = doc.Database;
       var ed = doc.Editor;
@@ -459,7 +510,7 @@ namespace GMEPPlumbing
         PromptResult pr = ed.GetKeywords(pko);
         if (pr.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
-          return;
+          return Point3d.Origin;
         }
         type = pr.StringResult;
       }
@@ -486,7 +537,7 @@ namespace GMEPPlumbing
            break;*/
         default:
           ed.WriteMessage("\nInvalid route type selected.");
-          return;
+          return Point3d.Origin;
       }
       PromptKeywordOptions pko2 = new PromptKeywordOptions("\nSelect Pipe Type: ");
       pko2.Keywords.Add("PEX");
@@ -506,7 +557,7 @@ namespace GMEPPlumbing
             PromptDoubleResult pdr = ed.GetDouble(pdo);
             if (pdr.Status == PromptStatus.Cancel) {
               ed.WriteMessage("\nCommand cancelled.");
-              return;
+              return Point3d.Origin;
             }
             if (pdr.Status != PromptStatus.OK) {
               ed.WriteMessage("\nInvalid input. Please enter a valid number.");
@@ -674,7 +725,7 @@ namespace GMEPPlumbing
           else {
             ed.WriteMessage("\nFailed to create vertical route block reference.");
             routeHeightDisplay.Disable();
-            return;
+            return Point3d.Origin;
           }
         }
 
@@ -693,7 +744,7 @@ namespace GMEPPlumbing
         if (endFloorResult.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
           routeHeightDisplay.Disable();
-          return;
+          return Point3d.Origin;
         }
         endFloor = int.Parse(endFloorResult.StringResult);
       }
@@ -747,7 +798,7 @@ namespace GMEPPlumbing
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
           if (rotatePromptResult.Status != PromptStatus.OK) {
-            return;
+            return Point3d.Origin;
           }
           upBlockRef2.Position = new Point3d(newUpPointLocation2.X, newUpPointLocation2.Y, zIndex);
           labelPoint = upBlockRef2.Position;
@@ -851,7 +902,7 @@ namespace GMEPPlumbing
               }
               else if (promptDoubleResult.Status == PromptStatus.Cancel) {
                 ed.WriteMessage("\nCommand cancelled.");
-                return;
+                return Point3d.Origin;
               }
               else if (promptDoubleResult.Status == PromptStatus.Error) {
                 ed.WriteMessage("\nError in input. Please try again.");
@@ -871,7 +922,7 @@ namespace GMEPPlumbing
           RotateJig rotateJig2 = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
           if (rotatePromptResult2.Status != PromptStatus.OK) {
-            return;
+            return Point3d.Origin;
           }
           upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, (floorHeights[(int)endFloor] + height)*12);
 
@@ -928,7 +979,7 @@ namespace GMEPPlumbing
           RotateJig rotateJig = new RotateJig(upBlockRef2);
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
           if (rotatePromptResult.Status != PromptStatus.OK) {
-            return;
+            return Point3d.Origin;
           }
           upBlockRef2.Position = new Point3d(newUpPointLocation2.X, newUpPointLocation2.Y, zIndex);
           upBlockRef2.Layer = layer;
@@ -1030,7 +1081,7 @@ namespace GMEPPlumbing
             }
             else if (promptDoubleResult.Status == PromptStatus.Cancel) {
               ed.WriteMessage("\nCommand cancelled.");
-              return;
+              return Point3d.Origin;
             }
             else if (promptDoubleResult.Status == PromptStatus.Error) {
               ed.WriteMessage("\nError in input. Please try again.");
@@ -1048,7 +1099,7 @@ namespace GMEPPlumbing
           RotateJig rotateJig2 = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
           if (rotatePromptResult2.Status != PromptStatus.OK) {
-            return;
+            return Point3d.Origin;
           }
           upBlockRef3.Layer = layer;
           upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, (floorHeights[(int)endFloor] + height) * 12);
@@ -1096,7 +1147,7 @@ namespace GMEPPlumbing
           if (pr3.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
             routeHeightDisplay.Disable();
-            return;
+            return Point3d.Origin;
           }
           direction = pr3.StringResult;
         }
@@ -1147,7 +1198,7 @@ namespace GMEPPlumbing
             }
             else if (pdr2.Status == PromptStatus.Cancel) {
               ed.WriteMessage("\nCommand cancelled.");
-              return;
+              return Point3d.Origin;
             }
             break;
           }
@@ -1191,7 +1242,7 @@ namespace GMEPPlumbing
           RotateJig rotateJig = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
           if (rotatePromptResult.Status != PromptStatus.OK) {
-            return;
+            return Point3d.Origin;
           }
           if (direction == "Up") {
             zIndex += (double)length * 12;
@@ -1237,6 +1288,7 @@ namespace GMEPPlumbing
         MakeVerticalRouteLabel(labelPoint3, direction.ToUpper());
       }
       SettingObjects = false;
+      return StartUpLocation;
     }
 
     [CommandMethod("SETPLUMBINGBASEPOINT")]
@@ -2109,6 +2161,7 @@ namespace GMEPPlumbing
                 out btr,
                 out point
               );
+
               if (br != null) {
                 BlockTableRecord curSpace = (BlockTableRecord)
                   tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
@@ -2199,7 +2252,24 @@ namespace GMEPPlumbing
               flowTypeId
             );
 
-            
+            if (blockName == "GMEP DRAIN") {
+              //logic to attach vent
+              Point3d ventPoint = VerticalRoute("Vent", routeHeight);
+              SpecializedHorizontalRoute(
+                ventPoint, ventPoint, "Vent", "", routeHeight
+              );
+            }
+            else  if (blockName == "GMEP CW FIXTURE POINT") {
+              if (flowTypeId == 1) {
+                //flush valve placement logic
+              }
+              else if (flowTypeId == 2) {
+                //flush tank placement 
+              }
+            }
+            else if (blockName == "GMEP HW FIXTURE POINT") {
+
+            }
           }
           catch (System.Exception ex) {
             ed.WriteMessage(ex.ToString());
