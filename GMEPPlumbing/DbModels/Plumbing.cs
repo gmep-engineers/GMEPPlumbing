@@ -52,19 +52,22 @@ namespace GMEPPlumbing {
     public int Id;
     public string Name;
     public string Abbreviation;
-    public string BlockName;
+    public string WaterBlockNames;
+    public string WasteBlockNames;
 
 
     public PlumbingFixtureType(
       int id,
       string name,
       string abbreviation,
-      string blockName
+      string waterBlockNames,
+      string wasteBlockNames
     ) {
       Id = id;
       Name = name;
       Abbreviation = abbreviation;
-      BlockName = blockName;
+      WaterBlockNames = waterBlockNames;
+      WasteBlockNames = wasteBlockNames;
     }
   }
   public class PlumbingFullRoute {

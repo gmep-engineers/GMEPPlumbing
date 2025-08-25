@@ -35,6 +35,7 @@ using Line = Autodesk.AutoCAD.DatabaseServices.Line;
 using static MongoDB.Bson.Serialization.Serializers.SerializerHelper;
 using Google.Protobuf.WellKnownTypes;
 using GMEPPlumbing.Tools;
+using MySqlX.XDevAPI.Common;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
@@ -177,13 +178,36 @@ namespace GMEPPlumbing
           ed.WriteMessage("\nInvalid route type selected.");
           return;
       }
-      PromptKeywordOptions pko3 = new PromptKeywordOptions("\nSelect Pipe Type: ");
-      pko3.Keywords.Add("PEX");
-      pko3.Keywords.Add("CPVC SCH80");
-      pko3.Keywords.Add("CPVC SDR II");
-      pko3.Keywords.Add("Copper Type L");
-      PromptResult pr3 = ed.GetKeywords(pko3);
-      string pipeType = pr3.StringResult;
+      string pipeType = "";
+      if (result == "ColdWater" || result == "HotWater") {
+        PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
+        pko1.Keywords.Add("Copper Type L");
+        pko1.Keywords.Add("CPVC SCH80");
+        pko1.Keywords.Add("CPVC SDR II");
+        pko1.Keywords.Add("PEX");
+        PromptResult pr1 = ed.GetKeywords(pko1);
+        if (pr1.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+        pipeType = pr1.StringResult;
+      }
+      else if (result == "Gas") {
+        PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
+        pko1.Keywords.Add("Semi-Rigid Copper Tubing");
+        pko1.Keywords.Add("Schedule 40 Metallic Pipe");
+        pko1.Keywords.Add("Corrugated Stainless Steel Tubing");
+        pko1.Keywords.Add("Polyethylene Plastic Pipe");
+        PromptResult pr1 = ed.GetKeywords(pko1);
+        if (pr1.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+        pipeType = pr1.StringResult;
+      }
+    
+
+
 
       PromptKeywordOptions pko2 = new PromptKeywordOptions("\nForward or Backward?");
       pko2.Keywords.Add("Forward");
@@ -378,8 +402,6 @@ namespace GMEPPlumbing
           tr.AddNewlyCreatedDBObject(line, true);
           addedLineId = line.ObjectId;
 
-          //PropagateUpRouteInfo(tr, layer, LineGUID);
-
           tr.Commit();
         }
         routeGUIDS.Add(LineGUID);
@@ -388,15 +410,67 @@ namespace GMEPPlumbing
       }
       routeHeightDisplay.Disable();
     }
+    public async void SpecializedHorizontalRoute(Point3d startPoint, Point3d endPoint, string type, string pipeType, double height) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      //double routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
+      double zIndex = (height + CADObjectCommands.ActiveFloorHeight) * 12;
+      ObjectId addedLineId = ObjectId.Null;
+      string LineGUID = Guid.NewGuid().ToString();
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+        Line line = new Line();
+        line.StartPoint = new Point3d(startPoint.X, startPoint.Y, zIndex);
+        line.EndPoint = new Point3d(endPoint.X, endPoint.Y, zIndex);
+
+        string layer = "";
+
+        switch (type) {
+          case "HotWater":
+            layer = "P-DOMW-HOTW";
+            break;
+          case "ColdWater":
+            layer = "P-DOMW-CWTR";
+            break;
+          case "Gas":
+            layer = "P-GAS";
+            break;
+          case "Waste":
+            layer = "P-GREASE-WASTE";
+            break;
+          case "Vent":
+            layer = "P-WV-VENT";
+            break;
+          /*case "Storm":
+              layer = "GMEP_PLUMBING_STORM";
+              break;*/
+          default:
+            ed.WriteMessage("\nInvalid route type selected.");
+            return;
+        }
+
+        line.Layer = layer;
+        btr.AppendEntity(line);
+        tr.AddNewlyCreatedDBObject(line, true);
+        addedLineId = line.ObjectId;
+        tr.Commit();
+      }
+      AttachRouteXData(addedLineId, LineGUID, CADObjectCommands.GetActiveView(), pipeType);
+      //AddArrowsToLine(addedLineId, LineGUID);
+    }
 
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
       // Call the method with a null parameter to avoid ambiguity
       VerticalRoute();
     }
-    public async void VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null) {
+    public Point3d VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null) {
       var doc = Application.DocumentManager.MdiActiveDocument;
-      if (doc == null) return;
+      if (doc == null) return Point3d.Origin;
 
       var db = doc.Database;
       var ed = doc.Editor;
@@ -436,7 +510,7 @@ namespace GMEPPlumbing
         PromptResult pr = ed.GetKeywords(pko);
         if (pr.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
-          return;
+          return Point3d.Origin;
         }
         type = pr.StringResult;
       }
@@ -463,7 +537,7 @@ namespace GMEPPlumbing
            break;*/
         default:
           ed.WriteMessage("\nInvalid route type selected.");
-          return;
+          return Point3d.Origin;
       }
       PromptKeywordOptions pko2 = new PromptKeywordOptions("\nSelect Pipe Type: ");
       pko2.Keywords.Add("PEX");
@@ -483,7 +557,7 @@ namespace GMEPPlumbing
             PromptDoubleResult pdr = ed.GetDouble(pdo);
             if (pdr.Status == PromptStatus.Cancel) {
               ed.WriteMessage("\nCommand cancelled.");
-              return;
+              return Point3d.Origin;
             }
             if (pdr.Status != PromptStatus.OK) {
               ed.WriteMessage("\nInvalid input. Please enter a valid number.");
@@ -651,7 +725,7 @@ namespace GMEPPlumbing
           else {
             ed.WriteMessage("\nFailed to create vertical route block reference.");
             routeHeightDisplay.Disable();
-            return;
+            return Point3d.Origin;
           }
         }
 
@@ -670,7 +744,7 @@ namespace GMEPPlumbing
         if (endFloorResult.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
           routeHeightDisplay.Disable();
-          return;
+          return Point3d.Origin;
         }
         endFloor = int.Parse(endFloorResult.StringResult);
       }
@@ -724,7 +798,7 @@ namespace GMEPPlumbing
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
           if (rotatePromptResult.Status != PromptStatus.OK) {
-            return;
+            return Point3d.Origin;
           }
           upBlockRef2.Position = new Point3d(newUpPointLocation2.X, newUpPointLocation2.Y, zIndex);
           labelPoint = upBlockRef2.Position;
@@ -828,7 +902,7 @@ namespace GMEPPlumbing
               }
               else if (promptDoubleResult.Status == PromptStatus.Cancel) {
                 ed.WriteMessage("\nCommand cancelled.");
-                return;
+                return Point3d.Origin;
               }
               else if (promptDoubleResult.Status == PromptStatus.Error) {
                 ed.WriteMessage("\nError in input. Please try again.");
@@ -848,7 +922,7 @@ namespace GMEPPlumbing
           RotateJig rotateJig2 = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
           if (rotatePromptResult2.Status != PromptStatus.OK) {
-            return;
+            return Point3d.Origin;
           }
           upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, (floorHeights[(int)endFloor] + height)*12);
 
@@ -905,7 +979,7 @@ namespace GMEPPlumbing
           RotateJig rotateJig = new RotateJig(upBlockRef2);
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
           if (rotatePromptResult.Status != PromptStatus.OK) {
-            return;
+            return Point3d.Origin;
           }
           upBlockRef2.Position = new Point3d(newUpPointLocation2.X, newUpPointLocation2.Y, zIndex);
           upBlockRef2.Layer = layer;
@@ -1007,7 +1081,7 @@ namespace GMEPPlumbing
             }
             else if (promptDoubleResult.Status == PromptStatus.Cancel) {
               ed.WriteMessage("\nCommand cancelled.");
-              return;
+              return Point3d.Origin;
             }
             else if (promptDoubleResult.Status == PromptStatus.Error) {
               ed.WriteMessage("\nError in input. Please try again.");
@@ -1025,7 +1099,7 @@ namespace GMEPPlumbing
           RotateJig rotateJig2 = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
           if (rotatePromptResult2.Status != PromptStatus.OK) {
-            return;
+            return Point3d.Origin;
           }
           upBlockRef3.Layer = layer;
           upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, (floorHeights[(int)endFloor] + height) * 12);
@@ -1073,7 +1147,7 @@ namespace GMEPPlumbing
           if (pr3.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
             routeHeightDisplay.Disable();
-            return;
+            return Point3d.Origin;
           }
           direction = pr3.StringResult;
         }
@@ -1124,7 +1198,7 @@ namespace GMEPPlumbing
             }
             else if (pdr2.Status == PromptStatus.Cancel) {
               ed.WriteMessage("\nCommand cancelled.");
-              return;
+              return Point3d.Origin;
             }
             break;
           }
@@ -1168,9 +1242,9 @@ namespace GMEPPlumbing
           RotateJig rotateJig = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
           if (rotatePromptResult.Status != PromptStatus.OK) {
-            return;
+            return Point3d.Origin;
           }
-          if (direction == "Up") {
+          if (direction == "Up" || direction == "UpToCeiling") {
             zIndex += (double)length * 12;
           }
           upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, zIndex);
@@ -1214,6 +1288,7 @@ namespace GMEPPlumbing
         MakeVerticalRouteLabel(labelPoint3, direction.ToUpper());
       }
       SettingObjects = false;
+      return StartUpLocation;
     }
 
     [CommandMethod("SETPLUMBINGBASEPOINT")]
@@ -1865,6 +1940,9 @@ namespace GMEPPlumbing
     [CommandMethod("PF")]
     [CommandMethod("PlumbingFixture")]
     public void PlumbingFixture() {
+      Fixture();
+    }
+    public void Fixture(string fixtureString = null, string catalogString = null, Point3d? placementPoint = null, double? blockRotation = null, double? routeHeight = null) {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
     
@@ -1877,23 +1955,27 @@ namespace GMEPPlumbing
       string basePointId = CADObjectCommands.GetActiveView();
 
       List<PlumbingFixtureType> plumbingFixtureTypes = MariaDBService.GetPlumbingFixtureTypes();
+
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
-      keywordOptions.Message = "\nSelect fixture type:";
+      PromptResult keywordResult;
 
-      plumbingFixtureTypes.ForEach(t => {
-        keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
-      });
-      keywordOptions.Keywords.Default = "WC - Water Closet";
-      keywordOptions.AllowNone = false;
-      PromptResult keywordResult = ed.GetKeywords(keywordOptions);
+      if (fixtureString == null) {
+        keywordOptions.Message = "\nSelect fixture type:";
+        plumbingFixtureTypes.ForEach(t => {
+          keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
+        });
+        keywordOptions.Keywords.Default = "WC - Water Closet";
+        keywordOptions.AllowNone = false;
+        keywordResult = ed.GetKeywords(keywordOptions);
 
-      if (keywordResult.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nCommand cancelled.");
-        return;
+        if (keywordResult.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+       fixtureString = keywordResult.StringResult;
       }
-      string keywordResultString = keywordResult.StringResult;
       PlumbingFixtureType selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t =>
-        keywordResultString.StartsWith(t.Abbreviation)
+        fixtureString.StartsWith(t.Abbreviation)
       );
       if (selectedFixtureType == null) {
         selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t => t.Abbreviation == "WC");
@@ -1904,162 +1986,176 @@ namespace GMEPPlumbing
         List<PlumbingFixtureCatalogItem> plumbingFixtureCatalogItems =
           MariaDBService.GetPlumbingFixtureCatalogItemsByType(selectedFixtureType.Id);
 
-        keywordOptions = new PromptKeywordOptions("");
-        keywordOptions.Message = "\nSelect catalog item:";
-        plumbingFixtureCatalogItems.ForEach(i => {
-          keywordOptions.Keywords.Add(
-            i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model
-          );
-        });
+        if (catalogString == null) {
+          keywordOptions = new PromptKeywordOptions("");
+          keywordOptions.Message = "\nSelect catalog item:";
+          plumbingFixtureCatalogItems.ForEach(i => {
+            keywordOptions.Keywords.Add(
+              i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model
+            );
+          });
 
-        keywordOptions.Keywords.Default =
-          plumbingFixtureCatalogItems[0].Id.ToString()
-          + " - "
-          + plumbingFixtureCatalogItems[0].Description
-          + " - "
-          + plumbingFixtureCatalogItems[0].Make
-          + " "
-          + plumbingFixtureCatalogItems[0].Model;
-        keywordResult = ed.GetKeywords(keywordOptions);
+          keywordOptions.Keywords.Default =
+            plumbingFixtureCatalogItems[0].Id.ToString()
+            + " - "
+            + plumbingFixtureCatalogItems[0].Description
+            + " - "
+            + plumbingFixtureCatalogItems[0].Make
+            + " "
+            + plumbingFixtureCatalogItems[0].Model;
+          keywordResult = ed.GetKeywords(keywordOptions);
 
-        keywordResultString = keywordResult.StringResult;
-        if (keywordResultString.Contains(' ')) {
-          keywordResultString = keywordResultString.Split(' ')[0];
+          catalogString = keywordResult.StringResult;
+        }
+        if (catalogString.Contains(' ')) {
+          catalogString = catalogString.Split(' ')[0];
         }
         selectedCatalogItem = plumbingFixtureCatalogItems.FirstOrDefault(
-          i => i.Id.ToString() == keywordResultString
+          i => i.Id.ToString() == catalogString
         );
       }
-      PromptKeywordOptions keywordOptions2 = new PromptKeywordOptions("");
-      keywordOptions2.Message = "\nSelect the flow type for the fixture:";
-      keywordOptions2.Keywords.Add("Flush Tank");
-      keywordOptions2.Keywords.Add("Flush Valve");
-      keywordOptions2.Keywords.Default = "Flush Tank";
-      keywordOptions2.AllowNone = false;
-      PromptResult keywordResult2 = ed.GetKeywords(keywordOptions2);
-      int flowTypeId = 0;
-      flowTypeId = keywordResult2.StringResult == "Flush Tank" ? 1 : 2;
+      int flowTypeId = 1;
+      if (selectedFixtureType.Abbreviation == "WC") {
+        PromptKeywordOptions keywordOptions2 = new PromptKeywordOptions("");
+        keywordOptions2.Message = "\nSelect the flow type for the fixture:";
+        keywordOptions2.Keywords.Add("Flush Tank");
+        keywordOptions2.Keywords.Add("Flush Valve");
+        keywordOptions2.Keywords.Default = "Flush Tank";
+        keywordOptions2.AllowNone = false;
+        PromptResult keywordResult2 = ed.GetKeywords(keywordOptions2);
+        flowTypeId = keywordResult2.StringResult == "Flush Tank" ? 1 : 2;
+      }
+      else if (selectedFixtureType.Abbreviation == "U") {
+        flowTypeId = 2;
+      }
+      List<string> selectedBlockNames = new List<string>();
+      string viewType = GetPlumbingBasePointsFromCAD(ProjectId).Where(bp => bp.Id == basePointId).First().Type;
+      if (viewType.Contains("Water")) {
+        selectedBlockNames.AddRange(selectedFixtureType.WaterBlockNames.Split(','));
+      }
+      if (viewType.Contains("Gas")) {
+        //selectedBlockNames.AddRange(selectedFixtureType.WaterBlockNames.Split(','));
+      }
+      if (viewType.Contains("Sewer-Vent")) {
+        selectedBlockNames.AddRange(selectedFixtureType.WasteBlockNames.Split(','));
+      }
+      selectedBlockNames = selectedBlockNames.Distinct().ToList();
 
-      if (selectedFixtureType.BlockName.Contains("%WHSIZE%")) {
-        if (selectedFixtureType.Abbreviation == "WH") {
-          keywordOptions = new PromptKeywordOptions("");
-          keywordOptions.Message = "\nSelect WH size";
-          keywordOptions.Keywords.Add("50 gal.");
-          keywordOptions.Keywords.Add("80 gal.");
-          keywordOptions.Keywords.Default = "50 gal.";
-          keywordOptions.AllowNone = false;
-          keywordResult = ed.GetKeywords(keywordOptions);
-          if (keywordResult.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
+      foreach (string blockName in selectedBlockNames) {
+        if (blockName.Contains("%WHSIZE%")) {
+          if (selectedFixtureType.Abbreviation == "WH") {
+            keywordOptions = new PromptKeywordOptions("");
+            keywordOptions.Message = "\nSelect WH size";
+            keywordOptions.Keywords.Add("50 gal.");
+            keywordOptions.Keywords.Add("80 gal.");
+            keywordOptions.Keywords.Default = "50 gal.";
+            keywordOptions.AllowNone = false;
+            keywordResult = ed.GetKeywords(keywordOptions);
+            if (keywordResult.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            string whSize = keywordResult.StringResult;
+            if (whSize.Contains(' ')) {
+              whSize = whSize.Split(' ')[0];
+            }
+            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+              "%WHSIZE%",
+              whSize
+            );
           }
-          string whSize = keywordResult.StringResult;
-          if (whSize.Contains(' ')) {
-            whSize = whSize.Split(' ')[0];
+        }
+        if (blockName.Contains("%FSSIZE%")) {
+          if (selectedFixtureType.Abbreviation == "FS") {
+            keywordOptions = new PromptKeywordOptions("");
+            keywordOptions.Message = "\nSelect FS size";
+            keywordOptions.Keywords.Add("12\"");
+            keywordOptions.Keywords.Add("6\"");
+            keywordOptions.Keywords.Default = "12\"";
+            keywordOptions.AllowNone = false;
+            keywordResult = ed.GetKeywords(keywordOptions);
+            if (keywordResult.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            string fsSize = keywordResult.StringResult.Replace("\"", "");
+            if (fsSize.Contains(' ')) {
+              fsSize = fsSize.Split(' ')[0];
+            }
+            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+             "%FSSIZE%",
+             fsSize
+            );
           }
-          selectedFixtureType.BlockName = selectedFixtureType.BlockName.Replace(
-            "%WHSIZE%",
-            whSize
-          );
+        }
+        if (blockName.Contains("%COSTYLE%")) {
+          if (selectedFixtureType.Abbreviation == "CO") {
+            // Prompt for WCO style
+            keywordOptions = new PromptKeywordOptions("");
+            keywordOptions.Message = "\nSelect CO style";
+            keywordOptions.Keywords.Add("STRAIGHT");
+            keywordOptions.Keywords.Add("ANGLED");
+            keywordOptions.Keywords.Add("FLOOR");
+            keywordOptions.Keywords.Default = "STRAIGHT";
+            keywordOptions.AllowNone = false;
+            keywordResult = ed.GetKeywords(keywordOptions);
+            if (keywordResult.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            string coStyle = keywordResult.StringResult.Replace("\"", "");
+            if (coStyle.Contains(' ')) {
+              coStyle = coStyle.Split(' ')[0];
+            }
+            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+              "%COSTYLE%",
+              coStyle
+            );
+          }
         }
       }
-
-      if (selectedFixtureType.BlockName.Contains("%FSSIZE%")) {
-        if (selectedFixtureType.Abbreviation == "FS") {
-          keywordOptions = new PromptKeywordOptions("");
-          keywordOptions.Message = "\nSelect FS size";
-          keywordOptions.Keywords.Add("12\"");
-          keywordOptions.Keywords.Add("6\"");
-          keywordOptions.Keywords.Default = "12\"";
-          keywordOptions.AllowNone = false;
-          keywordResult = ed.GetKeywords(keywordOptions);
-          if (keywordResult.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
+      if (routeHeight == null) {
+        PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the fixture from the floor (in feet): ");
+        pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
+        routeHeight = 0;
+        while (true) {
+          try {
+            PromptDoubleResult pdr = ed.GetDouble(pdo);
+            if (pdr.Status == PromptStatus.Cancel) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            if (pdr.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+              continue;
+            }
+            routeHeight = pdr.Value;
+            // GetHeightLimits returns Tuple<double, double> (min, max)
+            var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+            double minHeight = heightLimits.Item1;
+            double maxHeight = heightLimits.Item2;
+            if (routeHeight < minHeight || routeHeight > maxHeight) {
+              ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
+              pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
+              continue;
+            }
+            break; // Valid input
           }
-          string fsSize = keywordResult.StringResult.Replace("\"", "");
-          if (fsSize.Contains(' ')) {
-            fsSize = fsSize.Split(' ')[0];
-          }
-          selectedFixtureType.BlockName = selectedFixtureType.BlockName.Replace(
-            "%FSSIZE%",
-            fsSize
-          );
-        }
-      }
-      if (selectedFixtureType.BlockName.Contains("%COSTYLE%")) {
-        if (selectedFixtureType.Abbreviation == "CO") {
-          // Prompt for WCO style
-          keywordOptions = new PromptKeywordOptions("");
-          keywordOptions.Message = "\nSelect CO style";
-          keywordOptions.Keywords.Add("STRAIGHT");
-          keywordOptions.Keywords.Add("ANGLED");
-          keywordOptions.Keywords.Add("FLOOR");
-          keywordOptions.Keywords.Default = "STRAIGHT";
-          keywordOptions.AllowNone = false;
-          keywordResult = ed.GetKeywords(keywordOptions);
-          if (keywordResult.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
-          }
-          string coStyle = keywordResult.StringResult.Replace("\"", "");
-          if (coStyle.Contains(' ')) {
-            coStyle = coStyle.Split(' ')[0];
-          }
-          string blockName = selectedFixtureType.BlockName;
-          selectedFixtureType.BlockName = selectedFixtureType.BlockName.Replace(
-            "%COSTYLE%",
-            coStyle
-          );
-        }
-      }
-      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the vertical route from the floor (in feet): ");
-      pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
-      double routeHeight = 0;
-      while (true) {
-        try {
-          PromptDoubleResult pdr = ed.GetDouble(pdo);
-          if (pdr.Status == PromptStatus.Cancel) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
-          }
-          if (pdr.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+          catch (System.Exception ex) {
+            ed.WriteMessage($"\nError: {ex.Message}");
             continue;
           }
-          routeHeight = pdr.Value;
-          // GetHeightLimits returns Tuple<double, double> (min, max)
-          var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
-          double minHeight = heightLimits.Item1;
-          double maxHeight = heightLimits.Item2;
-          if (routeHeight < minHeight || routeHeight > maxHeight) {
-            ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
-            pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
-            continue;
-          }
-          break; // Valid input
-        }
-        catch (System.Exception ex) {
-          ed.WriteMessage($"\nError: {ex.Message}");
-          continue;
         }
       }
       PlumbingFixture plumbingFixture = null;
-      double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
+      double zIndex = ((double)routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
 
       var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+      routeHeightDisplay.Enable((double)routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
-      if (!String.IsNullOrEmpty(selectedFixtureType.BlockName)) {
-        List<string> blockNames = new List<string>();
-        blockNames.Add(selectedFixtureType.BlockName);
-        if (selectedCatalogItem != null && (selectedCatalogItem.Id == 2 || selectedCatalogItem.Id == 3 || selectedCatalogItem.Id == 25)) {
-          blockNames.Add("GMEP PLUMBING GAS OUTPUT");
-        }
-        foreach (string blockName in blockNames) {
-          // ed.WriteMessage("\nSelect base point for " + selectedFixtureType.Name);
+      if (selectedBlockNames.Count() != 0) {
+        foreach (string blockName in selectedBlockNames) {
           ObjectId blockId;
-          //string blockName = selectedFixtureType.BlockName;
           Point3d point;
           double rotation = 0;
           int number = 0;
@@ -2068,24 +2164,38 @@ namespace GMEPPlumbing
             using (Transaction tr = db.TransactionManager.StartTransaction()) {
               BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
               BlockTableRecord btr;
-              BlockReference br = CADObjectCommands.CreateBlockReference(
-                tr,
-                bt,
-                blockName,
-                "Plumbing Fixture " + selectedFixtureType.Name,
-                out btr,
-                out point
-              );
+
+              BlockReference br = null;
+              if (placementPoint == null) {
+                br = CADObjectCommands.CreateBlockReference(
+                  tr,
+                  bt,
+                  blockName,
+                  "Plumbing Fixture " + selectedFixtureType.Name,
+                  out btr,
+                  out point
+                );
+              }
+              else {
+                btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                br = new BlockReference((Point3d)placementPoint, btr.ObjectId);
+                point = (Point3d)placementPoint;
+              }
               if (br != null) {
                 BlockTableRecord curSpace = (BlockTableRecord)
                   tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-                RotateJig rotateJig = new RotateJig(br);
-                PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
-                if (rotatePromptResult.Status != PromptStatus.OK) {
-                  ed.WriteMessage("\nRotation cancelled.");
-                  routeHeightDisplay.Disable();
-                  return;
+                if (blockRotation == null) {
+                  RotateJig rotateJig = new RotateJig(br);
+                  PromptResult rotatePromptResult = ed.Drag(rotateJig);
+                  if (rotatePromptResult.Status != PromptStatus.OK) {
+                    ed.WriteMessage("\nRotation cancelled.");
+                    routeHeightDisplay.Disable();
+                    return;
+                  }
+                }
+                else {
+                  br.Rotation = blockRotation.Value;
                 }
                 br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
                 rotation = br.Rotation;
@@ -2166,7 +2276,24 @@ namespace GMEPPlumbing
               flowTypeId
             );
 
-            
+            if (blockName == "GMEP DRAIN") {
+              //logic to attach vent
+              Point3d ventPoint = VerticalRoute("Vent", (double)routeHeight);
+              SpecializedHorizontalRoute(
+                point, ventPoint, "Waste", "", (double)routeHeight
+              );
+            }
+            else  if (blockName == "GMEP CW FIXTURE POINT") {
+              if (flowTypeId == 1) {
+                //flush valve placement logic
+              }
+              else if (flowTypeId == 2) {
+                //flush tank placement 
+              }
+            }
+            else if (blockName == "GMEP HW FIXTURE POINT") {
+
+            }
           }
           catch (System.Exception ex) {
             ed.WriteMessage(ex.ToString());
