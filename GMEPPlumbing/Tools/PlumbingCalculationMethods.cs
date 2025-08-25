@@ -186,7 +186,6 @@ namespace GMEPPlumbing {
          verticalRoute.ProjectId,
          verticalRoute.Type,
          verticalRoute.Position,
-         verticalRoute.ConnectionPosition,
          verticalRoute.VerticalRouteId,
          verticalRoute.BasePointId,
          verticalRoute.StartHeight,
@@ -198,7 +197,6 @@ namespace GMEPPlumbing {
         bool isUpRoute = (verticalRoute.NodeTypeId == 1 || verticalRoute.NodeTypeId == 2);
         if (verticalRoute.IsUp == isUpRoute) {
           adjustedRoute.Position = new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ);
-          adjustedRoute.ConnectionPosition = route.EndPoint;
         }
         routeObjectsTemp.Add(adjustedRoute);
         length += adjustedRoute.Length * 12;
@@ -311,7 +309,7 @@ namespace GMEPPlumbing {
       ed.WriteMessage($"\nTraversing vertical route: {route.Id} at position {route.Position}");
 
       List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
-        .Where(r => (r.Type == route.Type || (r.Type == "Waste" && route.Type == "Vent")) && r.BasePointId == route.BasePointId && (r.StartPoint.DistanceTo(route.ConnectionPosition) <= 3.0 || (routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= Math.Min(startZ, endZ) && r.StartPoint.Z <= Math.Max(startZ, endZ))))
+        .Where(r => (r.Type == route.Type || (r.Type == "Waste" && route.Type == "Vent")) && r.BasePointId == route.BasePointId && routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= Math.Min(startZ, endZ) && r.StartPoint.Z <= Math.Max(startZ, endZ))
         .OrderByDescending(r => Math.Abs(r.StartPoint.Z - startZ))
         .ToList();
 
@@ -324,7 +322,6 @@ namespace GMEPPlumbing {
           route.ProjectId,
           route.Type,
           route.Position,
-          route.ConnectionPosition,
           route.VerticalRouteId,
           route.BasePointId,
           route.StartHeight,
@@ -335,7 +332,6 @@ namespace GMEPPlumbing {
         );
         if (route.IsUp != isUpRoute) {
           adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
-          adjustedRoute.ConnectionPosition = childRoute.StartPoint;
         }
 
         List<object> routeObjectsTemp = new List<object>(routeObjects);
@@ -574,9 +570,6 @@ namespace GMEPPlumbing {
       return VerticalRoutes.Where(route => {
         if (route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type ) {
           ed.WriteMessage($"\nChecking vertical route {route.Id} for target route {targetRoute.Id}");
-          if (targetRoute.EndPoint.DistanceTo(route.ConnectionPosition) < 3.0) {
-            return true;
-          }
           Point3d routePos = new Point3d(route.Position.X, route.Position.Y, 0);
           double startHeight = route.Position.Z;
           double endHeight = route.Position.Z + (route.Length * 12); // Convert feet to inches

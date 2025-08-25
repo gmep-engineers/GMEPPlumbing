@@ -3355,8 +3355,6 @@ namespace GMEPPlumbing
                       string Id = string.Empty;
                       string VerticalRouteId = string.Empty;
                       string BasePointId = string.Empty;
-                      double pointX = 0;
-                      double pointY = 0;
                       double startHeight = 0;
                       double length = 0;
                       double width = 0;
@@ -3374,12 +3372,6 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "id") {
                           Id = prop.Value?.ToString();
                         }
-                        if (prop.PropertyName == "Connection X") {
-                          pointX = Convert.ToDouble(prop.Value);
-                        }
-                        if (prop.PropertyName == "Connection Y") {
-                          pointY = Convert.ToDouble(prop.Value);
-                        }
                         if (prop.PropertyName == "start_height") {
                           startHeight = Convert.ToDouble(prop.Value);
                         }
@@ -3395,9 +3387,6 @@ namespace GMEPPlumbing
                       }
                       if (Id != "0") {
                         double rotation = entity.Rotation;
-                        double rotatedX = pointX * Math.Cos(rotation) - pointY * Math.Sin(rotation);
-                        double rotatedY = pointX * Math.Sin(rotation) + pointY * Math.Cos(rotation);
-                        var connectionPointLocation = new Point3d(entity.Position.X + rotatedX, entity.Position.Y + rotatedY, entity.Position.Z);
 
                         int nodeTypeId = 0;
                         switch (name) {
@@ -3435,7 +3424,6 @@ namespace GMEPPlumbing
                           ProjectId,
                           type,
                           entity.Position,
-                          connectionPointLocation,
                           VerticalRouteId,
                           BasePointId,
                           startHeight,
