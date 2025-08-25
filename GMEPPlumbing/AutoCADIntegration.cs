@@ -1244,7 +1244,7 @@ namespace GMEPPlumbing
           if (rotatePromptResult.Status != PromptStatus.OK) {
             return Point3d.Origin;
           }
-          if (direction == "Up") {
+          if (direction == "Up" || direction == "UpToCeiling") {
             zIndex += (double)length * 12;
           }
           upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, zIndex);
@@ -2279,9 +2279,8 @@ namespace GMEPPlumbing
             if (blockName == "GMEP DRAIN") {
               //logic to attach vent
               Point3d ventPoint = VerticalRoute("Vent", (double)routeHeight);
-              Fixture("VS", "32", ventPoint, 0, (double)routeHeight);
               SpecializedHorizontalRoute(
-                ventPoint, ventPoint, "Vent", "", (double)routeHeight
+                point, ventPoint, "Waste", "", (double)routeHeight
               );
             }
             else  if (blockName == "GMEP CW FIXTURE POINT") {
