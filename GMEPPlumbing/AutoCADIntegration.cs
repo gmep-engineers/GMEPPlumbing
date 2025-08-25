@@ -2305,7 +2305,34 @@ namespace GMEPPlumbing
       }
       routeHeightDisplay.Disable();
     }
+    public void CreateCenterLineRoute(Point3d addPoint, double rotation, string type, string pipeType, double height) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
 
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      PromptKeywordOptions pOptions = new PromptKeywordOptions("\nForward or Backward?");
+      pOptions.Keywords.Add("Forward");
+      pOptions.Keywords.Add("Backward");
+      pOptions.Keywords.Default = "Forward";
+      PromptResult pResult = ed.GetKeywords(pOptions);
+
+      double distance = 4.0 / 12.0;
+
+      // Calculate the end point using rotation (angle in radians)
+      double endX = addPoint.X + distance * Math.Cos(rotation);
+      double endY = addPoint.Y + distance * Math.Sin(rotation);
+      double endZ = addPoint.Z; // Keep Z the same
+      Point3d endPoint = new Point3d(endX, endY, endZ);
+      if (pResult.StringResult == "Forward") {
+        SpecializedHorizontalRoute(addPoint, endPoint, type, pipeType, height);
+      }
+      else if (pResult.StringResult == "Backward") {
+        SpecializedHorizontalRoute(endPoint, addPoint, type, pipeType, height);
+      }
+
+    }
     [CommandMethod("PlumbingSource")]
     public void CreatePlumbingSource() {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
