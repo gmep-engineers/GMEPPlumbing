@@ -342,6 +342,7 @@ namespace GMEPPlumbing {
       PipeType = pipeType;
       IsUp = isUp;
     }
+    public PlumbingVerticalRoute() { }
     public void GenerateGallonsPerMinute() {
       // Key: fixture units, Value: gpm
       // All values from the provided charts

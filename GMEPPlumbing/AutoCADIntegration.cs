@@ -468,9 +468,9 @@ namespace GMEPPlumbing
       // Call the method with a null parameter to avoid ambiguity
       VerticalRoute();
     }
-    public Point3d VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null) {
+    public Dictionary<string, PlumbingVerticalRoute> VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null) {
       var doc = Application.DocumentManager.MdiActiveDocument;
-      if (doc == null) return Point3d.Origin;
+      if (doc == null) return null;
 
       var db = doc.Database;
       var ed = doc.Editor;
@@ -492,6 +492,7 @@ namespace GMEPPlumbing
       int typeId = 0;
       bool isUp = false;
       Dictionary<int, double> floorHeights = new Dictionary<int, double>();
+      Dictionary<string, PlumbingVerticalRoute> verticalRoutes = new Dictionary<string, PlumbingVerticalRoute>();
 
       if (type == null) {
         PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
@@ -510,7 +511,7 @@ namespace GMEPPlumbing
         PromptResult pr = ed.GetKeywords(pko);
         if (pr.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
-          return Point3d.Origin;
+          return null;
         }
         type = pr.StringResult;
       }
@@ -537,7 +538,7 @@ namespace GMEPPlumbing
            break;*/
         default:
           ed.WriteMessage("\nInvalid route type selected.");
-          return Point3d.Origin;
+          return null;
       }
       PromptKeywordOptions pko2 = new PromptKeywordOptions("\nSelect Pipe Type: ");
       pko2.Keywords.Add("PEX");
@@ -557,7 +558,7 @@ namespace GMEPPlumbing
             PromptDoubleResult pdr = ed.GetDouble(pdo);
             if (pdr.Status == PromptStatus.Cancel) {
               ed.WriteMessage("\nCommand cancelled.");
-              return Point3d.Origin;
+              return null;
             }
             if (pdr.Status != PromptStatus.OK) {
               ed.WriteMessage("\nInvalid input. Please enter a valid number.");
@@ -725,7 +726,7 @@ namespace GMEPPlumbing
           else {
             ed.WriteMessage("\nFailed to create vertical route block reference.");
             routeHeightDisplay.Disable();
-            return Point3d.Origin;
+            return null;
           }
         }
 
@@ -744,7 +745,7 @@ namespace GMEPPlumbing
         if (endFloorResult.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
           routeHeightDisplay.Disable();
-          return Point3d.Origin;
+          return null;
         }
         endFloor = int.Parse(endFloorResult.StringResult);
       }
@@ -798,7 +799,7 @@ namespace GMEPPlumbing
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
           if (rotatePromptResult.Status != PromptStatus.OK) {
-            return Point3d.Origin;
+            return null;
           }
           upBlockRef2.Position = new Point3d(newUpPointLocation2.X, newUpPointLocation2.Y, zIndex);
           labelPoint = upBlockRef2.Position;
@@ -810,29 +811,42 @@ namespace GMEPPlumbing
           // Attach the vertical route ID to the start pipe
           var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
 
+
+          PlumbingVerticalRoute newRoute = new PlumbingVerticalRoute();
           foreach (DynamicBlockReferenceProperty prop in pc2) {
             if (prop.PropertyName == "id") {
               prop.Value = Guid.NewGuid().ToString();
+              newRoute.Id = prop.Value.ToString();
             }
             if (prop.PropertyName == "base_point_id") {
               prop.Value = BasePointGUIDs[startFloor];
+              newRoute.BasePointId = prop.Value.ToString();
             }
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
+              newRoute.VerticalRouteId = prop.Value.ToString();
             }
             if (prop.PropertyName == "length") {
               prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item2 - routeHeight;
+              newRoute.Length = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "start_height") {
-              prop.Value = routeHeight; 
+              prop.Value = routeHeight;
+              newRoute.StartHeight = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "pipe_type") {
               prop.Value = pipeType;
+              newRoute.PipeType = prop.Value.ToString();
             }
             if (prop.PropertyName == "is_up") {
               prop.Value = isUp ? 1 : 0;
+              newRoute.IsUp = (int)prop.Value == 1;
             }
           }
+          newRoute.Type = type;
+          newRoute.ProjectId = ProjectId;
+          newRoute.Position = upBlockRef2.Position;
+          verticalRoutes.Add(newRoute.BasePointId, newRoute);
 
           // Set the vertical route ID
           tr.Commit();
@@ -857,26 +871,38 @@ namespace GMEPPlumbing
             tr.AddNewlyCreatedDBObject(upBlockRef, true);
             var pc2 = upBlockRef.DynamicBlockReferencePropertyCollection;
 
+            PlumbingVerticalRoute newRoute = new PlumbingVerticalRoute();
+
             foreach (DynamicBlockReferenceProperty prop in pc2) {
               if (prop.PropertyName == "id") {
                 prop.Value = Guid.NewGuid().ToString();
+                newRoute.Id = prop.Value.ToString();
               }
               if (prop.PropertyName == "base_point_id") {
                 prop.Value = BasePointGUIDs[i];
+                newRoute.BasePointId = prop.Value.ToString();
               }
               if (prop.PropertyName == "vertical_route_id") {
                 prop.Value = verticalRouteId;
+                newRoute.VerticalRouteId = prop.Value.ToString();
               }
               if (prop.PropertyName == "length") {
                 prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
+                newRoute.Length = Convert.ToDouble(prop.Value);
               }
               if (prop.PropertyName == "pipe_type") {
                 prop.Value = pipeType;
+                newRoute.PipeType = prop.Value.ToString();
               }
               if (prop.PropertyName == "is_up") {
                 prop.Value = isUp ? 1 : 0;
+                newRoute.IsUp = (int)prop.Value == 1;
               }
             }
+            newRoute.Type = type;
+            newRoute.ProjectId = ProjectId;
+            newRoute.Position = upBlockRef.Position;
+            verticalRoutes.Add(newRoute.BasePointId, newRoute);
           }
 
           //end pipe
@@ -902,7 +928,7 @@ namespace GMEPPlumbing
               }
               else if (promptDoubleResult.Status == PromptStatus.Cancel) {
                 ed.WriteMessage("\nCommand cancelled.");
-                return Point3d.Origin;
+                return null;
               }
               else if (promptDoubleResult.Status == PromptStatus.Error) {
                 ed.WriteMessage("\nError in input. Please try again.");
@@ -922,7 +948,7 @@ namespace GMEPPlumbing
           RotateJig rotateJig2 = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
           if (rotatePromptResult2.Status != PromptStatus.OK) {
-            return Point3d.Origin;
+            return null;
           }
           upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, (floorHeights[(int)endFloor] + height)*12);
 
@@ -930,30 +956,42 @@ namespace GMEPPlumbing
           curSpace3.AppendEntity(upBlockRef3);
           tr.AddNewlyCreatedDBObject(upBlockRef3, true);
           var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
+          PlumbingVerticalRoute newRoute2 = new PlumbingVerticalRoute();
 
           foreach (DynamicBlockReferenceProperty prop in pc3) {
             if (prop.PropertyName == "id") {
               prop.Value = Guid.NewGuid().ToString();
+              newRoute2.Id = prop.Value.ToString();
             }
             if (prop.PropertyName == "base_point_id") {
               prop.Value = BasePointGUIDs[(int)endFloor];
+              newRoute2.BasePointId = prop.Value.ToString();
             }
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
+              newRoute2.VerticalRouteId = prop.Value.ToString();
             }
             if (prop.PropertyName == "length") {
               prop.Value = height;
+              newRoute2.Length = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "start_height") {
               prop.Value = height;
+              newRoute2.StartHeight = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "pipe_type") {
               prop.Value = pipeType;
+              newRoute2.PipeType = prop.Value.ToString();
             }
             if (prop.PropertyName == "is_up") {
               prop.Value = isUp ? 1 : 0;
+              newRoute2.IsUp = (int)prop.Value == 1;
             }
           }
+          newRoute2.Type = type;
+          newRoute2.ProjectId = ProjectId;
+          newRoute2.Position = upBlockRef3.Position;
+          verticalRoutes.Add(newRoute2.BasePointId, newRoute2);
           tr.Commit();
         }
         MakeVerticalRouteLabel(labelPoint2, "UP FROM LOWER");
@@ -979,7 +1017,7 @@ namespace GMEPPlumbing
           RotateJig rotateJig = new RotateJig(upBlockRef2);
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
           if (rotatePromptResult.Status != PromptStatus.OK) {
-            return Point3d.Origin;
+            return null;
           }
           upBlockRef2.Position = new Point3d(newUpPointLocation2.X, newUpPointLocation2.Y, zIndex);
           upBlockRef2.Layer = layer;
@@ -988,30 +1026,41 @@ namespace GMEPPlumbing
           labelPoint = upBlockRef2.Position;
 
           var pc2 = upBlockRef2.DynamicBlockReferencePropertyCollection;
-
+          PlumbingVerticalRoute newRoute = new PlumbingVerticalRoute();
           foreach (DynamicBlockReferenceProperty prop in pc2) {
             if (prop.PropertyName == "id") {
               prop.Value = Guid.NewGuid().ToString();
+              newRoute.Id = prop.Value.ToString();
             }
             if (prop.PropertyName == "base_point_id") {
               prop.Value = BasePointGUIDs[startFloor];
+              newRoute.BasePointId = prop.Value.ToString();
             }
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
+              newRoute.VerticalRouteId = prop.Value.ToString();
             }
             if (prop.PropertyName == "length") {
               prop.Value = routeHeight;
+              newRoute.Length = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "start_height") {
               prop.Value = routeHeight;
+              newRoute.StartHeight = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "pipe_type") {
               prop.Value = pipeType;
+              newRoute.PipeType = prop.Value.ToString();
             }
             if (prop.PropertyName == "is_up") {
               prop.Value = isUp ? 1 : 0;
+              newRoute.IsUp = isUp;
             }
           }
+          newRoute.Type = type;
+          newRoute.ProjectId = ProjectId;
+          newRoute.Position = upBlockRef2.Position;
+          verticalRoutes.Add(newRoute.BasePointId, newRoute);
           tr.Commit();
         }
         MakeVerticalRouteLabel(labelPoint, "DOWN TO LOWER");
@@ -1034,26 +1083,37 @@ namespace GMEPPlumbing
             tr.AddNewlyCreatedDBObject(upBlockRef, true);
             var pc = upBlockRef.DynamicBlockReferencePropertyCollection;
 
+            PlumbingVerticalRoute newRoute = new PlumbingVerticalRoute();
             foreach (DynamicBlockReferenceProperty prop in pc) {
               if (prop.PropertyName == "id") {
                 prop.Value = Guid.NewGuid().ToString();
+                newRoute.Id = prop.Value.ToString();
               }
               if (prop.PropertyName == "base_point_id") {
                 prop.Value = BasePointGUIDs[i];
+                newRoute.BasePointId = prop.Value.ToString();
               }
               if (prop.PropertyName == "vertical_route_id") {
                 prop.Value = verticalRouteId;
+                newRoute.VerticalRouteId = prop.Value.ToString();
               }
               if (prop.PropertyName == "length") {
                 prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
+                newRoute.Length = Convert.ToDouble(prop.Value);
               }
               if (prop.PropertyName == "pipe_type") {
                 prop.Value = pipeType;
+                newRoute.PipeType = prop.Value.ToString();
               }
               if (prop.PropertyName == "is_up") {
                 prop.Value = isUp ? 1 : 0;
+                newRoute.IsUp = isUp;
               }
             }
+            newRoute.Type = type;
+            newRoute.ProjectId = ProjectId;
+            newRoute.Position = upBlockRef.Position;
+            verticalRoutes.Add(newRoute.BasePointId, newRoute);
           }
 
           //end pipe
@@ -1081,7 +1141,7 @@ namespace GMEPPlumbing
             }
             else if (promptDoubleResult.Status == PromptStatus.Cancel) {
               ed.WriteMessage("\nCommand cancelled.");
-              return Point3d.Origin;
+              return null;
             }
             else if (promptDoubleResult.Status == PromptStatus.Error) {
               ed.WriteMessage("\nError in input. Please try again.");
@@ -1099,37 +1159,49 @@ namespace GMEPPlumbing
           RotateJig rotateJig2 = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult2 = ed.Drag(rotateJig2);
           if (rotatePromptResult2.Status != PromptStatus.OK) {
-            return Point3d.Origin;
+            return null;
           }
           upBlockRef3.Layer = layer;
           upBlockRef3.Position = new Point3d(newUpPointLocation3.X, newUpPointLocation3.Y, (floorHeights[(int)endFloor] + height) * 12);
           curSpace3.AppendEntity(upBlockRef3);
           tr.AddNewlyCreatedDBObject(upBlockRef3, true);
           var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
+          PlumbingVerticalRoute endRoute = new PlumbingVerticalRoute();
 
           foreach (DynamicBlockReferenceProperty prop in pc3) {
             if (prop.PropertyName == "id") {
               prop.Value = Guid.NewGuid().ToString();
+              endRoute.Id = prop.Value.ToString();
             }
             if (prop.PropertyName == "base_point_id") {
               prop.Value = BasePointGUIDs[(int)endFloor];
+              endRoute.BasePointId = prop.Value.ToString();
             }
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
+              endRoute.VerticalRouteId = prop.Value.ToString();
             }
             if (prop.PropertyName == "length") {
               prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[(int)endFloor]).Item2 - height;
+              endRoute.Length = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "start_height") {
               prop.Value = height;
+              endRoute.StartHeight = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "pipe_type") {
               prop.Value = pipeType;
+              endRoute.PipeType = prop.Value.ToString();
             }
             if (prop.PropertyName == "is_up") {
               prop.Value = isUp ? 1 : 0;
+              endRoute.IsUp = isUp;
             }
           }
+          endRoute.Type = type;
+          endRoute.ProjectId = ProjectId;
+          endRoute.Position = upBlockRef3.Position;
+          verticalRoutes.Add(endRoute.BasePointId, endRoute);
           tr.Commit();
         }
         MakeVerticalRouteLabel(labelPoint2, "DOWN FROM UPPER");
@@ -1147,7 +1219,7 @@ namespace GMEPPlumbing
           if (pr3.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
             routeHeightDisplay.Disable();
-            return Point3d.Origin;
+            return null;
           }
           direction = pr3.StringResult;
         }
@@ -1198,7 +1270,7 @@ namespace GMEPPlumbing
             }
             else if (pdr2.Status == PromptStatus.Cancel) {
               ed.WriteMessage("\nCommand cancelled.");
-              return Point3d.Origin;
+              return null;
             }
             break;
           }
@@ -1242,7 +1314,7 @@ namespace GMEPPlumbing
           RotateJig rotateJig = new RotateJig(upBlockRef3);
           PromptResult rotatePromptResult = ed.Drag(rotateJig);
           if (rotatePromptResult.Status != PromptStatus.OK) {
-            return Point3d.Origin;
+            return null;
           }
           if (direction == "Up" || direction == "UpToCeiling") {
             zIndex += (double)length * 12;
@@ -1254,18 +1326,23 @@ namespace GMEPPlumbing
           labelPoint3 = upBlockRef3.Position;
 
           var pc3 = upBlockRef3.DynamicBlockReferencePropertyCollection;
+          PlumbingVerticalRoute newRoute = new PlumbingVerticalRoute();
           foreach (DynamicBlockReferenceProperty prop in pc3) {
             if (prop.PropertyName == "id") {
               prop.Value = Guid.NewGuid().ToString();
+              newRoute.Id = prop.Value.ToString();
             }
             if (prop.PropertyName == "base_point_id") {
               prop.Value = BasePointGUIDs[startFloor];
+              newRoute.BasePointId = prop.Value.ToString();
             }
             if (prop.PropertyName == "vertical_route_id") {
               prop.Value = verticalRouteId;
+              newRoute.VerticalRouteId = prop.Value.ToString();
             }
             if (prop.PropertyName == "length") {
               prop.Value = length;
+              newRoute.Length = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "start_height") {
               if (direction == "Up" || direction == "UpToCeiling") {
@@ -1274,21 +1351,28 @@ namespace GMEPPlumbing
               else if (direction == "Down" || direction == "DownToFloor") {
                 prop.Value = routeHeight;
               }
+              newRoute.StartHeight = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "pipe_type") {
               prop.Value = pipeType;
+              newRoute.PipeType = prop.Value.ToString();
             }
             if (prop.PropertyName == "is_up") {
               prop.Value = isUp ? 1 : 0;
+              newRoute.IsUp = isUp;
             }
           }
+          newRoute.Type = type;
+          newRoute.ProjectId = ProjectId;
+          newRoute.Position = upBlockRef3.Position;
+          verticalRoutes.Add(newRoute.BasePointId, newRoute);
           tr.Commit();
           
         }
         MakeVerticalRouteLabel(labelPoint3, direction.ToUpper());
       }
       SettingObjects = false;
-      return StartUpLocation;
+      return verticalRoutes;
     }
 
     [CommandMethod("SETPLUMBINGBASEPOINT")]
@@ -2278,9 +2362,24 @@ namespace GMEPPlumbing
 
             if (blockName == "GMEP DRAIN") {
               //logic to attach vent
-              Point3d ventPoint = VerticalRoute("Vent", (double)routeHeight);
+              Point3d ventPoint = VerticalRoute("Vent", (double)routeHeight)[CADObjectCommands.ActiveBasePointId].Position;
+              ventPoint = new Point3d(ventPoint.X, ventPoint.Y, point.Z);
+
+              double shortenBy = 1.5; // 1.5 inches, since your units are inches
+
+              Vector3d direction = point - ventPoint;
+              double length = direction.Length;
+
+              Point3d newEndPoint = ventPoint;
+              Point3d newStartPoint = point;
+              if (length > 0) {
+                Vector3d offset = direction.GetNormal() * shortenBy;
+                newEndPoint = ventPoint + offset;
+                newStartPoint = point - offset; 
+              }
+
               SpecializedHorizontalRoute(
-                point, ventPoint, "Waste", "", (double)routeHeight
+                  newStartPoint, newEndPoint, "Waste", "", (double)routeHeight
               );
             }
             else  if (blockName == "GMEP CW FIXTURE POINT") {
