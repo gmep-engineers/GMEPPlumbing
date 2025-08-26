@@ -2364,9 +2364,7 @@ namespace GMEPPlumbing
               //logic to attach vent
               Point3d ventPoint = VerticalRoute("Vent", (double)routeHeight)[CADObjectCommands.ActiveBasePointId].Position;
               ventPoint = new Point3d(ventPoint.X, ventPoint.Y, point.Z);
-
-              double shortenBy = 1.5; // 1.5 inches, since your units are inches
-
+              double shortenBy = 1.5;
               Vector3d direction = point - ventPoint;
               double length = direction.Length;
 
