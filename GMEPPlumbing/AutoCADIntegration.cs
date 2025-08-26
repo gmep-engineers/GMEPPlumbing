@@ -2256,58 +2256,6 @@ namespace GMEPPlumbing
             if (blockName == "GMEP CW FIXTURE POINT") {
               if (flowTypeId == 1) {
                 PlumbingVerticalRoute route = VerticalRoute("ColdWater", (double)routeHeight, CADObjectCommands.ActiveFloor).First().Value;
-                using (Transaction tr = db.TransactionManager.StartTransaction()) {
-                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
-                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-                 
-
-                  double offsetDistance = 11.25;
-                  double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
-                  double offsetY = offsetDistance * Math.Sin(route.Rotation + (Math.PI / 2));
-                  Point3d newPoint = new Point3d(
-                      route.Position.X + offsetX,
-                      route.Position.Y + offsetY,
-                      route.Position.Z
-                  );
-
-                  if (route.IsUp) {
-                    SpecializedHorizontalRoute(route.Position, newPoint, "ColdWater", "", (double)routeHeight);
-                    SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", "", route.StartHeight - route.Length);
-                    Point3d fixturePos = new Point3d(newPoint.X, newPoint.Y, newPoint.Z);
-                    BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
-                    modelSpace.AppendEntity(br);
-                    tr.AddNewlyCreatedDBObject(br, true);
-                    blockId = br.Id;
-                    point = br.Position;
-                    rotation = br.Rotation;
-
-                  }
-                  else {
-                    SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", "", (double)routeHeight);
-                    SpecializedHorizontalRoute(route.Position, newPoint, "ColdWater", "", route.StartHeight - route.Length);
-                    Point3d fixturePos = new Point3d(newPoint.X, newPoint.Y, newPoint.Z - (route.Length * 12));
-                    BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
-                    modelSpace.AppendEntity(br);
-                    tr.AddNewlyCreatedDBObject(br, true);
-                    blockId = br.Id;
-                    point = br.Position;
-                    rotation = br.Rotation;
-                  }
-                  tr.Commit();
-                }
-              }
-              else if (flowTypeId == 2) {
-                //flush tank placement 
-              }
-            }
-            else if (blockName == "GMEP HW FIXTURE POINT") {
-              PlumbingVerticalRoute route = VerticalRoute("HotWater", (double)routeHeight, CADObjectCommands.ActiveFloor).First().Value;
-              using (Transaction tr = db.TransactionManager.StartTransaction()) {
-                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
-                BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-              
 
                 double offsetDistance = 11.25;
                 double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
@@ -2319,29 +2267,88 @@ namespace GMEPPlumbing
                 );
 
                 if (route.IsUp) {
-                  SpecializedHorizontalRoute(route.Position, newPoint, "HotWater", "", (double)routeHeight);
-                  SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", "", route.StartHeight - route.Length);
+                  SpecializedHorizontalRoute(route.Position, newPoint, "ColdWater", "", (double)routeHeight);
+                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", "", route.StartHeight - route.Length);
                   Point3d fixturePos = new Point3d(newPoint.X, newPoint.Y, newPoint.Z);
-                  BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
-                  modelSpace.AppendEntity(br);
-                  tr.AddNewlyCreatedDBObject(br, true);
-                  blockId = br.Id;
-                  point = br.Position;
-                  rotation = br.Rotation;
-
+                  using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                    BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                    BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                    modelSpace.AppendEntity(br);
+                    tr.AddNewlyCreatedDBObject(br, true);
+                    blockId = br.Id;
+                    point = br.Position;
+                    rotation = br.Rotation;
+                    tr.Commit();
+                  }
                 }
                 else {
-                  SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", "", (double)routeHeight);
-                  SpecializedHorizontalRoute(route.Position, newPoint, "HotWater", "", route.StartHeight - route.Length);
+                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", "", (double)routeHeight);
+                  SpecializedHorizontalRoute(route.Position, newPoint, "ColdWater", "", route.StartHeight - route.Length);
                   Point3d fixturePos = new Point3d(newPoint.X, newPoint.Y, newPoint.Z - (route.Length * 12));
+                  using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                    BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                    BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                    modelSpace.AppendEntity(br);
+                    tr.AddNewlyCreatedDBObject(br, true);
+                    blockId = br.Id;
+                    point = br.Position;
+                    rotation = br.Rotation;
+                    tr.Commit();
+                  }
+                }
+              }
+              else if (flowTypeId == 2) {
+                //flush tank placement 
+              }
+            }
+            else if (blockName == "GMEP HW FIXTURE POINT") {
+              PlumbingVerticalRoute route = VerticalRoute("HotWater", (double)routeHeight, CADObjectCommands.ActiveFloor).First().Value;
+              double offsetDistance = 11.25;
+              double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
+              double offsetY = offsetDistance * Math.Sin(route.Rotation + (Math.PI / 2));
+              Point3d newPoint = new Point3d(
+                  route.Position.X + offsetX,
+                  route.Position.Y + offsetY,
+                  route.Position.Z
+              );
+
+              if (route.IsUp) {
+                SpecializedHorizontalRoute(route.Position, newPoint, "HotWater", "", (double)routeHeight);
+                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", "", route.StartHeight - route.Length);
+                Point3d fixturePos = new Point3d(newPoint.X, newPoint.Y, newPoint.Z);
+                using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
                   BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
                   modelSpace.AppendEntity(br);
                   tr.AddNewlyCreatedDBObject(br, true);
                   blockId = br.Id;
                   point = br.Position;
                   rotation = br.Rotation;
+                  tr.Commit();
                 }
-                tr.Commit();
+              }
+              else {
+                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", "", (double)routeHeight);
+                SpecializedHorizontalRoute(route.Position, newPoint, "HotWater", "", route.StartHeight - route.Length);
+                Point3d fixturePos = new Point3d(newPoint.X, newPoint.Y, newPoint.Z - (route.Length * 12));
+                using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                  BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                  modelSpace.AppendEntity(br);
+                  tr.AddNewlyCreatedDBObject(br, true);
+                  blockId = br.Id;
+                  point = br.Position;
+                  rotation = br.Rotation;
+                  tr.Commit();
+                }
               }
             }
             else {
