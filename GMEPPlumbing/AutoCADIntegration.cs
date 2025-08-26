@@ -2279,6 +2279,7 @@ namespace GMEPPlumbing
                     BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
                     BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
                     BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                    br.Rotation = route.Rotation;
                     modelSpace.AppendEntity(br);
                     tr.AddNewlyCreatedDBObject(br, true);
                     blockId = br.Id;
@@ -2297,6 +2298,7 @@ namespace GMEPPlumbing
                     BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
                     BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
                     BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                    br.Rotation = route.Rotation;
                     modelSpace.AppendEntity(br);
                     tr.AddNewlyCreatedDBObject(br, true);
                     blockId = br.Id;
@@ -2334,6 +2336,7 @@ namespace GMEPPlumbing
                   BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
                   BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
                   BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                  br.Rotation = route.Rotation;
                   modelSpace.AppendEntity(br);
                   tr.AddNewlyCreatedDBObject(br, true);
                   blockId = br.Id;
@@ -2352,6 +2355,7 @@ namespace GMEPPlumbing
                   BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
                   BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
                   BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                  br.Rotation = route.Rotation;
                   modelSpace.AppendEntity(br);
                   tr.AddNewlyCreatedDBObject(br, true);
                   blockId = br.Id;
