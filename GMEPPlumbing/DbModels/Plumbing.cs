@@ -311,6 +311,7 @@ namespace GMEPPlumbing {
     public int NodeTypeId;
     public string PipeType;
     public bool IsUp;
+    public double Rotation;
     public double FixtureUnits { get; set; } = 0;
     public int FlowTypeId { get; set; } = 1;
     public int GPM { get; set; } = 0;
