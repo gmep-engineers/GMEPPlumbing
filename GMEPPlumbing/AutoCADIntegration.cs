@@ -2255,7 +2255,7 @@ namespace GMEPPlumbing
 
           try {
             if (blockName == "GMEP CW FIXTURE POINT") {
-              if (flowTypeId == 1) {
+              if (flowTypeId == 1 || flowTypeId == 2) {
                 PlumbingVerticalRoute route = VerticalRoute("ColdWater", (double)routeHeight, CADObjectCommands.ActiveFloor).First().Value;
 
                 double offsetDistance = 11.25;
@@ -2271,9 +2271,9 @@ namespace GMEPPlumbing
                 Vector3d offset2 = direction.GetNormal() * offsetDistance2;
 
                 if (route.IsUp) {
-                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", "", route.StartHeight - route.Length);
+                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", route.PipeType, route.StartHeight - route.Length);
                   Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z);
-                  SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", "", route.StartHeight);
+                  SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", route.PipeType, route.StartHeight);
                   
                   using (Transaction tr = db.TransactionManager.StartTransaction()) {
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -2290,9 +2290,9 @@ namespace GMEPPlumbing
                   }
                 }
                 else {
-                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", "", route.StartHeight);
+                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", route.PipeType, route.StartHeight);
                   Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
-                  SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", "", route.StartHeight - route.Length);
+                  SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", route.PipeType, route.StartHeight - route.Length);
                   
                   using (Transaction tr = db.TransactionManager.StartTransaction()) {
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -2328,9 +2328,9 @@ namespace GMEPPlumbing
               Vector3d offset2 = direction.GetNormal() * offsetDistance2;
 
               if (route.IsUp) {
-                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", "", route.StartHeight - route.Length);
+                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", route.PipeType, route.StartHeight - route.Length);
                 Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z);
-                SpecializedHorizontalRoute(route.Position, fixturePos, "HotWater", "", route.StartHeight);
+                SpecializedHorizontalRoute(route.Position, fixturePos, "HotWater", route.PipeType, route.StartHeight);
                
                 using (Transaction tr = db.TransactionManager.StartTransaction()) {
                   BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -2347,9 +2347,9 @@ namespace GMEPPlumbing
                 }
               }
               else {
-                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", "", route.StartHeight);
+                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", route.PipeType, route.StartHeight);
                 Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
-                SpecializedHorizontalRoute(route.Position, fixturePos, "HotWater", "", route.StartHeight - route.Length);
+                SpecializedHorizontalRoute(route.Position, fixturePos, "HotWater", route.PipeType, route.StartHeight - route.Length);
       
                 using (Transaction tr = db.TransactionManager.StartTransaction()) {
                   BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
