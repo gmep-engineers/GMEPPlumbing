@@ -2126,7 +2126,7 @@ namespace GMEPPlumbing
         selectedBlockNames.AddRange(selectedFixtureType.WaterBlockNames.Split(','));
       }
       if (viewType.Contains("Gas")) {
-        //selectedBlockNames.AddRange(selectedFixtureType.WaterBlockNames.Split(','));
+        selectedBlockNames.AddRange(selectedFixtureType.GasBlockNames.Split(','));
       }
       if (viewType.Contains("Sewer-Vent")) {
         selectedBlockNames.AddRange(selectedFixtureType.WasteBlockNames.Split(','));

@@ -588,7 +588,8 @@ namespace GMEPPlumbing.Services
             GetSafeString(reader, "name"),
             GetSafeString(reader, "abbreviation"),
             GetSafeString(reader, "water_block_names"),
-            GetSafeString(reader, "waste_block_names")
+            GetSafeString(reader, "waste_block_names"),
+            GetSafeString(reader, "gas_block_names")
           )
         );
       }
