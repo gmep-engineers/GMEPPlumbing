@@ -2132,6 +2132,7 @@ namespace GMEPPlumbing
         selectedBlockNames.AddRange(selectedFixtureType.WasteBlockNames.Split(','));
       }
       selectedBlockNames = selectedBlockNames.Distinct().ToList();
+      List<string> selectedBlockNames2 = new List<string>(selectedBlockNames);
 
       foreach (string blockName in selectedBlockNames) {
         if (blockName.Contains("%WHSIZE%")) {
@@ -2151,7 +2152,7 @@ namespace GMEPPlumbing
             if (whSize.Contains(' ')) {
               whSize = whSize.Split(' ')[0];
             }
-            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+            selectedBlockNames2[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
               "%WHSIZE%",
               whSize
             );
@@ -2245,8 +2246,8 @@ namespace GMEPPlumbing
       var routeHeightDisplay = new RouteHeightDisplay(ed);
       routeHeightDisplay.Enable((double)routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
-      if (selectedBlockNames.Count() != 0) {
-        foreach (string blockName in selectedBlockNames) {
+      if (selectedBlockNames2.Count() != 0) {
+        foreach (string blockName in selectedBlockNames2) {
           ObjectId blockId = ObjectId.Null;
           Point3d point = Point3d.Origin;
           double rotation = 0;
