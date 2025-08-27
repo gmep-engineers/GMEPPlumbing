@@ -840,7 +840,7 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "is_up") {
               prop.Value = isUp ? 1 : 0;
-              newRoute.IsUp = (int)prop.Value == 1;
+              newRoute.IsUp = isUp;
             }
           }
           newRoute.Type = type;
@@ -897,7 +897,7 @@ namespace GMEPPlumbing
               }
               if (prop.PropertyName == "is_up") {
                 prop.Value = isUp ? 1 : 0;
-                newRoute.IsUp = (int)prop.Value == 1;
+                newRoute.IsUp = isUp;
               }
             }
             newRoute.Type = type;
@@ -987,7 +987,7 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "is_up") {
               prop.Value = isUp ? 1 : 0;
-              newRoute2.IsUp = (int)prop.Value == 1;
+              newRoute2.IsUp = isUp;
             }
           }
           newRoute2.Type = type;
@@ -2126,12 +2126,13 @@ namespace GMEPPlumbing
         selectedBlockNames.AddRange(selectedFixtureType.WaterBlockNames.Split(','));
       }
       if (viewType.Contains("Gas")) {
-        //selectedBlockNames.AddRange(selectedFixtureType.WaterBlockNames.Split(','));
+        selectedBlockNames.AddRange(selectedFixtureType.GasBlockNames.Split(','));
       }
       if (viewType.Contains("Sewer-Vent")) {
         selectedBlockNames.AddRange(selectedFixtureType.WasteBlockNames.Split(','));
       }
       selectedBlockNames = selectedBlockNames.Distinct().ToList();
+      List<string> selectedBlockNames2 = new List<string>(selectedBlockNames);
 
       foreach (string blockName in selectedBlockNames) {
         if (blockName.Contains("%WHSIZE%")) {
@@ -2151,7 +2152,7 @@ namespace GMEPPlumbing
             if (whSize.Contains(' ')) {
               whSize = whSize.Split(' ')[0];
             }
-            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+            selectedBlockNames2[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
               "%WHSIZE%",
               whSize
             );
@@ -2245,8 +2246,8 @@ namespace GMEPPlumbing
       var routeHeightDisplay = new RouteHeightDisplay(ed);
       routeHeightDisplay.Enable((double)routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
-      if (selectedBlockNames.Count() != 0) {
-        foreach (string blockName in selectedBlockNames) {
+      if (selectedBlockNames2.Count() != 0) {
+        foreach (string blockName in selectedBlockNames2) {
           ObjectId blockId = ObjectId.Null;
           Point3d point = Point3d.Origin;
           double rotation = 0;
@@ -2255,7 +2256,7 @@ namespace GMEPPlumbing
 
           try {
             if (blockName == "GMEP CW FIXTURE POINT") {
-              if (flowTypeId == 1) {
+              if (flowTypeId == 1 || flowTypeId == 2) {
                 PlumbingVerticalRoute route = VerticalRoute("ColdWater", (double)routeHeight, CADObjectCommands.ActiveFloor).First().Value;
 
                 double offsetDistance = 11.25;
@@ -2271,9 +2272,9 @@ namespace GMEPPlumbing
                 Vector3d offset2 = direction.GetNormal() * offsetDistance2;
 
                 if (route.IsUp) {
-                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", "", route.StartHeight - route.Length);
+                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", route.PipeType, route.StartHeight - route.Length);
                   Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z);
-                  SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", "", route.StartHeight);
+                  SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", route.PipeType, route.StartHeight);
                   
                   using (Transaction tr = db.TransactionManager.StartTransaction()) {
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -2290,9 +2291,9 @@ namespace GMEPPlumbing
                   }
                 }
                 else {
-                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", "", route.StartHeight);
+                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", route.PipeType, route.StartHeight);
                   Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
-                  SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", "", route.StartHeight - route.Length);
+                  SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", route.PipeType, route.StartHeight - route.Length);
                   
                   using (Transaction tr = db.TransactionManager.StartTransaction()) {
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -2328,9 +2329,9 @@ namespace GMEPPlumbing
               Vector3d offset2 = direction.GetNormal() * offsetDistance2;
 
               if (route.IsUp) {
-                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", "", route.StartHeight - route.Length);
+                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", route.PipeType, route.StartHeight - route.Length);
                 Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z);
-                SpecializedHorizontalRoute(route.Position, fixturePos, "HotWater", "", route.StartHeight);
+                SpecializedHorizontalRoute(route.Position, fixturePos, "HotWater", route.PipeType, route.StartHeight);
                
                 using (Transaction tr = db.TransactionManager.StartTransaction()) {
                   BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -2347,9 +2348,9 @@ namespace GMEPPlumbing
                 }
               }
               else {
-                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", "", route.StartHeight);
+                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", route.PipeType, route.StartHeight);
                 Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
-                SpecializedHorizontalRoute(route.Position, fixturePos, "HotWater", "", route.StartHeight - route.Length);
+                SpecializedHorizontalRoute(route.Position, fixturePos, "HotWater", route.PipeType, route.StartHeight - route.Length);
       
                 using (Transaction tr = db.TransactionManager.StartTransaction()) {
                   BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
