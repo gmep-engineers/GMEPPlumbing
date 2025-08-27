@@ -446,38 +446,38 @@ namespace GMEPPlumbing {
           Children = new ObservableCollection<MenuItemViewModel> {
             new MenuItemViewModel { Name = "Corrugated Stainless Steel Tubing", Children = new ObservableCollection<MenuItemViewModel>()
             {
-              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 1)},
-              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 2)},
-              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 3)},
-              new MenuItemViewModel { Name = "Chart 4", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 4)},
-              new MenuItemViewModel { Name = "Chart 5", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 5)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 1)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 3.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 2)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 6.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 3)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 4)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 5.0 psi \nPressure Drop: 3.5 psi \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Corrugated Stainless Steel Tubing", 5)},
             }
             },
             new MenuItemViewModel { Name = "Semi-Rigid Copper Tubing", Children = new ObservableCollection<MenuItemViewModel>(){
-              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 1)},
-              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 2)},
-              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 3)},
-              new MenuItemViewModel { Name = "Chart 4", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 4)},
-              new MenuItemViewModel { Name = "Chart 5", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 5)},
-              new MenuItemViewModel { Name = "Chart 6", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 6)},
-              new MenuItemViewModel { Name = "Chart 7", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 7)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.3 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 1)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 2)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 1.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 3)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 17.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 4)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 5)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.5 psi \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 6)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 5.0 psi \nPressure Drop: 3.5 psi \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 7)},
             } 
             },
             new MenuItemViewModel { Name = "Polyethylene Plastic Pipe", Children = new ObservableCollection<MenuItemViewModel>(){
-              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 1)},
-              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 2)},
-              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 3)},
-              new MenuItemViewModel { Name = "Chart 4", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 4)},
-              new MenuItemViewModel { Name = "Chart 5", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 5)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.3 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 1)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 2)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 3)},
+              new MenuItemViewModel { Name = "(CTS)\nInlet Pressure: Less Than 2 psi \nPressure Drop: 0.3 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 4)},
+              new MenuItemViewModel { Name = "(CTS)\nInlet Pressure: Less Than 2 psi \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 5)},
             } 
             },
             new MenuItemViewModel { Name = "Schedule 40 Metallic Pipe", Children = new ObservableCollection<MenuItemViewModel>(){
-              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 1)},
-              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 2)},
-              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 3)},
-              new MenuItemViewModel { Name = "Chart 4", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 4)},
-              new MenuItemViewModel { Name = "Chart 5", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 5)},
-              new MenuItemViewModel { Name = "Chart 6", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 6)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 1)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 3.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 2)},
+              new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 6.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 3)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 4)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 3.0 psi \nPressure Drop: 2.0 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 5)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 5.0 psi \nPressure Drop: 3.5 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 6)},
             }
             },
           }
@@ -487,28 +487,28 @@ namespace GMEPPlumbing {
           Children = new ObservableCollection<MenuItemViewModel> {
             new MenuItemViewModel { Name = "Corrugated Stainless Steel Tubing", Children = new ObservableCollection<MenuItemViewModel>()
             {
-              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Corrugated Stainless Steel Tubing", 1)},
-              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Corrugated Stainless Steel Tubing", 2)},
-              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Corrugated Stainless Steel Tubing", 3)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 11.0 in. w.c. \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Corrugated Stainless Steel Tubing", 1)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Corrugated Stainless Steel Tubing", 2)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 5.0 psi \nPressure Drop: 3.5 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Corrugated Stainless Steel Tubing", 3)},
             }
             },
             new MenuItemViewModel { Name = "Semi-Rigid Copper Tubing", Children = new ObservableCollection<MenuItemViewModel>(){
-              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Semi-Rigid Copper Tubing", 1)},
-              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Semi-Rigid Copper Tubing", 2)},
-              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Semi-Rigid Copper Tubing", 3)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 10.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Semi-Rigid Copper Tubing", 1)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 11.0 in. w.c. \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Semi-Rigid Copper Tubing", 2)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Semi-Rigid Copper Tubing", 3)},
             }
             },
             new MenuItemViewModel { Name = "Polyethylene Plastic Pipe", Children = new ObservableCollection<MenuItemViewModel>(){
-              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Polyethylene Plastic Pipe", 1)},
-              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Polyethylene Plastic Pipe", 2)},
-              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Polyethylene Plastic Pipe", 3)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 11.0 in. w.c. \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Polyethylene Plastic Pipe", 1)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Polyethylene Plastic Pipe", 2)},
+              new MenuItemViewModel { Name = "(CTS)\nInlet Pressure: 11.0 in. w.c. \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Polyethylene Plastic Pipe", 3)},
             }
             },
             new MenuItemViewModel { Name = "Schedule 40 Metallic Pipe", Children = new ObservableCollection<MenuItemViewModel>(){
-              new MenuItemViewModel { Name = "Chart 1", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 1)},
-              new MenuItemViewModel { Name = "Chart 2", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 2)},
-              new MenuItemViewModel { Name = "Chart 3", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 3)},
-              new MenuItemViewModel { Name = "Chart 4", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 4)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 10.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 1)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 10.0 psi \nPressure Drop: 3.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 2)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 3)},
+              new MenuItemViewModel { Name = "Inlet Pressure: 11.0 in. w.c. \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 4)},
             }
             },
           }
