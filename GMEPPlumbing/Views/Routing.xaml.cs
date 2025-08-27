@@ -177,14 +177,6 @@ namespace GMEPPlumbing.Views
             Radius = 1,
             Fill = TypeToBrushColor(verticalRoute.Type)
           };
-         var connectionTubeModel = new TubeVisual3D {
-            Path = new Point3DCollection {
-              new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
-              new Point3D(verticalRoute.ConnectionPosition.X, verticalRoute.ConnectionPosition.Y, verticalRoute.ConnectionPosition.Z)
-            },
-            Diameter = 2,
-            Fill = TypeToBrushColor(verticalRoute.Type)
-         };
 
           double length = verticalRoute.Length * 12;
 
@@ -202,7 +194,6 @@ namespace GMEPPlumbing.Views
 
           fullModel.Children.Add(tubeModel);
           if (verticalRoute.NodeTypeId != 2) {
-            fullModel.Children.Add(connectionTubeModel);
             fullModel.Children.Add(ballModel);
           }
 
@@ -632,11 +623,6 @@ namespace GMEPPlumbing.Views
                 verticalRoute.Position.Y - basePoint.Point.Y,
                 verticalRoute.Position.Z
               );
-              verticalRoute.ConnectionPosition = new Point3d(
-                verticalRoute.ConnectionPosition.X - basePoint.Point.X,
-                verticalRoute.ConnectionPosition.Y - basePoint.Point.Y,
-                verticalRoute.ConnectionPosition.Z
-              );
             }
           }
           else if (item is PlumbingSource plumbingSource) {
@@ -691,7 +677,6 @@ namespace GMEPPlumbing.Views
                 vr.ProjectId,
                 vr.Type,
                 new Point3d(vr.Position.X, vr.Position.Y, vr.Position.Z),
-                new Point3d(vr.ConnectionPosition.X, vr.ConnectionPosition.Y, vr.ConnectionPosition.Z),
                 vr.VerticalRouteId,
                 vr.BasePointId,
                 vr.StartHeight,

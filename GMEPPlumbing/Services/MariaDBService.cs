@@ -904,15 +904,12 @@ namespace GMEPPlumbing.Services
       if (routes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_vertical_routes
-              (id, project_id, pos_x, pos_y, pos_z, connection_pos_x, connection_pos_y, connection_pos_z, vertical_route_id, base_point_id, start_height, length, node_type_id, type, pipe_type, is_up)
-              VALUES (@id, @projectId, @posX, @posY, @posZ, @connectionPosX, @connectionPosY, @connectionPosZ, @verticalRouteId, @basePointId, @startHeight, @length, @nodeTypeId, @type, @pipeType, @isUp)
+              (id, project_id, pos_x, pos_y, pos_z, vertical_route_id, base_point_id, start_height, length, node_type_id, type, pipe_type, is_up)
+              VALUES (@id, @projectId, @posX, @posY, @posZ, @verticalRouteId, @basePointId, @startHeight, @length, @nodeTypeId, @type, @pipeType, @isUp)
               ON DUPLICATE KEY UPDATE
               pos_x = @posX,
               pos_y = @posy,
               pos_z = @posZ,
-              connection_pos_x = @connectionPosX, 
-              connection_pos_y = @connectionPosY,
-              connection_pos_z = @connectionPosZ,
               vertical_route_id = @verticalRouteId,
               base_point_id = @basePointId,
               start_height = @startHeight,
@@ -931,9 +928,6 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@posZ", route.Position.Z);
           command.Parameters.AddWithValue("@verticalRouteId", route.VerticalRouteId);
           command.Parameters.AddWithValue("@basePointId", route.BasePointId);
-          command.Parameters.AddWithValue("@connectionPosX", route.ConnectionPosition.X);
-          command.Parameters.AddWithValue("@connectionPosY", route.ConnectionPosition.Y);
-          command.Parameters.AddWithValue("@connectionPosZ", route.ConnectionPosition.Z);
           command.Parameters.AddWithValue("@startHeight", route.StartHeight);
           command.Parameters.AddWithValue("@length", route.Length);
           command.Parameters.AddWithValue("@nodeTypeId", route.NodeTypeId);
@@ -1177,11 +1171,6 @@ namespace GMEPPlumbing.Services
             reader.GetDouble("pos_x"),
             reader.GetDouble("pos_y"),
             reader.GetDouble("pos_z")
-          ),
-          new Point3d(
-            reader.GetDouble("connection_pos_x"),
-            reader.GetDouble("connection_pos_y"),
-            reader.GetDouble("connection_pos_z")
           ),
           reader.GetString("vertical_route_id"),
           reader.GetString("base_point_id"),
