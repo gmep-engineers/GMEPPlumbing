@@ -2275,7 +2275,7 @@ namespace GMEPPlumbing
                   SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", route.PipeType, route.StartHeight - route.Length);
                   Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z);
                   SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", route.PipeType, route.StartHeight);
-                  
+
                   using (Transaction tr = db.TransactionManager.StartTransaction()) {
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                     BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
@@ -2294,7 +2294,7 @@ namespace GMEPPlumbing
                   SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", route.PipeType, route.StartHeight);
                   Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
                   SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", route.PipeType, route.StartHeight - route.Length);
-                  
+
                   using (Transaction tr = db.TransactionManager.StartTransaction()) {
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                     BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
@@ -2312,16 +2312,29 @@ namespace GMEPPlumbing
               }
               else if (flowTypeId == 2) {
                 PlumbingVerticalRoute route = VerticalRoute("ColdWater", (double)routeHeight, CADObjectCommands.ActiveFloor).First().Value;
+                PromptKeywordOptions pko = new PromptKeywordOptions("Left or Right?");
+                pko.Keywords.Add("Left");
+                pko.Keywords.Add("Right");
+                PromptResult res = ed.GetKeywords(pko);
+
 
                 double offsetDistance = 11.25;
                 double offsetDistance2 = 2.125;
                 double offsetX = offsetDistance * Math.Cos(route.Rotation);
                 double offsetY = offsetDistance * Math.Sin(route.Rotation);
+                double rotatedOffsetX = -offsetY;
+                double rotatedOffsetY = offsetX;
+                if (res.StringResult == "Left") {
+                  offsetX = -offsetX;
+                  offsetY = -offsetY;
+                  rotatedOffsetX = offsetY;
+                  rotatedOffsetY = -offsetX;
+                }
 
                 Point3d StartPos = route.Position;
                 Point3d newPoint = new Point3d(
-                    route.Position.X + offsetX,
-                    route.Position.Y + offsetY,
+                    route.Position.X + offsetX*1.2,
+                    route.Position.Y + offsetY*1.2,
                     route.Position.Z
                 );
                 Vector3d direction = route.Position - newPoint;
@@ -2332,8 +2345,7 @@ namespace GMEPPlumbing
                 }
 
 
-                double rotatedOffsetX = -offsetY;
-                double rotatedOffsetY = offsetX;
+              
                 Point3d anotherNewPoint = new Point3d(
                     newPoint.X + rotatedOffsetX,
                     newPoint.Y + rotatedOffsetY,
@@ -2353,6 +2365,8 @@ namespace GMEPPlumbing
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                     BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
                     BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+
+                    //Place the fixture block
                     BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
                     br.Rotation = route.Rotation;
                     modelSpace.AppendEntity(br);
@@ -2360,6 +2374,27 @@ namespace GMEPPlumbing
                     blockId = br.Id;
                     point = br.Position;
                     rotation = br.Rotation;
+
+                    //Place the circle and hatch
+                    Point3d midPoint = new Point3d(
+                       (StartPos.X + newPoint.X) / 2.0,
+                       (StartPos.Y + newPoint.Y) / 2.0,
+                       (StartPos.Z + newPoint.Z) / 2.0
+                   );
+                    Circle circle = new Circle(midPoint, Vector3d.ZAxis, 1);
+                    circle.Layer = "P-DOMW-CWTR";
+                    modelSpace.AppendEntity(circle);
+                    tr.AddNewlyCreatedDBObject(circle, true);
+
+                    /*Hatch hatch = new Hatch();
+                    hatch.SetDatabaseDefaults();
+                    hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
+                    hatch.Associative = true;
+                    hatch.AppendLoop(HatchLoopTypes.Default, new ObjectIdCollection { circle.ObjectId });
+                    hatch.EvaluateHatch(true);
+                    modelSpace.AppendEntity(hatch);
+                    tr.AddNewlyCreatedDBObject(hatch, true);*/
+
                     tr.Commit();
                   }
                 }
@@ -2375,6 +2410,8 @@ namespace GMEPPlumbing
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                     BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
                     BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+
+                    //Place the fixture block
                     BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
                     br.Rotation = route.Rotation;
                     modelSpace.AppendEntity(br);
@@ -2382,6 +2419,27 @@ namespace GMEPPlumbing
                     blockId = br.Id;
                     point = br.Position;
                     rotation = br.Rotation;
+
+                    //Place the circle and hatch
+                    Point3d midPoint = new Point3d(
+                       (StartPos.X + newPoint.X) / 2.0,
+                       (StartPos.Y + newPoint.Y) / 2.0,
+                       (StartPos.Z + newPoint.Z) / 2.0
+                    );
+                    Circle circle = new Circle(midPoint, Vector3d.ZAxis, 1);
+                    circle.Layer = "P-DOMW-CWTR";
+                    modelSpace.AppendEntity(circle);
+                    tr.AddNewlyCreatedDBObject(circle, true);
+
+                    /*Hatch hatch = new Hatch();
+                    hatch.SetDatabaseDefaults();
+                    hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
+                    hatch.Associative = true;
+                    hatch.AppendLoop(HatchLoopTypes.Default, new ObjectIdCollection { circle.ObjectId });
+                    hatch.EvaluateHatch(true);
+                    modelSpace.AppendEntity(hatch);
+                    tr.AddNewlyCreatedDBObject(hatch, true);*/
+                    
                     tr.Commit();
                   }
                 }
