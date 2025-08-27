@@ -840,7 +840,7 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "is_up") {
               prop.Value = isUp ? 1 : 0;
-              newRoute.IsUp = (int)prop.Value == 1;
+              newRoute.IsUp = isUp;
             }
           }
           newRoute.Type = type;
@@ -897,7 +897,7 @@ namespace GMEPPlumbing
               }
               if (prop.PropertyName == "is_up") {
                 prop.Value = isUp ? 1 : 0;
-                newRoute.IsUp = (int)prop.Value == 1;
+                newRoute.IsUp = isUp;
               }
             }
             newRoute.Type = type;
@@ -987,7 +987,7 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "is_up") {
               prop.Value = isUp ? 1 : 0;
-              newRoute2.IsUp = (int)prop.Value == 1;
+              newRoute2.IsUp = isUp;
             }
           }
           newRoute2.Type = type;
