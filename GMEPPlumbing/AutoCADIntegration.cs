@@ -1594,28 +1594,29 @@ namespace GMEPPlumbing
     }
 
     public static void ZoomToBlock(Editor ed, BlockReference blockRef) {
-      Extents3d ext = blockRef.GeometricExtents;
-      using (ViewTableRecord view = ed.GetCurrentView()) {
-        double halfWidth = view.Width / 2.0;
-        double halfHeight = view.Height / 2.0;
-        double minX = view.CenterPoint.X - halfWidth;
-        double maxX = view.CenterPoint.X + halfWidth;
-        double minY = view.CenterPoint.Y - halfHeight;
-        double maxY = view.CenterPoint.Y + halfHeight;
+      var doc = ed.Document;
+      using (doc.LockDocument()) {
+        Point3d wcsPos = blockRef.Position;
+        // Get the current view
+        using (ViewTableRecord view = ed.GetCurrentView()) {
+          Matrix3d matWcs2Dcs =
+              Matrix3d.PlaneToWorld(view.ViewDirection) 
+              .Inverse() *
+              Matrix3d.Displacement(view.Target - Point3d.Origin) 
+              .Inverse() *
+              Matrix3d.Rotation(-view.ViewTwist, view.ViewDirection, view.Target);
 
-        if (
-            ext.MinPoint.X >= minX && ext.MaxPoint.X <= maxX &&
-            ext.MinPoint.Y >= minY && ext.MaxPoint.Y <= maxY
-        ) {
-          return;
+          Point3d dcsPos = wcsPos.TransformBy(matWcs2Dcs);
+
+          double zoomWidth = 400.0;
+          double zoomHeight = 400.0;
+
+          view.CenterPoint = new Point2d(dcsPos.X, dcsPos.Y);
+          view.Width = zoomWidth;
+          view.Height = zoomHeight;
+
+          ed.SetCurrentView(view);
         }
-        view.CenterPoint = new Point2d(
-          (ext.MinPoint.X + ext.MaxPoint.X) / 2,
-          (ext.MinPoint.Y + ext.MaxPoint.Y) / 2
-        );
-        view.Height = ext.MaxPoint.Y * 50 - ext.MinPoint.Y * 50;
-        view.Width = ext.MaxPoint.X * 50 - ext.MinPoint.X * 50;
-        ed.SetCurrentView(view);
       }
     }
 
