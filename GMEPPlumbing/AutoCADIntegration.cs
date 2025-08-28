@@ -2386,14 +2386,24 @@ namespace GMEPPlumbing
                     modelSpace.AppendEntity(circle);
                     tr.AddNewlyCreatedDBObject(circle, true);
 
-                    /*Hatch hatch = new Hatch();
+                    Hatch hatch = new Hatch();
                     hatch.SetDatabaseDefaults();
                     hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
-                    hatch.Associative = true;
-                    hatch.AppendLoop(HatchLoopTypes.Default, new ObjectIdCollection { circle.ObjectId });
-                    hatch.EvaluateHatch(true);
+                    hatch.Associative = false;
+                    hatch.Layer = "P-DOMW-CWTR";
+
+                    // Append the hatch to model space and add to transaction BEFORE EvaluateHatch
                     modelSpace.AppendEntity(hatch);
-                    tr.AddNewlyCreatedDBObject(hatch, true);*/
+                    tr.AddNewlyCreatedDBObject(hatch, true);
+
+                    // Append the loop
+                    ObjectIdCollection ids = new ObjectIdCollection { circle.ObjectId };
+                    hatch.AppendLoop(HatchLoopTypes.Default, ids);
+
+                    // Now evaluate the hatch
+                    hatch.EvaluateHatch(true);
+
+                    circle.Erase();
 
                     tr.Commit();
                   }
@@ -2427,19 +2437,28 @@ namespace GMEPPlumbing
                        (StartPos.Z + newPoint.Z) / 2.0
                     );
                     Circle circle = new Circle(midPoint, Vector3d.ZAxis, 1);
-                    circle.Layer = "P-DOMW-CWTR";
                     modelSpace.AppendEntity(circle);
                     tr.AddNewlyCreatedDBObject(circle, true);
 
-                    /*Hatch hatch = new Hatch();
+                    Hatch hatch = new Hatch();
                     hatch.SetDatabaseDefaults();
                     hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
-                    hatch.Associative = true;
-                    hatch.AppendLoop(HatchLoopTypes.Default, new ObjectIdCollection { circle.ObjectId });
-                    hatch.EvaluateHatch(true);
+                    hatch.Associative = false;
+                    hatch.Layer = "P-DOMW-CWTR";
+
+                    // Append the hatch to model space and add to transaction BEFORE EvaluateHatch
                     modelSpace.AppendEntity(hatch);
-                    tr.AddNewlyCreatedDBObject(hatch, true);*/
-                    
+                    tr.AddNewlyCreatedDBObject(hatch, true);
+
+                    // Append the loop
+                    ObjectIdCollection ids = new ObjectIdCollection { circle.ObjectId };
+                    hatch.AppendLoop(HatchLoopTypes.Default, ids);
+
+                    // Now evaluate the hatch
+                    hatch.EvaluateHatch(true);
+
+                    circle.Erase();
+
                     tr.Commit();
                   }
                 }
@@ -2637,7 +2656,7 @@ namespace GMEPPlumbing
             }
           }
           catch (System.Exception ex) {
-            ed.WriteMessage(ex.ToString());
+            ed.WriteMessage("FIxture Error - "+ ex.ToString());
             routeHeightDisplay.Disable();
             Console.WriteLine(ex.ToString());
           }
