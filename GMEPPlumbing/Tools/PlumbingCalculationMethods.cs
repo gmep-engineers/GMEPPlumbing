@@ -556,7 +556,11 @@ namespace GMEPPlumbing {
         intersectionPoint = default(Point3d);
         return false;
       }
-
+      //Checking Z heights, can change later
+      if (p2.Z != q1.Z && p1.Z != q2.Z) {
+        intersectionPoint = default(Point3d);
+        return false; // They only touch at endpoints
+      }
       // Use Z from the first segment's start point (or set to 0 if you want 2D)
       intersectionPoint = new Point3d(x, y, p1.Z);
       return true;
