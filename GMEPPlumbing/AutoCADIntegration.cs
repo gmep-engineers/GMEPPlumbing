@@ -2110,17 +2110,7 @@ namespace GMEPPlumbing
         );
       }
       int flowTypeId = 1;
-      if (selectedFixtureType.Abbreviation == "WC") {
-        PromptKeywordOptions keywordOptions2 = new PromptKeywordOptions("");
-        keywordOptions2.Message = "\nSelect the flow type for the fixture:";
-        keywordOptions2.Keywords.Add("Flush Tank");
-        keywordOptions2.Keywords.Add("Flush Valve");
-        keywordOptions2.Keywords.Default = "Flush Tank";
-        keywordOptions2.AllowNone = false;
-        PromptResult keywordResult2 = ed.GetKeywords(keywordOptions2);
-        flowTypeId = keywordResult2.StringResult == "Flush Tank" ? 1 : 2;
-      }
-      else if (selectedFixtureType.Abbreviation == "U") {
+      if (selectedFixtureType.Abbreviation == "U" || selectedCatalogItem.Id == 6) {
         flowTypeId = 2;
       }
       List<string> selectedBlockNames = new List<string>();
@@ -2753,12 +2743,13 @@ namespace GMEPPlumbing
       List<PlumbingSourceType> plumbingSourceTypes = MariaDBService.GetPlumbingSourceTypes();
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
 
-      keywordOptions.Message = "\nSelect fixture type:";
+      keywordOptions.Message = "\nSelect source type:";
 
       plumbingSourceTypes.ForEach(t => {
-        keywordOptions.Keywords.Add(t.Id.ToString() + " " + t.Type);
+        if ((CADObjectCommands.ActiveViewTypes.Contains("Water") && t.Type == "Water Meter") || (CADObjectCommands.ActiveViewTypes.Contains("Water") && t.Type == "Water Heater") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.Type == "Water Heater") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.Type == "Gas Meter") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.Type == "Waste Source") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.Type == "Vent Exit")) {
+          keywordOptions.Keywords.Add(t.Id.ToString() + " " + t.Type);
+        }
       });
-      keywordOptions.Keywords.Default = "1 Water Meter";
       keywordOptions.AllowNone = false;
       PromptResult keywordResult = ed.GetKeywords(keywordOptions);
       if (keywordResult.Status != PromptStatus.OK) {
