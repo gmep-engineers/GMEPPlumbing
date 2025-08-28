@@ -36,6 +36,7 @@ using static MongoDB.Bson.Serialization.Serializers.SerializerHelper;
 using Google.Protobuf.WellKnownTypes;
 using GMEPPlumbing.Tools;
 using MySqlX.XDevAPI.Common;
+using Mysqlx.Session;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
@@ -2085,19 +2086,11 @@ namespace GMEPPlumbing
           keywordOptions = new PromptKeywordOptions("");
           keywordOptions.Message = "\nSelect catalog item:";
           plumbingFixtureCatalogItems.ForEach(i => {
-            keywordOptions.Keywords.Add(
-              i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model
-            );
+            if (CADObjectCommands.ActiveViewTypes.Contains("Water") || i.Id != 1) {
+              keywordOptions.Keywords.Add(i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model);
+            }
           });
 
-          keywordOptions.Keywords.Default =
-            plumbingFixtureCatalogItems[0].Id.ToString()
-            + " - "
-            + plumbingFixtureCatalogItems[0].Description
-            + " - "
-            + plumbingFixtureCatalogItems[0].Make
-            + " "
-            + plumbingFixtureCatalogItems[0].Model;
           keywordResult = ed.GetKeywords(keywordOptions);
 
           catalogString = keywordResult.StringResult;
