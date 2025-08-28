@@ -2391,19 +2391,37 @@ namespace GMEPPlumbing
                     hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
                     hatch.Associative = false;
                     hatch.Layer = "P-DOMW-CWTR";
-
-                    // Append the hatch to model space and add to transaction BEFORE EvaluateHatch
                     modelSpace.AppendEntity(hatch);
                     tr.AddNewlyCreatedDBObject(hatch, true);
-
-                    // Append the loop
                     ObjectIdCollection ids = new ObjectIdCollection { circle.ObjectId };
                     hatch.AppendLoop(HatchLoopTypes.Default, ids);
+                    hatch.Elevation = midPoint.Z;
 
-                    // Now evaluate the hatch
                     hatch.EvaluateHatch(true);
-
                     circle.Erase();
+
+                    //placing the line :3
+                    Vector3d routeVec = newPoint - StartPos;
+                    double routeLength = routeVec.Length;
+                    if (routeLength == 0) return;
+
+                    Point3d midPoint2 = StartPos + (routeVec * 0.5);
+                    Vector3d normal = new Vector3d(-routeVec.Y, routeVec.X, 0).GetNormal();
+
+                    double offsetDistance3 = 4.0;
+                    Point3d offsetMid = midPoint + (normal * offsetDistance3);
+                    if (res.StringResult == "Right") {
+                      offsetMid = midPoint - (normal * offsetDistance3);
+                    }
+
+                    Vector3d halfVec = routeVec.GetNormal() * (routeLength / 4.0);
+                    Point3d newStart = offsetMid - halfVec;
+                    Point3d newEnd = offsetMid + halfVec;
+
+                    Line line = new Line(newStart, newEnd);
+                    line.Layer = "P-DOMW-CWTR";
+                    modelSpace.AppendEntity(line);
+                    tr.AddNewlyCreatedDBObject(line, true);
 
                     tr.Commit();
                   }
@@ -2436,7 +2454,8 @@ namespace GMEPPlumbing
                        (StartPos.Y + newPoint.Y) / 2.0,
                        (StartPos.Z + newPoint.Z) / 2.0
                     );
-                    Circle circle = new Circle(midPoint, Vector3d.ZAxis, 1);
+                    Point3d newMid = new Point3d(midPoint.X, midPoint.Y, midPoint.Z - (route.Length * 12));
+                    Circle circle = new Circle(newMid, Vector3d.ZAxis, 1);
                     modelSpace.AppendEntity(circle);
                     tr.AddNewlyCreatedDBObject(circle, true);
 
@@ -2445,19 +2464,41 @@ namespace GMEPPlumbing
                     hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
                     hatch.Associative = false;
                     hatch.Layer = "P-DOMW-CWTR";
+                    hatch.Elevation = newMid.Z;
 
-                    // Append the hatch to model space and add to transaction BEFORE EvaluateHatch
                     modelSpace.AppendEntity(hatch);
                     tr.AddNewlyCreatedDBObject(hatch, true);
 
-                    // Append the loop
                     ObjectIdCollection ids = new ObjectIdCollection { circle.ObjectId };
                     hatch.AppendLoop(HatchLoopTypes.Default, ids);
-
-                    // Now evaluate the hatch
                     hatch.EvaluateHatch(true);
-
                     circle.Erase();
+
+                    //placing the line :3
+                    Vector3d routeVec = newPoint - StartPos;
+                    double routeLength = routeVec.Length;
+                    if (routeLength == 0) return; 
+
+                    Point3d midPoint2 = StartPos + (routeVec * 0.5);
+                    Vector3d normal = new Vector3d(-routeVec.Y, routeVec.X, 0).GetNormal();
+
+                    double offsetDistance3 = 4.0;
+                    Point3d offsetMid = midPoint + (normal * offsetDistance3);
+                    if (res.StringResult == "Right") {
+                      offsetMid = midPoint - (normal * offsetDistance3);
+                    }
+
+                    Vector3d halfVec = routeVec.GetNormal() * (routeLength / 4.0);
+
+                    Point3d newStart = offsetMid - halfVec;
+                    Point3d newEnd = offsetMid + halfVec;
+                    newStart = new Point3d(newStart.X, newStart.Y, newStart.Z - (route.Length * 12));
+                    newEnd = new Point3d(newEnd.X, newEnd.Y, newEnd.Z - (route.Length * 12));
+
+                    Line line = new Line(newStart, newEnd);
+                    line.Layer = "P-DOMW-CWTR";
+                    modelSpace.AppendEntity(line);
+                    tr.AddNewlyCreatedDBObject(line, true);
 
                     tr.Commit();
                   }
