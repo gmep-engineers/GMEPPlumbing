@@ -2054,9 +2054,12 @@ namespace GMEPPlumbing
       if (fixtureString == null) {
         keywordOptions.Message = "\nSelect fixture type:";
         plumbingFixtureTypes.ForEach(t => {
-          keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
+          if ((CADObjectCommands.ActiveViewTypes.Contains("Water") && t.WaterBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.GasBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.WasteBlockNames != "")) 
+          {
+            keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
+          }
         });
-        keywordOptions.Keywords.Default = "WC - Water Closet";
+        //keywordOptions.Keywords.Default = "WC - Water Closet";
         keywordOptions.AllowNone = false;
         keywordResult = ed.GetKeywords(keywordOptions);
 
