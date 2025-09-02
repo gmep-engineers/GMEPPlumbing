@@ -515,8 +515,10 @@ namespace GMEPPlumbing
       {
         BlockTable acBlkTbl =
           acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+        /*BlockTableRecord acBlkTblRec =
+          acTrans.GetObject(acBlkTbl[$"ar{Scale}"], OpenMode.ForRead) as BlockTableRecord;*/
         BlockTableRecord acBlkTblRec =
-          acTrans.GetObject(acBlkTbl[$"ar{Scale}"], OpenMode.ForRead) as BlockTableRecord;
+          acTrans.GetObject(acBlkTbl[$"ar0.25"], OpenMode.ForRead) as BlockTableRecord;
         using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId))
         {
           ArrowJig arrowJig = new ArrowJig(acBlkRef, center);
