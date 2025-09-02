@@ -132,13 +132,12 @@ namespace GMEPPlumbing.Views
             textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\"  {horizontalRoute.PipeSize}\n";
           }
           else if (horizontalRoute.Type == "Waste") {
-            textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits} \n";
+            textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\" \n Pipe Size: {horizontalRoute.PipeSize}\n \n";
           }
           else if (horizontalRoute.Type == "Vent") {
-            textString = $" {feet}' {inches}\"\n";
+            textString = $" {feet}' {inches}\"\n  DFU: {horizontalRoute.FixtureUnits} \nLongest Run: {longestRunFeet}' {longestRunInches}\" \n Pipe Size: {horizontalRoute.PipeSize}\n \n";
           }
           double textWidth = textHeight * textString.Length * 0.05;
-
           // Offset so the back of the text aligns with the end point 
           var textPos = new Point3D(
               horizontalRoute.EndPoint.X - (direction.X * (textWidth / 2)),
@@ -280,13 +279,13 @@ namespace GMEPPlumbing.Views
         int inches = (int)Math.Round(pipeLength % 12);
         string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n Pipe Size: {pipeSize}";
         if (verticalRoutes.First().Type == "Gas") {
-          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\" {pipeSize}";
+          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\" \n {pipeSize}";
         }
         else if (verticalRoutes.First().Type == "Waste") {
-          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n";
+          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\" \n Pipe Size: {pipeSize}";
         }
         else if (verticalRoutes.First().Type == "Vent") {
-          textString = $" {feet}' {inches}\"\n";
+          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\" \n Pipe Size: {pipeSize}";
         }
         int textHeight = 8;
         double textWidth = textHeight * textString.Length * 0.05;
