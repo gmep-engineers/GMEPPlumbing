@@ -207,6 +207,7 @@ namespace GMEPPlumbing {
     public int GPM { get; set; } = 0;
     public double LongestRunLength { get; set; } = 0;
     public string PipeSize { get; set; } = "";
+    public double Slope { get; set; } = 0;  
     public PlumbingHorizontalRoute(
       string id,
       string projectId,
@@ -214,7 +215,8 @@ namespace GMEPPlumbing {
       Point3d startPoint,
       Point3d endPoint,
       string basePointId,
-      string pipeType
+      string pipeType,
+      double slope
     ) {
       Id = id;
       Type = type;
@@ -223,6 +225,7 @@ namespace GMEPPlumbing {
       EndPoint = endPoint;
       BasePointId = basePointId;
       PipeType = pipeType;
+      Slope = slope;
     }
     public void GenerateGallonsPerMinute() {
       // Key: fixture units, Value: gpm

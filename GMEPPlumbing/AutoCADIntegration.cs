@@ -198,7 +198,7 @@ namespace GMEPPlumbing
         pko1.Keywords.Add("Copper", "Semi-Rigid Copper Tubing", "Semi-Rigid Copper Tubing");
         pko1.Keywords.Add("Metal", "Schedule 40 Metallic Pipe", "Schedule 40 Metallic Pipe");
         pko1.Keywords.Add("Steel", "Corrugated Stainless Steel Tubing", "Corrugated Stainless Steel Tubing");
-        pko1.Keywords.Add("Plastic","Polyethylene Plastic Pipe", "Polyethylene Plastic Pipe");
+        pko1.Keywords.Add("Plastic", "Polyethylene Plastic Pipe", "Polyethylene Plastic Pipe");
         PromptResult pr1 = ed.GetKeywords(pko1);
         if (pr1.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
@@ -206,10 +206,7 @@ namespace GMEPPlumbing
         }
         pipeType = pr1.StringResult;
       }
-    
-
-
-
+     
       PromptKeywordOptions pko2 = new PromptKeywordOptions("\nForward or Backward?");
       pko2.Keywords.Add("Forward");
       pko2.Keywords.Add("Backward");
@@ -290,6 +287,26 @@ namespace GMEPPlumbing
 
       Point3d endPointLocation2 = ppr3.Value;
 
+      double slope = 0;
+
+      if (result == "Waste" || result == "Vent") {
+        PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Slope: ");
+        pko1.Keywords.Add("2%");
+        pko1.Keywords.Add("1%");
+        PromptResult pr1 = ed.GetKeywords(pko1);
+        if (pr1.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+        string slopeResult = pr1.StringResult;
+        if (slopeResult == "2%") {
+          slope = 0.02;
+        }
+        else if (slopeResult == "1%") {
+          slope = 0.01;
+        }
+      }
+
       using (Transaction tr2 = db.TransactionManager.StartTransaction()) {
         BlockTable bt = (BlockTable)tr2.GetObject(db.BlockTableId, OpenMode.ForWrite);
         BlockTableRecord btr = (BlockTableRecord)
@@ -306,7 +323,7 @@ namespace GMEPPlumbing
         tr2.Commit();
       }
       routeGUIDS.Add(LineGUID2);
-      AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType);
+      AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType, slope);
       AddArrowsToLine(addedLineId2, LineGUID2);
 
       while (true) {
@@ -383,6 +400,24 @@ namespace GMEPPlumbing
             endPointLocation3 = ppr.Value;
             break;
           }
+          slope = 0;
+          if (result == "Waste" || result == "Vent") {
+            PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Slope: ");
+            pko1.Keywords.Add("2%");
+            pko1.Keywords.Add("1%");
+            PromptResult pr1 = ed.GetKeywords(pko1);
+            if (pr1.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            string slopeResult = pr1.StringResult;
+            if (slopeResult == "2%") {
+              slope = 0.02;
+            }
+            else if (slopeResult == "1%") {
+              slope = 0.01;
+            }
+          }
 
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
           BlockTableRecord btr = (BlockTableRecord)
@@ -406,7 +441,7 @@ namespace GMEPPlumbing
           tr.Commit();
         }
         routeGUIDS.Add(LineGUID);
-        AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType);
+        AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType, slope);
         AddArrowsToLine(addedLineId, LineGUID);
       }
       routeHeightDisplay.Disable();
@@ -460,7 +495,25 @@ namespace GMEPPlumbing
         addedLineId = line.ObjectId;
         tr.Commit();
       }
-      AttachRouteXData(addedLineId, LineGUID, CADObjectCommands.GetActiveView(), pipeType);
+      double slope = 0;
+      if (type == "Waste" || type == "Vent") {
+        PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Slope: ");
+        pko1.Keywords.Add("2%");
+        pko1.Keywords.Add("1%");
+        PromptResult pr1 = ed.GetKeywords(pko1);
+        if (pr1.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+        string slopeResult = pr1.StringResult;
+        if (slopeResult == "2%") {
+          slope = 0.02;
+        }
+        else if (slopeResult == "1%") {
+          slope = 0.01;
+        }
+      }
+      AttachRouteXData(addedLineId, LineGUID, CADObjectCommands.GetActiveView(), pipeType, slope);
       //AddArrowsToLine(addedLineId, LineGUID);
     }
 
@@ -1752,7 +1805,7 @@ namespace GMEPPlumbing
       }
     }
 
-    private void AttachRouteXData(ObjectId lineId, string id, string basePointId, string pipeType) {
+    private void AttachRouteXData(ObjectId lineId, string id, string basePointId, string pipeType, double slope) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
 
@@ -1775,7 +1828,8 @@ namespace GMEPPlumbing
           new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
           new TypedValue(1000, id),
           new TypedValue(1000, basePointId),
-          new TypedValue(1000, pipeType)
+          new TypedValue(1000, pipeType),
+          new TypedValue(1040, slope)
         );
         line.XData = rb;
         rb.Dispose();
@@ -3738,9 +3792,9 @@ namespace GMEPPlumbing
               if (xdata != null && xdata.AsArray().Length > 2) {
                 TypedValue[] values = xdata.AsArray();
 
-                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), values[3].Value.ToString());
+                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), values[3].Value.ToString(), (double)values[4].Value);
                 if (route.Type == "Waste" || route.Type == "Vent") {
-                  route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.EndPoint, line.StartPoint, values[2].Value.ToString(), values[3].Value.ToString());
+                  route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.EndPoint, line.StartPoint, values[2].Value.ToString(), values[3].Value.ToString(), (double)values[4].Value);
                 }
                 routes.Add(route);
               }

@@ -840,8 +840,8 @@ namespace GMEPPlumbing.Services
         if (routes.Count > 0) {
           string upsertQuery = @"
               INSERT INTO plumbing_horizontal_routes
-              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, start_pos_z, end_pos_z, base_point_id, type, pipe_type)
-              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @startPosZ, @endPosZ, @basePointId, @type, @pipeType)
+              (id, project_id, start_pos_x, end_pos_x, start_pos_y, end_pos_y, start_pos_z, end_pos_z, base_point_id, type, pipe_type, slope)
+              VALUES (@id, @projectId, @startPosX, @endPosX, @startPosY, @endPosY, @startPosZ, @endPosZ, @basePointId, @type, @pipeType, @slope)
               ON DUPLICATE KEY UPDATE
                   start_pos_x = @startPosX,
                   end_pos_x = @endPosX,
@@ -851,7 +851,8 @@ namespace GMEPPlumbing.Services
                   end_pos_z = @endPosZ,
                   base_point_id = @basePointId,
                   type = @type,
-                  pipe_type = @pipeType
+                  pipe_type = @pipeType,
+                  slope = @slope
           ";
           foreach (var route in routes) {
             MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -866,6 +867,7 @@ namespace GMEPPlumbing.Services
             command.Parameters.AddWithValue("@basePointId", route.BasePointId);
             command.Parameters.AddWithValue("@type", route.Type);
             command.Parameters.AddWithValue("@pipeType", route.PipeType);
+            command.Parameters.AddWithValue("@slope", route.Slope);
             await command.ExecuteNonQueryAsync();
           }
         }
@@ -1145,7 +1147,8 @@ namespace GMEPPlumbing.Services
             reader.GetDouble("end_pos_z")
           ),
          reader.GetString("base_point_id"),
-         reader.GetString("pipe_type")
+         reader.GetString("pipe_type"),
+         reader.GetDouble("slope")
         );
         routes.Add(route);
       }
