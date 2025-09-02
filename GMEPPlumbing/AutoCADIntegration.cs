@@ -4304,11 +4304,16 @@ namespace GMEPPlumbing
     private bool _enabled = false;
 
     public RouteHeightDisplay(Editor ed) {
-      _ed = ed;
+      _ed = ed ?? throw new ArgumentNullException(nameof(ed));
     }
 
     public void Enable(double routeHeight, string viewName, int floor) {
-      if (_enabled) return;
+      if (_enabled || _ed == null)
+        return;
+
+      if (string.IsNullOrWhiteSpace(viewName))
+        viewName = "N/A";
+
       _routeHeight = routeHeight;
       _viewName = viewName;
       _floor = floor;
@@ -4318,97 +4323,115 @@ namespace GMEPPlumbing
 
     public void Disable() {
       if (!_enabled) return;
-      _ed.PointMonitor -= Ed_PointMonitor;
+      if (_ed != null)
+        _ed.PointMonitor -= Ed_PointMonitor;
       _enabled = false;
-      TransientManager.CurrentTransientManager.EraseTransients(TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+      try {
+        TransientManager.CurrentTransientManager.EraseTransients(TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+      }
+      catch {
+        Console.WriteLine("Error erasing transients");
+      }
     }
 
     public void Update(double routeHeight, string viewName, int floor) {
+      if (string.IsNullOrWhiteSpace(viewName))
+        viewName = "N/A";
       _routeHeight = routeHeight;
       _viewName = viewName;
       _floor = floor;
     }
 
     private void Ed_PointMonitor(object sender, PointMonitorEventArgs e) {
-      var view = _ed.GetCurrentView();
-      var db = _ed.Document.Database;
+      try {
+        if (_ed == null || _ed.Document == null)
+          return;
 
+        var view = _ed.GetCurrentView();
+        var db = _ed.Document.Database;
 
-      string viewNameText = $"View: {_viewName}";
-      string floorText = $"Floor: {_floor}";
-      string routeHeightText = $"Height: {_routeHeight:0.##} ft";
+        if (view == null || db == null)
+          return;
 
-      double textHeight = view.Height / 70;
-      double lineSpacing = textHeight * 1.2;
+        string viewNameText = $"View: {_viewName}";
+        string floorText = $"Floor: {_floor}";
+        string routeHeightText = $"Height: {_routeHeight:0.##} ft";
 
-      string[] lines = { viewNameText, routeHeightText, floorText };
-      int maxLen = lines.Max(s => s.Length);
-      double textWidth = textHeight * maxLen * 0.6;
-      double padding = textHeight * 0.4;
+        double textHeight = view.Height / 70;
+        double lineSpacing = textHeight * 1.2;
 
-      // Position text 10 units left of the cursor
-      var pos = e.Context.RawPoint + new Vector3d(-(view.Width / 10.5), -(view.Height / 150), 0);
+        string[] lines = { viewNameText, routeHeightText, floorText };
+        int maxLen = lines.Max(s => s.Length);
+        double textWidth = textHeight * maxLen * 0.6;
+        double padding = textHeight * 0.4;
 
-      // Rectangle corners (lower left, lower right, upper right, upper left)
-      double rectHeight = lineSpacing * 3 + padding * 2;
-      Point3d lowerLeft = new Point3d(pos.X - padding, pos.Y - padding, pos.Z);
-      Point3d lowerRight = new Point3d(pos.X + textWidth + padding, pos.Y - padding, pos.Z);
-      Point3d upperRight = new Point3d(pos.X + textWidth + padding, pos.Y + rectHeight - padding, pos.Z);
-      Point3d upperLeft = new Point3d(pos.X - padding, pos.Y + rectHeight - padding, pos.Z);
+        // Position text 10 units left of the cursor
+        var pos = e.Context.RawPoint + new Vector3d(-(view.Width / 10.5), -(view.Height / 150), 0);
 
-      // Create filled rectangle using Solid
-      var solid = new Solid(lowerLeft, lowerRight, upperLeft, upperRight);
-      solid.ColorIndex = 8; // Light gray, or set as needed
+        // Rectangle corners (lower left, lower right, upper right, upper left)
+        double rectHeight = lineSpacing * 3 + padding * 2;
+        Point3d lowerLeft = new Point3d(pos.X - padding, pos.Y - padding, pos.Z);
+        Point3d lowerRight = new Point3d(pos.X + textWidth + padding, pos.Y - padding, pos.Z);
+        Point3d upperRight = new Point3d(pos.X + textWidth + padding, pos.Y + rectHeight - padding, pos.Z);
+        Point3d upperLeft = new Point3d(pos.X - padding, pos.Y + rectHeight - padding, pos.Z);
 
-      var border = new Polyline(4);
-      border.AddVertexAt(0, new Point2d(lowerLeft.X, lowerLeft.Y), 0, 0, 0);
-      border.AddVertexAt(1, new Point2d(lowerRight.X, lowerRight.Y), 0, 0, 0);
-      border.AddVertexAt(2, new Point2d(upperRight.X, upperRight.Y), 0, 0, 0);
-      border.AddVertexAt(3, new Point2d(upperLeft.X, upperLeft.Y), 0, 0, 0);
-      border.Closed = true;
-      border.Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0);
+        // Create filled rectangle using Solid
+        var solid = new Solid(lowerLeft, lowerRight, upperLeft, upperRight);
+        solid.ColorIndex = 8; // Light gray, or set as needed
 
-      // Create the text
-      var text1 = new DBText {
-        Position = new Point3d(pos.X, pos.Y + lineSpacing * 2, pos.Z),
-        Height = textHeight,
-        TextString = viewNameText,
-        Layer = "0",
-        Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0),
-        TextStyleId = db.Textstyle,
-      };
-      var text2 = new DBText {
-        Position = new Point3d(pos.X, pos.Y + lineSpacing, pos.Z),
-        Height = textHeight,
-        TextString = floorText,
-        Layer = "0",
-        Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0),
-        TextStyleId = db.Textstyle,
-      };
-      var text3 = new DBText {
-        Position = new Point3d(pos.X, pos.Y, pos.Z),
-        Height = textHeight,
-        TextString = routeHeightText,
-        Layer = "0",
-        Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0),
-        TextStyleId = db.Textstyle,
-      };
+        var border = new Polyline(4);
+        border.AddVertexAt(0, new Point2d(lowerLeft.X, lowerLeft.Y), 0, 0, 0);
+        border.AddVertexAt(1, new Point2d(lowerRight.X, lowerRight.Y), 0, 0, 0);
+        border.AddVertexAt(2, new Point2d(upperRight.X, upperRight.Y), 0, 0, 0);
+        border.AddVertexAt(3, new Point2d(upperLeft.X, upperLeft.Y), 0, 0, 0);
+        border.Closed = true;
+        border.Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0);
 
-      // Remove previous transients
-      TransientManager.CurrentTransientManager.EraseTransients(
-          TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+        // Create the text
+        var text1 = new DBText {
+          Position = new Point3d(pos.X, pos.Y + lineSpacing * 2, pos.Z),
+          Height = textHeight,
+          TextString = viewNameText,
+          Layer = "0",
+          Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0),
+          TextStyleId = db.Textstyle,
+        };
+        var text2 = new DBText {
+          Position = new Point3d(pos.X, pos.Y + lineSpacing, pos.Z),
+          Height = textHeight,
+          TextString = floorText,
+          Layer = "0",
+          Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0),
+          TextStyleId = db.Textstyle,
+        };
+        var text3 = new DBText {
+          Position = new Point3d(pos.X, pos.Y, pos.Z),
+          Height = textHeight,
+          TextString = routeHeightText,
+          Layer = "0",
+          Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 0),
+          TextStyleId = db.Textstyle,
+        };
 
-      // Draw background solid first, then text
-      TransientManager.CurrentTransientManager.AddTransient(
-          solid, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
-      TransientManager.CurrentTransientManager.AddTransient(
-          border, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
-      TransientManager.CurrentTransientManager.AddTransient(
-          text1, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
-      TransientManager.CurrentTransientManager.AddTransient(
-          text2, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
-      TransientManager.CurrentTransientManager.AddTransient(
-          text3, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+        // Remove previous transients
+        TransientManager.CurrentTransientManager.EraseTransients(
+            TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+
+        // Draw background solid first, then text
+        TransientManager.CurrentTransientManager.AddTransient(
+            solid, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+        TransientManager.CurrentTransientManager.AddTransient(
+            border, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+        TransientManager.CurrentTransientManager.AddTransient(
+            text1, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+        TransientManager.CurrentTransientManager.AddTransient(
+            text2, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+        TransientManager.CurrentTransientManager.AddTransient(
+            text3, TransientDrawingMode.DirectShortTerm, 128, new IntegerCollection());
+      }
+      catch (System.Exception ex) {
+        _ed.WriteMessage($"\nError in PointMonitor: {ex.Message}");
+      }
     }
   }
 }
