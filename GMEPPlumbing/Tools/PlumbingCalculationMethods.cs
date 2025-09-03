@@ -309,7 +309,7 @@ namespace GMEPPlumbing {
       ed.WriteMessage($"\nTraversing vertical route: {route.Id} at position {route.Position}");
 
       List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
-        .Where(r => (r.Type == route.Type || (r.Type == "Waste" && route.Type == "Vent")) && r.BasePointId == route.BasePointId && routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= Math.Min(startZ, endZ) && r.StartPoint.Z <= Math.Max(startZ, endZ))
+        .Where(r => (r.Type == route.Type || ((r.Type == "Waste" || r.Type == "Grease Waste") && route.Type == "Vent")) && r.BasePointId == route.BasePointId && routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= Math.Min(startZ, endZ) && r.StartPoint.Z <= Math.Max(startZ, endZ))
         .OrderByDescending(r => Math.Abs(r.StartPoint.Z - startZ))
         .ToList();
 
@@ -368,6 +368,7 @@ namespace GMEPPlumbing {
           break;
         case 4:
           types.Add("Waste");
+          types.Add("Grease Waste");
           break;
         case 5:
           types.Add("Vent");
@@ -397,6 +398,7 @@ namespace GMEPPlumbing {
         case "WC":
           types.Add("Cold Water");
           types.Add("Waste");
+          types.Add("Grease Waste");
           break;
         case "S":
         case "HS":
@@ -406,9 +408,11 @@ namespace GMEPPlumbing {
           types.Add("Cold Water");
           types.Add("Hot Water");
           types.Add("Waste");
+          types.Add("Grease Waste");
           break;
         case "SWR":
           types.Add("Waste");
+          types.Add("Grease Waste");
           break;
         case "VS":
         case "VE":
