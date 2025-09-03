@@ -518,10 +518,11 @@ namespace GMEPPlumbing
 
       PromptPointResult jigRes = prompts.AcquirePoint(jigOpts);
 
-      Point3d pt = jigRes.Value;
-
       if (jigRes.Status != PromptStatus.OK)
         return SamplerStatus.Cancel;
+
+      Point3d pt = jigRes.Value;
+
 
       if (pt == _point)
         return SamplerStatus.NoChange;
