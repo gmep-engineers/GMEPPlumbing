@@ -2197,7 +2197,7 @@ namespace GMEPPlumbing
             if (fsSize.Contains(' ')) {
               fsSize = fsSize.Split(' ')[0];
             }
-            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+            selectedBlockNames2[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
              "%FSSIZE%",
              fsSize
             );
@@ -2222,7 +2222,7 @@ namespace GMEPPlumbing
             if (coStyle.Contains(' ')) {
               coStyle = coStyle.Split(' ')[0];
             }
-            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+            selectedBlockNames2[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
               "%COSTYLE%",
               coStyle
             );
