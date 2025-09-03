@@ -146,6 +146,7 @@ namespace GMEPPlumbing
       if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
         pko.Keywords.Add("Waste");
         pko.Keywords.Add("Vent");
+        pko.Keywords.Add("GreaseWaste");
       }
       //pko.Keywords.Add("Storm");
       PromptResult pr = ed.GetKeywords(pko);
@@ -167,6 +168,9 @@ namespace GMEPPlumbing
           layer = "P-GAS";
           break;
         case "Waste":
+          layer = "P-WV-W-BELOW";
+          break;
+        case "GreaseWaste":
           layer = "P-GREASE-WASTE";
           break;
         case "Vent":
@@ -510,6 +514,7 @@ namespace GMEPPlumbing
         if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
           pko.Keywords.Add("Waste");
           pko.Keywords.Add("Vent");
+          pko.Keywords.Add("GreaseWaste");
         }
         //pko.Keywords.Add("Storm");
         PromptResult pr = ed.GetKeywords(pko);
@@ -531,6 +536,9 @@ namespace GMEPPlumbing
           layer = "P-GAS";
           break;
         case "Waste":
+          layer = "P-WV-W-BELOW";
+          break;
+        case "GreaseWaste":
           layer = "P-GREASE-WASTE";
           break;
         case "Vent":
@@ -3744,8 +3752,10 @@ namespace GMEPPlumbing
                   type = "Vent";
                   break;
                 case "P-WV-W-BELOW":
-                case "P-GREASE-WASTE":
                   type = "Waste";
+                  break;
+                case "P-GREASE-WASTE":
+                  type = "Grease Waste";
                   break;
               }
               ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
@@ -3753,7 +3763,7 @@ namespace GMEPPlumbing
                 TypedValue[] values = xdata.AsArray();
 
                 PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), values[3].Value.ToString());
-                if (route.Type == "Waste" || route.Type == "Vent") {
+                if (route.Type == "Waste" || route.Type == "Vent" || route.Type == "Grease Waste") {
                   route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.EndPoint, line.StartPoint, values[2].Value.ToString(), values[3].Value.ToString());
                 }
                 routes.Add(route);
@@ -3858,6 +3868,9 @@ namespace GMEPPlumbing
                             type = "Hot Water";
                             break;
                           case "P-GREASE-WASTE":
+                            type = "Grease Waste";
+                            break;
+                          case "P-WV-W-BELOW":
                             type = "Waste";
                             break;
                           case "P-WV-VENT":
@@ -3881,7 +3894,7 @@ namespace GMEPPlumbing
                           pipeType,
                           isUp
                         );
-                        if (route.Type == "Waste" || route.Type == "Vent") {
+                        if (route.Type == "Waste" || route.Type == "Vent" || route.Type == "Grease Waste") {
                           route.IsUp = !route.IsUp; 
                         }
                         routes.Add(route);

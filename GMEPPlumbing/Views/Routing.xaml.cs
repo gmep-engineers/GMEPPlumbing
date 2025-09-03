@@ -351,6 +351,8 @@ namespace GMEPPlumbing.Views
         case "Gas":
           return System.Windows.Media.Brushes.SteelBlue;
         case "Waste":
+          return System.Windows.Media.Brushes.Cyan;
+        case "Grease Waste":
           return System.Windows.Media.Brushes.Magenta;
         case "Vent":
           return System.Windows.Media.Brushes.Green;
