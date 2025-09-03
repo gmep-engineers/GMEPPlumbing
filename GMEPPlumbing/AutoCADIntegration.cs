@@ -2106,6 +2106,7 @@ namespace GMEPPlumbing
           return;
         }
        fixtureString = keywordResult.StringResult;
+        ed.WriteMessage("\nSelected fixture: " + fixtureString);  
       }
       PlumbingFixtureType selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t =>
         fixtureString.StartsWith(t.Abbreviation)
@@ -2121,7 +2122,7 @@ namespace GMEPPlumbing
         keywordOptions = new PromptKeywordOptions("");
         keywordOptions.Message = "\nSelect catalog item:";
         plumbingFixtureCatalogItems.ForEach(i => {
-          if ((CADObjectCommands.ActiveViewTypes.Contains("Water") && i.WaterBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && i.GasBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && i.GasBlockNames != "")) {
+          if ((CADObjectCommands.ActiveViewTypes.Contains("Water") && i.WaterBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && i.GasBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && i.WasteBlockNames != "")) {
             keywordOptions.Keywords.Add(i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model);
           }
         });
