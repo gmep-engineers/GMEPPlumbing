@@ -2084,17 +2084,21 @@ namespace GMEPPlumbing
       string basePointId = CADObjectCommands.GetActiveView();
 
       List<PlumbingFixtureType> plumbingFixtureTypes = MariaDBService.GetPlumbingFixtureTypes();
+      Dictionary<int, List<PlumbingFixtureCatalogItem>> allPlumbingFixtureCatalogItems =
+        MariaDBService.GetAllPlumbingFixtureCatalogItems();
 
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
       PromptResult keywordResult;
 
+
       if (fixtureString == null) {
         keywordOptions.Message = "\nSelect fixture type:";
         plumbingFixtureTypes.ForEach(t => {
-          List<PlumbingFixtureCatalogItem> catalogItems= MariaDBService.GetPlumbingFixtureCatalogItemsByType(t.Id);
-          if ((CADObjectCommands.ActiveViewTypes.Contains("Water") && !catalogItems.All(item => string.IsNullOrEmpty(item.WaterBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && !catalogItems.All(item => string.IsNullOrEmpty(item.GasBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && !catalogItems.All(item => string.IsNullOrEmpty(item.WasteBlockNames))))
-          {
-            keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
+          if (allPlumbingFixtureCatalogItems.ContainsKey(t.Id)) {
+            List<PlumbingFixtureCatalogItem> catalogItems = allPlumbingFixtureCatalogItems[t.Id];
+            if ((CADObjectCommands.ActiveViewTypes.Contains("Water") && !catalogItems.All(item => string.IsNullOrEmpty(item.WaterBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && !catalogItems.All(item => string.IsNullOrEmpty(item.GasBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && !catalogItems.All(item => string.IsNullOrEmpty(item.WasteBlockNames)))) {
+              keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
+            }
           }
         });
         //keywordOptions.Keywords.Default = "WC - Water Closet";
