@@ -1989,6 +1989,10 @@ namespace GMEPPlumbing
     }
 
     public void MakeVerticalRouteLabel(Point3d dnPoint, string direction) {
+      if (dnPoint == null || double.IsNaN(dnPoint.X) || double.IsNaN(dnPoint.Y) || double.IsNaN(dnPoint.Z)) {
+        WriteMessage("\nError: Invalid point for vertical route label.");
+        return;
+      }
       CADObjectCommands.CreateArrowJig("D0", dnPoint);
       CADObjectCommands.CreateTextWithJig(
         CADObjectCommands.TextLayer,
@@ -2684,7 +2688,13 @@ namespace GMEPPlumbing
 
             if (blockName == "GMEP DRAIN") {
               //logic to attach vent
-              Point3d ventPoint = VerticalRoute("Vent", (double)routeHeight)[CADObjectCommands.ActiveBasePointId].Position;
+              var ventRoutes = VerticalRoute("Vent", (double)routeHeight);
+              if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
+                ed.WriteMessage("\nError: Could not find vent route for base point.");
+                routeHeightDisplay.Disable();
+                return;
+              }
+              Point3d ventPoint = ventRoutes[CADObjectCommands.ActiveBasePointId].Position;
               ventPoint = new Point3d(ventPoint.X, ventPoint.Y, point.Z);
               double shortenBy = 1.5;
               Vector3d direction = point - ventPoint;
