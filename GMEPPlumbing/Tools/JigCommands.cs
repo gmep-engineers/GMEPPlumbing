@@ -511,7 +511,7 @@ namespace GMEPPlumbing
       JigPromptPointOptions jigOpts = new JigPromptPointOptions();
 
       jigOpts.UserInputControls = (
-        UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted
+        UserInputControls.Accept3dCoordinates
       );
 
       jigOpts.Message = $"Select a point for {_name}:";
@@ -520,15 +520,15 @@ namespace GMEPPlumbing
 
       Point3d pt = jigRes.Value;
 
+      if (jigRes.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
       if (pt == _point)
         return SamplerStatus.NoChange;
 
       _point = pt;
 
-      if (jigRes.Status == PromptStatus.OK)
-        return SamplerStatus.OK;
-
-      return SamplerStatus.Cancel;
+      return SamplerStatus.OK;
     }
 
     protected override bool WorldDraw(Autodesk.AutoCAD.GraphicsInterface.WorldDraw draw)
