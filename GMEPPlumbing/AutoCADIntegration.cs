@@ -440,8 +440,11 @@ namespace GMEPPlumbing
           case "Gas":
             layer = "P-GAS";
             break;
-          case "Waste":
+          case "Grease Waste":
             layer = "P-GREASE-WASTE";
+            break;
+          case "Waste":
+            layer = "P-WV-W-BELOW";
             break;
           case "Vent":
             layer = "P-WV-VENT";
@@ -2128,7 +2131,7 @@ namespace GMEPPlumbing
         );
       }
       int flowTypeId = 1;
-      if (selectedFixtureType.Abbreviation == "U" || selectedCatalogItem.Id == 6) {
+      if (selectedFixtureType.Abbreviation == "U" || (selectedCatalogItem != null && selectedCatalogItem.Id == 6)) {
         flowTypeId = 2;
       }
       List<string> selectedBlockNames = new List<string>();
@@ -3740,6 +3743,7 @@ namespace GMEPPlumbing
                 case "P-WV-VENT":
                   type = "Vent";
                   break;
+                case "P-WV-W-BELOW":
                 case "P-GREASE-WASTE":
                   type = "Waste";
                   break;
