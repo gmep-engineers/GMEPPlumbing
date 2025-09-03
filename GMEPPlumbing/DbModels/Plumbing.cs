@@ -52,25 +52,14 @@ namespace GMEPPlumbing {
     public int Id;
     public string Name;
     public string Abbreviation;
-    public string WaterBlockNames;
-    public string WasteBlockNames;
-    public string GasBlockNames;
-
-
     public PlumbingFixtureType(
       int id,
       string name,
-      string abbreviation,
-      string waterBlockNames,
-      string wasteBlockNames,
-      string gasBlockNames = ""
+      string abbreviation
     ) {
       Id = id;
       Name = name;
       Abbreviation = abbreviation;
-      WaterBlockNames = waterBlockNames;
-      WasteBlockNames = wasteBlockNames;
-      GasBlockNames = gasBlockNames;
     }
   }
   public class PlumbingFullRoute {
@@ -93,8 +82,9 @@ namespace GMEPPlumbing {
     public decimal FixtureDemand;
     public decimal HotDemand;
     public int Dfu;
-    public string WaterGasBlockName;
-    public string WasteVentBlockName;
+    public string WaterBlockNames;
+    public string WasteBlockNames;
+    public string GasBlockNames;
     public int Cfh;
 
     public PlumbingFixtureCatalogItem(
@@ -112,8 +102,9 @@ namespace GMEPPlumbing {
       decimal fixtureDemand,
       decimal hotDemand,
       int dfu,
-      string waterGasBlockName,
-      string wasteVentBlockName,
+      string waterBlockNames,
+      string wasteBlockNames,
+      string gasBlockNames,
       int cfh
     ) {
       Id = id;
@@ -130,8 +121,9 @@ namespace GMEPPlumbing {
       FixtureDemand = fixtureDemand;
       HotDemand = hotDemand;
       Dfu = dfu;
-      WaterGasBlockName = waterGasBlockName;
-      WasteVentBlockName = wasteVentBlockName;
+      WaterBlockNames = waterBlockNames;
+      WasteBlockNames = wasteBlockNames;
+      GasBlockNames = gasBlockNames;
       Cfh = cfh;
     }
   }
