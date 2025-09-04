@@ -292,6 +292,7 @@
     <Compile Include="Tools\GasPipeSizingChart.cs" />
     <Compile Include="Tools\JigCommands.cs" />
     <Compile Include="Tools\PlumbingCalculationMethods.cs" />
+    <Compile Include="Tools\WasteVentSizingCharts.cs" />
     <Compile Include="Tools\WaterPipeSizingChart.cs" />
     <Compile Include="ViewModels\WaterSystemViewModel.cs" />
     <Page Include="Views\BasePointPromptWindow.xaml">
@@ -784,6 +785,14 @@
     <None Include="Tools\Charts\Gas\Propane\Semi-RigidCopper\Chart3.csv" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Charts\Gas\NaturalGas\CorrugatedStainlessSteel\" />
+    <Folder Include="Charts\Gas\NaturalGas\PolyethylenePlastic\" />
+    <Folder Include="Charts\Gas\NaturalGas\Schedule40Metal\" />
+    <Folder Include="Charts\Gas\NaturalGas\Semi-RigidCopper\" />
+    <Folder Include="Charts\Gas\Propane\CorrugatedStainlessSteel\" />
+    <Folder Include="Charts\Gas\Propane\PolyethylenePlastic\" />
+    <Folder Include="Charts\Gas\Propane\Schedule40Metal\" />
+    <Folder Include="Charts\Gas\Propane\Semi-RigidCopper\" />
     <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>
@@ -1643,10 +1652,10 @@
     <Analyzer Include="packages\AWSSDK.SecurityToken.3.7.100.27\analyzers\dotnet\cs\AWSSDK.SecurityToken.CodeAnalysis.dll" />
   </ItemGroup>
   <ItemGroup>
-	<None Include="Tools\Charts\**\*.*">
-		<Link>Charts\%(RecursiveDir)%(Filename)%(Extension)</Link>
-		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	</None>
+    <None Include="Tools\Charts\**\*.*">
+      <Link>Charts\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
