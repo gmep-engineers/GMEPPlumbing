@@ -2141,7 +2141,10 @@ namespace GMEPPlumbing
       PlumbingFixtureCatalogItem selectedCatalogItem = plumbingFixtureCatalogItems.FirstOrDefault(
         i => i.Id.ToString() == catalogString
       );
-      
+      if (selectedCatalogItem == null) {
+        return;
+      }
+
       int flowTypeId = 1;
       if (selectedFixtureType.Abbreviation == "U" || selectedCatalogItem.Id == 6) {
         flowTypeId = 2;
