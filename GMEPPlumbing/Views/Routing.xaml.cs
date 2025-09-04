@@ -666,7 +666,8 @@ namespace GMEPPlumbing.Views
                 new Point3d(hr.StartPoint.X, hr.StartPoint.Y, hr.StartPoint.Z),
                 new Point3d(hr.EndPoint.X, hr.EndPoint.Y, hr.EndPoint.Z),
                 hr.BasePointId,
-                hr.PipeType
+                hr.PipeType,
+                hr.Slope
             );
             copy.FixtureUnits = hr.FixtureUnits;
             copy.FlowTypeId = hr.FlowTypeId;

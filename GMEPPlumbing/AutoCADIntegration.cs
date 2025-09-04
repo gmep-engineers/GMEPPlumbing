@@ -310,8 +310,26 @@ namespace GMEPPlumbing
         addedLineId2 = line.ObjectId;
         tr2.Commit();
       }
+      double slope = 0;
+      if (result == "Waste" || result == "Vent" || result == "GreaseWaste") {
+        PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
+        pko3.Keywords.Add("1%");
+        pko3.Keywords.Add("2%");
+        PromptResult pr3 = ed.GetKeywords(pko3);
+        if (pr3.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          routeHeightDisplay.Disable();
+          return;
+        }
+        if (pr3.StringResult == "1%") {
+          slope = 0.01;
+        }
+        else if (pr3.StringResult == "2%") {
+          slope = 0.02;
+        }
+      }
       routeGUIDS.Add(LineGUID2);
-      AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType);
+      AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType, slope);
       AddArrowsToLine(addedLineId2, LineGUID2);
 
       while (true) {
@@ -410,8 +428,26 @@ namespace GMEPPlumbing
 
           tr.Commit();
         }
+        slope = 0;
+        if (result == "Waste" || result == "Vent" || result == "GreaseWaste") {
+          PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
+          pko3.Keywords.Add("1%");
+          pko3.Keywords.Add("2%");
+          PromptResult pr3 = ed.GetKeywords(pko3);
+          if (pr3.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            routeHeightDisplay.Disable();
+            return;
+          }
+          if (pr3.StringResult == "1%") {
+            slope = 0.01;
+          }
+          else if (pr3.StringResult == "2%") {
+            slope = 0.02;
+          }
+        }
         routeGUIDS.Add(LineGUID);
-        AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType);
+        AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType, slope);
         AddArrowsToLine(addedLineId, LineGUID);
       }
       routeHeightDisplay.Disable();
@@ -445,7 +481,7 @@ namespace GMEPPlumbing
           case "Gas":
             layer = "P-GAS";
             break;
-          case "Grease Waste":
+          case "GreaseWaste":
             layer = "P-GREASE-WASTE";
             break;
           case "Waste":
@@ -468,7 +504,24 @@ namespace GMEPPlumbing
         addedLineId = line.ObjectId;
         tr.Commit();
       }
-      AttachRouteXData(addedLineId, LineGUID, CADObjectCommands.GetActiveView(), pipeType);
+      double slope = 0;
+      if (type == "Waste" || type == "Vent" || type == "GreaseWaste") {
+        PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
+        pko3.Keywords.Add("1%");
+        pko3.Keywords.Add("2%");
+        PromptResult pr3 = ed.GetKeywords(pko3);
+        if (pr3.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+        if (pr3.StringResult == "1%") {
+          slope = 0.01;
+        }
+        else if (pr3.StringResult == "2%") {
+          slope = 0.02;
+        }
+      }
+      AttachRouteXData(addedLineId, LineGUID, CADObjectCommands.GetActiveView(), pipeType, slope);
       //AddArrowsToLine(addedLineId, LineGUID);
     }
 
@@ -1764,7 +1817,7 @@ namespace GMEPPlumbing
       }
     }
 
-    private void AttachRouteXData(ObjectId lineId, string id, string basePointId, string pipeType) {
+    private void AttachRouteXData(ObjectId lineId, string id, string basePointId, string pipeType, double slope) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
 
@@ -1787,7 +1840,8 @@ namespace GMEPPlumbing
           new TypedValue((int)DxfCode.ExtendedDataRegAppName, XRecordKey),
           new TypedValue(1000, id),
           new TypedValue(1000, basePointId),
-          new TypedValue(1000, pipeType)
+          new TypedValue(1000, pipeType),
+          new TypedValue(1040, slope)
         );
         line.XData = rb;
         rb.Dispose();
@@ -3769,9 +3823,9 @@ namespace GMEPPlumbing
               if (xdata != null && xdata.AsArray().Length > 2) {
                 TypedValue[] values = xdata.AsArray();
 
-                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), values[3].Value.ToString());
+                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), values[3].Value.ToString(), (double)values[4].Value);
                 if (route.Type == "Waste" || route.Type == "Vent" || route.Type == "Grease Waste") {
-                  route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.EndPoint, line.StartPoint, values[2].Value.ToString(), values[3].Value.ToString());
+                  route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.EndPoint, line.StartPoint, values[2].Value.ToString(), values[3].Value.ToString(), (double)values[4].Value);
                 }
                 routes.Add(route);
               }
