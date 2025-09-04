@@ -626,7 +626,9 @@ namespace GMEPPlumbing.Services
             GetSafeString(reader, "water_block_names"),
             GetSafeString(reader, "waste_block_names"),
             GetSafeString(reader, "gas_block_names"),
-            GetSafeInt(reader, "cfh")
+            GetSafeInt(reader, "cfh"),
+            GetSafeBoolean(reader, "residential"),
+            GetSafeBoolean(reader, "commercial")
           )
         );
       }
@@ -663,7 +665,9 @@ namespace GMEPPlumbing.Services
             GetSafeString(reader, "water_block_names"),
             GetSafeString(reader, "waste_block_names"),
             GetSafeString(reader, "gas_block_names"),
-            GetSafeInt(reader, "cfh")
+            GetSafeInt(reader, "cfh"),
+            GetSafeBoolean(reader, "residential"),
+            GetSafeBoolean(reader, "commercial")
           )
         );
       }
@@ -698,7 +702,9 @@ namespace GMEPPlumbing.Services
                   GetSafeString(reader, "water_block_names"),
                   GetSafeString(reader, "waste_block_names"),
                   GetSafeString(reader, "gas_block_names"),
-                  GetSafeInt(reader, "cfh")
+                  GetSafeInt(reader, "cfh"),
+                  GetSafeBoolean(reader, "residential"),
+                  GetSafeBoolean(reader, "commercial")
               );
             }
           }

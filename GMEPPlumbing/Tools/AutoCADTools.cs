@@ -47,6 +47,8 @@ namespace GMEPPlumbing
 
     public static List<string> ActiveViewTypes = new List<string>();
 
+    public static bool IsResidential { get; set; } = false;
+
     //public static bool SettingFlag= false;
 
     [CommandMethod("SetPlumbingRouteHeight")]
@@ -437,6 +439,30 @@ namespace GMEPPlumbing
         tr.Commit();
       }
       return ActiveBasePointId;
+    }
+    [CommandMethod("SetProjectType")]
+    public static void SetProjectType() {
+      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      Editor ed = doc.Editor;
+
+      PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nSelect Project Type: ");
+      promptOptions.Keywords.Add("Residential");
+      promptOptions.Keywords.Add("Commercial");
+      promptOptions.AllowNone = false;
+
+      PromptResult pr = ed.GetKeywords(promptOptions);
+      if (pr.Status == PromptStatus.OK) {
+        if (pr.StringResult == "Residential") {
+          IsResidential = true;
+        }
+        else {
+          IsResidential = false;
+        }
+        ed.WriteMessage($"\nProject type set to {pr.StringResult}.");
+      }
+      else {
+        ed.WriteMessage("\nOperation cancelled.");
+      }
     }
 
 
