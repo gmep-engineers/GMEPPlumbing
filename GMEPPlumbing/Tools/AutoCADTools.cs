@@ -582,15 +582,14 @@ namespace GMEPPlumbing
         tr.Commit();
       }
       if (angle != 0 && angle != Math.PI && createHorizontalLeg) {
-        DynamicLineJig lineJig = new DynamicLineJig(insertionPoint, Scale);
-        PromptResult dynaLineJigRes = ed.Drag(lineJig);
-        if (dynaLineJigRes.Status == PromptStatus.OK) {
-          using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction()) {
+        using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction()) {
+          DynamicLineJig lineJig = new DynamicLineJig(insertionPoint, Scale);
+          PromptResult dynaLineJigRes = ed.Drag(lineJig);
+          if (dynaLineJigRes.Status == PromptStatus.OK) {
             BlockTableRecord btr = (BlockTableRecord)
               tr.GetObject(acDoc.Database.CurrentSpaceId, OpenMode.ForWrite);
             btr.AppendEntity(lineJig.line);
             tr.AddNewlyCreatedDBObject(lineJig.line, true);
-
             thirdClickPoint = lineJig.line.EndPoint;
             tr.Commit();
           }
