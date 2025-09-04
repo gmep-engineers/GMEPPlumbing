@@ -256,7 +256,8 @@ namespace GMEPPlumbing {
            route.StartPoint,
            getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value),
            route.BasePointId,
-           route.PipeType
+           route.PipeType,
+           route.Slope
           );
           routeObjectsTemp.Add(adjustedRoute);
           Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
@@ -399,15 +400,17 @@ namespace GMEPPlumbing {
         case "U":
         case "DF":
         case "WC":
+        case "IMB":
           types.Add("Cold Water");
-          types.Add("Waste");
-          types.Add("Grease Waste");
           break;
         case "S":
         case "HS":
         case "MS":
         case "FS":
         case "FD":
+        case "TUB":
+        case "SH":
+        case "WD":
           types.Add("Cold Water");
           types.Add("Hot Water");
           types.Add("Waste");
@@ -427,6 +430,10 @@ namespace GMEPPlumbing {
         case "CHR":
         case "6BRN":
           types.Add("Gas");
+          break;
+        case "DW":
+          types.Add("Hot Water");
+          types.Add("Waste");
           break;
       }
       return types;
@@ -475,7 +482,8 @@ namespace GMEPPlumbing {
                 closestPoint, // new start point
                 route.EndPoint,
                 route.BasePointId,
-                route.PipeType
+                route.PipeType,
+                route.Slope
             );
             result[adjustedRoute] = targetRoute.StartPoint.DistanceTo(targetRoute.EndPoint);
             continue;
@@ -498,7 +506,8 @@ namespace GMEPPlumbing {
                 closestPoint, // new start point
                 route.EndPoint,
                 route.BasePointId,
-                route.PipeType
+                route.PipeType,
+                route.Slope
             );
             result[adjustedRoute] = segLen;
             continue;
@@ -516,7 +525,8 @@ namespace GMEPPlumbing {
                 intersectionPoint, // new start point
                 route.EndPoint,
                 route.BasePointId,
-                route.PipeType
+                route.PipeType,
+                route.Slope
             );
           result[adjustedRoute] = segLen;
         }
