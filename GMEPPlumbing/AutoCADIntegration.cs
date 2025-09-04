@@ -37,6 +37,7 @@ using Google.Protobuf.WellKnownTypes;
 using GMEPPlumbing.Tools;
 using MySqlX.XDevAPI.Common;
 using Mysqlx.Session;
+using Autodesk.AutoCAD.Windows.ToolPalette;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
@@ -2084,16 +2085,21 @@ namespace GMEPPlumbing
       string basePointId = CADObjectCommands.GetActiveView();
 
       List<PlumbingFixtureType> plumbingFixtureTypes = MariaDBService.GetPlumbingFixtureTypes();
+      Dictionary<int, List<PlumbingFixtureCatalogItem>> allPlumbingFixtureCatalogItems =
+        MariaDBService.GetAllPlumbingFixtureCatalogItems();
 
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
       PromptResult keywordResult;
 
+
       if (fixtureString == null) {
         keywordOptions.Message = "\nSelect fixture type:";
         plumbingFixtureTypes.ForEach(t => {
-          if ((CADObjectCommands.ActiveViewTypes.Contains("Water") && t.WaterBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.GasBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.WasteBlockNames != "")) 
-          {
-            keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
+          if (allPlumbingFixtureCatalogItems.ContainsKey(t.Id)) {
+            List<PlumbingFixtureCatalogItem> catalogItems = allPlumbingFixtureCatalogItems[t.Id];
+            if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && !catalogItems.All(item => string.IsNullOrEmpty(item.WaterBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && !catalogItems.All(item => string.IsNullOrEmpty(item.GasBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && !catalogItems.All(item => string.IsNullOrEmpty(item.WasteBlockNames)))) && ((CADObjectCommands.IsResidential && !catalogItems.All(item => item.Residential == false)) || (!CADObjectCommands.IsResidential && !catalogItems.All(item => item.Commercial == false)))) {
+              keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
+            }
           }
         });
         //keywordOptions.Keywords.Default = "WC - Water Closet";
@@ -2105,6 +2111,7 @@ namespace GMEPPlumbing
           return;
         }
        fixtureString = keywordResult.StringResult;
+        ed.WriteMessage("\nSelected fixture: " + fixtureString);  
       }
       PlumbingFixtureType selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t =>
         fixtureString.StartsWith(t.Abbreviation)
@@ -2113,45 +2120,45 @@ namespace GMEPPlumbing
         selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t => t.Abbreviation == "WC");
       }
 
-      PlumbingFixtureCatalogItem selectedCatalogItem = null;
-      if (selectedFixtureType.Abbreviation != "CO" && selectedFixtureType.Abbreviation != "VE") {
-        List<PlumbingFixtureCatalogItem> plumbingFixtureCatalogItems =
-          MariaDBService.GetPlumbingFixtureCatalogItemsByType(selectedFixtureType.Id);
+      List<PlumbingFixtureCatalogItem> plumbingFixtureCatalogItems =
+        MariaDBService.GetPlumbingFixtureCatalogItemsByType(selectedFixtureType.Id);
 
-        if (catalogString == null) {
-          keywordOptions = new PromptKeywordOptions("");
-          keywordOptions.Message = "\nSelect catalog item:";
-          plumbingFixtureCatalogItems.ForEach(i => {
-            if (CADObjectCommands.ActiveViewTypes.Contains("Water") || i.Id != 1) {
-              keywordOptions.Keywords.Add(i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model);
-            }
-          });
+      if (catalogString == null) {
+        keywordOptions = new PromptKeywordOptions("");
+        keywordOptions.Message = "\nSelect catalog item:";
+        plumbingFixtureCatalogItems.ForEach(i => {
+          if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && i.WaterBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && i.GasBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && i.WasteBlockNames != "")) && ((CADObjectCommands.IsResidential && i.Residential == true) || (!CADObjectCommands.IsResidential && i.Commercial == true))) {
+            keywordOptions.Keywords.Add(i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model);
+          }
+        });
+        keywordResult = ed.GetKeywords(keywordOptions);
 
-          keywordResult = ed.GetKeywords(keywordOptions);
-
-          catalogString = keywordResult.StringResult;
-        }
-        if (catalogString.Contains(' ')) {
-          catalogString = catalogString.Split(' ')[0];
-        }
-        selectedCatalogItem = plumbingFixtureCatalogItems.FirstOrDefault(
-          i => i.Id.ToString() == catalogString
-        );
+        catalogString = keywordResult.StringResult;
       }
+      if (catalogString.Contains(' ')) {
+        catalogString = catalogString.Split(' ')[0];
+      }
+      PlumbingFixtureCatalogItem selectedCatalogItem = plumbingFixtureCatalogItems.FirstOrDefault(
+        i => i.Id.ToString() == catalogString
+      );
+      if (selectedCatalogItem == null) {
+        return;
+      }
+
       int flowTypeId = 1;
-      if (selectedFixtureType.Abbreviation == "U" || (selectedCatalogItem != null && selectedCatalogItem.Id == 6)) {
+      if (selectedFixtureType.Abbreviation == "U" || selectedCatalogItem.Id == 6) {
         flowTypeId = 2;
       }
       List<string> selectedBlockNames = new List<string>();
       string viewType = GetPlumbingBasePointsFromCAD(ProjectId).Where(bp => bp.Id == basePointId).First().Type;
       if (viewType.Contains("Water")) {
-        selectedBlockNames.AddRange(selectedFixtureType.WaterBlockNames.Split(','));
+        selectedBlockNames.AddRange(selectedCatalogItem.WaterBlockNames.Split(','));
       }
       if (viewType.Contains("Gas")) {
-        selectedBlockNames.AddRange(selectedFixtureType.GasBlockNames.Split(','));
+        selectedBlockNames.AddRange(selectedCatalogItem.GasBlockNames.Split(','));
       }
       if (viewType.Contains("Sewer-Vent")) {
-        selectedBlockNames.AddRange(selectedFixtureType.WasteBlockNames.Split(','));
+        selectedBlockNames.AddRange(selectedCatalogItem.WasteBlockNames.Split(','));
       }
       selectedBlockNames = selectedBlockNames.Distinct().ToList();
       List<string> selectedBlockNames2 = new List<string>(selectedBlockNames);
@@ -2197,7 +2204,7 @@ namespace GMEPPlumbing
             if (fsSize.Contains(' ')) {
               fsSize = fsSize.Split(' ')[0];
             }
-            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+            selectedBlockNames2[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
              "%FSSIZE%",
              fsSize
             );
@@ -2222,7 +2229,7 @@ namespace GMEPPlumbing
             if (coStyle.Contains(' ')) {
               coStyle = coStyle.Split(' ')[0];
             }
-            selectedBlockNames[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+            selectedBlockNames2[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
               "%COSTYLE%",
               coStyle
             );

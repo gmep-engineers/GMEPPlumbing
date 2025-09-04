@@ -586,16 +586,55 @@ namespace GMEPPlumbing.Services
           new PlumbingFixtureType(
             GetSafeInt(reader, "id"),
             GetSafeString(reader, "name"),
-            GetSafeString(reader, "abbreviation"),
-            GetSafeString(reader, "water_block_names"),
-            GetSafeString(reader, "waste_block_names"),
-            GetSafeString(reader, "gas_block_names")
+            GetSafeString(reader, "abbreviation")
           )
         );
       }
       reader.Close();
       CloseConnectionSync();
       return fixtureTypes;
+    }
+
+    public Dictionary<int,  List<PlumbingFixtureCatalogItem>> GetAllPlumbingFixtureCatalogItems() {
+      Dictionary<int, List<PlumbingFixtureCatalogItem>> items = new Dictionary<int, List<PlumbingFixtureCatalogItem>>();
+      OpenConnectionSync();
+      string query =
+        "SELECT * FROM plumbing_fixture_catalog ORDER BY description";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read()) {
+        int typeId = GetSafeInt(reader, "type_id");
+        if (!items.ContainsKey(typeId)) {
+          items[typeId] = new List<PlumbingFixtureCatalogItem>();
+        }
+        items[typeId].Add(
+          new PlumbingFixtureCatalogItem(
+            GetSafeInt(reader, "id"),
+            GetSafeInt(reader, "type_id"),
+            GetSafeString(reader, "description"),
+            GetSafeString(reader, "make"),
+            GetSafeString(reader, "model"),
+            GetSafeDecimal(reader, "trap"),
+            GetSafeDecimal(reader, "waste"),
+            GetSafeDecimal(reader, "vent"),
+            GetSafeDecimal(reader, "cold_water"),
+            GetSafeDecimal(reader, "hot_water"),
+            GetSafeString(reader, "remarks"),
+            GetSafeDecimal(reader, "fixture_demand"),
+            GetSafeDecimal(reader, "hot_demand"),
+            GetSafeInt(reader, "dfu"),
+            GetSafeString(reader, "water_block_names"),
+            GetSafeString(reader, "waste_block_names"),
+            GetSafeString(reader, "gas_block_names"),
+            GetSafeInt(reader, "cfh"),
+            GetSafeBoolean(reader, "residential"),
+            GetSafeBoolean(reader, "commercial")
+          )
+        );
+      }
+      reader.Close();
+      CloseConnectionSync();
+      return items;
     }
 
     public List<PlumbingFixtureCatalogItem> GetPlumbingFixtureCatalogItemsByType(int typeId) {
@@ -623,9 +662,12 @@ namespace GMEPPlumbing.Services
             GetSafeDecimal(reader, "fixture_demand"),
             GetSafeDecimal(reader, "hot_demand"),
             GetSafeInt(reader, "dfu"),
-            GetSafeString(reader, "water_gas_block_name"),
-            GetSafeString(reader, "waste_vent_block_name"),
-            GetSafeInt(reader, "cfh")
+            GetSafeString(reader, "water_block_names"),
+            GetSafeString(reader, "waste_block_names"),
+            GetSafeString(reader, "gas_block_names"),
+            GetSafeInt(reader, "cfh"),
+            GetSafeBoolean(reader, "residential"),
+            GetSafeBoolean(reader, "commercial")
           )
         );
       }
@@ -657,9 +699,12 @@ namespace GMEPPlumbing.Services
                   GetSafeDecimal(reader, "fixture_demand"),
                   GetSafeDecimal(reader, "hot_demand"),
                   GetSafeInt(reader, "dfu"),
-                  GetSafeString(reader, "water_gas_block_name"),
-                  GetSafeString(reader, "waste_vent_block_name"),
-                  GetSafeInt(reader, "cfh")
+                  GetSafeString(reader, "water_block_names"),
+                  GetSafeString(reader, "waste_block_names"),
+                  GetSafeString(reader, "gas_block_names"),
+                  GetSafeInt(reader, "cfh"),
+                  GetSafeBoolean(reader, "residential"),
+                  GetSafeBoolean(reader, "commercial")
               );
             }
           }
