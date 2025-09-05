@@ -342,8 +342,18 @@ namespace GMEPPlumbing
           promptOptions.Keywords.Add(keyword);
         }
         PromptResult pr = ed.GetKeywords(promptOptions);
+        if (pr.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nOperation cancelled.");
+          tr.Commit();
+          return;
+        }
         string resultKeyword = pr.StringResult;
         int index = keywords.IndexOf(resultKeyword);
+        if (index < 0 || index >= basePoints.Count) {
+          ed.WriteMessage("\nInvalid view selection. Operation cancelled.");
+          tr.Commit();
+          return;
+        }
         basePointIds = basePoints.ElementAt(index).Value;
 
         //Picking start floor

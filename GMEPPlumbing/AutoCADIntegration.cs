@@ -133,7 +133,7 @@ namespace GMEPPlumbing
       var ed = doc.Editor;
 
 
-      List<string> routeGUIDS = new List<string>();
+      //List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
   
       PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
@@ -328,7 +328,7 @@ namespace GMEPPlumbing
           slope = 0.02;
         }
       }
-      routeGUIDS.Add(LineGUID2);
+      //routeGUIDS.Add(LineGUID2);
       AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType, slope);
       AddArrowsToLine(addedLineId2, LineGUID2);
 
@@ -359,14 +359,14 @@ namespace GMEPPlumbing
           if (basePoint is Line basePointLine) {
             //retrieving the lines xdata
             ResultBuffer xData = basePointLine.GetXDataForApplication(XRecordKey);
-            if (xData == null || xData.AsArray().Length < 2) {
+            if (xData == null || xData.AsArray().Length < 5) {
               ed.WriteMessage("\nSelected line does not have the required XData.");
               return;
             }
             TypedValue[] values = xData.AsArray();
-            string Id = values[1].Value as string;
-            if (!routeGUIDS.Contains(Id)) {
-              ed.WriteMessage("\nSelected line is not part of the active route.");
+            string basePointGuid = values[2].Value as string;
+            if (basePointLine.Layer != layer || basePointGuid != CADObjectCommands.GetActiveView()) {
+              ed.WriteMessage("\nSelected line is not valid.");
               continue;
             }
 
@@ -446,7 +446,7 @@ namespace GMEPPlumbing
             slope = 0.02;
           }
         }
-        routeGUIDS.Add(LineGUID);
+        //routeGUIDS.Add(LineGUID);
         AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType, slope);
         AddArrowsToLine(addedLineId, LineGUID);
       }
@@ -3824,7 +3824,7 @@ namespace GMEPPlumbing
                   break;
               }
               ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
-              if (xdata != null && xdata.AsArray().Length > 2) {
+              if (xdata != null && xdata.AsArray().Length >= 5) {
                 TypedValue[] values = xdata.AsArray();
 
                 PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), values[3].Value.ToString(), (double)values[4].Value);
