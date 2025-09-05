@@ -3824,7 +3824,7 @@ namespace GMEPPlumbing
                   break;
               }
               ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
-              if (xdata != null && xdata.AsArray().Length > 2) {
+              if (xdata != null && xdata.AsArray().Length >= 5) {
                 TypedValue[] values = xdata.AsArray();
 
                 PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), values[3].Value.ToString(), (double)values[4].Value);
