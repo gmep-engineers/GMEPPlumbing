@@ -131,7 +131,7 @@ namespace GMEPPlumbing.Views
           if (horizontalRoute.Type == "Gas") {
             textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\"  {horizontalRoute.PipeSize}\n";
           }
-          else if (horizontalRoute.Type == "Waste") {
+          else if (horizontalRoute.Type == "Waste" || horizontalRoute.Type == "Grease Waste") {
             WasteSizingChart chart = new WasteSizingChart();
             string slope = "1%";
             if (horizontalRoute.Slope == 0.02) {
@@ -294,7 +294,7 @@ namespace GMEPPlumbing.Views
         if (verticalRoutes.First().Type == "Gas") {
           textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\" {pipeSize}";
         }
-        else if (verticalRoutes.First().Type == "Waste") {
+        else if (verticalRoutes.First().Type == "Waste" || verticalRoutes.First().Type == "Grease Waste") {
           WasteSizingChart chart = new WasteSizingChart();
           string recommendedSize = chart.FindSize(pipeFixtureUnits, "Vertical", pipeLength);
           textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n Pipe Size: {recommendedSize} \n";
