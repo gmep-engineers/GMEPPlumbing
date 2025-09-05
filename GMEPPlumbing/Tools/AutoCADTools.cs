@@ -498,6 +498,14 @@ namespace GMEPPlumbing
         return null;
       }
       ObjectId blockId = bt[blockName];
+      if (!blockId.IsValid) {
+        Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
+          $"Block '{blockName}' has an invalid ObjectId."
+        );
+        block = null;
+        point = Point3d.Origin;
+        return null;
+      }
 
       BlockJig blockJig = new BlockJig(name);
       PromptResult res = blockJig.DragMe(blockId, out point);
@@ -546,6 +554,12 @@ namespace GMEPPlumbing
           acTrans.GetObject(acBlkTbl[$"ar{Scale}"], OpenMode.ForRead) as BlockTableRecord;*/
         BlockTableRecord acBlkTblRec =
           acTrans.GetObject(acBlkTbl[$"ar0.25"], OpenMode.ForRead) as BlockTableRecord;
+        if (acBlkTblRec == null || !acBlkTblRec.ObjectId.IsValid) {
+          Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
+            $"Block 'ar{Scale}' not found in the BlockTable."
+          );
+          return Point3d.Origin;
+        }
         using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId)) {
           ArrowJig arrowJig = new ArrowJig(acBlkRef, center);
           PromptResult promptResult = ed.Drag(arrowJig);
