@@ -359,7 +359,7 @@ namespace GMEPPlumbing
           if (basePoint is Line basePointLine) {
             //retrieving the lines xdata
             ResultBuffer xData = basePointLine.GetXDataForApplication(XRecordKey);
-            if (xData == null || xData.AsArray().Length < 2) {
+            if (xData == null || xData.AsArray().Length < 5) {
               ed.WriteMessage("\nSelected line does not have the required XData.");
               return;
             }
