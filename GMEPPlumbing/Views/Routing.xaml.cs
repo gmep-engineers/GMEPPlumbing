@@ -132,10 +132,22 @@ namespace GMEPPlumbing.Views
             textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\"  {horizontalRoute.PipeSize}\n";
           }
           else if (horizontalRoute.Type == "Waste") {
-            textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits} \n";
+            WasteSizingChart chart = new WasteSizingChart();
+            string slope = "1%";
+            if (horizontalRoute.Slope == 0.02) {
+              slope = "2%";
+            }
+            string recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, slope);
+            textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits}\n Slope: {slope}\n Pipe Size: {recommendedSize}";
           }
           else if (horizontalRoute.Type == "Vent") {
-            textString = $" {feet}' {inches}\"\n";
+            VentSizingChart chart = new VentSizingChart();
+            string slope = "1%";
+            if (horizontalRoute.Slope == 0.02) {
+              slope = "2%";
+            }
+            string recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, horizontalRoute.LongestRunLength);
+            textString = $" {feet}' {inches}\"\n Slope: {slope}\n Pipe Size: {recommendedSize}\n";
           }
           double textWidth = textHeight * textString.Length * 0.05;
 
@@ -283,10 +295,15 @@ namespace GMEPPlumbing.Views
           textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\" {pipeSize}";
         }
         else if (verticalRoutes.First().Type == "Waste") {
-          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n";
+          WasteSizingChart chart = new WasteSizingChart();
+          string recommendedSize = chart.FindSize(pipeFixtureUnits, "Vertical", pipeLength);
+          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n Pipe Size: {recommendedSize} \n";
         }
         else if (verticalRoutes.First().Type == "Vent") {
-          textString = $" {feet}' {inches}\"\n";
+          VentSizingChart chart = new VentSizingChart();
+          string recommendedSize = chart.FindSize(pipeFixtureUnits, longestLength);
+          textString = $" {feet}' {inches}\"\n Pipe Size: {recommendedSize} \n";
+
         }
         int textHeight = 8;
         double textWidth = textHeight * textString.Length * 0.05;

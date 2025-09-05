@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace GMEPPlumbing.Tools {
-  class WasteSizingCharts {
+  class WasteSizingChart {
     public List<WasteEntry> Entries { get; set; } = new List<WasteEntry>() {
       new WasteEntry(1, 1, 0, 45, "1-1/4\""),
       new WasteEntry(2, 1, 0, 65, "1-1/2\""),
@@ -17,7 +17,7 @@ namespace GMEPPlumbing.Tools {
       new WasteEntry(1380, 720, 576, 510, "6\""),
       new WasteEntry(3600, 2640, 2112, 750, "8\""),
     };
-    public WasteSizingCharts() {
+    public WasteSizingChart() {
       // :3
     }
     public string FindSize(double dfu, string type, double length = 0) {
@@ -37,7 +37,7 @@ namespace GMEPPlumbing.Tools {
       return entry.PipeDiameter;
     }
   }
-  class VentSizingCharts {
+  class VentSizingChart {
     public List<VentEntry> Entries { get; set; } = new List<VentEntry>() {
       new VentEntry(1, 45, "1-1/4\""),
       new VentEntry(8, 60, "1-1/2\""),
@@ -49,7 +49,7 @@ namespace GMEPPlumbing.Tools {
       new VentEntry(1380, 510, "6\""),
       new VentEntry(3600, 750, "8\""),
     };
-    public VentSizingCharts() {
+    public VentSizingChart() {
       // :3
     }
     public string FindSize(double dfu, double length) {
