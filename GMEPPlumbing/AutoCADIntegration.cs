@@ -1619,47 +1619,51 @@ namespace GMEPPlumbing
             out block,
             out point
           );
+          if (br == null) {
+            ed.WriteMessage("\nOperation cancelled.");
+            SettingObjects = false;
+            return;
+          }
           br.Layer = "Defpoints";
-          if (br != null) {
-            curSpace.AppendEntity(br);
-            tr.AddNewlyCreatedDBObject(br, true);
-            blockId = br.ObjectId;
+          curSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+          blockId = br.ObjectId;
 
-            DynamicBlockReferencePropertyCollection properties =
-              br.DynamicBlockReferencePropertyCollection;
-            foreach (DynamicBlockReferenceProperty prop in properties) {
-              if (prop.PropertyName == "plan") {
-                prop.Value = planName;
-              }
-              else if (prop.PropertyName == "floor") {
-                prop.Value = i + 1;
-              }
-              else if (prop.PropertyName == "type") {
-                prop.Value = viewport;
-              }
-              else if (prop.PropertyName == "view_id") {
-                prop.Value = ViewId;
-              }
-              else if (prop.PropertyName == "id") {
-                prop.Value = Guid.NewGuid().ToString();
-              }
-              else if (prop.PropertyName == "pos_x") {
-                prop.Value = point.X;
-              }
-              else if (prop.PropertyName == "pos_y") {
-                prop.Value = point.Y;
-              }
-              else if (prop.PropertyName == "floor_height") {
-                prop.Value = currentFloorHeight;
-              }
-              else if (prop.PropertyName == "route_height") {
-                prop.Value = currentRouteHeight;
-              }
-              else if (prop.PropertyName == "ceiling_height") {
-                prop.Value = currentCeilingHeight;
-              }
+          DynamicBlockReferencePropertyCollection properties =
+            br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in properties) {
+            if (prop.PropertyName == "plan") {
+              prop.Value = planName;
+            }
+            else if (prop.PropertyName == "floor") {
+              prop.Value = i + 1;
+            }
+            else if (prop.PropertyName == "type") {
+              prop.Value = viewport;
+            }
+            else if (prop.PropertyName == "view_id") {
+              prop.Value = ViewId;
+            }
+            else if (prop.PropertyName == "id") {
+              prop.Value = Guid.NewGuid().ToString();
+            }
+            else if (prop.PropertyName == "pos_x") {
+              prop.Value = point.X;
+            }
+            else if (prop.PropertyName == "pos_y") {
+              prop.Value = point.Y;
+            }
+            else if (prop.PropertyName == "floor_height") {
+              prop.Value = currentFloorHeight;
+            }
+            else if (prop.PropertyName == "route_height") {
+              prop.Value = currentRouteHeight;
+            }
+            else if (prop.PropertyName == "ceiling_height") {
+              prop.Value = currentCeilingHeight;
             }
           }
+          
           tr.Commit();
         }
       }
