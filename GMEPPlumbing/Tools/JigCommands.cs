@@ -487,27 +487,18 @@ namespace GMEPPlumbing
     private string _name = string.Empty;
     private double _scale = 1;
 
-    public BlockJig(string _name = "block", double _scale = 1)
+    public BlockJig(ObjectId blockId, string _name = "block", double _scale = 1)
     {
       this._name = _name;
       this._scale = _scale;
-    }
-
-    public PromptResult DragMe(ObjectId i_blockId, out Point3d o_pnt)
-    {
-      _blockId = i_blockId;
-
-      Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
-
-      PromptResult jigRes = ed.Drag(this);
-
-      o_pnt = _point;
-
-      return jigRes;
+      this._blockId = blockId;
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
+      if (_blockId == ObjectId.Null || !_blockId.IsValid)
+        return SamplerStatus.Cancel;
+
       JigPromptPointOptions jigOpts = new JigPromptPointOptions();
 
       jigOpts.UserInputControls = (
@@ -522,7 +513,6 @@ namespace GMEPPlumbing
         return SamplerStatus.Cancel;
 
       Point3d pt = jigRes.Value;
-
 
       if (pt == _point)
         return SamplerStatus.NoChange;

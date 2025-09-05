@@ -488,6 +488,13 @@ namespace GMEPPlumbing
       out Point3d point
     )
     {
+      Document acDoc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Editor ed = acDoc.Editor;
       if (!bt.Has(blockName))
       {
         Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
@@ -497,15 +504,28 @@ namespace GMEPPlumbing
         point = Point3d.Origin;
         return null;
       }
-      block = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
-
-      BlockJig blockJig = new BlockJig(name);
-      PromptResult res = blockJig.DragMe(block.ObjectId, out point);
-      if (res.Status != PromptStatus.OK)
-      {
+      ObjectId blockId = bt[blockName];
+      if (blockId == ObjectId.Null || !blockId.IsValid) {
+        Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
+          $"Block '{blockName}' has an invalid ObjectId."
+        );
+        block = null;
+        point = Point3d.Origin;
         return null;
       }
-      BlockReference br = new BlockReference(point, block.ObjectId);
+
+      BlockJig blockJig = new BlockJig(blockId, name);
+      PromptResult res = ed.Drag(blockJig);
+      if (res.Status != PromptStatus.OK)
+      {
+        block = null;
+        point = Point3d.Origin;
+        return null;
+      }
+      block = (BlockTableRecord)tr.GetObject(blockId, OpenMode.ForRead);
+      point = blockJig._point;
+
+      BlockReference br = new BlockReference(point, blockId);
       return br;
     }
 
@@ -513,8 +533,7 @@ namespace GMEPPlumbing
       string layerName,
       Point3d center,
       bool createHorizontalLeg = true
-    )
-    {
+    ) {
       Document acDoc = Autodesk
         .AutoCAD
         .ApplicationServices
@@ -525,76 +544,77 @@ namespace GMEPPlumbing
       Editor ed = acDoc.Editor;
 
       Point3d thirdClickPoint = Point3d.Origin;
-      if (Scale == -1.0)
-      {
+      if (Scale == -1.0) {
         SetScale();
       }
 
-      if (Scale == -1.0)
-      {
+      if (Scale == -1.0) {
         Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
           "Please set the scale using the SetScale command before creating objects."
         );
         return new Point3d();
       }
-      using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
-      {
+      Point3d leaderPoint;
+      Point3d insertionPoint;
+      using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction()) {
         BlockTable acBlkTbl =
           acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
         /*BlockTableRecord acBlkTblRec =
           acTrans.GetObject(acBlkTbl[$"ar{Scale}"], OpenMode.ForRead) as BlockTableRecord;*/
         BlockTableRecord acBlkTblRec =
           acTrans.GetObject(acBlkTbl[$"ar0.25"], OpenMode.ForRead) as BlockTableRecord;
-        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId))
-        {
+        if (acBlkTblRec == null || !acBlkTblRec.ObjectId.IsValid) {
+          Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
+            $"Block 'ar{Scale}' not found in the BlockTable."
+          );
+          return Point3d.Origin;
+        }
+        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId)) {
           ArrowJig arrowJig = new ArrowJig(acBlkRef, center);
           PromptResult promptResult = ed.Drag(arrowJig);
 
-          if (promptResult.Status == PromptStatus.OK)
-          {
-            BlockTableRecord currentSpace =
-              acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-            currentSpace.AppendEntity(acBlkRef);
-            acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
+          if (promptResult.Status != PromptStatus.OK) {
+            return Point3d.Origin;
+          }
+          leaderPoint = arrowJig.LeaderPoint;
+          insertionPoint = arrowJig.InsertionPoint;
+          BlockTableRecord currentSpace =
+            acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          currentSpace.AppendEntity(acBlkRef);
+          acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
 
-            acBlkRef.Layer = layerName;
+          acBlkRef.Layer = layerName;
 
-            acTrans.Commit();
+          acTrans.Commit();
 
-            Point3d firstClickPoint = arrowJig.LeaderPoint;
+        }
+      }
 
-            Line line = new Line(arrowJig.LeaderPoint, arrowJig.InsertionPoint);
-            line.Layer = layerName;
 
-            Vector3d direction = arrowJig.InsertionPoint - arrowJig.LeaderPoint;
-            double angle = direction.GetAngleTo(Vector3d.XAxis, Vector3d.ZAxis);
-            using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction())
-            {
-              BlockTableRecord btr = (BlockTableRecord)
-                tr.GetObject(acDoc.Database.CurrentSpaceId, OpenMode.ForWrite);
-              btr.AppendEntity(line);
-              tr.AddNewlyCreatedDBObject(line, true);
+      Line line = new Line(leaderPoint, insertionPoint);
+      line.Layer = layerName;
 
-              tr.Commit();
-            }
-            if (angle != 0 && angle != Math.PI && createHorizontalLeg)
-            {
-              DynamicLineJig lineJig = new DynamicLineJig(arrowJig.InsertionPoint, Scale);
-              PromptResult dynaLineJigRes = ed.Drag(lineJig);
-              if (dynaLineJigRes.Status == PromptStatus.OK)
-              {
-                using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction())
-                {
-                  BlockTableRecord btr = (BlockTableRecord)
-                    tr.GetObject(acDoc.Database.CurrentSpaceId, OpenMode.ForWrite);
-                  btr.AppendEntity(lineJig.line);
-                  tr.AddNewlyCreatedDBObject(lineJig.line, true);
+      Vector3d direction = leaderPoint - insertionPoint;
+      double angle = direction.GetAngleTo(Vector3d.XAxis, Vector3d.ZAxis);
+      using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction()) {
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(acDoc.Database.CurrentSpaceId, OpenMode.ForWrite);
+        btr.AppendEntity(line);
+        tr.AddNewlyCreatedDBObject(line, true);
 
-                  thirdClickPoint = lineJig.line.EndPoint;
-                  tr.Commit();
-                }
-              }
-            }
+        tr.Commit();
+      }
+      if (angle != 0 && angle != Math.PI && createHorizontalLeg) {
+        using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction()) {
+          DynamicLineJig lineJig = new DynamicLineJig(insertionPoint, Scale);
+          PromptResult dynaLineJigRes = ed.Drag(lineJig);
+          if (dynaLineJigRes.Status == PromptStatus.OK) {
+            BlockTableRecord btr = (BlockTableRecord)
+              tr.GetObject(acDoc.Database.CurrentSpaceId, OpenMode.ForWrite);
+            btr.AppendEntity(lineJig.line);
+            tr.AddNewlyCreatedDBObject(lineJig.line, true);
+            thirdClickPoint = lineJig.line.EndPoint;
+            tr.Commit();
           }
         }
       }
