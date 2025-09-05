@@ -488,6 +488,13 @@ namespace GMEPPlumbing
       out Point3d point
     )
     {
+      Document acDoc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Editor ed = acDoc.Editor;
       if (!bt.Has(blockName))
       {
         Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
@@ -498,7 +505,7 @@ namespace GMEPPlumbing
         return null;
       }
       ObjectId blockId = bt[blockName];
-      if (!blockId.IsValid) {
+      if (blockId == ObjectId.Null || !blockId.IsValid) {
         Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
           $"Block '{blockName}' has an invalid ObjectId."
         );
@@ -507,14 +514,16 @@ namespace GMEPPlumbing
         return null;
       }
 
-      BlockJig blockJig = new BlockJig(name);
-      PromptResult res = blockJig.DragMe(blockId, out point);
+      BlockJig blockJig = new BlockJig(blockId, name);
+      PromptResult res = ed.Drag(blockJig);
       if (res.Status != PromptStatus.OK)
       {
         block = null;
+        point = Point3d.Origin;
         return null;
       }
       block = (BlockTableRecord)tr.GetObject(blockId, OpenMode.ForRead);
+      point = blockJig._point;
 
       BlockReference br = new BlockReference(point, blockId);
       return br;
