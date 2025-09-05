@@ -133,7 +133,7 @@ namespace GMEPPlumbing
       var ed = doc.Editor;
 
 
-      List<string> routeGUIDS = new List<string>();
+      //List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
   
       PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
@@ -328,7 +328,7 @@ namespace GMEPPlumbing
           slope = 0.02;
         }
       }
-      routeGUIDS.Add(LineGUID2);
+      //routeGUIDS.Add(LineGUID2);
       AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType, slope);
       AddArrowsToLine(addedLineId2, LineGUID2);
 
@@ -364,9 +364,9 @@ namespace GMEPPlumbing
               return;
             }
             TypedValue[] values = xData.AsArray();
-            string Id = values[1].Value as string;
-            if (!routeGUIDS.Contains(Id)) {
-              ed.WriteMessage("\nSelected line is not part of the active route.");
+            string basePointGuid = values[2].Value as string;
+            if (basePointLine.Layer != layer || basePointGuid != CADObjectCommands.GetActiveView()) {
+              ed.WriteMessage("\nSelected line is not valid.");
               continue;
             }
 
@@ -446,7 +446,7 @@ namespace GMEPPlumbing
             slope = 0.02;
           }
         }
-        routeGUIDS.Add(LineGUID);
+        //routeGUIDS.Add(LineGUID);
         AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType, slope);
         AddArrowsToLine(addedLineId, LineGUID);
       }
