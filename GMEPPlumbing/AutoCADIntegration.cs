@@ -91,6 +91,8 @@ namespace GMEPPlumbing
       db.ObjectModified += Db_VerticalRouteModified;
       db.ObjectModified -= Db_BasePointModified;
       db.ObjectModified += Db_BasePointModified;
+      db.ObjectAppended -= Db_ObjectAppended;
+      db.ObjectAppended += Db_ObjectAppended;
       db.SaveComplete -= Db_DocumentSaved;
       db.SaveComplete += Db_DocumentSaved;
       // ... attach other handlers as needed ...
@@ -106,6 +108,7 @@ namespace GMEPPlumbing
       db.ObjectModified -= Db_VerticalRouteModified;
       db.ObjectModified -= Db_BasePointModified;
       db.SaveComplete -= Db_DocumentSaved;
+      db.ObjectAppended -= Db_ObjectAppended;
       // ... detach other handlers as needed ...
     }
     [CommandMethod("TestGasChart")]
@@ -4341,7 +4344,115 @@ namespace GMEPPlumbing
       CADObjectCommands.GetActiveView();
       VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "DownToFloor");
     }
+    public static async void Db_ObjectAppended(object sender, ObjectEventArgs e) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      
+      try {
+        if (
+          e.DBObject is BlockReference blockRef
+          && !SettingObjects
+          && !IsSaving
+        ) {
+          SettingObjects = true;
+          string Id = string.Empty;
+          var pc = blockRef.DynamicBlockReferencePropertyCollection;
+         
+          foreach (DynamicBlockReferenceProperty prop in pc) {
+            if (prop.PropertyName == "id") {
+              Id = prop.Value?.ToString();
+            }
+          }
+          object obj = await FindObjectById(Id);
+          if (obj != null) {
+            if (obj is PlumbingFixture fixture || obj is PlumbingSource source) {
+              using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                BlockReference blockRef2 = (BlockReference)tr.GetObject(blockRef.ObjectId, OpenMode.ForWrite);
+                foreach (DynamicBlockReferenceProperty prop in blockRef2.DynamicBlockReferencePropertyCollection) {
+                  if (prop.PropertyName == "id") {
+                    prop.Value = Guid.NewGuid().ToString();
+                  }
+                }
+                tr.Commit();
+              }
+            }
+            if (obj is PlumbingVerticalRoute route) {
+              //DuplicateFullVerticalRoute(route);
+            }
+          }
+          else {
+            ed.WriteMessage($"\nNo matching object found for ID: {Id}");
+          }
 
+          SettingObjects = false;
+        }
+      }
+      catch (System.Exception ex) {
+        ed.WriteMessage($"\n");
+      }
+    }
+    public static async Task<object> FindObjectById(string Id) {
+      MariaDBService mariaDBService = new MariaDBService();
+      string projectNo = CADObjectCommands.GetProjectNoFromFileName();
+      string ProjectId = await mariaDBService.GetProjectId(projectNo);
+
+      List<PlumbingFixture> fixtures = GetPlumbingFixturesFromCAD(ProjectId);
+      List<PlumbingSource> sources = GetPlumbingSourcesFromCAD(ProjectId);
+      List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
+
+      var fixture = fixtures.FirstOrDefault(f => f.Id == Id);
+      if (fixture != null)
+        return fixture;
+
+      var source = sources.FirstOrDefault(s => s.Id == Id);
+      if (source != null)
+        return source;
+
+      var verticalRoute = verticalRoutes.FirstOrDefault(vr => vr.Id == Id);
+      if (verticalRoute != null)
+        return verticalRoute;
+
+      return null; // No match found
+    }
+    public static async void DuplicateFullVerticalRoute(PlumbingVerticalRoute route, ObjectId objid) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      MariaDBService mariaDBService = new MariaDBService();
+      string projectNo = CADObjectCommands.GetProjectNoFromFileName();
+      string ProjectId = await mariaDBService.GetProjectId(projectNo);
+      List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
+      List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
+      string newVerticalRouteId = Guid.NewGuid().ToString();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockReference blockRef2 = (BlockReference)tr.GetObject(objid, OpenMode.ForWrite);
+        foreach (DynamicBlockReferenceProperty prop in blockRef2.DynamicBlockReferencePropertyCollection) {
+          if (prop.PropertyName == "id") {
+            prop.Value = Guid.NewGuid().ToString();
+          }
+          if (prop.PropertyName == "vertical_route_id") {
+            prop.Value = newVerticalRouteId;
+          }
+        }
+        tr.Commit();
+      }
+      List<PlumbingVerticalRoute> relatedRoutes = verticalRoutes
+        .Where(vr => vr.VerticalRouteId == route.VerticalRouteId && vr.Id != route.Id)
+        .ToList();
+
+      PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == route.BasePointId);
+      if (basePoint == null) return;
+      Vector3d basePointOffset = route.Position - basePoint.Point;
+      foreach (PlumbingVerticalRoute subRoute in relatedRoutes) {
+        //start adding subroutes depending on nodes.
+      }
+
+    }
   }
 
 
