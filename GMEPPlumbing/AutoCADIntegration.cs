@@ -3447,7 +3447,7 @@ namespace GMEPPlumbing
 
       var db = doc.Database;
       var ed = doc.Editor;
-      await DuplicateFullVerticalRoutes();
+      DuplicateFullVerticalRoutes();
 
       Dictionary<string, ObjectId> basePoints = new Dictionary<string, ObjectId>();
       if (
@@ -3847,7 +3847,7 @@ namespace GMEPPlumbing
     }
 
 
-    public static List<PlumbingVerticalRoute> GetVerticalRoutesFromCAD(string ProjectId) {
+    public static List<PlumbingVerticalRoute> GetVerticalRoutesFromCAD(string ProjectId = "") {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return new List<PlumbingVerticalRoute>();
 
@@ -4007,7 +4007,7 @@ namespace GMEPPlumbing
       }
     }
   
-    public static List<PlumbingPlanBasePoint> GetPlumbingBasePointsFromCAD(string ProjectId) {
+    public static List<PlumbingPlanBasePoint> GetPlumbingBasePointsFromCAD(string ProjectId = "") {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return new List<PlumbingPlanBasePoint>();
 
@@ -4090,7 +4090,7 @@ namespace GMEPPlumbing
       return points;
     }
 
-    public static List<PlumbingSource> GetPlumbingSourcesFromCAD(string ProjectId) {
+    public static List<PlumbingSource> GetPlumbingSourcesFromCAD(string ProjectId = "") {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return new List<PlumbingSource>();
 
@@ -4188,7 +4188,7 @@ namespace GMEPPlumbing
     }
 
   
-  public static List<PlumbingFixture> GetPlumbingFixturesFromCAD(string ProjectId) {
+  public static List<PlumbingFixture> GetPlumbingFixturesFromCAD(string ProjectId = "") {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return new List<PlumbingFixture>();
 
@@ -4366,7 +4366,7 @@ namespace GMEPPlumbing
               Id = prop.Value?.ToString();
             }
           }
-          object obj = await FindObjectById(Id);
+          object obj = FindObjectById(Id);
           if (obj != null) {
             if (obj is PlumbingFixture fixture || obj is PlumbingSource source) {
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -4380,7 +4380,7 @@ namespace GMEPPlumbing
               }
             }
             if (obj is PlumbingVerticalRoute route) {
-              await StageDuplicateFullVerticalRoute(route, blockRef.ObjectId);
+             StageDuplicateFullVerticalRoute(route, blockRef.ObjectId);
             }
           }
           else {
@@ -4394,14 +4394,10 @@ namespace GMEPPlumbing
         ed.WriteMessage($"meow\n");
       }
     }
-    public static async Task<object> FindObjectById(string Id) {
-      MariaDBService mariaDBService = new MariaDBService();
-      string projectNo = CADObjectCommands.GetProjectNoFromFileName();
-      string ProjectId = await mariaDBService.GetProjectId(projectNo);
-
-      List<PlumbingFixture> fixtures = GetPlumbingFixturesFromCAD(ProjectId);
-      List<PlumbingSource> sources = GetPlumbingSourcesFromCAD(ProjectId);
-      List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
+    public static object FindObjectById(string Id) {
+      List<PlumbingFixture> fixtures = GetPlumbingFixturesFromCAD();
+      List<PlumbingSource> sources = GetPlumbingSourcesFromCAD();
+      List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD();
 
       var fixture = fixtures.FirstOrDefault(f => f.Id == Id);
       if (fixture != null)
@@ -4417,13 +4413,13 @@ namespace GMEPPlumbing
 
       return null; // No match found
     }
-    public static async Task StageDuplicateFullVerticalRoute(PlumbingVerticalRoute route, ObjectId objid) {
+    public static void StageDuplicateFullVerticalRoute(PlumbingVerticalRoute route, ObjectId objid) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
       var db = doc.Database;
       var ed = doc.Editor;
 
-     ;
+     
       string newVerticalRouteId = Guid.NewGuid().ToString();
       string id = Guid.NewGuid().ToString();
       string oldVerticalRouteId = route.VerticalRouteId;
@@ -4444,7 +4440,7 @@ namespace GMEPPlumbing
       
     }
 
-    public static async Task DuplicateFullVerticalRoutes() {
+    public static void DuplicateFullVerticalRoutes() {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
       var db = doc.Database;
@@ -4452,11 +4448,8 @@ namespace GMEPPlumbing
 
       if (!SettingObjects && !IsSaving && pendingDuplicationRoutes.Count > 0) 
       {
-        MariaDBService mariaDBService = new MariaDBService();
-        string projectNo = CADObjectCommands.GetProjectNoFromFileName();
-        string ProjectId = await mariaDBService.GetProjectId(projectNo);
-        List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
-        List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
+        List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD();
+        List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD();
 
         SettingObjects = true;
         List<Tuple<string, string>> routeKeys = new List<Tuple<string, string>>(pendingDuplicationRoutes);
