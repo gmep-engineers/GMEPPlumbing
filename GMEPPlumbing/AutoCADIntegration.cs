@@ -65,7 +65,7 @@ namespace GMEPPlumbing
     public static bool IsSaving { get; private set; }
     public static bool SettingObjects { get; set; }
 
-    private static readonly List<PlumbingVerticalRoute> pendingDuplicationRoutes = new List<PlumbingVerticalRoute>();
+    private static readonly List<ObjectId> ModifiedVerticalRoutes = new List<ObjectId>();
 
     public AutoCADIntegration() {
       SettingObjects = false;
@@ -3441,13 +3441,12 @@ namespace GMEPPlumbing
       }
     }
 
-    public static void Db_VerticalRouteModified(object sender, ObjectEventArgs e) {
+    public static async void Db_VerticalRouteModified(object sender, ObjectEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
 
       var db = doc.Database;
       var ed = doc.Editor;
-      DuplicateFullVerticalRoutes();
 
       Dictionary<string, ObjectId> basePoints = new Dictionary<string, ObjectId>();
       if (
@@ -3568,6 +3567,14 @@ namespace GMEPPlumbing
         }
         SettingObjects = false;
       }
+      List<ObjectId> ModifiedVerticalRoutes2 = new List<ObjectId>(ModifiedVerticalRoutes);
+      foreach (ObjectId id in ModifiedVerticalRoutes2) {
+        //ed.WriteMessage($"\nProcessing modified vertical route {id}.");
+        if (id != null && id.IsValid) {
+          await DuplicateFullVerticalRoutes(id);
+        }
+        ModifiedVerticalRoutes.Remove(id);
+      }
     }
 
     /*public static void Db_BasePointErased(object sender, ObjectEventArgs e) {
@@ -3642,7 +3649,6 @@ namespace GMEPPlumbing
       if (doc == null) return;
       var db = doc.Database;
       var ed = doc.Editor;
-      DuplicateFullVerticalRoutes();
 
       if (
         !SettingObjects
@@ -4381,7 +4387,8 @@ namespace GMEPPlumbing
               }
             }
             if (obj is PlumbingVerticalRoute route) {
-              await StageDuplicateFullVerticalRoute(route, blockRef.ObjectId);
+              ed.WriteMessage($"\nProcessing vertical route with ID: {Id}");
+              ModifiedVerticalRoutes.Add(blockRef.ObjectId);
             }
           }
           else {
@@ -4418,59 +4425,45 @@ namespace GMEPPlumbing
 
       return null; // No match found
     }
-    public static async Task StageDuplicateFullVerticalRoute(PlumbingVerticalRoute route, ObjectId objid) {
+    public static async Task DuplicateFullVerticalRoutes(ObjectId objid) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
       var db = doc.Database;
       var ed = doc.Editor;
 
-      MariaDBService mariaDBService = new MariaDBService();
-      string projectNo = CADObjectCommands.GetProjectNoFromFileName();
-      string ProjectId = await mariaDBService.GetProjectId(projectNo);
-      List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
-      List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
-      string newVerticalRouteId = Guid.NewGuid().ToString();
-
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        BlockReference blockRef2 = (BlockReference)tr.GetObject(objid, OpenMode.ForWrite);
-        foreach (DynamicBlockReferenceProperty prop in blockRef2.DynamicBlockReferencePropertyCollection) {
-          if (prop.PropertyName == "id") {
-            prop.Value = Guid.NewGuid().ToString();
-          }
-          if (prop.PropertyName == "vertical_route_id") {
-            prop.Value = newVerticalRouteId;
-          }
-        }
-        tr.Commit();
-      }
-      PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == route.BasePointId);
-      if (basePoint == null) return;
-      Vector3d basePointOffset = new Point3d(route.Position.X, route.Position.Y, 0) - basePoint.Point;
-
-      List<PlumbingVerticalRoute> relatedRoutes = verticalRoutes
-        .Where(vr => vr.VerticalRouteId == route.VerticalRouteId && vr.Id != route.Id)
-        .ToList();
-      foreach (var r in relatedRoutes) {
-        PlumbingPlanBasePoint basePoint2 = basePoints.FirstOrDefault(bp => bp.Id == r.BasePointId);
-        r.VerticalRouteId = newVerticalRouteId;
-        r.Id = Guid.NewGuid().ToString();
-        r.Position = basePoint2.Point + basePointOffset + new Vector3d(0, 0, r.StartHeight);
-        pendingDuplicationRoutes.Add(r);
-      }
-    }
-
-    public static void DuplicateFullVerticalRoutes() {
-      var doc = Application.DocumentManager.MdiActiveDocument;
-      if (doc == null) return;
-      var db = doc.Database;
-      var ed = doc.Editor;
-      if ( !SettingObjects && !IsSaving) 
-      {
+      if (!SettingObjects && !IsSaving) {
         SettingObjects = true;
-        List<PlumbingVerticalRoute> routesToProcess = new List<PlumbingVerticalRoute>(pendingDuplicationRoutes);
-        foreach (PlumbingVerticalRoute subRoute in routesToProcess) {
-          ed.WriteMessage($"\nProcessing sub-route at position {subRoute.Position} with node type {subRoute.NodeTypeId}");
-          //start adding subroutes depending on nodes.
+
+        MariaDBService mariaDBService = new MariaDBService();
+        string projectNo = CADObjectCommands.GetProjectNoFromFileName();
+        string ProjectId = await mariaDBService.GetProjectId(projectNo);
+        List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
+        List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
+        string newVerticalRouteId = Guid.NewGuid().ToString();
+        string id = "";
+
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockReference blockRef2 = (BlockReference)tr.GetObject(objid, OpenMode.ForWrite);
+          foreach (DynamicBlockReferenceProperty prop in blockRef2.DynamicBlockReferencePropertyCollection) {
+            if (prop.PropertyName == "id") {
+              id = prop.Value?.ToString();
+              prop.Value = Guid.NewGuid().ToString();
+            }
+            if (prop.PropertyName == "vertical_route_id") {
+              prop.Value = newVerticalRouteId;
+            }
+          }
+          tr.Commit();
+        }
+        PlumbingVerticalRoute route = verticalRoutes.FirstOrDefault(vr => vr.Id == id);
+        PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == route.BasePointId);
+        if (basePoint == null) return;
+        Vector3d basePointOffset = new Point3d(route.Position.X, route.Position.Y, 0) - basePoint.Point;
+
+        List<PlumbingVerticalRoute> relatedRoutes = verticalRoutes
+          .Where(vr => vr.VerticalRouteId == route.VerticalRouteId && vr.Id != route.Id)
+          .ToList();
+        foreach (var subRoute in relatedRoutes) {
           string blockName = "";
           switch (subRoute.NodeTypeId) {
             case 1:
@@ -4490,7 +4483,9 @@ namespace GMEPPlumbing
             BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
             BlockTableRecord blockDef = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
             if (blockDef == null) continue;
-            BlockReference newBlockRef = new BlockReference(subRoute.Position, blockDef.ObjectId);
+            PlumbingPlanBasePoint subBasePoint = basePoints.FirstOrDefault(bp => bp.Id == subRoute.BasePointId);
+            Point3d adjustedPosition = subRoute.Position + basePointOffset;
+            BlockReference newBlockRef = new BlockReference(adjustedPosition, blockDef.ObjectId);
             modelSpace.AppendEntity(newBlockRef);
             tr.AddNewlyCreatedDBObject(newBlockRef, true);
             var pc = newBlockRef.DynamicBlockReferencePropertyCollection;
@@ -4499,7 +4494,7 @@ namespace GMEPPlumbing
                 prop.Value = Guid.NewGuid().ToString();
               }
               if (prop.PropertyName == "vertical_route_id") {
-                prop.Value = subRoute.VerticalRouteId;
+                prop.Value = newVerticalRouteId;
               }
               if (prop.PropertyName == "base_point_id") {
                 prop.Value = subRoute.BasePointId;
@@ -4517,12 +4512,13 @@ namespace GMEPPlumbing
                 prop.Value = subRoute.IsUp ? 1.0 : 0.0;
               }
             }
-            pendingDuplicationRoutes.Remove(subRoute);
+            
             tr.Commit();
           }
         }
         SettingObjects = false;
       }
+     
     }
   }
 
