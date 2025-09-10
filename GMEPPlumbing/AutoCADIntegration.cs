@@ -39,6 +39,7 @@ using MySqlX.XDevAPI.Common;
 using Mysqlx.Session;
 using Autodesk.AutoCAD.Windows.ToolPalette;
 using GMEPPlumbing.Properties;
+using System.Windows.Shapes;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
@@ -4413,6 +4414,31 @@ namespace GMEPPlumbing
           }
           else {
             ed.WriteMessage($"\nNo matching object found for ID: {Id}");
+          }
+          SettingObjects = false;
+        }
+        else if (e.DBObject is Line lineBase
+          && !SettingObjects
+          && !IsSaving) {
+          ed.WriteMessage("\nLine object appended event triggered.\n");
+          SettingObjects = true;
+          using (Transaction tr = db.TransactionManager.StartTransaction()) {
+            Line line = (Line)tr.GetObject(lineBase.ObjectId, OpenMode.ForWrite);
+            ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
+            if (xdata == null || xdata.AsArray().Length < 5) {
+              SettingObjects = false;
+              return;
+            }
+            TypedValue[] values = xdata.AsArray();
+
+            // Example: Update pipeType (index 3)
+            values[1] = new TypedValue(1000, Guid.NewGuid().ToString()); // Change "NewPipeType" to your desired value
+
+            // Re-apply the XData
+            ResultBuffer newXdata = new ResultBuffer(values);
+            line.XData = newXdata;
+
+            tr.Commit();
           }
           SettingObjects = false;
         }
