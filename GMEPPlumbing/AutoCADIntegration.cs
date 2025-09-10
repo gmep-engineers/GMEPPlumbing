@@ -3380,11 +3380,17 @@ namespace GMEPPlumbing
           && !IsSaving
           && e.DBObject is BlockReference blockRef
         ) {
-          if (blockRef == null || blockRef.IsErased || blockRef.IsDisposed)
+          if (blockRef == null || blockRef.IsDisposed)
             return;
           if (!IsVerticalRouteBlock(blockRef)) {
             return;
           }
+
+          string cmdName = Application.GetSystemVariable("CMDNAMES") as string;
+          if (!string.IsNullOrEmpty(cmdName) && cmdName.Contains("PASTECLIP")) {
+            return;
+          }
+
           ed.WriteMessage($"\nObject {e.DBObject.ObjectId} was erased.");
 
           string VerticalRouteId = string.Empty;
