@@ -4369,14 +4369,19 @@ namespace GMEPPlumbing
           SettingObjects = true;
           string Id = string.Empty;
           var pc = blockRef.DynamicBlockReferencePropertyCollection;
-          ed.WriteMessage("\nObject appended event triggered.\n");
           foreach (DynamicBlockReferenceProperty prop in pc) {
             if (prop.PropertyName == "id") {
               Id = prop.Value?.ToString();
             }
           }
-          object obj = FindObjectById(Id);
+          if (string.IsNullOrEmpty(Id)) {
+            SettingObjects = false;
+            return;
+          }
+          ed.WriteMessage("\nObject appended event triggered.\n");
           ed.WriteMessage($"\nLooking for object with ID: {Id}");
+          object obj = FindObjectById(Id);
+          
           if (obj != null) {
             if (obj is PlumbingFixture fixture || obj is PlumbingSource source) {
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
