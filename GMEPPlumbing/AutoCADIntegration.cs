@@ -4567,8 +4567,8 @@ namespace GMEPPlumbing
             tr.Commit();
           }
         }
-        pendingDuplicationRoutes.Remove(entry.Key);
       }
+      pendingDuplicationRoutes.Clear();
       SettingObjects = false;
     }
     public static void Doc_CommandEnded(object sender, CommandEventArgs e) {
