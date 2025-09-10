@@ -66,6 +66,8 @@ namespace GMEPPlumbing
     public static bool IsSaving { get; private set; }
     public static bool SettingObjects { get; set; }
     private static readonly Dictionary<string, List<string>> pendingDuplicationRoutes = new Dictionary<string, List<string>>();
+    
+    private static readonly List<string> activePlacingDuplicationRoutes = new List<string>();
 
     public AutoCADIntegration() {
       SettingObjects = false;
@@ -4378,6 +4380,11 @@ namespace GMEPPlumbing
             SettingObjects = false;
             return;
           }
+          if (!activePlacingDuplicationRoutes.Contains(Id)) {
+            activePlacingDuplicationRoutes.Add(Id);
+            SettingObjects = false;
+            return;
+          }
           ed.WriteMessage("\nObject appended event triggered.\n");
           ed.WriteMessage($"\nLooking for object with ID: {Id}");
           object obj = FindObjectById(Id);
@@ -4574,6 +4581,7 @@ namespace GMEPPlumbing
         }
       }
       pendingDuplicationRoutes.Clear();
+      activePlacingDuplicationRoutes.Clear();
       SettingObjects = false;
     }
     public static void Doc_CommandEnded(object sender, CommandEventArgs e) {
