@@ -4383,10 +4383,15 @@ namespace GMEPPlumbing
           
           ed.WriteMessage("\nObject appended event triggered.\n");
           ed.WriteMessage($"\nLooking for object with ID: {Id}");
-          object obj = FindObjectById(Id);
           
-          if (obj != null) {
-            if (obj is PlumbingFixture fixture || obj is PlumbingSource source) {
+          string type = FindObjectType(blockRef);
+          if (string.IsNullOrEmpty(type)) {
+            SettingObjects = false;
+            return;
+          }
+          
+          if (type != "") {
+            if (type == "Fixture" || type == "Source") {
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
                 BlockReference blockRef2 = (BlockReference)tr.GetObject(blockRef.ObjectId, OpenMode.ForWrite);
                 foreach (DynamicBlockReferenceProperty prop in blockRef2.DynamicBlockReferencePropertyCollection) {
@@ -4397,13 +4402,13 @@ namespace GMEPPlumbing
                 tr.Commit();
               }
             }
-            if (obj is PlumbingVerticalRoute route) {
+            if (type == "VerticalRoute") {
               if (!activePlacingDuplicationRoutes.Contains(Id)) {
                 activePlacingDuplicationRoutes.Add(Id);
                 SettingObjects = false;
                 return;
               }
-              StageDuplicateFullVerticalRoute(route, blockRef.ObjectId);
+              StageDuplicateFullVerticalRoute(blockRef.ObjectId);
             }
           }
           else {
@@ -4417,6 +4422,59 @@ namespace GMEPPlumbing
         ed.WriteMessage($"Exception: {ex.StackTrace}\n");
         SettingObjects = false;
       }
+    }
+    public static string FindObjectType(BlockReference blockRef) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return null;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List<string> verticalRouteBlockNames = new List<string>
+      {
+          "GMEP_PLUMBING_LINE_UP",
+          "GMEP_PLUMBING_LINE_DOWN",
+          "GMEP_PLUMBING_LINE_VERTICAL"
+      };
+      List<string> fixtureNames = new List<string> {
+          "GMEP WH 80",
+          "GMEP WH 50",
+          "GMEP DRAIN",
+          "GMEP CP",
+          "GMEP FS 12",
+          "GMEP FS 6",
+          "GMEP FD",
+          "GMEP RPBFP",
+          "GMEP IWH",
+          "GMEP PLUMBING GAS OUTPUT",
+          "GMEP PLUMBING VENT START",
+          "GMEP CW FIXTURE POINT",
+          "GMEP HW FIXTURE POINT"
+      };
+      List<string> sourceNames = new List<string> {
+          "GMEP SOURCE",
+          "GMEP WH 80",
+          "GMEP WH 50",
+          "GMEP IWH",
+          "GMEP PLUMBING VENT EXIT"
+      };
+
+      string type = "";
+      string blockName = "";
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTableRecord btr = (BlockTableRecord)tr.GetObject(blockRef.DynamicBlockTableRecord, OpenMode.ForRead);
+        blockName = btr.Name;
+        tr.Commit();
+      }
+      if (verticalRouteBlockNames.Contains(blockName)) {
+        type = "VerticalRoute";
+      }
+      else if (fixtureNames.Contains(blockName)) {
+        type = "Fixture";
+      }
+      else if (sourceNames.Contains(blockName)) {
+        type = "Source";
+      }
+      return type;
     }
     public static object FindObjectById(string Id) {
 
@@ -4438,7 +4496,7 @@ namespace GMEPPlumbing
 
       return null; // No match found
     }
-    public static void StageDuplicateFullVerticalRoute(PlumbingVerticalRoute route, ObjectId objid) {
+    public static void StageDuplicateFullVerticalRoute(ObjectId objid) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
       var db = doc.Database;
@@ -4448,6 +4506,18 @@ namespace GMEPPlumbing
       List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD();
       string newVerticalRouteId = Guid.NewGuid().ToString();
       string newId = Guid.NewGuid().ToString();
+
+      string Id = "";
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockReference blockRef2 = (BlockReference)tr.GetObject(objid, OpenMode.ForRead);
+        foreach (DynamicBlockReferenceProperty prop in blockRef2.DynamicBlockReferencePropertyCollection) {
+          if (prop.PropertyName == "id") {
+            Id = prop.Value.ToString();
+          }
+        }
+        tr.Commit();
+      }
+      PlumbingVerticalRoute route = verticalRoutes.FirstOrDefault(r => r.Id == Id);
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockReference blockRef2 = (BlockReference)tr.GetObject(objid, OpenMode.ForWrite);
