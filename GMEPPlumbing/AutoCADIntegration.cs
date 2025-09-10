@@ -4464,7 +4464,9 @@ namespace GMEPPlumbing
       if (doc == null) return;
       var db = doc.Database;
       var ed = doc.Editor;
-     
+
+      SettingObjects = true;
+
       ed.WriteMessage($"\nChecking for pending vertical route duplications... Amount:{pendingDuplicationRoutes.Count}");
       List<PlumbingVerticalRoute> routes = GetVerticalRoutesFromCAD();
       List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD();
@@ -4565,6 +4567,7 @@ namespace GMEPPlumbing
         }
         pendingDuplicationRoutes.Remove(entry.Key);
       }
+      SettingObjects = false;
     }
     public static void Doc_CommandEnded(object sender, CommandEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
