@@ -3971,6 +3971,7 @@ namespace GMEPPlumbing
                           pipeType,
                           isUp
                         );
+                        route.Rotation = rotation;
                         if (route.Type == "Waste" || route.Type == "Vent" || route.Type == "Grease Waste") {
                           route.IsUp = !route.IsUp; 
                         }
@@ -4199,7 +4200,7 @@ namespace GMEPPlumbing
   
   public static List<PlumbingFixture> GetPlumbingFixturesFromCAD(string ProjectId = "") {
       var doc = Application.DocumentManager.MdiActiveDocument;
-      if (doc == null || doc.IsDisposed || !doc.IsActive || doc.Database == null) return new List<PlumbingFixture>();
+      if (doc == null) return new List<PlumbingFixture>();
       var db = doc.Database;
       var ed = doc.Editor;
 
@@ -4535,6 +4536,7 @@ namespace GMEPPlumbing
             Point3d newPosition = subBasePoint.Point + vectorChange;
             BlockReference newBlockRef = new BlockReference(newPosition, blockDef.ObjectId);
             newBlockRef.Layer = layer;
+            newBlockRef.Rotation = subRoute.Rotation;
             modelSpace.AppendEntity(newBlockRef);
             tr.AddNewlyCreatedDBObject(newBlockRef, true);
             var pc = newBlockRef.DynamicBlockReferencePropertyCollection;
