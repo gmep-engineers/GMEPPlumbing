@@ -4476,26 +4476,7 @@ namespace GMEPPlumbing
       }
       return type;
     }
-    public static object FindObjectById(string Id) {
 
-      List<PlumbingFixture> fixtures = GetPlumbingFixturesFromCAD();
-      List<PlumbingSource> sources = GetPlumbingSourcesFromCAD();
-      List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD();
-
-      var fixture = fixtures.FirstOrDefault(f => f.Id == Id);
-      if (fixture != null)
-        return fixture;
-
-      var source = sources.FirstOrDefault(s => s.Id == Id);
-      if (source != null)
-        return source;
-
-      var verticalRoute = verticalRoutes.FirstOrDefault(vr => vr.Id == Id);
-      if (verticalRoute != null)
-        return verticalRoute;
-
-      return null; // No match found
-    }
     public static void StageDuplicateFullVerticalRoute(ObjectId objid) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
