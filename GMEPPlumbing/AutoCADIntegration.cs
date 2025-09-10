@@ -4430,11 +4430,8 @@ namespace GMEPPlumbing
               return;
             }
             TypedValue[] values = xdata.AsArray();
+            values[1] = new TypedValue(1000, Guid.NewGuid().ToString()); 
 
-            // Example: Update pipeType (index 3)
-            values[1] = new TypedValue(1000, Guid.NewGuid().ToString()); // Change "NewPipeType" to your desired value
-
-            // Re-apply the XData
             ResultBuffer newXdata = new ResultBuffer(values);
             line.XData = newXdata;
 
