@@ -434,6 +434,7 @@ namespace GMEPPlumbing {
         case "DW":
           types.Add("Hot Water");
           types.Add("Waste");
+          types.Add("Grease Waste");
           break;
       }
       return types;
