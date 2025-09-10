@@ -4380,11 +4380,7 @@ namespace GMEPPlumbing
             SettingObjects = false;
             return;
           }
-          if (!activePlacingDuplicationRoutes.Contains(Id)) {
-            activePlacingDuplicationRoutes.Add(Id);
-            SettingObjects = false;
-            return;
-          }
+          
           ed.WriteMessage("\nObject appended event triggered.\n");
           ed.WriteMessage($"\nLooking for object with ID: {Id}");
           object obj = FindObjectById(Id);
@@ -4402,6 +4398,11 @@ namespace GMEPPlumbing
               }
             }
             if (obj is PlumbingVerticalRoute route) {
+              if (!activePlacingDuplicationRoutes.Contains(Id)) {
+                activePlacingDuplicationRoutes.Add(Id);
+                SettingObjects = false;
+                return;
+              }
               StageDuplicateFullVerticalRoute(route, blockRef.ObjectId);
             }
           }
