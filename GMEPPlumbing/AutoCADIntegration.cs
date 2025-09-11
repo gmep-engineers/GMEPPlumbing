@@ -3407,11 +3407,15 @@ namespace GMEPPlumbing
           ed.WriteMessage($"\nObject {e.DBObject.ObjectId} was erased.");
 
           string VerticalRouteId = string.Empty;
-          var properties = blockRef.DynamicBlockReferencePropertyCollection;
-          foreach (DynamicBlockReferenceProperty prop in properties) {
-            if (prop.PropertyName == "vertical_route_id") {
-              VerticalRouteId = prop.Value?.ToString();
+          using (Transaction tr = db.TransactionManager.StartTransaction()) {
+            BlockReference br = (BlockReference)tr.GetObject(blockRef.ObjectId, OpenMode.ForRead);
+            var properties = br.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in properties) {
+              if (prop.PropertyName == "vertical_route_id") {
+                VerticalRouteId = prop.Value?.ToString();
+              }
             }
+            tr.Commit();
           }
           if (!string.IsNullOrEmpty(VerticalRouteId)) {
             SettingObjects = true;
@@ -3526,14 +3530,18 @@ namespace GMEPPlumbing
 
         string VerticalRouteId = string.Empty;
         string BasePointId = string.Empty;
-        var properties = blockRef.DynamicBlockReferencePropertyCollection;
-        foreach (DynamicBlockReferenceProperty prop in properties) {
-          if (prop.PropertyName == "vertical_route_id") {
-            VerticalRouteId = prop.Value?.ToString();
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockReference br = (BlockReference)tr.GetObject(blockRef.ObjectId, OpenMode.ForRead);
+          var properties = br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in properties) {
+            if (prop.PropertyName == "vertical_route_id") {
+              VerticalRouteId = prop.Value?.ToString();
+            }
+            if (prop.PropertyName == "base_point_id") {
+              BasePointId = prop.Value?.ToString();
+            }
           }
-          if (prop.PropertyName == "base_point_id") {
-            BasePointId = prop.Value?.ToString();
-          }
+          tr.Commit();
         }
         if (BasePointId != "" && basePoints.ContainsKey(BasePointId)) {
           ObjectId basePointIdObj = basePoints[BasePointId];
