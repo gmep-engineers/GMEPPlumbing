@@ -24,9 +24,13 @@ namespace GMEPPlumbing.Views
   /// Interaction logic for Scene3DView.xaml
   /// </summary>
   public partial class Scene3DView : UserControl {
+    private TextVisual3D _highlightedText;
+    private Brush _originalBrush;
     public Scene3DView() {
       InitializeComponent();
       this.DataContextChanged += Scene3DView_DataContextChanged;
+      this.Viewport.MouseLeftButtonDown += Viewport_MouseLeftButtonDown;
+      this.Viewport.MouseMove += Viewport_MouseMove;
       //this.Viewport.CameraChanged += Viewport_CameraChanged;
     }
 
@@ -63,6 +67,44 @@ namespace GMEPPlumbing.Views
 
       text.TextDirection = right;
       text.UpDirection = up;
+    }
+    private void Viewport_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      var mousePos = e.GetPosition(Viewport);
+      var windowPos = Viewport.PointToScreen(mousePos);
+      var hitResult = Viewport.Viewport.FindHits(mousePos).FirstOrDefault();
+
+      if (hitResult != null && hitResult.Visual is TextVisual3D specificVisual) {
+        ed.WriteMessage($"\nYou clicked on: {specificVisual.Content}");
+        PopupText.Text = $"You clicked: {specificVisual.Content}";
+        InfoPopup.PlacementTarget = Viewport;
+        InfoPopup.HorizontalOffset = windowPos.X;
+        InfoPopup.VerticalOffset = windowPos.Y;
+        InfoPopup.IsOpen = true;
+        e.Handled = true;
+      }
+      else {
+        InfoPopup.IsOpen = false;
+      }
+    }
+    private void Viewport_MouseMove(object sender, MouseEventArgs e) {
+      var mousePos = e.GetPosition(Viewport);
+      var hitResult = Viewport.Viewport.FindHits(mousePos).FirstOrDefault();
+
+      if (_highlightedText != null) {
+        _highlightedText.Background = _originalBrush;
+        _highlightedText = null;
+        _originalBrush = null;
+      }
+
+      if (hitResult != null && hitResult.Visual is TextVisual3D textVisual && textVisual.Background == Brushes.White) {
+        _highlightedText = textVisual;
+        _originalBrush = textVisual.Background;
+        textVisual.Background = Brushes.LightGray;
+      }
     }
   }
   public class InchesToFeetInchesConverter : IValueConverter {
