@@ -77,9 +77,8 @@ namespace GMEPPlumbing.Views
       var windowPos = Viewport.PointToScreen(mousePos);
       var hitResult = Viewport.Viewport.FindHits(mousePos).FirstOrDefault();
 
-      if (hitResult != null && hitResult.Visual is TextVisual3D specificVisual) {
-        ed.WriteMessage($"\nYou clicked on: {specificVisual.Content}");
-        PopupText.Text = $"You clicked: {specificVisual.Content}";
+      if (hitResult != null && hitResult.Visual is TextVisual3D textVisual && textVisual.Background == Brushes.LightGray) {
+        PopupText.Text = $"{textVisual.Text}";
         InfoPopup.PlacementTarget = Viewport;
         InfoPopup.HorizontalOffset = windowPos.X;
         InfoPopup.VerticalOffset = windowPos.Y;
