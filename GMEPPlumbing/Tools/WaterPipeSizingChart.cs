@@ -867,7 +867,7 @@ namespace GMEPPlumbing.Tools
             .FirstOrDefault();
       }
       return new Tuple<string, string>(
-          result?.PipeSize ?? "Not Found",
+          "Pipe Size: " + (result?.PipeSize ?? "Not Found"),
           result?.InnerDiameter ?? ""
       );
 
