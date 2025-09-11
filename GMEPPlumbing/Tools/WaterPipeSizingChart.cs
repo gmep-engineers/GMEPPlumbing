@@ -837,7 +837,7 @@ namespace GMEPPlumbing.Tools
 
     };
 
-    public Tuple<string, string> FindSize(string pipeType, double psi, bool isHot, double gpm) {
+    public string FindSize(string pipeType, double psi, bool isHot, double gpm) {
       List<WaterPipeSizingEntry> searchChart = null;
       if (pipeType == "Copper Type L") {
         searchChart = CopperTypeLChart;
@@ -866,11 +866,13 @@ namespace GMEPPlumbing.Tools
             .OrderBy(e => e.PressureLossPer100Ft)
             .FirstOrDefault();
       }
-      return new Tuple<string, string>(
-          "Pipe Size: " + (result?.PipeSize ?? "Not Found"),
-          result?.InnerDiameter ?? ""
-      );
+      string pipeSize = "Pipe Size: " + (result?.PipeSize ?? "Not Found") + "\n";
+      string innerDiameter = "";
+      if (result != null && !string.IsNullOrEmpty(result.InnerDiameter)) {
+        innerDiameter = "Inner Diameter: " + result.InnerDiameter + "\n";
+      }
 
+      return pipeSize + innerDiameter;
     }
   }
   public class WaterPipeSizingEntry {

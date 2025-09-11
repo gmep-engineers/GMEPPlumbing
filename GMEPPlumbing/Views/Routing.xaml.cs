@@ -459,7 +459,7 @@ namespace GMEPPlumbing.Views
               psi,
               isHot,
               horizontalRoute.GPM
-            ).Item1;
+            );
           }
           else if (item is PlumbingVerticalRoute verticalRoute && (verticalRoute.Type == "Cold Water" || verticalRoute.Type == "Hot Water")) {
             bool isHot = false;
@@ -472,7 +472,7 @@ namespace GMEPPlumbing.Views
               psi,
               isHot,
               verticalRoute.GPM
-            ).Item1;
+            );
           }
         }
       }
