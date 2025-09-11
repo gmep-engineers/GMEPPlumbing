@@ -216,7 +216,7 @@ namespace GMEPPlumbing
           }
         }
       }
-      else if (result == "Gas") {
+     /* else if (result == "Gas") {
         PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
         pko1.Keywords.Add("Copper", "Semi-Rigid Copper Tubing", "Semi-Rigid Copper Tubing");
         pko1.Keywords.Add("Metal", "Schedule 40 Metallic Pipe", "Schedule 40 Metallic Pipe");
@@ -228,7 +228,7 @@ namespace GMEPPlumbing
           return;
         }
         pipeType = pr1.StringResult;
-      }
+      }*/
     
 
 
@@ -645,7 +645,7 @@ namespace GMEPPlumbing
             pipeType = "Copper Type L";
         }
       }
-      else if (type == "Gas") {
+     /* else if (type == "Gas") {
         PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
         pko1.Keywords.Add("Copper", "Semi-Rigid Copper Tubing", "Semi-Rigid Copper Tubing");
         pko1.Keywords.Add("Metal", "Schedule 40 Metallic Pipe", "Schedule 40 Metallic Pipe");
@@ -657,7 +657,7 @@ namespace GMEPPlumbing
           return null;
         }
         pipeType = pr1.StringResult;
-      }
+      }*/
 
 
       if (routeHeight == null) {
