@@ -84,6 +84,16 @@ namespace GMEPPlumbing.Views
         InfoPopup.VerticalOffset = windowPos.Y;
         InfoPopup.IsOpen = true;
         e.Handled = true;
+        if (PopupText.Text.Contains("Pipe Size") || PopupText.Text.Contains("Nominal Size")) {
+          PlaceOnCad.IsEnabled = true;
+          PlaceOnCad.Content = "Place Pipe Size";
+          PlaceOnCad.Foreground = Brushes.Black;
+        }
+        else {
+          PlaceOnCad.IsEnabled = false;
+          PlaceOnCad.Content = "Pipe Size Required";
+          PlaceOnCad.Foreground = Brushes.Crimson;
+        }
       }
       else {
         InfoPopup.IsOpen = false;
