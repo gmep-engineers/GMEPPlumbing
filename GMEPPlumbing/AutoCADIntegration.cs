@@ -197,17 +197,24 @@ namespace GMEPPlumbing
       }
       string pipeType = "";
       if (result == "ColdWater" || result == "HotWater") {
-        PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
-        pko1.Keywords.Add("Copper", "Copper Type L", "Copper Type L");
-        pko1.Keywords.Add("CPVCSCH80", "CPVC SCH80", "CPVC SCH80");
-        pko1.Keywords.Add("CPVCSDRII", "CPVC SDR II", "CPVC SDR II");
-        pko1.Keywords.Add("PEX");
-        PromptResult pr1 = ed.GetKeywords(pko1);
-        if (pr1.Status != PromptStatus.OK) {
-          ed.WriteMessage("\nCommand cancelled.");
-          return;
+        if (CADObjectCommands.IsResidential) {
+          PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
+          pko1.Keywords.Add("Copper", "Copper Type L", "Copper Type L");
+          pko1.Keywords.Add("CPVCSCH80", "CPVC SCH80", "CPVC SCH80");
+          pko1.Keywords.Add("CPVCSDRII", "CPVC SDR II", "CPVC SDR II");
+          pko1.Keywords.Add("PEX");
+          PromptResult pr1 = ed.GetKeywords(pko1);
+          if (pr1.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+          }
+          pipeType = pr1.StringResult;
         }
-        pipeType = pr1.StringResult;
+        else {
+          {
+            pipeType = "Copper Type L";
+          }
+        }
       }
       else if (result == "Gas") {
         PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
@@ -620,17 +627,23 @@ namespace GMEPPlumbing
 
       string pipeType = "";
       if (type == "ColdWater" || type == "HotWater") {
-        PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
-        pko1.Keywords.Add("Copper", "Copper Type L", "Copper Type L");
-        pko1.Keywords.Add("CPVCSCH80", "CPVC SCH80", "CPVC SCH80");
-        pko1.Keywords.Add("CPVCSDRII", "CPVC SDR II", "CPVC SDR II");
-        pko1.Keywords.Add("PEX");
-        PromptResult pr1 = ed.GetKeywords(pko1);
-        if (pr1.Status != PromptStatus.OK) {
-          ed.WriteMessage("\nCommand cancelled.");
-          return null;
+        if (CADObjectCommands.IsResidential) {
+          PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
+          pko1.Keywords.Add("Copper", "Copper Type L", "Copper Type L");
+          pko1.Keywords.Add("CPVCSCH80", "CPVC SCH80", "CPVC SCH80");
+          pko1.Keywords.Add("CPVCSDRII", "CPVC SDR II", "CPVC SDR II");
+          pko1.Keywords.Add("PEX");
+          PromptResult pr1 = ed.GetKeywords(pko1);
+          if (pr1.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return null;
+          }
+          pipeType = pr1.StringResult;
         }
-        pipeType = pr1.StringResult;
+        else 
+        {
+            pipeType = "Copper Type L";
+        }
       }
       else if (type == "Gas") {
         PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
