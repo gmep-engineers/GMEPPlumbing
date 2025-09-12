@@ -20,6 +20,7 @@ using Autodesk.AutoCAD.Geometry;
 using HelixToolkit.Wpf;
 using static Mysqlx.Crud.Order.Types;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
+using Autodesk.AutoCAD.EditorInput;
 
 namespace GMEPPlumbing.Views
 {
@@ -129,8 +130,9 @@ namespace GMEPPlumbing.Views
       List<PlumbingPlanBasePoint> basePoints =  AutoCADIntegration.GetPlumbingBasePointsFromCAD();
       object basePointIds = TextVisual3DExtensions.GetBasePointIds(_highlightedText);
       object isUp = TextVisual3DExtensions.GetIsUp(_highlightedText);
+      object type = TextVisual3DExtensions.GetType(_highlightedText);
       if (isUp != null && isUp is bool isUpBool) {
-        if (basePointIds != null && basePointIds is List<string> basePointIdsList) {
+        if (basePointIds != null && basePointIds is List<string> basePointIdsList && type != null && type is string typeText) {
           foreach (string basePointId in basePointIdsList) {
             PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == basePointId);
             if (basePoint != null) {
@@ -140,7 +142,7 @@ namespace GMEPPlumbing.Views
         }
       }
       else {
-        if (basePointIds != null && basePointIds is List<string> basePointIdsList) {
+        if (basePointIds != null && basePointIds is List<string> basePointIdsList && type != null && type is string typeText) {
           string basePointId = basePointIdsList.FirstOrDefault();
           if (basePointId != null) {
             PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == basePointId);
@@ -155,17 +157,42 @@ namespace GMEPPlumbing.Views
                 if (newlineIndex >= 0)
                   pipeSize = pipeSize.Substring(0, newlineIndex).Trim();
               }
-
+              ed.WriteMessage(_highlightedText.Position.ToString());
               Point3d placementPoint = basePoint.Point + new Vector3d(_highlightedText.Position.X, _highlightedText.Position.Y, 0);
-              AutoCADIntegration.ZoomToPoint(ed, basePoint.Point);
-       
-
+              AutoCADIntegration.ZoomToPoint(ed, placementPoint);
+              string fullText = pipeSize + " " + TypeToAbbreviation(typeText); 
+              using (var docLock = doc.LockDocument()) {
+                CADObjectCommands.CreateTextWithJig(
+                  CADObjectCommands.TextLayer,
+                  TextHorizontalMode.TextLeft,
+                  fullText
+                );
+              }
             }
           }
         }
       }
     }
+    public string TypeToAbbreviation(string type) {
+    switch(type) {
+        case "Cold Water":
+          return "CW";
+        case "Hot Water":
+          return "HW";
+        case "Waste":
+          return "W";
+        case "Grease Waste":
+          return "GW";
+        case "Vent":
+          return "V";
+        case "Gas":
+          return "G";
+        default:
+          return "";
+      }
+    }
   }
+
 
   public class InchesToFeetInchesConverter : IValueConverter {
       public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {

@@ -2121,39 +2121,6 @@ namespace GMEPPlumbing
       );
     }
 
-    [CommandMethod("CREATEPLUMBINGLABEL")]
-    public static void CreatePlumbingLabel()
-    {
-        var doc = Application.DocumentManager.MdiActiveDocument;
-        if (doc == null) return;
-        var ed = doc.Editor;
-
-        // Check if arguments were passed
-        var args = Autodesk.AutoCAD.ApplicationServices.Application.GetSystemVariable("CMDARGS") as string;
-        string labelText = null;
-        if (!string.IsNullOrWhiteSpace(args))
-        {
-            labelText = args.Trim();
-        }
-        else
-        {
-            PromptStringOptions pso = new PromptStringOptions("\nEnter label text:");
-            pso.AllowSpaces = true;
-            PromptResult pr = ed.GetString(pso);
-            if (pr.Status != PromptStatus.OK)
-            {
-                ed.WriteMessage("\nCommand cancelled.");
-                return;
-            }
-            labelText = pr.StringResult;
-        }
-
-        CADObjectCommands.CreateTextWithJig(
-            CADObjectCommands.TextLayer,
-            TextHorizontalMode.TextLeft,
-            labelText
-        );
-    }
 
     private void MakePlumbingFixtureLabel(PlumbingFixture fixture, PlumbingFixtureType type) {
       double distance = 3;

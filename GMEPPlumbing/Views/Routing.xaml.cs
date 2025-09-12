@@ -168,6 +168,7 @@ namespace GMEPPlumbing.Views
             TextDirection = direction
           };
           TextVisual3DExtensions.SetBasePointIds(textModel, new List<string> { horizontalRoute.BasePointId });
+          TextVisual3DExtensions.SetType(textModel, horizontalRoute.Type);
           textVisuals.Add(textModel);
 
           fullModel.Children.Add(ballModel2);
@@ -331,6 +332,7 @@ namespace GMEPPlumbing.Views
         };
         TextVisual3DExtensions.SetBasePointIds(textModel, routeBasePointIds);
         TextVisual3DExtensions.SetIsUp(textModel, isUp);
+        TextVisual3DExtensions.SetType(textModel, verticalRoutes.First().Type);
 
         textVisuals.Add(textModel);
       }
@@ -508,7 +510,7 @@ namespace GMEPPlumbing.Views
                 pipeSize = "Nominal ACR: " + copperEntry.NominalACR + "\n Nominal KL: " + copperEntry.NominalKL + "\n Outside: " + copperEntry.OutsideDiameter + "\n Inside: " + copperEntry.InsideDiameter;
               }
               else if (entry is Schedule40MetalGasEntry metal40Entry) {
-                pipeSize = "Actual ID: " + metal40Entry.ActualID + "\n Nominal Size: " + metal40Entry.NominalSize;
+                pipeSize = "Actual ID: " + metal40Entry.ActualID + "\"\n Nominal Pipe Size: " + metal40Entry.NominalSize+"\" ";
               }
               else if (entry is PolyethylenePlasticGasEntry plasticEntry) {
                 pipeSize = "Actual ID: " + plasticEntry.ActualID + "\n Designation: " + plasticEntry.Designation;
@@ -808,6 +810,13 @@ namespace GMEPPlumbing.Views
         typeof(TextVisual3DExtensions),
         new PropertyMetadata(null));
 
+    public static readonly DependencyProperty TypeProperty =
+    DependencyProperty.RegisterAttached(
+        "Type",
+        typeof(object),
+        typeof(TextVisual3DExtensions),
+        new PropertyMetadata(null));
+
 
 
     public static void SetBasePointIds(DependencyObject element, object value) {
@@ -824,6 +833,13 @@ namespace GMEPPlumbing.Views
 
     public static object GetIsUp(DependencyObject element) {
       return element.GetValue(IsUpProperty);
+    }
+    public static void SetType(DependencyObject element, object value) {
+      element.SetValue(TypeProperty, value);
+    }
+
+    public static object GetType(DependencyObject element) {
+      return element.GetValue(TypeProperty);
     }
   }
 
