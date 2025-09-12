@@ -157,16 +157,45 @@ namespace GMEPPlumbing.Views
                 if (newlineIndex >= 0)
                   pipeSize = pipeSize.Substring(0, newlineIndex).Trim();
               }
+              string gasInfo = "";
+              if (typeText == "Gas") {
+                string cfhMarker = "CFH: ";
+                string runMarker = "Longest Run: ";
+                int cfhIndex = text.IndexOf(cfhMarker);
+                int runIndex = text.IndexOf(runMarker);
+                string cfh = "";
+                if (cfhIndex >= 0) {
+                  cfh = text.Substring(cfhIndex + cfhMarker.Length).Trim();
+                  int newlineIndex = cfh.IndexOf('\n');
+                  if (newlineIndex >= 0)
+                    cfh = cfh.Substring(0, newlineIndex).Trim();
+                }
+                string run = "";
+                if (runIndex >= 0) {
+                  run = text.Substring(runIndex + runMarker.Length).Trim();
+                  int newlineIndex = run.IndexOf('\'');
+                  if (newlineIndex >= 0)
+                    run = run.Substring(0, newlineIndex).Trim();
+                }
+                gasInfo = $"({cfh}CFH@~{run}')";
+              }
               ed.WriteMessage(_highlightedText.Position.ToString());
               Point3d placementPoint = basePoint.Point + new Vector3d(_highlightedText.Position.X, _highlightedText.Position.Y, 0);
               AutoCADIntegration.ZoomToPoint(ed, placementPoint);
-              string fullText = pipeSize + " " + TypeToAbbreviation(typeText); 
+              string fullText = pipeSize + TypeToAbbreviation(typeText); 
               using (var docLock = doc.LockDocument()) {
                 CADObjectCommands.CreateTextWithJig(
                   CADObjectCommands.TextLayer,
                   TextHorizontalMode.TextLeft,
                   fullText
                 );
+                if (typeText == "Gas") {
+                  CADObjectCommands.CreateTextWithJig(
+                    CADObjectCommands.TextLayer,
+                    TextHorizontalMode.TextLeft,
+                    gasInfo
+                  );
+                }
               }
             }
           }
