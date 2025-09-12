@@ -138,7 +138,7 @@ namespace GMEPPlumbing.Views
               slope = "2%";
             }
             string recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, slope);
-            textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits}\n Slope: {slope}\n ---------------------- \n {recommendedSize}";
+            textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits}\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
           }
           else if (horizontalRoute.Type == "Vent") {
             VentSizingChart chart = new VentSizingChart();
@@ -149,7 +149,7 @@ namespace GMEPPlumbing.Views
             string recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, horizontalRoute.LongestRunLength);
             textString = $" {feet}' {inches}\"\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
           }
-          double textWidth = textHeight * textString.Length * 0.05;
+          double textWidth = textHeight * textString.Length * 0.03;
 
           // Offset so the back of the text aligns with the end point 
           var textPos = new Point3D(
@@ -290,23 +290,23 @@ namespace GMEPPlumbing.Views
         // Calculate pipe length in feet/inches
         int feet = (int)(pipeLength / 12);
         int inches = (int)Math.Round(pipeLength % 12);
-        string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n ---------------------- \n {pipeSize}";
+        string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n ---------------------- \n {pipeSize}\n";
         if (verticalRoutes.First().Type == "Gas") {
-          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\"\n ---------------------- \n {pipeSize}";
+          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\"\n ---------------------- \n {pipeSize}\n";
         }
         else if (verticalRoutes.First().Type == "Waste" || verticalRoutes.First().Type == "Grease Waste") {
           WasteSizingChart chart = new WasteSizingChart();
           string recommendedSize = chart.FindSize(pipeFixtureUnits, "Vertical", pipeLength);
-          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n ---------------------- \n {recommendedSize} \n";
+          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n ---------------------- \n {recommendedSize}\n";
         }
         else if (verticalRoutes.First().Type == "Vent") {
           VentSizingChart chart = new VentSizingChart();
           string recommendedSize = chart.FindSize(pipeFixtureUnits, longestLength);
-          textString = $" {feet}' {inches}\"\n ---------------------- \n {recommendedSize} \n";
+          textString = $" {feet}' {inches}\"\n ---------------------- \n {recommendedSize}\n";
 
         }
         int textHeight = 8;
-        double textWidth = textHeight * textString.Length * 0.05;
+        double textWidth = textHeight * textString.Length * 0.03;
 
         double offset = textWidth / 2;
         if (verticalRoutes[0].IsUp)
