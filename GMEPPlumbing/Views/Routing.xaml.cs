@@ -167,6 +167,7 @@ namespace GMEPPlumbing.Views
             UpDirection = new Vector3D(0, 0, 1),
             TextDirection = direction
           };
+          TextVisual3DExtensions.SetBasePointIds(textModel, new List<string> { horizontalRoute.BasePointId });
           textVisuals.Add(textModel);
 
           fullModel.Children.Add(ballModel2);
@@ -270,9 +271,13 @@ namespace GMEPPlumbing.Views
 
         double pipeLength = 0;
         double pipeFixtureUnits = 0;
+        List<string> routeBasePointIds = new List<string>();
+        bool isUp = false;
+
         foreach (var verticalRoute in verticalRoutes) {
           pipeLength += verticalRoute.Length * 12; // Convert to inches
           pipeFixtureUnits += verticalRoute.FixtureUnits;
+          routeBasePointIds.Add(verticalRoute.BasePointId);
         }
         int flowTypeId = verticalRoutes.First().FlowTypeId;
         int gpm = verticalRoutes.First().GPM;
@@ -284,6 +289,7 @@ namespace GMEPPlumbing.Views
           flowTypeId = verticalRoutes.Last().FlowTypeId;
           gpm = verticalRoutes.Last().GPM;
           pipeSize = verticalRoutes.Last().PipeSize;
+          isUp = true;
         }
         string flow = (flowTypeId == 1) ? "Flush Tank" : "Flush Valve";
 
@@ -323,6 +329,8 @@ namespace GMEPPlumbing.Views
           TextDirection = new Vector3D(1, 0, 0),
           UpDirection = new Vector3D(0, 0, 1)
         };
+        TextVisual3DExtensions.SetBasePointIds(textModel, routeBasePointIds);
+        TextVisual3DExtensions.SetIsUp(textModel, isUp);
 
         textVisuals.Add(textModel);
       }
@@ -783,6 +791,39 @@ namespace GMEPPlumbing.Views
     }
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
       throw new NotImplementedException();
+    }
+  }
+  public static class TextVisual3DExtensions {
+    public static readonly DependencyProperty BasePointIdsProperty =
+        DependencyProperty.RegisterAttached(
+            "BasePointIds",
+            typeof(object),
+            typeof(TextVisual3DExtensions),
+            new PropertyMetadata(null));
+
+    public static readonly DependencyProperty IsUpProperty =
+    DependencyProperty.RegisterAttached(
+        "IsUp",
+        typeof(object),
+        typeof(TextVisual3DExtensions),
+        new PropertyMetadata(null));
+
+
+
+    public static void SetBasePointIds(DependencyObject element, object value) {
+      element.SetValue(BasePointIdsProperty, value);
+    }
+
+    public static object GetBasePointIds(DependencyObject element) {
+      return element.GetValue(BasePointIdsProperty);
+    }
+
+    public static void SetIsUp(DependencyObject element, object value) {
+      element.SetValue(IsUpProperty, value);
+    }
+
+    public static object GetIsUp(DependencyObject element) {
+      return element.GetValue(IsUpProperty);
     }
   }
 

@@ -40,6 +40,7 @@ using Mysqlx.Session;
 using Autodesk.AutoCAD.Windows.ToolPalette;
 using GMEPPlumbing.Properties;
 using System.Windows.Shapes;
+using static Google.Protobuf.Compiler.CodeGeneratorResponse.Types;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
@@ -1734,6 +1735,31 @@ namespace GMEPPlumbing
         }
       }
     }
+    public static void ZoomToPoint(Editor ed, Point3d wcsPos) {
+      var doc = ed.Document;
+      using (doc.LockDocument()) {
+        // Get the current view
+        using (ViewTableRecord view = ed.GetCurrentView()) {
+          Matrix3d matWcs2Dcs =
+              Matrix3d.PlaneToWorld(view.ViewDirection)
+              .Inverse() *
+              Matrix3d.Displacement(view.Target - Point3d.Origin)
+              .Inverse() *
+              Matrix3d.Rotation(-view.ViewTwist, view.ViewDirection, view.Target);
+
+          Point3d dcsPos = wcsPos.TransformBy(matWcs2Dcs);
+
+          double zoomWidth = 400.0;
+          double zoomHeight = 400.0;
+
+          view.CenterPoint = new Point2d(dcsPos.X, dcsPos.Y);
+          view.Width = zoomWidth;
+          view.Height = zoomHeight;
+
+          ed.SetCurrentView(view);
+        }
+      }
+    }
 
     public void WriteMessage(string message) {
       var doc = Application.DocumentManager.MdiActiveDocument;
@@ -2093,6 +2119,40 @@ namespace GMEPPlumbing
         TextHorizontalMode.TextLeft,
         direction
       );
+    }
+
+    [CommandMethod("CREATEPLUMBINGLABEL")]
+    public static void CreatePlumbingLabel()
+    {
+        var doc = Application.DocumentManager.MdiActiveDocument;
+        if (doc == null) return;
+        var ed = doc.Editor;
+
+        // Check if arguments were passed
+        var args = Autodesk.AutoCAD.ApplicationServices.Application.GetSystemVariable("CMDARGS") as string;
+        string labelText = null;
+        if (!string.IsNullOrWhiteSpace(args))
+        {
+            labelText = args.Trim();
+        }
+        else
+        {
+            PromptStringOptions pso = new PromptStringOptions("\nEnter label text:");
+            pso.AllowSpaces = true;
+            PromptResult pr = ed.GetString(pso);
+            if (pr.Status != PromptStatus.OK)
+            {
+                ed.WriteMessage("\nCommand cancelled.");
+                return;
+            }
+            labelText = pr.StringResult;
+        }
+
+        CADObjectCommands.CreateTextWithJig(
+            CADObjectCommands.TextLayer,
+            TextHorizontalMode.TextLeft,
+            labelText
+        );
     }
 
     private void MakePlumbingFixtureLabel(PlumbingFixture fixture, PlumbingFixtureType type) {

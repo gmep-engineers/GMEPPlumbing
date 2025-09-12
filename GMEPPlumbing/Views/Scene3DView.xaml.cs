@@ -15,7 +15,10 @@ using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
 using HelixToolkit.Wpf;
+using static Mysqlx.Crud.Order.Types;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace GMEPPlumbing.Views
@@ -115,7 +118,55 @@ namespace GMEPPlumbing.Views
         textVisual.Background = Brushes.LightGray;
       }
     }
+
+    private void PlaceOnCad_Click(object sender, RoutedEventArgs e) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      InfoPopup.IsOpen = false;
+
+      List<PlumbingPlanBasePoint> basePoints =  AutoCADIntegration.GetPlumbingBasePointsFromCAD();
+      object basePointIds = TextVisual3DExtensions.GetBasePointIds(_highlightedText);
+      object isUp = TextVisual3DExtensions.GetIsUp(_highlightedText);
+      if (isUp != null && isUp is bool isUpBool) {
+        if (basePointIds != null && basePointIds is List<string> basePointIdsList) {
+          foreach (string basePointId in basePointIdsList) {
+            PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == basePointId);
+            if (basePoint != null) {
+              
+            }
+          }
+        }
+      }
+      else {
+        if (basePointIds != null && basePointIds is List<string> basePointIdsList) {
+          string basePointId = basePointIdsList.FirstOrDefault();
+          if (basePointId != null) {
+            PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == basePointId);
+            if (basePoint != null) {
+              string pipeSize = "";
+              string text = _highlightedText.Text;
+              const string marker = "Pipe Size: ";
+              int index = text.IndexOf(marker);
+              if (index >= 0) {
+                pipeSize = text.Substring(index + marker.Length).Trim();
+                int newlineIndex = pipeSize.IndexOf('\n');
+                if (newlineIndex >= 0)
+                  pipeSize = pipeSize.Substring(0, newlineIndex).Trim();
+              }
+
+              Point3d placementPoint = basePoint.Point + new Vector3d(_highlightedText.Position.X, _highlightedText.Position.Y, 0);
+              AutoCADIntegration.ZoomToPoint(ed, basePoint.Point);
+       
+
+            }
+          }
+        }
+      }
+    }
   }
+
   public class InchesToFeetInchesConverter : IValueConverter {
       public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
         if (value is double inches) {

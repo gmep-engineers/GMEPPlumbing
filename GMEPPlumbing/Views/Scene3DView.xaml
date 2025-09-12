@@ -19,7 +19,7 @@
                 <Border Background="White" BorderBrush="Gray" BorderThickness="3" Padding="8">
                     <StackPanel>
                         <TextBlock x:Name="PopupText" Margin="0,0,0,8"/>
-                        <Button x:Name="PlaceOnCad" Content="Place on CAD"/>
+                        <Button x:Name="PlaceOnCad" Content="Place on CAD" Click="PlaceOnCad_Click"/>
                     </StackPanel>
                 </Border>
                 <Polygon Points="0,0 20,0 0,20"
