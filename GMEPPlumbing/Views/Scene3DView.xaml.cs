@@ -128,74 +128,118 @@ namespace GMEPPlumbing.Views
       InfoPopup.IsOpen = false;
 
       List<PlumbingPlanBasePoint> basePoints =  AutoCADIntegration.GetPlumbingBasePointsFromCAD();
-      object basePointIds = TextVisual3DExtensions.GetBasePointIds(_highlightedText);
+      object basePointIds = TextVisual3DExtensions.GetBasePointId(_highlightedText);
       object isUp = TextVisual3DExtensions.GetIsUp(_highlightedText);
       object type = TextVisual3DExtensions.GetType(_highlightedText);
       if (isUp != null && isUp is bool isUpBool) {
-        if (basePointIds != null && basePointIds is List<string> basePointIdsList && type != null && type is string typeText) {
-          foreach (string basePointId in basePointIdsList) {
-            PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == basePointId);
-            if (basePoint != null) {
-              
+        if (basePointIds != null && basePointIds is string basePointId && type != null && type is string typeText) {
+          PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == basePointId);
+          if (basePoint != null) {
+            string pipeSize = "";
+            string text = _highlightedText.Text;
+            const string marker = "Pipe Size: ";
+            int index = text.IndexOf(marker);
+            if (index >= 0) {
+              pipeSize = text.Substring(index + marker.Length).Trim();
+              int newlineIndex = pipeSize.IndexOf('\n');
+              if (newlineIndex >= 0)
+                pipeSize = pipeSize.Substring(0, newlineIndex).Trim();
+            }
+            string gasInfo = "";
+            if (typeText == "Gas") {
+              string cfhMarker = "CFH: ";
+              string runMarker = "Longest Run: ";
+              int cfhIndex = text.IndexOf(cfhMarker);
+              int runIndex = text.IndexOf(runMarker);
+              string cfh = "";
+              if (cfhIndex >= 0) {
+                cfh = text.Substring(cfhIndex + cfhMarker.Length).Trim();
+                int newlineIndex = cfh.IndexOf('\n');
+                if (newlineIndex >= 0)
+                  cfh = cfh.Substring(0, newlineIndex).Trim();
+              }
+              string run = "";
+              if (runIndex >= 0) {
+                run = text.Substring(runIndex + runMarker.Length).Trim();
+                int newlineIndex = run.IndexOf('\'');
+                if (newlineIndex >= 0)
+                  run = run.Substring(0, newlineIndex).Trim();
+              }
+              gasInfo = $"({cfh}CFH@~{run}')";
+            }
+            ed.WriteMessage(_highlightedText.Position.ToString());
+            Point3d placementPoint = basePoint.Point + new Vector3d(_highlightedText.Position.X, _highlightedText.Position.Y, 0);
+            AutoCADIntegration.ZoomToPoint(ed, placementPoint);
+            string fullText = pipeSize + TypeToAbbreviation(typeText);
+            using (var docLock = doc.LockDocument()) {
+              CADObjectCommands.CreateTextWithJig(
+                CADObjectCommands.TextLayer,
+                TextHorizontalMode.TextLeft,
+                fullText
+              );
+              if (typeText == "Gas") {
+                CADObjectCommands.CreateTextWithJig(
+                  CADObjectCommands.TextLayer,
+                  TextHorizontalMode.TextLeft,
+                  gasInfo
+                );
+              }
             }
           }
         }
       }
       else {
-        if (basePointIds != null && basePointIds is List<string> basePointIdsList && type != null && type is string typeText) {
-          string basePointId = basePointIdsList.FirstOrDefault();
-          if (basePointId != null) {
-            PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == basePointId);
-            if (basePoint != null) {
-              string pipeSize = "";
-              string text = _highlightedText.Text;
-              const string marker = "Pipe Size: ";
-              int index = text.IndexOf(marker);
-              if (index >= 0) {
-                pipeSize = text.Substring(index + marker.Length).Trim();
-                int newlineIndex = pipeSize.IndexOf('\n');
+        if (basePointIds != null && basePointIds is string basePointId && type != null && type is string typeText) {
+          PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == basePointId);
+          if (basePoint != null) {
+            string pipeSize = "";
+            string text = _highlightedText.Text;
+            const string marker = "Pipe Size: ";
+            int index = text.IndexOf(marker);
+            if (index >= 0) {
+              pipeSize = text.Substring(index + marker.Length).Trim();
+              int newlineIndex = pipeSize.IndexOf('\n');
+              if (newlineIndex >= 0)
+                pipeSize = pipeSize.Substring(0, newlineIndex).Trim();
+            }
+            string gasInfo = "";
+            if (typeText == "Gas") {
+              string cfhMarker = "CFH: ";
+              string runMarker = "Longest Run: ";
+              int cfhIndex = text.IndexOf(cfhMarker);
+              int runIndex = text.IndexOf(runMarker);
+              string cfh = "";
+              if (cfhIndex >= 0) {
+                cfh = text.Substring(cfhIndex + cfhMarker.Length).Trim();
+                int newlineIndex = cfh.IndexOf('\n');
                 if (newlineIndex >= 0)
-                  pipeSize = pipeSize.Substring(0, newlineIndex).Trim();
+                  cfh = cfh.Substring(0, newlineIndex).Trim();
               }
-              string gasInfo = "";
+              string run = "";
+              if (runIndex >= 0) {
+                run = text.Substring(runIndex + runMarker.Length).Trim();
+                int newlineIndex = run.IndexOf('\'');
+                if (newlineIndex >= 0)
+                  run = run.Substring(0, newlineIndex).Trim();
+              }
+              gasInfo = $"({cfh}CFH@~{run}')";
+            }
+            ed.WriteMessage(_highlightedText.Position.ToString());
+            Point3d placementPoint = basePoint.Point + new Vector3d(_highlightedText.Position.X, _highlightedText.Position.Y, 0);
+            AutoCADIntegration.ZoomToPoint(ed, placementPoint);
+            string fullText = pipeSize + TypeToAbbreviation(typeText); 
+            using (var docLock = doc.LockDocument()) {
+              CADObjectCommands.CreateTextWithJig(
+                CADObjectCommands.TextLayer,
+                TextHorizontalMode.TextLeft,
+                fullText
+              );
               if (typeText == "Gas") {
-                string cfhMarker = "CFH: ";
-                string runMarker = "Longest Run: ";
-                int cfhIndex = text.IndexOf(cfhMarker);
-                int runIndex = text.IndexOf(runMarker);
-                string cfh = "";
-                if (cfhIndex >= 0) {
-                  cfh = text.Substring(cfhIndex + cfhMarker.Length).Trim();
-                  int newlineIndex = cfh.IndexOf('\n');
-                  if (newlineIndex >= 0)
-                    cfh = cfh.Substring(0, newlineIndex).Trim();
-                }
-                string run = "";
-                if (runIndex >= 0) {
-                  run = text.Substring(runIndex + runMarker.Length).Trim();
-                  int newlineIndex = run.IndexOf('\'');
-                  if (newlineIndex >= 0)
-                    run = run.Substring(0, newlineIndex).Trim();
-                }
-                gasInfo = $"({cfh}CFH@~{run}')";
-              }
-              ed.WriteMessage(_highlightedText.Position.ToString());
-              Point3d placementPoint = basePoint.Point + new Vector3d(_highlightedText.Position.X, _highlightedText.Position.Y, 0);
-              AutoCADIntegration.ZoomToPoint(ed, placementPoint);
-              string fullText = pipeSize + TypeToAbbreviation(typeText); 
-              using (var docLock = doc.LockDocument()) {
                 CADObjectCommands.CreateTextWithJig(
                   CADObjectCommands.TextLayer,
                   TextHorizontalMode.TextLeft,
-                  fullText
+                  gasInfo
                 );
-                if (typeText == "Gas") {
-                  CADObjectCommands.CreateTextWithJig(
-                    CADObjectCommands.TextLayer,
-                    TextHorizontalMode.TextLeft,
-                    gasInfo
-                  );
-                }
               }
             }
           }

@@ -167,7 +167,7 @@ namespace GMEPPlumbing.Views
             UpDirection = new Vector3D(0, 0, 1),
             TextDirection = direction
           };
-          TextVisual3DExtensions.SetBasePointIds(textModel, new List<string> { horizontalRoute.BasePointId });
+          TextVisual3DExtensions.SetBasePointId(textModel, horizontalRoute.BasePointId);
           TextVisual3DExtensions.SetType(textModel, horizontalRoute.Type);
           textVisuals.Add(textModel);
 
@@ -272,13 +272,11 @@ namespace GMEPPlumbing.Views
 
         double pipeLength = 0;
         double pipeFixtureUnits = 0;
-        List<string> routeBasePointIds = new List<string>();
         bool isUp = false;
 
         foreach (var verticalRoute in verticalRoutes) {
           pipeLength += verticalRoute.Length * 12; // Convert to inches
           pipeFixtureUnits += verticalRoute.FixtureUnits;
-          routeBasePointIds.Add(verticalRoute.BasePointId);
         }
         int flowTypeId = verticalRoutes.First().FlowTypeId;
         int gpm = verticalRoutes.First().GPM;
@@ -286,10 +284,12 @@ namespace GMEPPlumbing.Views
         double longestLength = verticalRoutes.Max(vr => vr.LongestRunLength);
         int longestLengthFeet = (int)(longestLength / 12); // Convert to feet
         int longestLengthInches = (int)Math.Round(longestLength % 12); // Remaining inches
+        string routeBasePointId = verticalRoutes.First().BasePointId;
         if (verticalRoutes.First().IsUp) {
           flowTypeId = verticalRoutes.Last().FlowTypeId;
           gpm = verticalRoutes.Last().GPM;
           pipeSize = verticalRoutes.Last().PipeSize;
+          routeBasePointId = verticalRoutes.Last().BasePointId;
           isUp = true;
         }
         string flow = (flowTypeId == 1) ? "Flush Tank" : "Flush Valve";
@@ -330,7 +330,7 @@ namespace GMEPPlumbing.Views
           TextDirection = new Vector3D(1, 0, 0),
           UpDirection = new Vector3D(0, 0, 1)
         };
-        TextVisual3DExtensions.SetBasePointIds(textModel, routeBasePointIds);
+        TextVisual3DExtensions.SetBasePointId(textModel, routeBasePointId);
         TextVisual3DExtensions.SetIsUp(textModel, isUp);
         TextVisual3DExtensions.SetType(textModel, verticalRoutes.First().Type);
 
@@ -530,8 +530,8 @@ namespace GMEPPlumbing.Views
                 pipeSize = "Nominal ACR: " + copperEntry.NominalACR + "\n Nominal KL: " + copperEntry.NominalKL + "\n Outside: " + copperEntry.OutsideDiameter + "\n Inside: " + copperEntry.InsideDiameter;
               }
               else if (entry is Schedule40MetalGasEntry metal40Entry) {
-                pipeSize = "Actual ID: " + metal40Entry.ActualID + "\n Nominal Size: " + metal40Entry.NominalSize;
-              }
+              pipeSize = "Actual ID: " + metal40Entry.ActualID + "\"\n Nominal Pipe Size: " + metal40Entry.NominalSize + "\" ";
+            }
               else if (entry is PolyethylenePlasticGasEntry plasticEntry) {
                 pipeSize = "Actual ID: " + plasticEntry.ActualID + "\n Designation: " + plasticEntry.Designation;
               }
@@ -796,9 +796,9 @@ namespace GMEPPlumbing.Views
     }
   }
   public static class TextVisual3DExtensions {
-    public static readonly DependencyProperty BasePointIdsProperty =
+    public static readonly DependencyProperty BasePointIdProperty =
         DependencyProperty.RegisterAttached(
-            "BasePointIds",
+            "BasePointId",
             typeof(object),
             typeof(TextVisual3DExtensions),
             new PropertyMetadata(null));
@@ -819,12 +819,12 @@ namespace GMEPPlumbing.Views
 
 
 
-    public static void SetBasePointIds(DependencyObject element, object value) {
-      element.SetValue(BasePointIdsProperty, value);
+    public static void SetBasePointId(DependencyObject element, object value) {
+      element.SetValue(BasePointIdProperty, value);
     }
 
-    public static object GetBasePointIds(DependencyObject element) {
-      return element.GetValue(BasePointIdsProperty);
+    public static object GetBasePointId(DependencyObject element) {
+      return element.GetValue(BasePointIdProperty);
     }
 
     public static void SetIsUp(DependencyObject element, object value) {
