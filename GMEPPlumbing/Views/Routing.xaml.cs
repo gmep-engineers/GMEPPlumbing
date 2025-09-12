@@ -127,9 +127,9 @@ namespace GMEPPlumbing.Views
           int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
 
           double textHeight = 8;
-          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n Pipe Size: {horizontalRoute.PipeSize}\n";
+          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n ---------------------- \n {horizontalRoute.PipeSize}\n";
           if (horizontalRoute.Type == "Gas") {
-            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\"  {horizontalRoute.PipeSize}\n";
+            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\"\n ---------------------- \n {horizontalRoute.PipeSize}\n";
           }
           else if (horizontalRoute.Type == "Waste" || horizontalRoute.Type == "Grease Waste") {
             WasteSizingChart chart = new WasteSizingChart();
@@ -138,7 +138,7 @@ namespace GMEPPlumbing.Views
               slope = "2%";
             }
             string recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, slope);
-            textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits}\n Slope: {slope}\n Pipe Size: {recommendedSize}";
+            textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits}\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
           }
           else if (horizontalRoute.Type == "Vent") {
             VentSizingChart chart = new VentSizingChart();
@@ -147,9 +147,9 @@ namespace GMEPPlumbing.Views
               slope = "2%";
             }
             string recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, horizontalRoute.LongestRunLength);
-            textString = $" {feet}' {inches}\"\n Slope: {slope}\n Pipe Size: {recommendedSize}\n";
+            textString = $" {feet}' {inches}\"\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
           }
-          double textWidth = textHeight * textString.Length * 0.05;
+          double textWidth = textHeight * textString.Length * 0.03;
 
           // Offset so the back of the text aligns with the end point 
           var textPos = new Point3D(
@@ -167,6 +167,8 @@ namespace GMEPPlumbing.Views
             UpDirection = new Vector3D(0, 0, 1),
             TextDirection = direction
           };
+          TextVisual3DExtensions.SetBasePointId(textModel, horizontalRoute.BasePointId);
+          TextVisual3DExtensions.SetType(textModel, horizontalRoute.Type);
           textVisuals.Add(textModel);
 
           fullModel.Children.Add(ballModel2);
@@ -270,6 +272,8 @@ namespace GMEPPlumbing.Views
 
         double pipeLength = 0;
         double pipeFixtureUnits = 0;
+        bool isUp = false;
+
         foreach (var verticalRoute in verticalRoutes) {
           pipeLength += verticalRoute.Length * 12; // Convert to inches
           pipeFixtureUnits += verticalRoute.FixtureUnits;
@@ -280,33 +284,36 @@ namespace GMEPPlumbing.Views
         double longestLength = verticalRoutes.Max(vr => vr.LongestRunLength);
         int longestLengthFeet = (int)(longestLength / 12); // Convert to feet
         int longestLengthInches = (int)Math.Round(longestLength % 12); // Remaining inches
+        string routeBasePointId = verticalRoutes.First().BasePointId;
         if (verticalRoutes.First().IsUp) {
           flowTypeId = verticalRoutes.Last().FlowTypeId;
           gpm = verticalRoutes.Last().GPM;
           pipeSize = verticalRoutes.Last().PipeSize;
+          routeBasePointId = verticalRoutes.Last().BasePointId;
+          isUp = true;
         }
         string flow = (flowTypeId == 1) ? "Flush Tank" : "Flush Valve";
 
         // Calculate pipe length in feet/inches
         int feet = (int)(pipeLength / 12);
         int inches = (int)Math.Round(pipeLength % 12);
-        string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n Pipe Size: {pipeSize}";
+        string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n ---------------------- \n {pipeSize}\n";
         if (verticalRoutes.First().Type == "Gas") {
-          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\" {pipeSize}";
+          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\"\n ---------------------- \n {pipeSize}\n";
         }
         else if (verticalRoutes.First().Type == "Waste" || verticalRoutes.First().Type == "Grease Waste") {
           WasteSizingChart chart = new WasteSizingChart();
           string recommendedSize = chart.FindSize(pipeFixtureUnits, "Vertical", pipeLength);
-          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n Pipe Size: {recommendedSize} \n";
+          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n ---------------------- \n {recommendedSize}\n";
         }
         else if (verticalRoutes.First().Type == "Vent") {
           VentSizingChart chart = new VentSizingChart();
           string recommendedSize = chart.FindSize(pipeFixtureUnits, longestLength);
-          textString = $" {feet}' {inches}\"\n Pipe Size: {recommendedSize} \n";
+          textString = $" {feet}' {inches}\"\n ---------------------- \n {recommendedSize}\n";
 
         }
         int textHeight = 8;
-        double textWidth = textHeight * textString.Length * 0.05;
+        double textWidth = textHeight * textString.Length * 0.03;
 
         double offset = textWidth / 2;
         if (verticalRoutes[0].IsUp)
@@ -323,6 +330,9 @@ namespace GMEPPlumbing.Views
           TextDirection = new Vector3D(1, 0, 0),
           UpDirection = new Vector3D(0, 0, 1)
         };
+        TextVisual3DExtensions.SetBasePointId(textModel, routeBasePointId);
+        TextVisual3DExtensions.SetIsUp(textModel, isUp);
+        TextVisual3DExtensions.SetType(textModel, verticalRoutes.First().Type);
 
         textVisuals.Add(textModel);
       }
@@ -459,7 +469,7 @@ namespace GMEPPlumbing.Views
               psi,
               isHot,
               horizontalRoute.GPM
-            ).Item1;
+            );
           }
           else if (item is PlumbingVerticalRoute verticalRoute && (verticalRoute.Type == "Cold Water" || verticalRoute.Type == "Hot Water")) {
             bool isHot = false;
@@ -472,7 +482,7 @@ namespace GMEPPlumbing.Views
               psi,
               isHot,
               verticalRoute.GPM
-            ).Item1;
+            );
           }
         }
       }
@@ -500,7 +510,7 @@ namespace GMEPPlumbing.Views
                 pipeSize = "Nominal ACR: " + copperEntry.NominalACR + "\n Nominal KL: " + copperEntry.NominalKL + "\n Outside: " + copperEntry.OutsideDiameter + "\n Inside: " + copperEntry.InsideDiameter;
               }
               else if (entry is Schedule40MetalGasEntry metal40Entry) {
-                pipeSize = "Actual ID: " + metal40Entry.ActualID + "\n Nominal Size: " + metal40Entry.NominalSize;
+                pipeSize = "Actual ID: " + metal40Entry.ActualID + "\"\n Nominal Pipe Size: " + metal40Entry.NominalSize+"\" ";
               }
               else if (entry is PolyethylenePlasticGasEntry plasticEntry) {
                 pipeSize = "Actual ID: " + plasticEntry.ActualID + "\n Designation: " + plasticEntry.Designation;
@@ -520,8 +530,8 @@ namespace GMEPPlumbing.Views
                 pipeSize = "Nominal ACR: " + copperEntry.NominalACR + "\n Nominal KL: " + copperEntry.NominalKL + "\n Outside: " + copperEntry.OutsideDiameter + "\n Inside: " + copperEntry.InsideDiameter;
               }
               else if (entry is Schedule40MetalGasEntry metal40Entry) {
-                pipeSize = "Actual ID: " + metal40Entry.ActualID + "\n Nominal Size: " + metal40Entry.NominalSize;
-              }
+              pipeSize = "Actual ID: " + metal40Entry.ActualID + "\"\n Nominal Pipe Size: " + metal40Entry.NominalSize + "\" ";
+            }
               else if (entry is PolyethylenePlasticGasEntry plasticEntry) {
                 pipeSize = "Actual ID: " + plasticEntry.ActualID + "\n Designation: " + plasticEntry.Designation;
               }
@@ -783,6 +793,53 @@ namespace GMEPPlumbing.Views
     }
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
       throw new NotImplementedException();
+    }
+  }
+  public static class TextVisual3DExtensions {
+    public static readonly DependencyProperty BasePointIdProperty =
+        DependencyProperty.RegisterAttached(
+            "BasePointId",
+            typeof(object),
+            typeof(TextVisual3DExtensions),
+            new PropertyMetadata(null));
+
+    public static readonly DependencyProperty IsUpProperty =
+    DependencyProperty.RegisterAttached(
+        "IsUp",
+        typeof(object),
+        typeof(TextVisual3DExtensions),
+        new PropertyMetadata(null));
+
+    public static readonly DependencyProperty TypeProperty =
+    DependencyProperty.RegisterAttached(
+        "Type",
+        typeof(object),
+        typeof(TextVisual3DExtensions),
+        new PropertyMetadata(null));
+
+
+
+    public static void SetBasePointId(DependencyObject element, object value) {
+      element.SetValue(BasePointIdProperty, value);
+    }
+
+    public static object GetBasePointId(DependencyObject element) {
+      return element.GetValue(BasePointIdProperty);
+    }
+
+    public static void SetIsUp(DependencyObject element, object value) {
+      element.SetValue(IsUpProperty, value);
+    }
+
+    public static object GetIsUp(DependencyObject element) {
+      return element.GetValue(IsUpProperty);
+    }
+    public static void SetType(DependencyObject element, object value) {
+      element.SetValue(TypeProperty, value);
+    }
+
+    public static object GetType(DependencyObject element) {
+      return element.GetValue(TypeProperty);
     }
   }
 

@@ -21,7 +21,7 @@ namespace GMEPPlumbing.Tools {
       // :3
     }
     public string FindSize(double dfu, string type, double length = 0) {
-      string size = "N/A";
+      string size = "Pipe Size: N/A";
       WasteEntry entry = null;
       if (type == "1%") {
         entry = Entries.Where(e => e.OnePercentSlopeDfu >= dfu).OrderBy(e => e.OnePercentSlopeDfu).FirstOrDefault();
@@ -34,7 +34,7 @@ namespace GMEPPlumbing.Tools {
       }
      
       if (entry == null) return size;
-      return entry.PipeDiameter;
+      return "Pipe Size: " + entry.PipeDiameter;
     }
   }
   class VentSizingChart {
@@ -53,10 +53,10 @@ namespace GMEPPlumbing.Tools {
       // :3
     }
     public string FindSize(double dfu, double length) {
-      string size = "N/A";
+      string size = "Pipe Size: N/A";
       VentEntry entry = Entries.Where(e => e.MaxDFU >= dfu && e.MaxLength >= length).OrderBy(e => e.MaxDFU).FirstOrDefault();
       if (entry == null) return size;
-      return entry.PipeDiameter;
+      return "Pipe Size: " + entry.PipeDiameter;
     }
   }
   class VentEntry {

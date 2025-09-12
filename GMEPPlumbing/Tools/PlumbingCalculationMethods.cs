@@ -402,6 +402,8 @@ namespace GMEPPlumbing {
         case "WC":
         case "IMB":
           types.Add("Cold Water");
+          types.Add("Waste");
+          types.Add("Grease Waste");
           break;
         case "S":
         case "HS":
@@ -413,10 +415,6 @@ namespace GMEPPlumbing {
         case "WD":
           types.Add("Cold Water");
           types.Add("Hot Water");
-          types.Add("Waste");
-          types.Add("Grease Waste");
-          break;
-        case "SWR":
           types.Add("Waste");
           types.Add("Grease Waste");
           break;

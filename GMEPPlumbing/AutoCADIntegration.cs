@@ -40,6 +40,7 @@ using Mysqlx.Session;
 using Autodesk.AutoCAD.Windows.ToolPalette;
 using GMEPPlumbing.Properties;
 using System.Windows.Shapes;
+using static Google.Protobuf.Compiler.CodeGeneratorResponse.Types;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
@@ -1734,6 +1735,31 @@ namespace GMEPPlumbing
         }
       }
     }
+    public static void ZoomToPoint(Editor ed, Point3d wcsPos) {
+      var doc = ed.Document;
+      using (doc.LockDocument()) {
+        // Get the current view
+        using (ViewTableRecord view = ed.GetCurrentView()) {
+          Matrix3d matWcs2Dcs =
+              Matrix3d.PlaneToWorld(view.ViewDirection)
+              .Inverse() *
+              Matrix3d.Displacement(view.Target - Point3d.Origin)
+              .Inverse() *
+              Matrix3d.Rotation(-view.ViewTwist, view.ViewDirection, view.Target);
+
+          Point3d dcsPos = wcsPos.TransformBy(matWcs2Dcs);
+
+          double zoomWidth = 400.0;
+          double zoomHeight = 400.0;
+
+          view.CenterPoint = new Point2d(dcsPos.X, dcsPos.Y);
+          view.Width = zoomWidth;
+          view.Height = zoomHeight;
+
+          ed.SetCurrentView(view);
+        }
+      }
+    }
 
     public void WriteMessage(string message) {
       var doc = Application.DocumentManager.MdiActiveDocument;
@@ -2094,6 +2120,7 @@ namespace GMEPPlumbing
         direction
       );
     }
+
 
     private void MakePlumbingFixtureLabel(PlumbingFixture fixture, PlumbingFixtureType type) {
       double distance = 3;
