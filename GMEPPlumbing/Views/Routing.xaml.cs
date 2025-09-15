@@ -495,6 +495,9 @@ namespace GMEPPlumbing.Views
         string sourceId = "";
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 3) {
           sourceId = plumbingSource.Id;
+          if (GasCalculators[sourceId].ChosenChart == null) {
+            return;
+          }
         }
         else {
           continue;
