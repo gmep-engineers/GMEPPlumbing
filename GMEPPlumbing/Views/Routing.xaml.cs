@@ -414,16 +414,18 @@ namespace GMEPPlumbing.Views
   }
   public class View : INotifyPropertyChanged {
     public List<PlumbingFullRoute> FullRoutes { get; set; } = new List<PlumbingFullRoute>();
-    public Tuple<Scene, List<Scene>> _scenes { get; set; } = new Tuple<Scene, List<Scene>>(new Scene(), new List<Scene>());
-    public Tuple<Scene, List<Scene>> Scenes {
-      get => _scenes;
+
+    public Scene _mainScene = new Scene();
+    public Scene MainScene {
+      get { return _mainScene; }
       set {
-        if (_scenes != value) {
-          _scenes = value;
-          OnPropertyChanged(nameof(Scenes));
-        }
+        _mainScene = value;
+        OnPropertyChanged(nameof(MainScene));
       }
     }
+
+    public ObservableCollection<Scene> Scenes { get; set; } = new ObservableCollection<Scene>();
+
 
     public bool IsCalculatorEnabled { get; set; } = false;
     public Dictionary<string, WaterCalculator> WaterCalculators { get; set; } = new Dictionary<string, WaterCalculator>();
@@ -616,20 +618,18 @@ namespace GMEPPlumbing.Views
       }
     }
     public void GenerateScenes() {
-      Scenes = new Tuple<Scene, List<Scene>>(new Scene(), new List<Scene>());
+      Scenes.Clear();
       Scene fullScene = new Scene();
-      List<Scene> sceneList = new List<Scene>();
       foreach (var fullRoute in FullRoutes) {
         var scene = new Scene(fullRoute, BasePointLookup);
         var scene2 = new Scene(fullRoute, BasePointLookup);
-        sceneList.Add(scene);
+        Scenes.Add(scene);
         foreach (var visual in scene2.RouteVisuals) {
           fullScene.RouteVisuals.Add(visual);
         }
       }
       fullScene.RemoveDuplicateRouteVisuals();
-      Scenes = new Tuple<Scene, List<Scene>>(fullScene, sceneList);
-
+      MainScene = fullScene;
     }
     public void NormalizeRoutes() {
       foreach (var route in FullRoutes) {
