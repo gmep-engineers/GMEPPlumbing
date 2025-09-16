@@ -48,7 +48,9 @@ namespace GMEPPlumbing.Views
         foreach (var visual in scene.RouteVisuals) {
           Viewport.Children.Add(visual);
         }
-        Dispatcher.BeginInvoke(new Action(() => Viewport.ZoomExtents()), System.Windows.Threading.DispatcherPriority.Loaded);
+        if (scene.InitialBuild) {
+          Dispatcher.BeginInvoke(new Action(() => Viewport.ZoomExtents()), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
       }
     }
     private void Viewport_CameraChanged(object sender, RoutedEventArgs e) {
