@@ -39,6 +39,8 @@ namespace GMEPPlumbing
 
     public static double ActiveFloorHeight = 0;
 
+    public static double ActiveCeilingHeight = 0;
+
     public static string ActiveViewName { get; set; } = "";
 
     public static int ActiveFloor { get; set; } = 0;
@@ -371,6 +373,7 @@ namespace GMEPPlumbing
 
           int floor = 0;
           double floorHeight = 0;
+          double ceilingHeight = 0;
           string basePointId = "";
           double routeHeight = 0;
           List<string> viewTypes = new List<string>();
@@ -383,6 +386,9 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "floor_height") {
               floorHeight = Convert.ToDouble(prop.Value);
+            }
+            if (prop.PropertyName == "ceiling_height") {
+              ceilingHeight = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "route_height") {
               routeHeight = Convert.ToDouble(prop.Value);
@@ -406,6 +412,7 @@ namespace GMEPPlumbing
             AutoCADIntegration.ZoomToBlock(ed, entity2);
             ActiveBasePointId = basePointId;
             ActiveFloorHeight = floorHeight;
+            ActiveCeilingHeight = ceilingHeight;
             ActiveRouteHeight = routeHeight;
             ActiveFloor = floor;
             ActiveViewName = resultKeyword;

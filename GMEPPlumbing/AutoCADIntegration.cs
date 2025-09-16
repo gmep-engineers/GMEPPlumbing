@@ -135,7 +135,14 @@ namespace GMEPPlumbing
     }
 
     [CommandMethod("PlumbingHorizontalRoute")]
-    public async void PlumbingHorizontalRoute() {
+    public void PlumbingHorizontalRoute() {
+     HorizontalRoute();
+    }
+    [CommandMethod("PlumbingGroundHorizontalRoute")]
+    public void PlumbingGroundHorizontalRoute() {
+      HorizontalRoute(0);
+    }
+    public void HorizontalRoute(double routeHeight = -1) {
       string BasePointId = CADObjectCommands.GetActiveView();
 
       var doc = Application.DocumentManager.MdiActiveDocument;
@@ -244,42 +251,15 @@ namespace GMEPPlumbing
       }
       string direction = pr2.StringResult;
 
-      //start of placement logic
-
-      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the horizontal route from the floor (in feet): ");
-      pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
-
-      double routeHeight = 0;
-      while (true) {
-        try {
-          PromptDoubleResult pdr = ed.GetDouble(pdo);
-          if (pdr.Status == PromptStatus.Cancel) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
-          }
-          if (pdr.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nInvalid input. Please enter a valid number.");
-            continue;
-          }
-
-          routeHeight = pdr.Value;
-          // GetHeightLimits returns Tuple<double, double> (min, max)
-          var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
-          double minHeight = heightLimits.Item1;
-          double maxHeight = heightLimits.Item2;
-
-          if (routeHeight < minHeight || routeHeight > maxHeight) {
-            ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
-            pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
-            continue;
-          }
-          break; // Valid input
+      if (routeHeight == -1) {
+        if (result != "Waste" && result != "GreaseWaste") {
+          routeHeight = CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight;
         }
-        catch (System.Exception ex) {
-          ed.WriteMessage($"\nError: {ex.Message}");
-          continue;
+        else {
+          routeHeight = 0;
         }
       }
+
 
       double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
 
