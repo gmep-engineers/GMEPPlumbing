@@ -52,14 +52,30 @@ namespace GMEPPlumbing.Views
     }
   }
 
-  public class Scene {
+  public class Scene : INotifyPropertyChanged {
       public List<object> RouteItems { get; set; } = new List<object>();
       public double Length { get; set; } = 0;
       public ObservableCollection<Visual3D> RouteVisuals { get; set; } = new ObservableCollection<Visual3D>();
       public Dictionary<string, PlumbingPlanBasePoint> BasePoints { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
+
       public HashSet<string> BasePointIds = new HashSet<string>();
+
+      public bool _changeFlag = true;
+      public bool ChangeFlag {
+        get { return _changeFlag; }
+        set {
+          _changeFlag = value;
+          OnPropertyChanged(nameof(ChangeFlag));
+        }
+      }
+
       public bool InitialBuild { get; set; } = true;
-      //public SolidColorBrush RouteColor { get; set; } = new SolidColorBrush(Color.FromArgb(255, 0, 0, 255)); // Default to blue
+
+      public event PropertyChangedEventHandler PropertyChanged;
+      protected void OnPropertyChanged(string propertyName) {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+      }
+
     public Scene(PlumbingFullRoute fullRoute, Dictionary<string, PlumbingPlanBasePoint> basePoints) {
           RouteItems = fullRoute.RouteItems;
           Length = fullRoute.Length;
@@ -87,6 +103,7 @@ namespace GMEPPlumbing.Views
       RouteItems = fullRoute.RouteItems;
       Length = fullRoute.Length;
       BuildScene();
+      ChangeFlag = !ChangeFlag;
     }
 
     public void BuildScene() {
