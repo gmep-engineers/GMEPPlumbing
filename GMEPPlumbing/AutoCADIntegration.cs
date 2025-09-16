@@ -2326,40 +2326,15 @@ namespace GMEPPlumbing
         }
       }
       if (routeHeight == null) {
-        PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the fixture from the floor (in feet): ");
-        pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
-        routeHeight = 0;
-        while (true) {
-          try {
-            PromptDoubleResult pdr = ed.GetDouble(pdo);
-            if (pdr.Status == PromptStatus.Cancel) {
-              ed.WriteMessage("\nCommand cancelled.");
-              return;
-            }
-            if (pdr.Status != PromptStatus.OK) {
-              ed.WriteMessage("\nInvalid input. Please enter a valid number.");
-              continue;
-            }
-            routeHeight = pdr.Value;
-            // GetHeightLimits returns Tuple<double, double> (min, max)
-            var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
-            double minHeight = heightLimits.Item1;
-            double maxHeight = heightLimits.Item2;
-            if (routeHeight < minHeight || routeHeight > maxHeight) {
-              ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
-              pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
-              continue;
-            }
-            break; // Valid input
-          }
-          catch (System.Exception ex) {
-            ed.WriteMessage($"\nError: {ex.Message}");
-            continue;
-          }
+        if (selectedFixtureType.Abbreviation == "FD" || selectedFixtureType.Abbreviation == "FS") {
+          routeHeight = 0;
+        }
+        else {
+          routeHeight = CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight;
         }
       }
       PlumbingFixture plumbingFixture = null;
-      double zIndex = ((double)routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
+      
 
       var routeHeightDisplay = new RouteHeightDisplay(ed);
       routeHeightDisplay.Enable((double)routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
@@ -2371,8 +2346,10 @@ namespace GMEPPlumbing
           double rotation = 0;
           int number = 0;
           string GUID = Guid.NewGuid().ToString();
+          double zIndex = ((double)routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
 
           try {
+           
             if (blockName == "GMEP CW FIXTURE POINT") {
               if (flowTypeId == 1) {
                 PlumbingVerticalRoute route = VerticalRoute("ColdWater", (double)routeHeight, CADObjectCommands.ActiveFloor).First().Value;
@@ -2677,6 +2654,9 @@ namespace GMEPPlumbing
               }
             }
             else {
+              if (blockName == "GMEP DRAIN") {
+                zIndex = CADObjectCommands.ActiveFloorHeight * 12;
+              }
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr;
@@ -2795,7 +2775,7 @@ namespace GMEPPlumbing
 
             if (blockName == "GMEP DRAIN") {
               //logic to attach vent
-              var ventRoutes = VerticalRoute("Vent", (double)routeHeight);
+              var ventRoutes = VerticalRoute("Vent", 0);
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
                 routeHeightDisplay.Disable();
