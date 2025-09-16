@@ -138,9 +138,15 @@ namespace GMEPPlumbing
     public void PlumbingHorizontalRoute() {
      HorizontalRoute();
     }
-    [CommandMethod("PlumbingGroundHorizontalRoute")]
-    public void PlumbingGroundHorizontalRoute() {
+    [CommandMethod("PlumbingHorizontalRouteGround")]
+    public void PlumbingHorizontalRouteGround() {
       HorizontalRoute(0);
+    }
+
+    [CommandMethod("PlumbingHorizontalRouteFixtureHeight")]
+    public void PlumbingHorizontalRouteFixtureHeight() {
+      double routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
+      HorizontalRoute(routeHeight);
     }
     public void HorizontalRoute(double routeHeight = -1) {
       string BasePointId = CADObjectCommands.GetActiveView();
