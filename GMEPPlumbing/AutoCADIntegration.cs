@@ -2336,7 +2336,7 @@ namespace GMEPPlumbing
           routeHeight = 0;
         }
         else {
-          routeHeight = CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight;
+          routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
         }
       }
       PlumbingFixture plumbingFixture = null;
@@ -2353,12 +2353,14 @@ namespace GMEPPlumbing
           int number = 0;
           string GUID = Guid.NewGuid().ToString();
           double zIndex = ((double)routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
+          double startHeight = CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight;
+          double verticalRouteLength = startHeight - (double)routeHeight;
 
           try {
            
             if (blockName == "GMEP CW FIXTURE POINT") {
               if (flowTypeId == 1) {
-                PlumbingVerticalRoute route = VerticalRoute("ColdWater", (double)routeHeight, CADObjectCommands.ActiveFloor).First().Value;
+                PlumbingVerticalRoute route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "DOWN", verticalRouteLength).First().Value;
 
                 double offsetDistance = 11.25;
                 double offsetDistance2 = 2.125;
@@ -2412,7 +2414,7 @@ namespace GMEPPlumbing
                 }
               }
               else if (flowTypeId == 2) {
-                PlumbingVerticalRoute route = VerticalRoute("ColdWater", (double)routeHeight, CADObjectCommands.ActiveFloor).First().Value;
+                PlumbingVerticalRoute route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "DOWN", verticalRouteLength).First().Value;
                 PromptKeywordOptions pko = new PromptKeywordOptions("Left or Right?");
                 pko.Keywords.Add("Left");
                 pko.Keywords.Add("Right");
@@ -2607,7 +2609,7 @@ namespace GMEPPlumbing
               }
             }
             else if (blockName == "GMEP HW FIXTURE POINT") {
-              PlumbingVerticalRoute route = VerticalRoute("HotWater", (double)routeHeight, CADObjectCommands.ActiveFloor).First().Value;
+              PlumbingVerticalRoute route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "DOWN", verticalRouteLength).First().Value;
               double offsetDistance = 11.25;
               double offsetDistance2 = 2.125;
               double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
