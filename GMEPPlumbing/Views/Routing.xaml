@@ -185,10 +185,10 @@
                         <Grid Grid.Row="2">
                             <TabControl TabStripPlacement="Left" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
                                 <TabItem Header="Main" Style="{StaticResource RotatedTabHeaderStyle}">
-                                    <local:Scene3DView DataContext="{Binding Scenes.Item1}" Margin="5"/>
+                                    <local:Scene3DView DataContext="{Binding MainScene}" Margin="5"/>
                                 </TabItem>
                                 <TabItem Header="Fixture Routes" Style="{StaticResource RotatedTabHeaderStyle}">
-                                    <TabControl AlternationCount="1000"  ItemsSource="{Binding Scenes.Item2}">
+                                    <TabControl AlternationCount="1000"  ItemsSource="{Binding Scenes}">
                                         <TabControl.ItemTemplate>
                                             <DataTemplate>
                                                 <TextBlock>

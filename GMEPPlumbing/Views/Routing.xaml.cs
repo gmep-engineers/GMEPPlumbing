@@ -52,14 +52,31 @@ namespace GMEPPlumbing.Views
     }
   }
 
-  public class Scene {
+  public class Scene : INotifyPropertyChanged {
       public List<object> RouteItems { get; set; } = new List<object>();
       public double Length { get; set; } = 0;
       public ObservableCollection<Visual3D> RouteVisuals { get; set; } = new ObservableCollection<Visual3D>();
       public Dictionary<string, PlumbingPlanBasePoint> BasePoints { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
+
       public HashSet<string> BasePointIds = new HashSet<string>();
-      //public SolidColorBrush RouteColor { get; set; } = new SolidColorBrush(Color.FromArgb(255, 0, 0, 255)); // Default to blue
-      public Scene(PlumbingFullRoute fullRoute, Dictionary<string, PlumbingPlanBasePoint> basePoints) {
+
+      public bool _changeFlag = true;
+      public bool ChangeFlag {
+        get { return _changeFlag; }
+        set {
+          _changeFlag = value;
+          OnPropertyChanged(nameof(ChangeFlag));
+        }
+      }
+
+      public bool InitialBuild { get; set; } = true;
+
+      public event PropertyChangedEventHandler PropertyChanged;
+      protected void OnPropertyChanged(string propertyName) {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+      }
+
+    public Scene(PlumbingFullRoute fullRoute, Dictionary<string, PlumbingPlanBasePoint> basePoints) {
           RouteItems = fullRoute.RouteItems;
           Length = fullRoute.Length;
           BasePoints = basePoints;
@@ -81,6 +98,12 @@ namespace GMEPPlumbing.Views
       }
     public Scene() {
       
+    }
+    public void RebuildScene(PlumbingFullRoute fullRoute) {
+      RouteItems = fullRoute.RouteItems;
+      Length = fullRoute.Length;
+      BuildScene();
+      ChangeFlag = !ChangeFlag;
     }
 
     public void BuildScene() {
@@ -414,16 +437,18 @@ namespace GMEPPlumbing.Views
   }
   public class View : INotifyPropertyChanged {
     public List<PlumbingFullRoute> FullRoutes { get; set; } = new List<PlumbingFullRoute>();
-    public Tuple<Scene, List<Scene>> _scenes { get; set; } = new Tuple<Scene, List<Scene>>(new Scene(), new List<Scene>());
-    public Tuple<Scene, List<Scene>> Scenes {
-      get => _scenes;
+
+    public Scene _mainScene = new Scene();
+    public Scene MainScene {
+      get { return _mainScene; }
       set {
-        if (_scenes != value) {
-          _scenes = value;
-          OnPropertyChanged(nameof(Scenes));
-        }
+        _mainScene = value;
+        OnPropertyChanged(nameof(MainScene));
       }
     }
+
+    public ObservableCollection<Scene> Scenes { get; set; } = new ObservableCollection<Scene>();
+
 
     public bool IsCalculatorEnabled { get; set; } = false;
     public Dictionary<string, WaterCalculator> WaterCalculators { get; set; } = new Dictionary<string, WaterCalculator>();
@@ -486,7 +511,7 @@ namespace GMEPPlumbing.Views
           }
         }
       }
-      GenerateScenes();
+      RegenerateScenes();
     }
     public void GenerateGasPipeSizing() {
       foreach (var fullRoute in FullRoutes) {
@@ -545,7 +570,7 @@ namespace GMEPPlumbing.Views
             }
           }
       }
-      GenerateScenes();
+      RegenerateScenes();
     }
     private void ExecuteCalculate(object parameter) {
       var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
@@ -616,20 +641,33 @@ namespace GMEPPlumbing.Views
       }
     }
     public void GenerateScenes() {
-      Scenes = new Tuple<Scene, List<Scene>>(new Scene(), new List<Scene>());
+      Scenes.Clear();
       Scene fullScene = new Scene();
-      List<Scene> sceneList = new List<Scene>();
       foreach (var fullRoute in FullRoutes) {
         var scene = new Scene(fullRoute, BasePointLookup);
         var scene2 = new Scene(fullRoute, BasePointLookup);
-        sceneList.Add(scene);
+        Scenes.Add(scene);
         foreach (var visual in scene2.RouteVisuals) {
           fullScene.RouteVisuals.Add(visual);
         }
       }
       fullScene.RemoveDuplicateRouteVisuals();
-      Scenes = new Tuple<Scene, List<Scene>>(fullScene, sceneList);
-
+      MainScene = fullScene;
+    }
+    public void RegenerateScenes() {
+      Scene fullScene = new Scene();
+      int index = 0;
+      foreach (var fullRoute in FullRoutes) {
+        Scenes[index].RebuildScene(fullRoute);
+        var scene2 = new Scene(fullRoute, BasePointLookup);
+        foreach (var visual in scene2.RouteVisuals) {
+          fullScene.RouteVisuals.Add(visual);
+        }
+        index++;
+      }
+      fullScene.RemoveDuplicateRouteVisuals();
+      fullScene.InitialBuild = false;
+      MainScene = fullScene;
     }
     public void NormalizeRoutes() {
       foreach (var route in FullRoutes) {

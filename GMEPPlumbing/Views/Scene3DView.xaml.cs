@@ -21,6 +21,7 @@ using HelixToolkit.Wpf;
 using static Mysqlx.Crud.Order.Types;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 using Autodesk.AutoCAD.EditorInput;
+using System.ComponentModel;
 
 namespace GMEPPlumbing.Views
 {
@@ -30,6 +31,7 @@ namespace GMEPPlumbing.Views
   public partial class Scene3DView : UserControl {
     private TextVisual3D _highlightedText;
     private Brush _originalBrush;
+    private Scene _lastScene;
     public Scene3DView() {
       InitializeComponent();
       this.DataContextChanged += Scene3DView_DataContextChanged;
@@ -42,15 +44,37 @@ namespace GMEPPlumbing.Views
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
+      if (_lastScene != null)
+        _lastScene.PropertyChanged -= Scene_PropertyChanged;
+
       Viewport.Children.Clear();
       if (DataContext is Scene scene) {
         Viewport.Children.Add(new HelixToolkit.Wpf.SunLight());
         foreach (var visual in scene.RouteVisuals) {
           Viewport.Children.Add(visual);
         }
-        Dispatcher.BeginInvoke(new Action(() => Viewport.ZoomExtents()), System.Windows.Threading.DispatcherPriority.Loaded);
+        // Subscribe to property changes
+        scene.PropertyChanged += Scene_PropertyChanged;
+        _lastScene = scene;
+
+        if (scene.InitialBuild) {
+          Dispatcher.BeginInvoke(new Action(() => Viewport.ZoomExtents()), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
       }
     }
+    private void Scene_PropertyChanged(object sender, PropertyChangedEventArgs e) {
+      if (e.PropertyName == nameof(Scene.ChangeFlag)) {
+        Viewport.Children.Clear();
+        var scene = sender as Scene;
+        if (scene != null) {
+          Viewport.Children.Add(new HelixToolkit.Wpf.SunLight());
+          foreach (var visual in scene.RouteVisuals) {
+            Viewport.Children.Add(visual);
+          }
+        }
+      }
+    }
+
     private void Viewport_CameraChanged(object sender, RoutedEventArgs e) {
       // Find all TextVisual3D in the viewport
       foreach (var visual in Viewport.Children) {
