@@ -2427,7 +2427,7 @@ namespace GMEPPlumbing
           try {
             if (blockName == "GMEP CW FIXTURE POINT") {
               if (flowTypeId == 1) {
-                PlumbingVerticalRoute route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "DOWN", verticalRouteLength).First().Value;
+                PlumbingVerticalRoute route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
 
                 double offsetDistance = 11.25;
                 double offsetDistance2 = 2.125;
@@ -2481,7 +2481,7 @@ namespace GMEPPlumbing
                 }
               }
               else if (flowTypeId == 2) {
-                PlumbingVerticalRoute route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "DOWN", verticalRouteLength).First().Value;
+                PlumbingVerticalRoute route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
                 PromptKeywordOptions pko = new PromptKeywordOptions("Left or Right?");
                 pko.Keywords.Add("Left");
                 pko.Keywords.Add("Right");
@@ -2667,7 +2667,7 @@ namespace GMEPPlumbing
               }
             }
             else if (blockName == "GMEP HW FIXTURE POINT") {
-              PlumbingVerticalRoute route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "DOWN", verticalRouteLength).First().Value;
+              PlumbingVerticalRoute route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
               double offsetDistance = 11.25;
               double offsetDistance2 = 2.125;
               double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
