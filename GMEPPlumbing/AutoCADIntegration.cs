@@ -2167,7 +2167,7 @@ namespace GMEPPlumbing
     public void PlumbingFixture() {
       Fixture();
     }
-    public void Fixture(string fixtureString = null, string catalogString = null, Point3d? placementPoint = null, double? blockRotation = null, double? routeHeight = null) {
+    public void Fixture(string fixtureString = null, string catalogString = null, Point3d? placementPoint = null, double? blockRotation = null) {
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
     
@@ -2331,19 +2331,16 @@ namespace GMEPPlumbing
           }
         }
       }
-      if (routeHeight == null) {
-        if (selectedFixtureType.Abbreviation == "FD" || selectedFixtureType.Abbreviation == "FS") {
-          routeHeight = 0;
-        }
-        else {
-          routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
-        }
+      double routeHeight = 0;
+      if (selectedFixtureType.Abbreviation != "FD" && selectedFixtureType.Abbreviation != "FS") {
+        routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
       }
+      
       PlumbingFixture plumbingFixture = null;
       
 
       var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable((double)routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       if (selectedBlockNames2.Count() != 0) {
         foreach (string blockName in selectedBlockNames2) {
@@ -2352,12 +2349,11 @@ namespace GMEPPlumbing
           double rotation = 0;
           int number = 0;
           string GUID = Guid.NewGuid().ToString();
-          double zIndex = ((double)routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
+          double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
           double startHeight = CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight;
-          double verticalRouteLength = startHeight - (double)routeHeight;
+          double verticalRouteLength = startHeight - routeHeight;
 
           try {
-           
             if (blockName == "GMEP CW FIXTURE POINT") {
               if (flowTypeId == 1) {
                 PlumbingVerticalRoute route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "DOWN", verticalRouteLength).First().Value;
@@ -2804,7 +2800,7 @@ namespace GMEPPlumbing
               }
 
               SpecializedHorizontalRoute(
-                  newStartPoint, newEndPoint, "Waste", "", (double)routeHeight
+                  newStartPoint, newEndPoint, "Waste", "", routeHeight
               );
             }
           }
