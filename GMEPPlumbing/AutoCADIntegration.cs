@@ -2514,22 +2514,26 @@ namespace GMEPPlumbing
                   StartPos = StartPos - offsetStart;
                 }
 
+                Point3d midPoint = new Point3d(
+                   (StartPos.X + newPoint.X) / 2.0,
+                   (StartPos.Y + newPoint.Y) / 2.0,
+                   StartPos.Z
+               );
 
-              
                 Point3d anotherNewPoint = new Point3d(
-                    newPoint.X + rotatedOffsetX,
-                    newPoint.Y + rotatedOffsetY,
-                    newPoint.Z
+                    midPoint.X + rotatedOffsetX,
+                    midPoint.Y + rotatedOffsetY,
+                    midPoint.Z
                 );
-                Vector3d direction2 = new Vector3d(anotherNewPoint.X - newPoint.X, anotherNewPoint.Y - newPoint.Y, 0);
+                Vector3d direction2 = new Vector3d(anotherNewPoint.X - midPoint.X, anotherNewPoint.Y - midPoint.Y, 0);
                 Vector3d offset2 = direction2.GetNormal() * offsetDistance2;
                 if (route.IsUp) {
-                  SpecializedHorizontalRoute(anotherNewPoint, newPoint, "ColdWater", route.PipeType, route.StartHeight - route.Length);
+                  SpecializedHorizontalRoute(anotherNewPoint, midPoint, "ColdWater", route.PipeType, route.StartHeight - route.Length);
                   SpecializedHorizontalRoute(newPoint, StartPos, "ColdWater", route.PipeType, route.StartHeight - route.Length);
 
                   SpecializedHorizontalRoute(StartPos, newPoint, "ColdWater", route.PipeType, route.StartHeight);
                   Point3d fixturePos = new Point3d(anotherNewPoint.X - offset2.X, anotherNewPoint.Y - offset2.Y, anotherNewPoint.Z);
-                  SpecializedHorizontalRoute(newPoint, fixturePos, "ColdWater", route.PipeType, route.StartHeight);
+                  SpecializedHorizontalRoute(midPoint, fixturePos, "ColdWater", route.PipeType, route.StartHeight);
 
                   using (Transaction tr = db.TransactionManager.StartTransaction()) {
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -2545,13 +2549,8 @@ namespace GMEPPlumbing
                     point = br.Position;
                     rotation = br.Rotation;
 
-                    //Place the circle and hatch
-                    Point3d midPoint = new Point3d(
-                       (StartPos.X + newPoint.X) / 2.0,
-                       (StartPos.Y + newPoint.Y) / 2.0,
-                       (StartPos.Z + newPoint.Z) / 2.0
-                   );
-                    Circle circle = new Circle(midPoint, Vector3d.ZAxis, 1);
+                  
+                    Circle circle = new Circle(newPoint, Vector3d.ZAxis, 1);
                     circle.Layer = "P-DOMW-CWTR";
                     modelSpace.AppendEntity(circle);
                     tr.AddNewlyCreatedDBObject(circle, true);
@@ -2565,7 +2564,7 @@ namespace GMEPPlumbing
                     tr.AddNewlyCreatedDBObject(hatch, true);
                     ObjectIdCollection ids = new ObjectIdCollection { circle.ObjectId };
                     hatch.AppendLoop(HatchLoopTypes.Default, ids);
-                    hatch.Elevation = midPoint.Z;
+                    hatch.Elevation = newPoint.Z;
 
                     hatch.EvaluateHatch(true);
                     circle.Erase();
@@ -2575,13 +2574,12 @@ namespace GMEPPlumbing
                     double routeLength = routeVec.Length;
                     if (routeLength == 0) return;
 
-                    Point3d midPoint2 = StartPos + (routeVec * 0.5);
                     Vector3d normal = new Vector3d(-routeVec.Y, routeVec.X, 0).GetNormal();
 
                     double offsetDistance3 = 4.0;
-                    Point3d offsetMid = midPoint + (normal * offsetDistance3);
+                    Point3d offsetMid = newPoint - (normal * offsetDistance3);
                     if (res.StringResult == "Right") {
-                      offsetMid = midPoint - (normal * offsetDistance3);
+                      offsetMid = newPoint + (normal * offsetDistance3);
                     }
 
                     Vector3d halfVec = routeVec.GetNormal() * (routeLength / 4.0);
@@ -2597,12 +2595,12 @@ namespace GMEPPlumbing
                   }
                 }
                 else {
-                  SpecializedHorizontalRoute(anotherNewPoint, newPoint, "ColdWater", route.PipeType, route.StartHeight);
+                  SpecializedHorizontalRoute(anotherNewPoint, midPoint, "ColdWater", route.PipeType, route.StartHeight);
                   SpecializedHorizontalRoute(newPoint, StartPos, "ColdWater", route.PipeType, route.StartHeight);
 
                   SpecializedHorizontalRoute(StartPos, newPoint, "ColdWater", route.PipeType, route.StartHeight - route.Length);
                   Point3d fixturePos = new Point3d(anotherNewPoint.X - offset2.X, anotherNewPoint.Y - offset2.Y, anotherNewPoint.Z - (route.Length * 12));
-                  SpecializedHorizontalRoute(newPoint, fixturePos, "ColdWater", route.PipeType, route.StartHeight - route.Length);
+                  SpecializedHorizontalRoute(midPoint, fixturePos, "ColdWater", route.PipeType, route.StartHeight - route.Length);
 
                   using (Transaction tr = db.TransactionManager.StartTransaction()) {
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -2618,14 +2616,8 @@ namespace GMEPPlumbing
                     point = br.Position;
                     rotation = br.Rotation;
 
-                    //Place the circle and hatch
-                    Point3d midPoint = new Point3d(
-                       (StartPos.X + newPoint.X) / 2.0,
-                       (StartPos.Y + newPoint.Y) / 2.0,
-                       (StartPos.Z + newPoint.Z) / 2.0
-                    );
-                    Point3d newMid = new Point3d(midPoint.X, midPoint.Y, midPoint.Z - (route.Length * 12));
-                    Circle circle = new Circle(newMid, Vector3d.ZAxis, 1);
+                    Point3d newPos = new Point3d(newPoint.X, newPoint.Y, newPoint.Z - (route.Length * 12));
+                    Circle circle = new Circle(newPos, Vector3d.ZAxis, 1);
                     modelSpace.AppendEntity(circle);
                     tr.AddNewlyCreatedDBObject(circle, true);
 
@@ -2634,7 +2626,7 @@ namespace GMEPPlumbing
                     hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
                     hatch.Associative = false;
                     hatch.Layer = "P-DOMW-CWTR";
-                    hatch.Elevation = newMid.Z;
+                    hatch.Elevation = newPos.Z;
 
                     modelSpace.AppendEntity(hatch);
                     tr.AddNewlyCreatedDBObject(hatch, true);
@@ -2649,13 +2641,12 @@ namespace GMEPPlumbing
                     double routeLength = routeVec.Length;
                     if (routeLength == 0) return; 
 
-                    Point3d midPoint2 = StartPos + (routeVec * 0.5);
                     Vector3d normal = new Vector3d(-routeVec.Y, routeVec.X, 0).GetNormal();
 
                     double offsetDistance3 = 4.0;
-                    Point3d offsetMid = midPoint + (normal * offsetDistance3);
+                    Point3d offsetMid = newPoint - (normal * offsetDistance3);
                     if (res.StringResult == "Right") {
-                      offsetMid = midPoint - (normal * offsetDistance3);
+                      offsetMid = newPoint + (normal * offsetDistance3);
                     }
 
                     Vector3d halfVec = routeVec.GetNormal() * (routeLength / 4.0);
