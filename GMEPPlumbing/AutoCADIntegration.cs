@@ -2848,8 +2848,34 @@ namespace GMEPPlumbing
             );
 
             if (blockName == "GMEP DRAIN") {
-              //logic to attach vent
-              var ventRoutes = VerticalRoute("Vent", 0);
+              PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
+              pko.Keywords.Add("Ceiling");
+              pko.Keywords.Add("Roof");
+              pko.Keywords.Add("None", "No Vent Needed", "No Vent Needed");
+              pko.AllowNone = false;
+              PromptResult res = ed.GetKeywords(pko);
+              ed.WriteMessage("\nYou selected: " + res.StringResult);
+              if (res.Status != PromptStatus.OK) {
+                ed.WriteMessage("\nCommand cancelled.");
+                routeHeightDisplay.Disable();
+                return;
+              }
+              Dictionary<string, PlumbingVerticalRoute> ventRoutes = null;
+              if (res.StringResult == "None") {
+                continue;
+              }
+              if (res.StringResult == "Ceiling") {
+                ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "UpToCeiling");
+              }
+              else if (res.StringResult == "Roof") {
+                List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
+                PlumbingPlanBasePoint activeBasePoint = basePoints.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
+                List<PlumbingPlanBasePoint> aboveBasePoints = basePoints.Where(bp => bp.Floor >= activeBasePoint.Floor && bp.ViewportId == activeBasePoint.ViewportId).ToList();
+                PlumbingPlanBasePoint highestFloorBasePoint = aboveBasePoints
+                .OrderByDescending(bp => bp.Floor)
+                .FirstOrDefault();
+                ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, null, highestFloorBasePoint.CeilingHeight - highestFloorBasePoint.FloorHeight);
+              }
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
                 routeHeightDisplay.Disable();
