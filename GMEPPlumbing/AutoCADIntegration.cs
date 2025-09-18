@@ -325,18 +325,16 @@ namespace GMEPPlumbing
       ObjectId addedLineId2 = ObjectId.Null;
       string LineGUID2 = Guid.NewGuid().ToString();
 
-      PromptPointOptions ppo3 = new PromptPointOptions("\nSpecify next point for route: ");
-      ppo3.BasePoint = startPointLocation2;
-      ppo3.UseBasePoint = true;
+      HorizontalRouteJig routeJig = new HorizontalRouteJig(startPointLocation2, layer);
 
-      PromptPointResult ppr3 = ed.GetPoint(ppo3);
-      if (ppr3.Status != PromptStatus.OK) {
+      PromptResult routeResult = ed.Drag(routeJig);
+      if (routeResult.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
         routeHeightDisplay.Disable();
         return;
       }
 
-      Point3d endPointLocation2 = ppr3.Value;
+      Point3d endPointLocation2 = routeJig.line.EndPoint;
 
       using (Transaction tr2 = db.TransactionManager.StartTransaction()) {
         BlockTable bt = (BlockTable)tr2.GetObject(db.BlockTableId, OpenMode.ForWrite);
@@ -420,33 +418,32 @@ namespace GMEPPlumbing
             layer = basePointLine.Layer;
           }
 
-          PromptPointOptions ppo = new PromptPointOptions("\nSpecify next point for route: ");
-          ppo.BasePoint = startPointLocation;
-          ppo.UseBasePoint = true;
+          HorizontalRouteJig routeJig2 = new HorizontalRouteJig(startPointLocation, layer);
 
           Point3d endPointLocation3 = Point3d.Origin;
 
           while (true) {
-            PromptPointResult ppr = ed.GetPoint(ppo);
-            if (ppr.Status != PromptStatus.OK) {
+            PromptResult routeResult2 = ed.Drag(routeJig2);
+            if (routeResult2.Status != PromptStatus.OK) {
               ed.WriteMessage("\nCommand cancelled.");
               routeHeightDisplay.Disable();
               return;
             }
+            Point3d endPoint = routeJig2.line.EndPoint;
 
             if (layer == "P-GAS" && basePoint is Line basePointLine2) {
-              Vector3d prevDir = basePointLine2.EndPoint - basePointLine2.StartPoint;
-              Vector3d newDir = ppr.Value - startPointLocation;
+              Vector3d prevDir = (basePointLine2.EndPoint - basePointLine2.StartPoint).GetNormal();
+              Vector3d newDir = (endPoint - startPointLocation).GetNormal();
               double angle = prevDir.GetAngleTo(newDir);
 
               if (angle > Math.PI / 4) {
                 ed.WriteMessage("\nAngle exceeds 45 degrees. Please pick a point closer to the previous direction.");
-                ppo.Message = "\nNext Line must be 45 degrees or less";
+                routeJig2.message = $"\nAngle is {angle}. Next Line must be 45 degrees or less.";
                 continue;
               }
             }
 
-            endPointLocation3 = ppr.Value;
+            endPointLocation3 = endPoint;
             break;
           }
 

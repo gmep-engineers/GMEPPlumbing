@@ -71,6 +71,7 @@ namespace GMEPPlumbing
     private Point3d startPoint;
     private Point3d endPoint;
     public Line line;
+    public string message = "\nSelect end point:";
 
     public HorizontalRouteJig(Point3d startPt, string layer) {
       startPoint = startPt;
@@ -87,7 +88,7 @@ namespace GMEPPlumbing
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
-      JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
+      JigPromptPointOptions opts = new JigPromptPointOptions(message);
       opts.BasePoint = startPoint;
       opts.UseBasePoint = true;
       opts.Cursor = CursorType.RubberBand;
@@ -99,7 +100,7 @@ namespace GMEPPlumbing
       if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
         return SamplerStatus.NoChange;
 
-      endPoint = res.Value;
+      endPoint = new Point3d(res.Value.X, res.Value.Y, startPoint.Z);
       line.EndPoint = endPoint;
 
       return SamplerStatus.OK;
