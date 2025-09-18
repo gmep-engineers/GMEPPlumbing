@@ -3620,6 +3620,9 @@ namespace GMEPPlumbing
               Dictionary<string, PlumbingVerticalRoute> ventRoutes2 = null;
               ventRoutes2 = VerticalRoute("Vent", CADObjectCommands.ActiveRouteHeight, CADObjectCommands.ActiveFloor, "Down", CADObjectCommands.ActiveRouteHeight);
               Point3d ventPoint2 = ventRoutes2[CADObjectCommands.ActiveBasePointId].Position;
+              SpecializedHorizontalRoute(
+                   "Vent", "", CADObjectCommands.ActiveRouteHeight, ventPoint, ventPoint2
+              );
               //HorizontalRoute("Vent", "", 0, ventPoint2, newEndPoint);
             }
           }
