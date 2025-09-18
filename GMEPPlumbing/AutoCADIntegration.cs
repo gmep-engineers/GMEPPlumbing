@@ -5195,6 +5195,11 @@ namespace GMEPPlumbing
       var db = doc.Database;
       var ed = doc.Editor;
 
+      string cmdName = Application.GetSystemVariable("CMDNAMES") as string;
+      if (!cmdName.Contains("PASTECLIP")) {
+        return;
+      }
+
       try {
         if (
           e.DBObject is BlockReference blockRef
