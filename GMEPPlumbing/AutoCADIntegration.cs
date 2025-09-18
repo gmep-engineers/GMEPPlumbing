@@ -2958,7 +2958,7 @@ namespace GMEPPlumbing
               }
 
               SpecializedHorizontalRoute(
-                   "Waste", "", routeHeight, newStartPoint, newEndPoint
+                   "Waste", "", 0, newStartPoint, newEndPoint
               );
             }
           }
@@ -3561,7 +3561,7 @@ namespace GMEPPlumbing
             );
 
             if (blockName == "GMEP DRAIN") {
-              PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
+             /* PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
               pko.Keywords.Add("Ceiling");
               pko.Keywords.Add("Roof");
               pko.Keywords.Add("None", "No Vent Needed", "No Vent Needed");
@@ -3572,9 +3572,10 @@ namespace GMEPPlumbing
                 ed.WriteMessage("\nCommand cancelled.");
                 routeHeightDisplay.Disable();
                 return;
-              }
+              }*/
               Dictionary<string, PlumbingVerticalRoute> ventRoutes = null;
-              if (res.StringResult == "None") {
+              ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "Up", CADObjectCommands.ActiveRouteHeight);
+              /*if (res.StringResult == "None") {
                 continue;
               }
               if (res.StringResult == "Ceiling") {
@@ -3598,7 +3599,7 @@ namespace GMEPPlumbing
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
                 routeHeightDisplay.Disable();
                 return;
-              }
+              }*/
               Point3d ventPoint = ventRoutes[CADObjectCommands.ActiveBasePointId].Position;
               ventPoint = new Point3d(ventPoint.X, ventPoint.Y, point.Z);
               double shortenBy = 1.5;
@@ -3614,8 +3615,12 @@ namespace GMEPPlumbing
               }
 
               SpecializedHorizontalRoute(
-                   "Waste", "", routeHeight, newStartPoint, newEndPoint
+                   "Waste", "", 0, newStartPoint, newEndPoint
               );
+              Dictionary<string, PlumbingVerticalRoute> ventRoutes2 = null;
+              ventRoutes2 = VerticalRoute("Vent", CADObjectCommands.ActiveRouteHeight, CADObjectCommands.ActiveFloor, "Down", CADObjectCommands.ActiveRouteHeight);
+              Point3d ventPoint2 = ventRoutes2[CADObjectCommands.ActiveBasePointId].Position;
+              //HorizontalRoute("Vent", "", 0, ventPoint2, newEndPoint);
             }
           }
           catch (System.Exception ex) {
