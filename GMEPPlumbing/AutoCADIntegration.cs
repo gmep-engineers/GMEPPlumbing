@@ -2734,6 +2734,59 @@ namespace GMEPPlumbing
                 }
               }
             }
+            else if (blockName == "GMEP PLUMBING GAS OUTPUT") {
+              PlumbingVerticalRoute route = VerticalRoute("Gas", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
+              double offsetDistance = 10.25;
+              double offsetDistance2 = 3.5;
+              double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
+              double offsetY = offsetDistance * Math.Sin(route.Rotation + (Math.PI / 2));
+              Point3d newPoint = new Point3d(
+                  route.Position.X + offsetX,
+                  route.Position.Y + offsetY,
+                  route.Position.Z
+              );
+              Vector3d direction = new Vector3d(newPoint.X - route.Position.X, newPoint.Y - route.Position.Y, 0);
+              Vector3d offset2 = direction.GetNormal() * offsetDistance2;
+
+              if (route.IsUp) {
+                SpecializedHorizontalRoute("Gas", route.PipeType, route.StartHeight - route.Length, newPoint, route.Position);
+                Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z);
+                SpecializedHorizontalRoute("Gas", route.PipeType, route.StartHeight, route.Position, fixturePos);
+
+                using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                  BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                  br.Rotation = route.Rotation;
+                  modelSpace.AppendEntity(br);
+                  tr.AddNewlyCreatedDBObject(br, true);
+                  blockId = br.Id;
+                  point = br.Position;
+                  rotation = br.Rotation;
+                  tr.Commit();
+                }
+              }
+              else {
+                SpecializedHorizontalRoute("Gas", route.PipeType, route.StartHeight, newPoint, route.Position);
+                Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
+                SpecializedHorizontalRoute("Gas", route.PipeType, route.StartHeight - route.Length, route.Position, fixturePos);
+
+                using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                  BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                  br.Rotation = route.Rotation + Math.PI / 2;
+                  modelSpace.AppendEntity(br);
+                  tr.AddNewlyCreatedDBObject(br, true);
+                  blockId = br.Id;
+                  point = br.Position;
+                  rotation = br.Rotation;
+                  tr.Commit();
+                }
+              }
+            }
             else {
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
