@@ -67,6 +67,46 @@ namespace GMEPPlumbing
     }
   }
 
+  public class HorizontalRouteJig : DrawJig {
+    private Point3d startPoint;
+    private Point3d endPoint;
+    public Line line;
+
+    public HorizontalRouteJig(Point3d startPt, string layer) {
+      startPoint = startPt;
+      endPoint = startPt;
+      line = new Line(startPoint, startPoint);
+      line.Layer = layer;
+    }
+
+    protected override bool WorldDraw(WorldDraw draw) {
+      if (line != null) {
+        draw.Geometry.Draw(line);
+      }
+      return true;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts) {
+      JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
+      opts.BasePoint = startPoint;
+      opts.UseBasePoint = true;
+      opts.Cursor = CursorType.RubberBand;
+
+      PromptPointResult res = prompts.AcquirePoint(opts);
+      if (res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
+      if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+        return SamplerStatus.NoChange;
+
+      endPoint = res.Value;
+      line.EndPoint = endPoint;
+
+      return SamplerStatus.OK;
+    }
+  }
+
+
   public class LineStartPointPreviewJig : DrawJig
   {
     private Line _baseLine;
