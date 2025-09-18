@@ -628,7 +628,8 @@ namespace GMEPPlumbing.Services
             GetSafeString(reader, "gas_block_names"),
             GetSafeInt(reader, "cfh"),
             GetSafeBoolean(reader, "residential"),
-            GetSafeBoolean(reader, "commercial")
+            GetSafeBoolean(reader, "commercial"),
+            GetSafeBoolean(reader, "island")
           )
         );
       }
@@ -667,7 +668,8 @@ namespace GMEPPlumbing.Services
             GetSafeString(reader, "gas_block_names"),
             GetSafeInt(reader, "cfh"),
             GetSafeBoolean(reader, "residential"),
-            GetSafeBoolean(reader, "commercial")
+            GetSafeBoolean(reader, "commercial"),
+            GetSafeBoolean(reader, "island")
           )
         );
       }
@@ -704,7 +706,8 @@ namespace GMEPPlumbing.Services
                   GetSafeString(reader, "gas_block_names"),
                   GetSafeInt(reader, "cfh"),
                   GetSafeBoolean(reader, "residential"),
-                  GetSafeBoolean(reader, "commercial")
+                  GetSafeBoolean(reader, "commercial"),
+                  GetSafeBoolean(reader, "island")
               );
             }
           }

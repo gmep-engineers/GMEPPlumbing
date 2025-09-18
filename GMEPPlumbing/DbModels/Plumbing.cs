@@ -88,6 +88,7 @@ namespace GMEPPlumbing {
     public int Cfh;
     public bool Residential;
     public bool Commercial;
+    public bool Island;
 
     public PlumbingFixtureCatalogItem(
       int id,
@@ -109,7 +110,8 @@ namespace GMEPPlumbing {
       string gasBlockNames,
       int cfh,
       bool residential,
-      bool commercial
+      bool commercial,
+      bool island
     ) {
       Id = id;
       TypeId = typeId;
@@ -131,6 +133,7 @@ namespace GMEPPlumbing {
       Cfh = cfh;
       Residential = residential;
       Commercial = commercial;
+      Island = island;
     }
   }
 

@@ -2907,6 +2907,640 @@ namespace GMEPPlumbing
       }
       routeHeightDisplay.Disable();
     }
+
+    [CommandMethod("PLUMBINGISLANDFIXTURE")]
+    public void PlumbingIslandFixture() {
+      IslandFixture();
+    }
+    public void IslandFixture(string fixtureString = null, string catalogString = null, Point3d? placementPoint = null, double? blockRotation = null) {
+      string projectNo = CADObjectCommands.GetProjectNoFromFileName();
+      string projectId = MariaDBService.GetProjectIdSync(projectNo);
+
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      string basePointId = CADObjectCommands.GetActiveView();
+
+      List<PlumbingFixtureType> plumbingFixtureTypes = MariaDBService.GetPlumbingFixtureTypes();
+      Dictionary<int, List<PlumbingFixtureCatalogItem>> allPlumbingFixtureCatalogItems =
+        MariaDBService.GetAllPlumbingFixtureCatalogItems();
+
+      PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
+      PromptResult keywordResult;
+
+
+      if (fixtureString == null) {
+        keywordOptions.Message = "\nSelect fixture type:";
+        plumbingFixtureTypes.ForEach(t => {
+          if (allPlumbingFixtureCatalogItems.ContainsKey(t.Id)) {
+            List<PlumbingFixtureCatalogItem> catalogItems = allPlumbingFixtureCatalogItems[t.Id];
+            if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && !catalogItems.All(item => string.IsNullOrEmpty(item.WaterBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && !catalogItems.All(item => string.IsNullOrEmpty(item.GasBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && !catalogItems.All(item => string.IsNullOrEmpty(item.WasteBlockNames)))) && (!catalogItems.All(item => !item.Island)) && ((CADObjectCommands.IsResidential && !catalogItems.All(item => item.Residential == false)) || (!CADObjectCommands.IsResidential && !catalogItems.All(item => item.Commercial == false)))) {
+              keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
+            }
+          }
+        });
+        //keywordOptions.Keywords.Default = "WC - Water Closet";
+        keywordOptions.AllowNone = false;
+        keywordResult = ed.GetKeywords(keywordOptions);
+
+        if (keywordResult.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+        fixtureString = keywordResult.StringResult;
+        ed.WriteMessage("\nSelected fixture: " + fixtureString);
+      }
+      PlumbingFixtureType selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t =>
+        fixtureString.StartsWith(t.Abbreviation)
+      );
+      if (selectedFixtureType == null) {
+        selectedFixtureType = plumbingFixtureTypes.FirstOrDefault(t => t.Abbreviation == "WC");
+      }
+
+      List<PlumbingFixtureCatalogItem> plumbingFixtureCatalogItems =
+        MariaDBService.GetPlumbingFixtureCatalogItemsByType(selectedFixtureType.Id);
+
+      if (catalogString == null) {
+        keywordOptions = new PromptKeywordOptions("");
+        keywordOptions.Message = "\nSelect catalog item:";
+        plumbingFixtureCatalogItems.ForEach(i => {
+          if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && i.WaterBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && i.GasBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && i.WasteBlockNames != "")) && ((CADObjectCommands.IsResidential && i.Residential == true) || (!CADObjectCommands.IsResidential && i.Commercial == true)) && i.Island) {
+            keywordOptions.Keywords.Add(i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model);
+          }
+        });
+        keywordResult = ed.GetKeywords(keywordOptions);
+
+        catalogString = keywordResult.StringResult;
+      }
+      if (catalogString.Contains(' ')) {
+        catalogString = catalogString.Split(' ')[0];
+      }
+      PlumbingFixtureCatalogItem selectedCatalogItem = plumbingFixtureCatalogItems.FirstOrDefault(
+        i => i.Id.ToString() == catalogString
+      );
+      if (selectedCatalogItem == null) {
+        return;
+      }
+
+      int flowTypeId = 1;
+      if (selectedFixtureType.Abbreviation == "U" || selectedCatalogItem.Id == 6) {
+        flowTypeId = 2;
+      }
+      List<string> selectedBlockNames = new List<string>();
+      string viewType = GetPlumbingBasePointsFromCAD(ProjectId).Where(bp => bp.Id == basePointId).First().Type;
+      if (viewType.Contains("Water")) {
+        selectedBlockNames.AddRange(selectedCatalogItem.WaterBlockNames.Split(','));
+      }
+      if (viewType.Contains("Gas")) {
+        selectedBlockNames.AddRange(selectedCatalogItem.GasBlockNames.Split(','));
+      }
+      if (viewType.Contains("Sewer-Vent")) {
+        selectedBlockNames.AddRange(selectedCatalogItem.WasteBlockNames.Split(','));
+      }
+      selectedBlockNames = selectedBlockNames.Distinct().ToList();
+      List<string> selectedBlockNames2 = new List<string>(selectedBlockNames);
+
+      
+      double routeHeight = 0;
+      if (selectedFixtureType.Abbreviation != "FD" && selectedFixtureType.Abbreviation != "FS") {
+        routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
+        if (selectedFixtureType.Abbreviation == "WH" || selectedFixtureType.Abbreviation == "IWH") {
+          PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the fixture from the floor (in feet): ");
+          pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
+          while (true) {
+            try {
+              PromptDoubleResult pdr = ed.GetDouble(pdo);
+              if (pdr.Status == PromptStatus.Cancel) {
+                ed.WriteMessage("\nCommand cancelled.");
+                return;
+              }
+              if (pdr.Status != PromptStatus.OK) {
+                ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+                continue;
+              }
+              routeHeight = pdr.Value;
+              // GetHeightLimits returns Tuple<double, double> (min, max)
+              var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+              double minHeight = heightLimits.Item1;
+              double maxHeight = heightLimits.Item2;
+              if (routeHeight < minHeight || routeHeight > maxHeight) {
+                ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
+                pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
+                continue;
+              }
+              break; // Valid input
+            }
+            catch (System.Exception ex) {
+              ed.WriteMessage($"\nError: {ex.Message}");
+              continue;
+            }
+          }
+        }
+      }
+
+      PlumbingFixture plumbingFixture = null;
+
+
+      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+
+      if (selectedBlockNames2.Count() != 0) {
+        foreach (string blockName in selectedBlockNames2) {
+          ObjectId blockId = ObjectId.Null;
+          Point3d point = Point3d.Origin;
+          double rotation = 0;
+          int number = 0;
+          string GUID = Guid.NewGuid().ToString();
+          double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
+          double startHeight = CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight;
+          double verticalRouteLength = startHeight - routeHeight;
+
+          try {
+            if (blockName == "GMEP CW FIXTURE POINT") {
+              if (flowTypeId == 1) {
+                PlumbingVerticalRoute route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
+
+                double offsetDistance = 11.25;
+                double offsetDistance2 = 2.125;
+                double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
+                double offsetY = offsetDistance * Math.Sin(route.Rotation + (Math.PI / 2));
+                Point3d newPoint = new Point3d(
+                    route.Position.X + offsetX,
+                    route.Position.Y + offsetY,
+                    route.Position.Z
+                );
+                Vector3d direction = new Vector3d(newPoint.X - route.Position.X, newPoint.Y - route.Position.Y, 0);
+                Vector3d offset2 = direction.GetNormal() * offsetDistance2;
+
+                if (route.IsUp) {
+                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", route.PipeType, route.StartHeight - route.Length);
+                  Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z);
+                  SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", route.PipeType, route.StartHeight);
+
+                  using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                    BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                    BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                    br.Rotation = route.Rotation;
+                    modelSpace.AppendEntity(br);
+                    tr.AddNewlyCreatedDBObject(br, true);
+                    blockId = br.Id;
+                    point = br.Position;
+                    rotation = br.Rotation;
+                    tr.Commit();
+                  }
+                }
+                else {
+                  SpecializedHorizontalRoute(newPoint, route.Position, "ColdWater", route.PipeType, route.StartHeight);
+                  Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
+                  SpecializedHorizontalRoute(route.Position, fixturePos, "ColdWater", route.PipeType, route.StartHeight - route.Length);
+
+                  using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                    BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                    BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                    br.Rotation = route.Rotation;
+                    modelSpace.AppendEntity(br);
+                    tr.AddNewlyCreatedDBObject(br, true);
+                    blockId = br.Id;
+                    point = br.Position;
+                    rotation = br.Rotation;
+                    tr.Commit();
+                  }
+                }
+              }
+              else if (flowTypeId == 2) {
+                PlumbingVerticalRoute route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
+                PromptKeywordOptions pko = new PromptKeywordOptions("Left or Right?");
+                pko.Keywords.Add("Left");
+                pko.Keywords.Add("Right");
+                PromptResult res = ed.GetKeywords(pko);
+
+
+                double offsetDistance = 11.25;
+                double offsetDistance2 = 2.125;
+                double offsetX = offsetDistance * Math.Cos(route.Rotation);
+                double offsetY = offsetDistance * Math.Sin(route.Rotation);
+                double rotatedOffsetX = -offsetY;
+                double rotatedOffsetY = offsetX;
+                if (res.StringResult == "Left") {
+                  offsetX = -offsetX;
+                  offsetY = -offsetY;
+                  rotatedOffsetX = offsetY;
+                  rotatedOffsetY = -offsetX;
+                }
+
+                Point3d StartPos = route.Position;
+                Point3d newPoint = new Point3d(
+                    route.Position.X + offsetX * 1.2,
+                    route.Position.Y + offsetY * 1.2,
+                    route.Position.Z
+                );
+                Vector3d direction = route.Position - newPoint;
+                double length = direction.Length;
+                if (length > 0) {
+                  Vector3d offsetStart = direction.GetNormal() * 1.5;
+                  StartPos = StartPos - offsetStart;
+                }
+
+                Point3d midPoint = new Point3d(
+                   (StartPos.X + newPoint.X) / 2.0,
+                   (StartPos.Y + newPoint.Y) / 2.0,
+                   StartPos.Z
+               );
+
+                Point3d anotherNewPoint = new Point3d(
+                    midPoint.X + rotatedOffsetX,
+                    midPoint.Y + rotatedOffsetY,
+                    midPoint.Z
+                );
+                Vector3d direction2 = new Vector3d(anotherNewPoint.X - midPoint.X, anotherNewPoint.Y - midPoint.Y, 0);
+                Vector3d offset2 = direction2.GetNormal() * offsetDistance2;
+                if (route.IsUp) {
+                  SpecializedHorizontalRoute(anotherNewPoint, midPoint, "ColdWater", route.PipeType, route.StartHeight - route.Length);
+                  SpecializedHorizontalRoute(newPoint, StartPos, "ColdWater", route.PipeType, route.StartHeight - route.Length);
+
+                  SpecializedHorizontalRoute(StartPos, newPoint, "ColdWater", route.PipeType, route.StartHeight);
+                  Point3d fixturePos = new Point3d(anotherNewPoint.X - offset2.X, anotherNewPoint.Y - offset2.Y, anotherNewPoint.Z);
+                  SpecializedHorizontalRoute(midPoint, fixturePos, "ColdWater", route.PipeType, route.StartHeight);
+
+                  using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                    BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+
+                    //Place the fixture block
+                    BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                    br.Rotation = route.Rotation;
+                    modelSpace.AppendEntity(br);
+                    tr.AddNewlyCreatedDBObject(br, true);
+                    blockId = br.Id;
+                    point = br.Position;
+                    rotation = br.Rotation;
+
+
+                    Circle circle = new Circle(newPoint, Vector3d.ZAxis, 1);
+                    circle.Layer = "P-DOMW-CWTR";
+                    modelSpace.AppendEntity(circle);
+                    tr.AddNewlyCreatedDBObject(circle, true);
+
+                    Hatch hatch = new Hatch();
+                    hatch.SetDatabaseDefaults();
+                    hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
+                    hatch.Associative = false;
+                    hatch.Layer = "P-DOMW-CWTR";
+                    modelSpace.AppendEntity(hatch);
+                    tr.AddNewlyCreatedDBObject(hatch, true);
+                    ObjectIdCollection ids = new ObjectIdCollection { circle.ObjectId };
+                    hatch.AppendLoop(HatchLoopTypes.Default, ids);
+                    hatch.Elevation = newPoint.Z;
+
+                    hatch.EvaluateHatch(true);
+                    circle.Erase();
+
+                    //placing the line :3
+                    Vector3d routeVec = newPoint - StartPos;
+                    double routeLength = routeVec.Length;
+                    if (routeLength == 0) return;
+
+                    Vector3d normal = new Vector3d(-routeVec.Y, routeVec.X, 0).GetNormal();
+
+                    double offsetDistance3 = 4.0;
+                    Point3d offsetMid = newPoint - (normal * offsetDistance3);
+                    if (res.StringResult == "Right") {
+                      offsetMid = newPoint + (normal * offsetDistance3);
+                    }
+
+                    Vector3d halfVec = routeVec.GetNormal() * (routeLength / 4.0);
+                    Point3d newStart = offsetMid - halfVec;
+                    Point3d newEnd = offsetMid + halfVec;
+
+                    Line line = new Line(newStart, newEnd);
+                    line.Layer = "P-DOMW-CWTR";
+                    modelSpace.AppendEntity(line);
+                    tr.AddNewlyCreatedDBObject(line, true);
+
+                    tr.Commit();
+                  }
+                }
+                else {
+                  SpecializedHorizontalRoute(anotherNewPoint, midPoint, "ColdWater", route.PipeType, route.StartHeight);
+                  SpecializedHorizontalRoute(newPoint, StartPos, "ColdWater", route.PipeType, route.StartHeight);
+
+                  SpecializedHorizontalRoute(StartPos, newPoint, "ColdWater", route.PipeType, route.StartHeight - route.Length);
+                  Point3d fixturePos = new Point3d(anotherNewPoint.X - offset2.X, anotherNewPoint.Y - offset2.Y, anotherNewPoint.Z - (route.Length * 12));
+                  SpecializedHorizontalRoute(midPoint, fixturePos, "ColdWater", route.PipeType, route.StartHeight - route.Length);
+
+                  using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                    BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+
+                    //Place the fixture block
+                    BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                    br.Rotation = route.Rotation;
+                    modelSpace.AppendEntity(br);
+                    tr.AddNewlyCreatedDBObject(br, true);
+                    blockId = br.Id;
+                    point = br.Position;
+                    rotation = br.Rotation;
+
+                    Point3d newPos = new Point3d(newPoint.X, newPoint.Y, newPoint.Z - (route.Length * 12));
+                    Circle circle = new Circle(newPos, Vector3d.ZAxis, 1);
+                    modelSpace.AppendEntity(circle);
+                    tr.AddNewlyCreatedDBObject(circle, true);
+
+                    Hatch hatch = new Hatch();
+                    hatch.SetDatabaseDefaults();
+                    hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
+                    hatch.Associative = false;
+                    hatch.Layer = "P-DOMW-CWTR";
+                    hatch.Elevation = newPos.Z;
+
+                    modelSpace.AppendEntity(hatch);
+                    tr.AddNewlyCreatedDBObject(hatch, true);
+
+                    ObjectIdCollection ids = new ObjectIdCollection { circle.ObjectId };
+                    hatch.AppendLoop(HatchLoopTypes.Default, ids);
+                    hatch.EvaluateHatch(true);
+                    circle.Erase();
+
+                    //placing the line :3
+                    Vector3d routeVec = newPoint - StartPos;
+                    double routeLength = routeVec.Length;
+                    if (routeLength == 0) return;
+
+                    Vector3d normal = new Vector3d(-routeVec.Y, routeVec.X, 0).GetNormal();
+
+                    double offsetDistance3 = 4.0;
+                    Point3d offsetMid = newPoint - (normal * offsetDistance3);
+                    if (res.StringResult == "Right") {
+                      offsetMid = newPoint + (normal * offsetDistance3);
+                    }
+
+                    Vector3d halfVec = routeVec.GetNormal() * (routeLength / 4.0);
+
+                    Point3d newStart = offsetMid - halfVec;
+                    Point3d newEnd = offsetMid + halfVec;
+                    newStart = new Point3d(newStart.X, newStart.Y, newStart.Z - (route.Length * 12));
+                    newEnd = new Point3d(newEnd.X, newEnd.Y, newEnd.Z - (route.Length * 12));
+
+                    Line line = new Line(newStart, newEnd);
+                    line.Layer = "P-DOMW-CWTR";
+                    modelSpace.AppendEntity(line);
+                    tr.AddNewlyCreatedDBObject(line, true);
+
+                    tr.Commit();
+                  }
+                }
+              }
+            }
+            else if (blockName == "GMEP HW FIXTURE POINT") {
+              PlumbingVerticalRoute route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
+              double offsetDistance = 11.25;
+              double offsetDistance2 = 2.125;
+              double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
+              double offsetY = offsetDistance * Math.Sin(route.Rotation + (Math.PI / 2));
+              Point3d newPoint = new Point3d(
+                  route.Position.X + offsetX,
+                  route.Position.Y + offsetY,
+                  route.Position.Z
+              );
+              Vector3d direction = new Vector3d(newPoint.X - route.Position.X, newPoint.Y - route.Position.Y, 0);
+              Vector3d offset2 = direction.GetNormal() * offsetDistance2;
+
+              if (route.IsUp) {
+                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", route.PipeType, route.StartHeight - route.Length);
+                Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z);
+                SpecializedHorizontalRoute(route.Position, fixturePos, "HotWater", route.PipeType, route.StartHeight);
+
+                using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                  BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                  br.Rotation = route.Rotation;
+                  modelSpace.AppendEntity(br);
+                  tr.AddNewlyCreatedDBObject(br, true);
+                  blockId = br.Id;
+                  point = br.Position;
+                  rotation = br.Rotation;
+                  tr.Commit();
+                }
+              }
+              else {
+                SpecializedHorizontalRoute(newPoint, route.Position, "HotWater", route.PipeType, route.StartHeight);
+                Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
+                SpecializedHorizontalRoute(route.Position, fixturePos, "HotWater", route.PipeType, route.StartHeight - route.Length);
+
+                using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                  BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                  br.Rotation = route.Rotation;
+                  modelSpace.AppendEntity(br);
+                  tr.AddNewlyCreatedDBObject(br, true);
+                  blockId = br.Id;
+                  point = br.Position;
+                  rotation = br.Rotation;
+                  tr.Commit();
+                }
+              }
+            }
+            else {
+              if (blockName == "GMEP DRAIN") {
+                zIndex = CADObjectCommands.ActiveFloorHeight * 12;
+              }
+              using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord btr;
+
+                BlockReference br = null;
+                if (placementPoint == null) {
+                  br = CADObjectCommands.CreateBlockReference(
+                    tr,
+                    bt,
+                    blockName,
+                    "Plumbing Fixture " + selectedFixtureType.Name,
+                    out btr,
+                    out point
+                  );
+                }
+                else {
+                  btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                  br = new BlockReference((Point3d)placementPoint, btr.ObjectId);
+                  point = (Point3d)placementPoint;
+                }
+                if (br != null) {
+                  BlockTableRecord curSpace = (BlockTableRecord)
+                    tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                  if (blockRotation == null) {
+                    RotateJig rotateJig = new RotateJig(br);
+                    PromptResult rotatePromptResult = ed.Drag(rotateJig);
+                    if (rotatePromptResult.Status != PromptStatus.OK) {
+                      ed.WriteMessage("\nRotation cancelled.");
+                      routeHeightDisplay.Disable();
+                      return;
+                    }
+                  }
+                  else {
+                    br.Rotation = blockRotation.Value;
+                  }
+                  br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
+                  rotation = br.Rotation;
+
+                  curSpace.AppendEntity(br);
+                  tr.AddNewlyCreatedDBObject(br, true);
+                }
+                else {
+                  ed.WriteMessage("\nBlock reference could not be created.");
+                  routeHeightDisplay.Disable();
+                  return;
+                }
+
+                blockId = br.Id;
+                tr.Commit();
+              }
+            }
+            using (Transaction tr = db.TransactionManager.StartTransaction()) {
+              BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+              var modelSpace = (BlockTableRecord)
+                tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+              BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+              DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+              foreach (DynamicBlockReferenceProperty prop in pc) {
+                if (prop.PropertyName == "id") {
+                  prop.Value = GUID;
+                }
+                if (prop.PropertyName == "gmep_plumbing_fixture_demand" && selectedCatalogItem != null) {
+                  prop.Value = (double)selectedCatalogItem.FixtureDemand;
+                }
+                if (prop.PropertyName == "gmep_plumbing_fixture_hot_demand" && selectedCatalogItem != null) {
+                  prop.Value = (double)selectedCatalogItem.HotDemand;
+                }
+                if (prop.PropertyName == "base_point_id") {
+                  prop.Value = basePointId;
+                }
+                if (prop.PropertyName == "type_abbreviation") {
+                  prop.Value = selectedFixtureType.Abbreviation;
+                }
+                if (prop.PropertyName == "catalog_id" && selectedCatalogItem != null) {
+                  prop.Value = selectedCatalogItem.Id;
+                }
+                if (prop.PropertyName == "flow_type_id") {
+                  prop.Value = flowTypeId;
+                }
+              }
+              int catalogId = selectedCatalogItem != null ? selectedCatalogItem.Id : 0;
+              PlumbingFixture fixture = new PlumbingFixture(
+                GUID,
+                projectId,
+                point,
+                rotation,
+                catalogId,
+                selectedFixtureType.Abbreviation,
+                0,
+                basePointId,
+                blockName,
+                flowTypeId
+              );
+              foreach (DynamicBlockReferenceProperty prop in pc) {
+                if (prop.PropertyName == "number") {
+                  number = DetermineFixtureNumber(fixture);
+                  prop.Value = number;
+                }
+              }
+              tr.Commit();
+            }
+            int catalogId2 = selectedCatalogItem != null ? selectedCatalogItem.Id : 0;
+            plumbingFixture = new PlumbingFixture(
+              GUID,
+              projectId,
+              point,
+              rotation,
+              catalogId2,
+              selectedFixtureType.Abbreviation,
+              number,
+              basePointId,
+              blockName,
+              flowTypeId
+            );
+
+            if (blockName == "GMEP DRAIN") {
+              PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
+              pko.Keywords.Add("Ceiling");
+              pko.Keywords.Add("Roof");
+              pko.Keywords.Add("None", "No Vent Needed", "No Vent Needed");
+              pko.AllowNone = false;
+              PromptResult res = ed.GetKeywords(pko);
+              ed.WriteMessage("\nYou selected: " + res.StringResult);
+              if (res.Status != PromptStatus.OK) {
+                ed.WriteMessage("\nCommand cancelled.");
+                routeHeightDisplay.Disable();
+                return;
+              }
+              Dictionary<string, PlumbingVerticalRoute> ventRoutes = null;
+              if (res.StringResult == "None") {
+                continue;
+              }
+              if (res.StringResult == "Ceiling") {
+                ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "UpToCeiling");
+              }
+              else if (res.StringResult == "Roof") {
+                List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
+                PlumbingPlanBasePoint activeBasePoint = basePoints.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
+                List<PlumbingPlanBasePoint> aboveBasePoints = basePoints.Where(bp => bp.Floor >= activeBasePoint.Floor && bp.ViewportId == activeBasePoint.ViewportId).ToList();
+                PlumbingPlanBasePoint highestFloorBasePoint = aboveBasePoints
+                .OrderByDescending(bp => bp.Floor)
+                .FirstOrDefault();
+
+                ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, "UpToCeiling", null, highestFloorBasePoint.CeilingHeight - highestFloorBasePoint.FloorHeight);
+                if (highestFloorBasePoint.Floor > CADObjectCommands.ActiveFloor) {
+                  PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
+                  ZoomToPoint(ed, startRoute.Position);
+                }
+              }
+              if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
+                ed.WriteMessage("\nError: Could not find vent route for base point.");
+                routeHeightDisplay.Disable();
+                return;
+              }
+              Point3d ventPoint = ventRoutes[CADObjectCommands.ActiveBasePointId].Position;
+              ventPoint = new Point3d(ventPoint.X, ventPoint.Y, point.Z);
+              double shortenBy = 1.5;
+              Vector3d direction = point - ventPoint;
+              double length = direction.Length;
+
+              Point3d newEndPoint = ventPoint;
+              Point3d newStartPoint = point;
+              if (length > 0) {
+                Vector3d offset = direction.GetNormal() * shortenBy;
+                newEndPoint = ventPoint + offset;
+                newStartPoint = point - offset;
+              }
+
+              SpecializedHorizontalRoute(
+                  newStartPoint, newEndPoint, "Waste", "", routeHeight
+              );
+            }
+          }
+          catch (System.Exception ex) {
+            ed.WriteMessage("FIxture Error - " + ex.ToString());
+            routeHeightDisplay.Disable();
+            Console.WriteLine(ex.ToString());
+          }
+        }
+        MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
+      }
+      routeHeightDisplay.Disable();
+    }
     public void CreateCenterLineRoute(Point3d addPoint, double rotation, string type, string pipeType, double height) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
