@@ -3705,7 +3705,16 @@ namespace GMEPPlumbing
               PlumbingVerticalRoute route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
               double offsetDistance = 2.125;
 
-              List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward");
+              CircleStartPointPreviewJig jig = new CircleStartPointPreviewJig(route.Position, 1.5);
+              PromptResult jigResult = ed.Drag(jig);
+              if (jigResult.Status != PromptStatus.OK) {
+                ed.WriteMessage("\nCommand cancelled.");
+                routeHeightDisplay.Disable();
+                return;
+              }
+              Point3d firstPoint = jig.ProjectedPoint;
+
+              List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint);
               foreach (PlumbingHorizontalRoute r in routes) {
                 if (r == routes.Last()) {
                   Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
