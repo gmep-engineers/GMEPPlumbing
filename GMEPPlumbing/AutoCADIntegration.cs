@@ -152,7 +152,7 @@ namespace GMEPPlumbing
       double routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
       HorizontalRoute(-1);
     }
-    public List<PlumbingHorizontalRoute> HorizontalRoute(double? routeHeight = null, string result = null) {
+    public List<PlumbingHorizontalRoute> HorizontalRoute(double? routeHeight = null, string result = null, bool hasArrows = true, string direction = null) {
 
       List<PlumbingHorizontalRoute> horizontalRoutes = new List<PlumbingHorizontalRoute>();
       string BasePointId = CADObjectCommands.GetActiveView();
@@ -238,32 +238,33 @@ namespace GMEPPlumbing
           }
         }
       }
-     /* else if (result == "Gas") {
-        PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
-        pko1.Keywords.Add("Copper", "Semi-Rigid Copper Tubing", "Semi-Rigid Copper Tubing");
-        pko1.Keywords.Add("Metal", "Schedule 40 Metallic Pipe", "Schedule 40 Metallic Pipe");
-        pko1.Keywords.Add("Steel", "Corrugated Stainless Steel Tubing", "Corrugated Stainless Steel Tubing");
-        pko1.Keywords.Add("Plastic","Polyethylene Plastic Pipe", "Polyethylene Plastic Pipe");
-        PromptResult pr1 = ed.GetKeywords(pko1);
-        if (pr1.Status != PromptStatus.OK) {
+      /* else if (result == "Gas") {
+         PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
+         pko1.Keywords.Add("Copper", "Semi-Rigid Copper Tubing", "Semi-Rigid Copper Tubing");
+         pko1.Keywords.Add("Metal", "Schedule 40 Metallic Pipe", "Schedule 40 Metallic Pipe");
+         pko1.Keywords.Add("Steel", "Corrugated Stainless Steel Tubing", "Corrugated Stainless Steel Tubing");
+         pko1.Keywords.Add("Plastic","Polyethylene Plastic Pipe", "Polyethylene Plastic Pipe");
+         PromptResult pr1 = ed.GetKeywords(pko1);
+         if (pr1.Status != PromptStatus.OK) {
+           ed.WriteMessage("\nCommand cancelled.");
+           return;
+         }
+         pipeType = pr1.StringResult;
+       }*/
+
+
+
+      if (direction == null) {
+        PromptKeywordOptions pko2 = new PromptKeywordOptions("\nForward or Backward?");
+        pko2.Keywords.Add("Forward");
+        pko2.Keywords.Add("Backward");
+        PromptResult pr2 = ed.GetKeywords(pko2);
+        if (pr2.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
-          return;
+          return horizontalRoutes;
         }
-        pipeType = pr1.StringResult;
-      }*/
-    
-
-
-
-      PromptKeywordOptions pko2 = new PromptKeywordOptions("\nForward or Backward?");
-      pko2.Keywords.Add("Forward");
-      pko2.Keywords.Add("Backward");
-      PromptResult pr2 = ed.GetKeywords(pko2);
-      if (pr2.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nCommand cancelled.");
-        return horizontalRoutes;
+        direction = pr2.StringResult;
       }
-      string direction = pr2.StringResult;
 
       if (routeHeight == null) {
         if (result != "Waste" && result != "GreaseWaste") {
@@ -377,7 +378,9 @@ namespace GMEPPlumbing
       
       //routeGUIDS.Add(LineGUID2);
       AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType, slope);
-      AddArrowsToLine(addedLineId2, LineGUID2);
+      if (hasArrows) {
+        AddArrowsToLine(addedLineId2, LineGUID2);
+      }
       PlumbingHorizontalRoute firstRoute = new PlumbingHorizontalRoute(
         LineGUID2,
         ProjectId,
@@ -509,7 +512,9 @@ namespace GMEPPlumbing
         
         //routeGUIDS.Add(LineGUID);
         AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType, slope);
-        AddArrowsToLine(addedLineId, LineGUID);
+        if (hasArrows) {
+          AddArrowsToLine(addedLineId, LineGUID);
+        }
         PlumbingHorizontalRoute nextRoute = new PlumbingHorizontalRoute(
           LineGUID,
           ProjectId,
@@ -3799,7 +3804,7 @@ namespace GMEPPlumbing
 
                 double offsetDistance = 2.125;
 
-                List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type);
+                List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward");
                 foreach (PlumbingHorizontalRoute r in routes) {
                   if (r == routes.Last()) {
                     Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
@@ -4014,7 +4019,7 @@ namespace GMEPPlumbing
               PlumbingVerticalRoute route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
               double offsetDistance = 2.125;
 
-              List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type);
+              List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward");
               foreach (PlumbingHorizontalRoute r in routes) {
                 if (r == routes.Last()) {
                   Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
