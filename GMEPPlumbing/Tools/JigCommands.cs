@@ -180,6 +180,71 @@ namespace GMEPPlumbing
       return a + ab * t;
     }
   }
+  public class CircleStartPointPreviewJig : DrawJig {
+    private Point3d _center;
+    private double _radius;
+    private Point3d _mousePoint;
+    public Point3d ProjectedPoint { get; private set; }
+
+    public CircleStartPointPreviewJig(Point3d center, double radius) {
+      _center = center;
+      _radius = radius;
+      _mousePoint = center;
+      ProjectedPoint = center + new Vector3d(radius, 0, 0); // Default to right
+    }
+
+    protected override bool WorldDraw(WorldDraw draw) {
+      Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+      ViewTableRecord view = ed.GetCurrentView();
+
+      double unitsPerPixel = view.Width / 6000;
+      double markerRadius = unitsPerPixel * 10;
+
+      // Draw an "X" at the projected point
+      Point3d p1 = ProjectedPoint + new Vector3d(-markerRadius, -markerRadius, 0);
+      Point3d p2 = ProjectedPoint + new Vector3d(markerRadius, markerRadius, 0);
+      Point3d p3 = ProjectedPoint + new Vector3d(-markerRadius, markerRadius, 0);
+      Point3d p4 = ProjectedPoint + new Vector3d(markerRadius, -markerRadius, 0);
+
+      Line line1 = new Line(p1, p2);
+      Line line2 = new Line(p3, p4);
+
+      draw.Geometry.Draw(line1);
+      draw.Geometry.Draw(line2);
+
+      line1.Dispose();
+      line2.Dispose();
+
+      return true;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts) {
+      JigPromptPointOptions opts = new JigPromptPointOptions(
+          "\nMove cursor to preview point on circle, click to select:"
+      );
+      opts.UserInputControls =
+          UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+      PromptPointResult res = prompts.AcquirePoint(opts);
+
+      if (res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
+      if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+        return SamplerStatus.NoChange;
+
+      _mousePoint = new Point3d(res.Value.X, res.Value.Y, _center.Z);
+      ProjectedPoint = ProjectPointToCircle(_center, _radius, _mousePoint);
+      return SamplerStatus.OK;
+    }
+
+    public static Point3d ProjectPointToCircle(Point3d center, double radius, Point3d p) {
+      Vector3d dir = (p - center).GetNormal();
+      if (dir.Length < Tolerance.Global.EqualPoint)
+        dir = new Vector3d(1, 0, 0); // Default direction if mouse is at center
+      dir = dir.GetNormal();
+      return center + dir * radius;
+    }
+  }
 
   public class PolyLineJig : DrawJig
   {

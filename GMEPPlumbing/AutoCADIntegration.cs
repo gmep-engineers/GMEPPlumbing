@@ -152,7 +152,7 @@ namespace GMEPPlumbing
       double routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
       HorizontalRoute(-1);
     }
-    public List<PlumbingHorizontalRoute> HorizontalRoute(double? routeHeight = null, string result = null, bool hasArrows = true, string direction = null) {
+    public List<PlumbingHorizontalRoute> HorizontalRoute(double? routeHeight = null, string result = null, bool hasArrows = true, string direction = null, Point3d? startPoint = null) {
 
       List<PlumbingHorizontalRoute> horizontalRoutes = new List<PlumbingHorizontalRoute>();
       string BasePointId = CADObjectCommands.GetActiveView();
@@ -335,17 +335,20 @@ namespace GMEPPlumbing
         }
       }
 
+      if (startPoint == null) {
+        PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
+        ppo2.AllowNone = false;
+        PromptPointResult ppr2 = ed.GetPoint(ppo2);
+        if (ppr2.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          routeHeightDisplay.Disable();
+          return horizontalRoutes;
+        }
 
-      PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
-      ppo2.AllowNone = false;
-      PromptPointResult ppr2 = ed.GetPoint(ppo2);
-      if (ppr2.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nCommand cancelled.");
-        routeHeightDisplay.Disable();
-        return horizontalRoutes;
+        startPoint = ppr2.Value;
       }
+      Point3d startPointLocation2 = (Point3d)startPoint;
 
-      Point3d startPointLocation2 = ppr2.Value;
       ObjectId addedLineId2 = ObjectId.Null;
       string LineGUID2 = Guid.NewGuid().ToString();
 
@@ -3545,7 +3548,16 @@ namespace GMEPPlumbing
 
                 double offsetDistance = 2.125;
 
-                List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward");
+                CircleStartPointPreviewJig jig = new CircleStartPointPreviewJig(route.Position, 1.5);
+                PromptResult jigResult = ed.Drag(jig);
+                if (jigResult.Status != PromptStatus.OK) {
+                  ed.WriteMessage("\nCommand cancelled.");
+                  routeHeightDisplay.Disable();
+                  return;
+                }
+                Point3d firstPoint = jig.ProjectedPoint;
+
+                List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint);
                 foreach (PlumbingHorizontalRoute r in routes) {
                   if (r == routes.Last()) {
                     Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
