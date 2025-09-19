@@ -277,6 +277,9 @@ namespace GMEPPlumbing
     }
 
     [CommandMethod("SetActiveView")]
+    public static void SetActiveViewMethod() {
+      SetActiveView();
+    }
     public static void SetActiveView(string message = "\nPick View: ") {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
