@@ -3617,142 +3617,75 @@ namespace GMEPPlumbing
                 );
                 Vector3d direction2 = new Vector3d(anotherNewPoint.X - midPoint.X, anotherNewPoint.Y - midPoint.Y, 0);
                 Vector3d offset2 = direction2.GetNormal() * offsetDistance2;
-                if (route.IsUp) {
-                  SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, anotherNewPoint, midPoint);
-                  SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, newPoint, StartPos);
-
-                  SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, StartPos, newPoint);
-                  Point3d fixturePos = new Point3d(anotherNewPoint.X - offset2.X, anotherNewPoint.Y - offset2.Y, anotherNewPoint.Z);
-                  SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, midPoint, fixturePos);
-
-                  using (Transaction tr = db.TransactionManager.StartTransaction()) {
-                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
-                    BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-
-                    //Place the fixture block
-                    BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
-                    br.Rotation = route.Rotation;
-                    modelSpace.AppendEntity(br);
-                    tr.AddNewlyCreatedDBObject(br, true);
-                    blockId = br.Id;
-                    point = br.Position;
-                    rotation = br.Rotation;
 
 
-                    Circle circle = new Circle(newPoint, Vector3d.ZAxis, 1);
-                    circle.Layer = "P-DOMW-CWTR";
-                    modelSpace.AppendEntity(circle);
-                    tr.AddNewlyCreatedDBObject(circle, true);
+                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, anotherNewPoint, midPoint);
+                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, newPoint, StartPos);
 
-                    Hatch hatch = new Hatch();
-                    hatch.SetDatabaseDefaults();
-                    hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
-                    hatch.Associative = false;
-                    hatch.Layer = "P-DOMW-CWTR";
-                    modelSpace.AppendEntity(hatch);
-                    tr.AddNewlyCreatedDBObject(hatch, true);
-                    ObjectIdCollection ids = new ObjectIdCollection { circle.ObjectId };
-                    hatch.AppendLoop(HatchLoopTypes.Default, ids);
-                    hatch.Elevation = newPoint.Z;
+                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, StartPos, newPoint);
+                Point3d fixturePos = new Point3d(anotherNewPoint.X - offset2.X, anotherNewPoint.Y - offset2.Y, anotherNewPoint.Z - (route.Length * 12));
+                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, midPoint, fixturePos);
 
-                    hatch.EvaluateHatch(true);
-                    circle.Erase();
+                using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
 
-                    //placing the line :3
-                    Vector3d routeVec = newPoint - StartPos;
-                    double routeLength = routeVec.Length;
-                    if (routeLength == 0) return;
+                  //Place the fixture block
+                  BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                  br.Rotation = route.Rotation;
+                  modelSpace.AppendEntity(br);
+                  tr.AddNewlyCreatedDBObject(br, true);
+                  blockId = br.Id;
+                  point = br.Position;
+                  rotation = br.Rotation;
 
-                    Vector3d normal = new Vector3d(-routeVec.Y, routeVec.X, 0).GetNormal();
+                  Point3d newPos = new Point3d(newPoint.X, newPoint.Y, newPoint.Z - (route.Length * 12));
+                  Circle circle = new Circle(newPos, Vector3d.ZAxis, 1);
+                  modelSpace.AppendEntity(circle);
+                  tr.AddNewlyCreatedDBObject(circle, true);
 
-                    double offsetDistance3 = 4.0;
-                    Point3d offsetMid = newPoint - (normal * offsetDistance3);
-                    if (res.StringResult == "Right") {
-                      offsetMid = newPoint + (normal * offsetDistance3);
-                    }
+                  Hatch hatch = new Hatch();
+                  hatch.SetDatabaseDefaults();
+                  hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
+                  hatch.Associative = false;
+                  hatch.Layer = "P-DOMW-CWTR";
+                  hatch.Elevation = newPos.Z;
 
-                    Vector3d halfVec = routeVec.GetNormal() * (routeLength / 4.0);
-                    Point3d newStart = offsetMid - halfVec;
-                    Point3d newEnd = offsetMid + halfVec;
+                  modelSpace.AppendEntity(hatch);
+                  tr.AddNewlyCreatedDBObject(hatch, true);
 
-                    Line line = new Line(newStart, newEnd);
-                    line.Layer = "P-DOMW-CWTR";
-                    modelSpace.AppendEntity(line);
-                    tr.AddNewlyCreatedDBObject(line, true);
+                  ObjectIdCollection ids = new ObjectIdCollection { circle.ObjectId };
+                  hatch.AppendLoop(HatchLoopTypes.Default, ids);
+                  hatch.EvaluateHatch(true);
+                  circle.Erase();
 
-                    tr.Commit();
+                  //placing the line :3
+                  Vector3d routeVec = newPoint - StartPos;
+                  double routeLength = routeVec.Length;
+                  if (routeLength == 0) return;
+
+                  Vector3d normal = new Vector3d(-routeVec.Y, routeVec.X, 0).GetNormal();
+
+                  double offsetDistance3 = 4.0;
+                  Point3d offsetMid = newPoint - (normal * offsetDistance3);
+                  if (res.StringResult == "Right") {
+                    offsetMid = newPoint + (normal * offsetDistance3);
                   }
-                }
-                else {
-                  SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, anotherNewPoint, midPoint);
-                  SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, newPoint, StartPos);
 
-                  SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, StartPos, newPoint);
-                  Point3d fixturePos = new Point3d(anotherNewPoint.X - offset2.X, anotherNewPoint.Y - offset2.Y, anotherNewPoint.Z - (route.Length * 12));
-                  SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, midPoint, fixturePos);
+                  Vector3d halfVec = routeVec.GetNormal() * (routeLength / 4.0);
 
-                  using (Transaction tr = db.TransactionManager.StartTransaction()) {
-                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
-                    BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                  Point3d newStart = offsetMid - halfVec;
+                  Point3d newEnd = offsetMid + halfVec;
+                  newStart = new Point3d(newStart.X, newStart.Y, newStart.Z - (route.Length * 12));
+                  newEnd = new Point3d(newEnd.X, newEnd.Y, newEnd.Z - (route.Length * 12));
 
-                    //Place the fixture block
-                    BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
-                    br.Rotation = route.Rotation;
-                    modelSpace.AppendEntity(br);
-                    tr.AddNewlyCreatedDBObject(br, true);
-                    blockId = br.Id;
-                    point = br.Position;
-                    rotation = br.Rotation;
+                  Line line = new Line(newStart, newEnd);
+                  line.Layer = "P-DOMW-CWTR";
+                  modelSpace.AppendEntity(line);
+                  tr.AddNewlyCreatedDBObject(line, true);
 
-                    Point3d newPos = new Point3d(newPoint.X, newPoint.Y, newPoint.Z - (route.Length * 12));
-                    Circle circle = new Circle(newPos, Vector3d.ZAxis, 1);
-                    modelSpace.AppendEntity(circle);
-                    tr.AddNewlyCreatedDBObject(circle, true);
-
-                    Hatch hatch = new Hatch();
-                    hatch.SetDatabaseDefaults();
-                    hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
-                    hatch.Associative = false;
-                    hatch.Layer = "P-DOMW-CWTR";
-                    hatch.Elevation = newPos.Z;
-
-                    modelSpace.AppendEntity(hatch);
-                    tr.AddNewlyCreatedDBObject(hatch, true);
-
-                    ObjectIdCollection ids = new ObjectIdCollection { circle.ObjectId };
-                    hatch.AppendLoop(HatchLoopTypes.Default, ids);
-                    hatch.EvaluateHatch(true);
-                    circle.Erase();
-
-                    //placing the line :3
-                    Vector3d routeVec = newPoint - StartPos;
-                    double routeLength = routeVec.Length;
-                    if (routeLength == 0) return;
-
-                    Vector3d normal = new Vector3d(-routeVec.Y, routeVec.X, 0).GetNormal();
-
-                    double offsetDistance3 = 4.0;
-                    Point3d offsetMid = newPoint - (normal * offsetDistance3);
-                    if (res.StringResult == "Right") {
-                      offsetMid = newPoint + (normal * offsetDistance3);
-                    }
-
-                    Vector3d halfVec = routeVec.GetNormal() * (routeLength / 4.0);
-
-                    Point3d newStart = offsetMid - halfVec;
-                    Point3d newEnd = offsetMid + halfVec;
-                    newStart = new Point3d(newStart.X, newStart.Y, newStart.Z - (route.Length * 12));
-                    newEnd = new Point3d(newEnd.X, newEnd.Y, newEnd.Z - (route.Length * 12));
-
-                    Line line = new Line(newStart, newEnd);
-                    line.Layer = "P-DOMW-CWTR";
-                    modelSpace.AppendEntity(line);
-                    tr.AddNewlyCreatedDBObject(line, true);
-
-                    tr.Commit();
-                  }
+                  tr.Commit();
                 }
               }
             }
