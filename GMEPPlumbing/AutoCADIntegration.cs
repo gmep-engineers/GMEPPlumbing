@@ -3677,7 +3677,7 @@ namespace GMEPPlumbing
         plumbingFixtureTypes.ForEach(t => {
           if (allPlumbingFixtureCatalogItems.ContainsKey(t.Id)) {
             List<PlumbingFixtureCatalogItem> catalogItems = allPlumbingFixtureCatalogItems[t.Id];
-            if (CADObjectCommands.ActiveViewTypes.Contains("Water") && !catalogItems.All(item => string.IsNullOrEmpty(item.WaterBlockNames)) && !catalogItems.All(item => !item.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") && !item.WaterBlockNames.Contains("GMEP CW FIXTURE POINT")) && ((CADObjectCommands.IsResidential && !catalogItems.All(item => item.Residential == false)) || (!CADObjectCommands.IsResidential && !catalogItems.All(item => item.Commercial == false)))) {
+            if ((CADObjectCommands.ActiveViewTypes.Contains("Water") || CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) && !catalogItems.All(item => string.IsNullOrEmpty(item.WaterBlockNames)) && !catalogItems.All(item => !item.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") && !item.WaterBlockNames.Contains("GMEP CW FIXTURE POINT")) && ((CADObjectCommands.IsResidential && !catalogItems.All(item => item.Residential == false)) || (!CADObjectCommands.IsResidential && !catalogItems.All(item => item.Commercial == false)))) {
               keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
             }
           }
@@ -3707,7 +3707,7 @@ namespace GMEPPlumbing
         keywordOptions = new PromptKeywordOptions("");
         keywordOptions.Message = "\nSelect catalog item:";
         plumbingFixtureCatalogItems.ForEach(i => {
-          if (CADObjectCommands.ActiveViewTypes.Contains("Water") && i.WaterBlockNames != "" && (i.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") || i.WaterBlockNames.Contains("GMEP CW FIXTURE POINT")) && ((CADObjectCommands.IsResidential && i.Residential == true) || (!CADObjectCommands.IsResidential && i.Commercial == true))) {
+          if ((CADObjectCommands.ActiveViewTypes.Contains("Water") || CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) && i.WaterBlockNames != "" && (i.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") || i.WaterBlockNames.Contains("GMEP CW FIXTURE POINT")) && ((CADObjectCommands.IsResidential && i.Residential == true) || (!CADObjectCommands.IsResidential && i.Commercial == true))) {
             keywordOptions.Keywords.Add(i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model);
           }
         });
