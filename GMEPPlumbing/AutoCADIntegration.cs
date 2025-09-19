@@ -152,15 +152,16 @@ namespace GMEPPlumbing
       double routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
       HorizontalRoute(-1);
     }
-    public void HorizontalRoute(double? routeHeight = null, string result = null) {
+    public List<PlumbingHorizontalRoute> HorizontalRoute(double? routeHeight = null, string result = null) {
       string BasePointId = CADObjectCommands.GetActiveView();
 
       var doc = Application.DocumentManager.MdiActiveDocument;
-      if (doc == null) return;
+      if (doc == null) return null;
 
       var db = doc.Database;
       var ed = doc.Editor;
-
+      
+      List<PlumbingHorizontalRoute> horizontalRoutes = new List<PlumbingHorizontalRoute>();
 
       //List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
@@ -183,7 +184,7 @@ namespace GMEPPlumbing
         PromptResult pr = ed.GetKeywords(pko);
         if (pr.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
-          return;
+          return null;
         }
         result = pr.StringResult;
       }
@@ -213,7 +214,7 @@ namespace GMEPPlumbing
              break;*/
         default:
           ed.WriteMessage("\nInvalid route type selected.");
-          return;
+          return null;
       }
       string pipeType = "";
       if (result == "ColdWater" || result == "HotWater") {
@@ -226,7 +227,7 @@ namespace GMEPPlumbing
           PromptResult pr1 = ed.GetKeywords(pko1);
           if (pr1.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
-            return;
+            return null;
           }
           pipeType = pr1.StringResult;
         }
@@ -259,7 +260,7 @@ namespace GMEPPlumbing
       PromptResult pr2 = ed.GetKeywords(pko2);
       if (pr2.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
-        return;
+        return null;
       }
       string direction = pr2.StringResult;
 
@@ -279,7 +280,7 @@ namespace GMEPPlumbing
             PromptDoubleResult pdr = ed.GetDouble(pdo);
             if (pdr.Status == PromptStatus.Cancel) {
               ed.WriteMessage("\nCommand cancelled.");
-              return;
+              return null;
             }
             if (pdr.Status != PromptStatus.OK) {
               ed.WriteMessage("\nInvalid input. Please enter a valid number.");
@@ -320,7 +321,7 @@ namespace GMEPPlumbing
       if (ppr2.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
         routeHeightDisplay.Disable();
-        return;
+        return null;
       }
 
       Point3d startPointLocation2 = ppr2.Value;
@@ -333,7 +334,7 @@ namespace GMEPPlumbing
       if (routeResult.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
         routeHeightDisplay.Disable();
-        return;
+        return null;
       }
 
       Point3d endPointLocation2 = routeJig.line.EndPoint;
@@ -362,7 +363,7 @@ namespace GMEPPlumbing
         if (pr3.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
           routeHeightDisplay.Disable();
-          return;
+          return null;
         }
         if (pr3.StringResult == "1%") {
           slope = 0.01;
@@ -374,6 +375,17 @@ namespace GMEPPlumbing
       //routeGUIDS.Add(LineGUID2);
       AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType, slope);
       AddArrowsToLine(addedLineId2, LineGUID2);
+      PlumbingHorizontalRoute firstRoute = new PlumbingHorizontalRoute(
+        LineGUID2,
+        ProjectId,
+        result,
+        startPointLocation2,
+        endPointLocation2,
+        BasePointId,
+        pipeType,
+        slope
+      );
+      horizontalRoutes.Add(firstRoute);
 
       while (true) {
         //Select a starting point/object
@@ -385,11 +397,12 @@ namespace GMEPPlumbing
         if (per.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
           routeHeightDisplay.Disable();
-          return;
+          return null;
         }
         ObjectId basePointId = per.ObjectId;
 
         Point3d startPointLocation = Point3d.Origin;
+        Point3d endPointLocation3 = Point3d.Origin;
         ObjectId addedLineId = ObjectId.Null;
 
         string LineGUID = Guid.NewGuid().ToString();
@@ -404,7 +417,7 @@ namespace GMEPPlumbing
             ResultBuffer xData = basePointLine.GetXDataForApplication(XRecordKey);
             if (xData == null || xData.AsArray().Length < 5) {
               ed.WriteMessage("\nSelected line does not have the required XData.");
-              return;
+              return null;
             }
             TypedValue[] values = xData.AsArray();
             string basePointGuid = values[2].Value as string;
@@ -422,14 +435,12 @@ namespace GMEPPlumbing
 
           HorizontalRouteJig routeJig2 = new HorizontalRouteJig(startPointLocation, layer);
 
-          Point3d endPointLocation3 = Point3d.Origin;
-
           while (true) {
             PromptResult routeResult2 = ed.Drag(routeJig2);
             if (routeResult2.Status != PromptStatus.OK) {
               ed.WriteMessage("\nCommand cancelled.");
               routeHeightDisplay.Disable();
-              return;
+              return null;
             }
             Point3d endPoint = routeJig2.line.EndPoint;
 
@@ -479,7 +490,7 @@ namespace GMEPPlumbing
           if (pr3.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
             routeHeightDisplay.Disable();
-            return;
+            return null;
           }
           if (pr3.StringResult == "1%") {
             slope = 0.01;
@@ -491,8 +502,20 @@ namespace GMEPPlumbing
         //routeGUIDS.Add(LineGUID);
         AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType, slope);
         AddArrowsToLine(addedLineId, LineGUID);
+        PlumbingHorizontalRoute nextRoute = new PlumbingHorizontalRoute(
+          LineGUID,
+          ProjectId,
+          result,
+          startPointLocation,
+          endPointLocation3,
+          BasePointId,
+          pipeType,
+          slope
+        );
+        horizontalRoutes.Add(nextRoute);
       }
       routeHeightDisplay.Disable();
+      return horizontalRoutes;
     }
     public async void SpecializedHorizontalRoute(string type, string pipeType, double height, Point3d startPoint, Point3d? endPoint = null) {
       var doc = Application.DocumentManager.MdiActiveDocument;
