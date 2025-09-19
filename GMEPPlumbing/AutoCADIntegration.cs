@@ -153,15 +153,16 @@ namespace GMEPPlumbing
       HorizontalRoute(-1);
     }
     public List<PlumbingHorizontalRoute> HorizontalRoute(double? routeHeight = null, string result = null) {
+
+      List<PlumbingHorizontalRoute> horizontalRoutes = new List<PlumbingHorizontalRoute>();
       string BasePointId = CADObjectCommands.GetActiveView();
 
       var doc = Application.DocumentManager.MdiActiveDocument;
-      if (doc == null) return null;
+      if (doc == null) return horizontalRoutes;
 
       var db = doc.Database;
       var ed = doc.Editor;
-      
-      List<PlumbingHorizontalRoute> horizontalRoutes = new List<PlumbingHorizontalRoute>();
+ 
 
       //List<string> routeGUIDS = new List<string>();
       string layer = "Defpoints";
@@ -184,7 +185,7 @@ namespace GMEPPlumbing
         PromptResult pr = ed.GetKeywords(pko);
         if (pr.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
-          return null;
+          return horizontalRoutes;
         }
         result = pr.StringResult;
       }
@@ -214,7 +215,7 @@ namespace GMEPPlumbing
              break;*/
         default:
           ed.WriteMessage("\nInvalid route type selected.");
-          return null;
+          return horizontalRoutes;
       }
       string pipeType = "";
       if (result == "ColdWater" || result == "HotWater") {
@@ -227,7 +228,7 @@ namespace GMEPPlumbing
           PromptResult pr1 = ed.GetKeywords(pko1);
           if (pr1.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
-            return null;
+            return horizontalRoutes;
           }
           pipeType = pr1.StringResult;
         }
@@ -260,7 +261,7 @@ namespace GMEPPlumbing
       PromptResult pr2 = ed.GetKeywords(pko2);
       if (pr2.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
-        return null;
+        return horizontalRoutes;
       }
       string direction = pr2.StringResult;
 
@@ -280,7 +281,7 @@ namespace GMEPPlumbing
             PromptDoubleResult pdr = ed.GetDouble(pdo);
             if (pdr.Status == PromptStatus.Cancel) {
               ed.WriteMessage("\nCommand cancelled.");
-              return null;
+              return horizontalRoutes;
             }
             if (pdr.Status != PromptStatus.OK) {
               ed.WriteMessage("\nInvalid input. Please enter a valid number.");
@@ -314,6 +315,25 @@ namespace GMEPPlumbing
       var routeHeightDisplay = new RouteHeightDisplay(ed);
       routeHeightDisplay.Enable((double)routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
+      double slope = 0;
+      if (result == "Waste" || result == "Vent" || result == "GreaseWaste") {
+        PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
+        pko3.Keywords.Add("1%");
+        pko3.Keywords.Add("2%");
+        PromptResult pr3 = ed.GetKeywords(pko3);
+        if (pr3.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          routeHeightDisplay.Disable();
+          return horizontalRoutes;
+        }
+        if (pr3.StringResult == "1%") {
+          slope = 0.01;
+        }
+        else if (pr3.StringResult == "2%") {
+          slope = 0.02;
+        }
+      }
+
 
       PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
       ppo2.AllowNone = false;
@@ -321,7 +341,7 @@ namespace GMEPPlumbing
       if (ppr2.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
         routeHeightDisplay.Disable();
-        return null;
+        return horizontalRoutes;
       }
 
       Point3d startPointLocation2 = ppr2.Value;
@@ -334,7 +354,7 @@ namespace GMEPPlumbing
       if (routeResult.Status != PromptStatus.OK) {
         ed.WriteMessage("\nCommand cancelled.");
         routeHeightDisplay.Disable();
-        return null;
+        return horizontalRoutes;
       }
 
       Point3d endPointLocation2 = routeJig.line.EndPoint;
@@ -354,24 +374,7 @@ namespace GMEPPlumbing
         addedLineId2 = line.ObjectId;
         tr2.Commit();
       }
-      double slope = 0;
-      if (result == "Waste" || result == "Vent" || result == "GreaseWaste") {
-        PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
-        pko3.Keywords.Add("1%");
-        pko3.Keywords.Add("2%");
-        PromptResult pr3 = ed.GetKeywords(pko3);
-        if (pr3.Status != PromptStatus.OK) {
-          ed.WriteMessage("\nCommand cancelled.");
-          routeHeightDisplay.Disable();
-          return null;
-        }
-        if (pr3.StringResult == "1%") {
-          slope = 0.01;
-        }
-        else if (pr3.StringResult == "2%") {
-          slope = 0.02;
-        }
-      }
+      
       //routeGUIDS.Add(LineGUID2);
       AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType, slope);
       AddArrowsToLine(addedLineId2, LineGUID2);
@@ -388,6 +391,26 @@ namespace GMEPPlumbing
       horizontalRoutes.Add(firstRoute);
 
       while (true) {
+
+        slope = 0;
+        if (result == "Waste" || result == "Vent" || result == "GreaseWaste") {
+          PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
+          pko3.Keywords.Add("1%");
+          pko3.Keywords.Add("2%");
+          PromptResult pr3 = ed.GetKeywords(pko3);
+          if (pr3.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            routeHeightDisplay.Disable();
+            break;
+          }
+          if (pr3.StringResult == "1%") {
+            slope = 0.01;
+          }
+          else if (pr3.StringResult == "2%") {
+            slope = 0.02;
+          }
+        }
+
         //Select a starting point/object
         PromptEntityOptions peo = new PromptEntityOptions("\nSelect a line");
         peo.SetRejectMessage("\nSelect a line");
@@ -397,8 +420,10 @@ namespace GMEPPlumbing
         if (per.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
           routeHeightDisplay.Disable();
-          return null;
+          break;
         }
+
+       
         ObjectId basePointId = per.ObjectId;
 
         Point3d startPointLocation = Point3d.Origin;
@@ -417,7 +442,7 @@ namespace GMEPPlumbing
             ResultBuffer xData = basePointLine.GetXDataForApplication(XRecordKey);
             if (xData == null || xData.AsArray().Length < 5) {
               ed.WriteMessage("\nSelected line does not have the required XData.");
-              return null;
+              continue;
             }
             TypedValue[] values = xData.AsArray();
             string basePointGuid = values[2].Value as string;
@@ -440,7 +465,7 @@ namespace GMEPPlumbing
             if (routeResult2.Status != PromptStatus.OK) {
               ed.WriteMessage("\nCommand cancelled.");
               routeHeightDisplay.Disable();
-              return null;
+              return horizontalRoutes;
             }
             Point3d endPoint = routeJig2.line.EndPoint;
 
@@ -481,24 +506,7 @@ namespace GMEPPlumbing
 
           tr.Commit();
         }
-        slope = 0;
-        if (result == "Waste" || result == "Vent" || result == "GreaseWaste") {
-          PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
-          pko3.Keywords.Add("1%");
-          pko3.Keywords.Add("2%");
-          PromptResult pr3 = ed.GetKeywords(pko3);
-          if (pr3.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nCommand cancelled.");
-            routeHeightDisplay.Disable();
-            return null;
-          }
-          if (pr3.StringResult == "1%") {
-            slope = 0.01;
-          }
-          else if (pr3.StringResult == "2%") {
-            slope = 0.02;
-          }
-        }
+        
         //routeGUIDS.Add(LineGUID);
         AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType, slope);
         AddArrowsToLine(addedLineId, LineGUID);
@@ -4028,56 +4036,33 @@ namespace GMEPPlumbing
             }
             else if (blockName == "GMEP HW FIXTURE POINT") {
               PlumbingVerticalRoute route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
-              double offsetDistance = 11.25;
-              double offsetDistance2 = 2.125;
-              double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
-              double offsetY = offsetDistance * Math.Sin(route.Rotation + (Math.PI / 2));
-              Point3d newPoint = new Point3d(
-                  route.Position.X + offsetX,
-                  route.Position.Y + offsetY,
-                  route.Position.Z
-              );
-              Vector3d direction = new Vector3d(newPoint.X - route.Position.X, newPoint.Y - route.Position.Y, 0);
-              Vector3d offset2 = direction.GetNormal() * offsetDistance2;
+              double offsetDistance = 2.125;
 
-              if (route.IsUp) {
-                SpecializedHorizontalRoute("HotWater", route.PipeType, route.StartHeight - route.Length, newPoint, route.Position);
-                Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z);
-                SpecializedHorizontalRoute("HotWater", route.PipeType, route.StartHeight, route.Position, fixturePos);
-
-                using (Transaction tr = db.TransactionManager.StartTransaction()) {
-                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
-                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-                  BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
-                  br.Rotation = route.Rotation;
-                  modelSpace.AppendEntity(br);
-                  tr.AddNewlyCreatedDBObject(br, true);
-                  blockId = br.Id;
-                  point = br.Position;
-                  rotation = br.Rotation;
-                  tr.Commit();
+              List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type);
+              foreach (PlumbingHorizontalRoute r in routes) {
+                if (r == routes.Last()) {
+                  Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
+                  Vector3d offset = direction.GetNormal() * offsetDistance;
+                  r.StartPoint = r.StartPoint + offset;
                 }
+                SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.EndPoint, r.StartPoint);
               }
-              else {
-                SpecializedHorizontalRoute("HotWater", route.PipeType, route.StartHeight, newPoint, route.Position);
-                Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
-                SpecializedHorizontalRoute("HotWater", route.PipeType, route.StartHeight - route.Length, route.Position, fixturePos);
+              Vector3d direction2 = new Vector3d(routes.Last().StartPoint.X - routes.Last().EndPoint.X, routes.Last().StartPoint.Y - routes.Last().EndPoint.Y, 0);
 
-                using (Transaction tr = db.TransactionManager.StartTransaction()) {
-                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
-                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-                  BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
-                  br.Rotation = route.Rotation;
-                  modelSpace.AppendEntity(br);
-                  tr.AddNewlyCreatedDBObject(br, true);
-                  blockId = br.Id;
-                  point = br.Position;
-                  rotation = br.Rotation;
-                  tr.Commit();
-                }
+              using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                BlockReference br = new BlockReference(routes.Last().EndPoint, btr.ObjectId);
+                br.Rotation = Math.Atan2(direction2.Y, direction2.X);
+                modelSpace.AppendEntity(br);
+                tr.AddNewlyCreatedDBObject(br, true);
+                blockId = br.Id;
+                point = br.Position;
+                rotation = br.Rotation;
+                tr.Commit();
               }
+              
             }
             else {
               if (blockName == "GMEP DRAIN") {
