@@ -22,6 +22,7 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
+using System.Security.Cryptography.X509Certificates;
 
 namespace GMEPPlumbing
 {
@@ -276,7 +277,7 @@ namespace GMEPPlumbing
     }
 
     [CommandMethod("SetActiveView")]
-    public static void SetActiveView() {
+    public static void SetActiveView(string message = "\nPick View: ") {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
@@ -339,7 +340,7 @@ namespace GMEPPlumbing
             }
           }
         }
-        PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nPick View: ");
+        PromptKeywordOptions promptOptions = new PromptKeywordOptions(message);
         foreach (var keyword in keywords) {
           promptOptions.Keywords.Add(keyword);
         }
