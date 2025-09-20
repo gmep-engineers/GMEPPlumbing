@@ -626,7 +626,7 @@ namespace GMEPPlumbing
       // Call the method with a null parameter to avoid ambiguity
       VerticalRoute();
     }
-    public Dictionary<string, PlumbingVerticalRoute> VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null, double? endFloorHeight = null) {
+    public Dictionary<string, PlumbingVerticalRoute> VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null, double? endFloorHeight = null, string message = "Vertical Route") {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return null;
 
@@ -900,7 +900,7 @@ namespace GMEPPlumbing
             tr,
             bt,
             "GMEP_PLUMBING_LINE_VERTICAL",
-            "Vertical Route",
+            message,
             out block,
             out StartUpLocation
           );
@@ -3004,7 +3004,7 @@ namespace GMEPPlumbing
 
           try {
             if (blockName == "GMEP CW FIXTURE POINT") {
-              PlumbingVerticalRoute route2 = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight).First().Value;
+              PlumbingVerticalRoute route2 = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight, null, "Vertical route down to below floor: ").First().Value;
               CircleStartPointPreviewJig circleJig = new CircleStartPointPreviewJig(route2.Position, 1.5);
               PromptResult circlePromptResult = ed.Drag(circleJig);
               if (circlePromptResult.Status != PromptStatus.OK) {
@@ -3015,7 +3015,7 @@ namespace GMEPPlumbing
               Point3d firstPoint = circleJig.ProjectedPoint;
               HorizontalRoute(0, route2.Type, false, "Forward", firstPoint);
 
-              PlumbingVerticalRoute route = VerticalRoute("ColdWater", 0, CADObjectCommands.ActiveFloor, "Up", routeHeight).First().Value;
+              PlumbingVerticalRoute route = VerticalRoute("ColdWater", 0, CADObjectCommands.ActiveFloor, "Up", routeHeight, null, "Vertical route back up to fixture height: ").First().Value;
               if (flowTypeId == 1) {
                 double offsetDistance = 11.25;
                 double offsetDistance2 = 2.125;
@@ -3162,7 +3162,7 @@ namespace GMEPPlumbing
               }
             }
             else if (blockName == "GMEP HW FIXTURE POINT") {
-              PlumbingVerticalRoute route2 = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight).First().Value;
+              PlumbingVerticalRoute route2 = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight, null, "Vertical route down to below floor: ").First().Value;
               CircleStartPointPreviewJig circleJig = new CircleStartPointPreviewJig(route2.Position, 1.5);
               PromptResult circlePromptResult = ed.Drag(circleJig);
               if (circlePromptResult.Status != PromptStatus.OK) {
@@ -3173,7 +3173,7 @@ namespace GMEPPlumbing
               Point3d firstPoint = circleJig.ProjectedPoint;
               HorizontalRoute(0, route2.Type, false, "Forward", firstPoint);
               
-              PlumbingVerticalRoute route = VerticalRoute("HotWater", 0, CADObjectCommands.ActiveFloor, "Up", routeHeight).First().Value;
+              PlumbingVerticalRoute route = VerticalRoute("HotWater", 0, CADObjectCommands.ActiveFloor, "Up", routeHeight, null, "Vertical route back up to fixture height: ").First().Value;
               
               double offsetDistance = 11.25;
               double offsetDistance2 = 2.125;
