@@ -3004,6 +3004,17 @@ namespace GMEPPlumbing
 
           try {
             if (blockName == "GMEP CW FIXTURE POINT") {
+              PlumbingVerticalRoute route2 = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight).First().Value;
+              CircleStartPointPreviewJig circleJig = new CircleStartPointPreviewJig(route2.Position, 1.5);
+              PromptResult circlePromptResult = ed.Drag(circleJig);
+              if (circlePromptResult.Status != PromptStatus.OK) {
+                ed.WriteMessage("\nCommand cancelled.");
+                routeHeightDisplay.Disable();
+                return;
+              }
+              Point3d firstPoint = circleJig.ProjectedPoint;
+              HorizontalRoute(0, route2.Type, false, "Forward", firstPoint);
+
               PlumbingVerticalRoute route = VerticalRoute("ColdWater", 0, CADObjectCommands.ActiveFloor, "Up", routeHeight).First().Value;
               if (flowTypeId == 1) {
                 double offsetDistance = 11.25;
@@ -3149,11 +3160,21 @@ namespace GMEPPlumbing
                   tr.Commit();
                 }
               }
-              PlumbingVerticalRoute route2 = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight).First().Value;
-              SpecializedHorizontalRoute("ColdWater", route2.PipeType, 0, route2.Position, null);
             }
             else if (blockName == "GMEP HW FIXTURE POINT") {
+              PlumbingVerticalRoute route2 = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight).First().Value;
+              CircleStartPointPreviewJig circleJig = new CircleStartPointPreviewJig(route2.Position, 1.5);
+              PromptResult circlePromptResult = ed.Drag(circleJig);
+              if (circlePromptResult.Status != PromptStatus.OK) {
+                ed.WriteMessage("\nCommand cancelled.");
+                routeHeightDisplay.Disable();
+                return;
+              }
+              Point3d firstPoint = circleJig.ProjectedPoint;
+              HorizontalRoute(0, route2.Type, false, "Forward", firstPoint);
+              
               PlumbingVerticalRoute route = VerticalRoute("HotWater", 0, CADObjectCommands.ActiveFloor, "Up", routeHeight).First().Value;
+              
               double offsetDistance = 11.25;
               double offsetDistance2 = 2.125;
               double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
@@ -3183,11 +3204,18 @@ namespace GMEPPlumbing
                 rotation = br.Rotation;
                 tr.Commit();
               }
-
-              PlumbingVerticalRoute route2 = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight).First().Value;
-              SpecializedHorizontalRoute("HotWater", route2.PipeType, 0, route2.Position, null);
             }
             else if (blockName == "GMEP PLUMBING GAS OUTPUT") {
+              PlumbingVerticalRoute route2 = VerticalRoute("Gas", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight).First().Value;
+              CircleStartPointPreviewJig circleJig = new CircleStartPointPreviewJig(route2.Position, 1.5);
+              PromptResult circlePromptResult = ed.Drag(circleJig);
+              if (circlePromptResult.Status != PromptStatus.OK) {
+                ed.WriteMessage("\nCommand cancelled.");
+                routeHeightDisplay.Disable();
+                return;
+              }
+              Point3d firstPoint = circleJig.ProjectedPoint;
+              HorizontalRoute(0, route2.Type, false, "Forward", firstPoint);
               PlumbingVerticalRoute route = VerticalRoute("Gas", 0, CADObjectCommands.ActiveFloor, "Up", routeHeight).First().Value;
               double offsetDistance = 10.25;
               double offsetDistance2 = 3.5;
@@ -3218,9 +3246,6 @@ namespace GMEPPlumbing
                 rotation = br.Rotation;
                 tr.Commit();
               }
-              
-              PlumbingVerticalRoute route2 = VerticalRoute("Gas", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight).First().Value;
-              SpecializedHorizontalRoute("Gas", route2.PipeType, 0, route2.Position, null);
             }
             else {
               if (blockName == "GMEP DRAIN") {
