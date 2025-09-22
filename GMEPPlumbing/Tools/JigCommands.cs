@@ -66,7 +66,78 @@ namespace GMEPPlumbing
       return SamplerStatus.OK;
     }
   }
+  public class OffsetLineJig : DrawJig {
+    private readonly Line _baseLine;
+    private double _offsetDistance;
+    private Point3d _mousePoint;
+    private Line _previewLine;
 
+    public OffsetLineJig(PlumbingHorizontalRoute route, double initialOffset = 4.0) {
+      _baseLine = new Line(route.StartPoint, route.EndPoint);
+      _offsetDistance = initialOffset;
+      _mousePoint = route.StartPoint;
+
+      Vector3d routeVec = _baseLine.EndPoint - _baseLine.StartPoint;
+      Vector3d direction = routeVec.GetNormal();
+
+      _previewLine = new Line(_baseLine.EndPoint + (direction * 3.1), _baseLine.EndPoint - (direction * 3.1));
+      _previewLine.Layer = "P-DOMW-CWTR";
+    }
+
+    protected override bool WorldDraw(WorldDraw draw) {
+      if (_previewLine != null)
+        draw.Geometry.Draw(_previewLine);
+      return true;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts) {
+      JigPromptPointOptions opts = new JigPromptPointOptions("\nSpecify offset position:");
+      opts.UserInputControls = UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+      PromptPointResult res = prompts.AcquirePoint(opts);
+
+      if (res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
+      if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+        return SamplerStatus.NoChange;
+
+      _mousePoint = res.Value;
+
+      UpdatePreviewLine();
+      return SamplerStatus.OK;
+    }
+
+    private void UpdatePreviewLine() {
+      // Get the normal vector of the base line
+      Vector3d routeVec = _baseLine.EndPoint - _baseLine.StartPoint;
+      Vector3d normal = routeVec.CrossProduct(Vector3d.ZAxis).GetNormal();
+
+      // Determine sign of offset based on mouse position
+      Vector3d mouseVec = _mousePoint - _baseLine.StartPoint;
+      double side = normal.DotProduct(mouseVec) >= 0 ? 1.0 : -1.0;
+
+      double offsetDistance = _offsetDistance * side;
+
+   
+      Point3d offsetMid = _baseLine.EndPoint + (normal * offsetDistance);
+
+      Vector3d halfVec = routeVec.GetNormal() * (3.1);
+
+      Point3d newStart = offsetMid - halfVec;
+      Point3d newEnd = offsetMid + halfVec;
+
+      // Optionally adjust Z as in your example
+      // newStart = new Point3d(newStart.X, newStart.Y, newStart.Z - (_baseLine.Length * 12));
+      // newEnd = new Point3d(newEnd.X, newEnd.Y, newEnd.Z - (_baseLine.Length * 12));
+
+      _previewLine.StartPoint = newStart;
+      _previewLine.EndPoint = newEnd;
+    }
+
+    public Line GetOffsetLine() {
+      return new Line(_previewLine.StartPoint, _previewLine.EndPoint) { Layer = _previewLine.Layer };
+    }
+  }
   public class HorizontalRouteJig : DrawJig {
     private Point3d startPoint;
     private Point3d endPoint;

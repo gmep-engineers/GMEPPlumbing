@@ -3437,7 +3437,7 @@ namespace GMEPPlumbing
             }
           }
           catch (System.Exception ex) {
-            ed.WriteMessage("FIxture Error - " + ex.ToString());
+            ed.WriteMessage("Fixture Error - " + ex.ToString());
             routeHeightDisplay.Disable();
             Console.WriteLine(ex.ToString());
           }
@@ -3609,59 +3609,22 @@ namespace GMEPPlumbing
               }
               else if (flowTypeId == 2) {
                 PlumbingVerticalRoute route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
-                PromptKeywordOptions pko = new PromptKeywordOptions("Left or Right?");
-                pko.Keywords.Add("Left");
-                pko.Keywords.Add("Right");
-                PromptResult res = ed.GetKeywords(pko);
+                double offsetDistance = 2.125;
 
-
-                double offsetDistance = 11.25;
-                double offsetDistance2 = 2.125;
-                double offsetX = offsetDistance * Math.Cos(route.Rotation);
-                double offsetY = offsetDistance * Math.Sin(route.Rotation);
-                double rotatedOffsetX = -offsetY;
-                double rotatedOffsetY = offsetX;
-                if (res.StringResult == "Left") {
-                  offsetX = -offsetX;
-                  offsetY = -offsetY;
-                  rotatedOffsetX = offsetY;
-                  rotatedOffsetY = -offsetX;
+                CircleStartPointPreviewJig jig = new CircleStartPointPreviewJig(route.Position, 1.5);
+                PromptResult jigResult = ed.Drag(jig);
+                if (jigResult.Status != PromptStatus.OK) {
+                  ed.WriteMessage("\nCommand cancelled.");
+                  routeHeightDisplay.Disable();
+                  return;
                 }
+                Point3d firstPoint = jig.ProjectedPoint;
 
-                Point3d StartPos = route.Position;
-                Point3d newPoint = new Point3d(
-                    route.Position.X + offsetX * 1.2,
-                    route.Position.Y + offsetY * 1.2,
-                    route.Position.Z
-                );
-                Vector3d direction = route.Position - newPoint;
-                double length = direction.Length;
-                if (length > 0) {
-                  Vector3d offsetStart = direction.GetNormal() * 1.5;
-                  StartPos = StartPos - offsetStart;
+                List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint);
+                foreach (PlumbingHorizontalRoute r in routes) {
+                  SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.EndPoint, r.StartPoint);
                 }
-
-                Point3d midPoint = new Point3d(
-                   (StartPos.X + newPoint.X) / 2.0,
-                   (StartPos.Y + newPoint.Y) / 2.0,
-                   StartPos.Z
-               );
-
-                Point3d anotherNewPoint = new Point3d(
-                    midPoint.X + rotatedOffsetX,
-                    midPoint.Y + rotatedOffsetY,
-                    midPoint.Z
-                );
-                Vector3d direction2 = new Vector3d(anotherNewPoint.X - midPoint.X, anotherNewPoint.Y - midPoint.Y, 0);
-                Vector3d offset2 = direction2.GetNormal() * offsetDistance2;
-
-
-                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, anotherNewPoint, midPoint);
-                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, newPoint, StartPos);
-
-                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, StartPos, newPoint);
-                Point3d fixturePos = new Point3d(anotherNewPoint.X - offset2.X, anotherNewPoint.Y - offset2.Y, anotherNewPoint.Z - (route.Length * 12));
-                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, midPoint, fixturePos);
+         
 
                 using (Transaction tr = db.TransactionManager.StartTransaction()) {
                   BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -3669,7 +3632,7 @@ namespace GMEPPlumbing
                   BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
 
                   //Place the fixture block
-                  BlockReference br = new BlockReference(fixturePos, btr.ObjectId);
+                  BlockReference br = new BlockReference(routes.Last().EndPoint, btr.ObjectId);
                   br.Rotation = route.Rotation;
                   modelSpace.AppendEntity(br);
                   tr.AddNewlyCreatedDBObject(br, true);
@@ -3677,7 +3640,7 @@ namespace GMEPPlumbing
                   point = br.Position;
                   rotation = br.Rotation;
 
-                  Point3d newPos = new Point3d(newPoint.X, newPoint.Y, newPoint.Z - (route.Length * 12));
+                  Point3d newPos = new Point3d(routes.Last().EndPoint.X, routes.Last().EndPoint.Y, routes.Last().EndPoint.Z - (route.Length * 12));
                   Circle circle = new Circle(newPos, Vector3d.ZAxis, 1);
                   modelSpace.AppendEntity(circle);
                   tr.AddNewlyCreatedDBObject(circle, true);
@@ -3697,31 +3660,25 @@ namespace GMEPPlumbing
                   hatch.EvaluateHatch(true);
                   circle.Erase();
 
-                  //placing the line :3
-                  Vector3d routeVec = newPoint - StartPos;
-                  double routeLength = routeVec.Length;
-                  if (routeLength == 0) return;
+                  tr.Commit();
+                }
 
-                  Vector3d normal = new Vector3d(-routeVec.Y, routeVec.X, 0).GetNormal();
-
-                  double offsetDistance3 = 4.0;
-                  Point3d offsetMid = newPoint - (normal * offsetDistance3);
-                  if (res.StringResult == "Right") {
-                    offsetMid = newPoint + (normal * offsetDistance3);
-                  }
-
-                  Vector3d halfVec = routeVec.GetNormal() * (routeLength / 4.0);
-
-                  Point3d newStart = offsetMid - halfVec;
-                  Point3d newEnd = offsetMid + halfVec;
-                  newStart = new Point3d(newStart.X, newStart.Y, newStart.Z - (route.Length * 12));
-                  newEnd = new Point3d(newEnd.X, newEnd.Y, newEnd.Z - (route.Length * 12));
-
-                  Line line = new Line(newStart, newEnd);
+                OffsetLineJig lineJig = new OffsetLineJig(routes.Last(), 4.0);
+                PromptResult linePromptResult = ed.Drag(lineJig);
+                if (linePromptResult.Status != PromptStatus.OK) {
+                  ed.WriteMessage("\nCommand cancelled.");
+                  routeHeightDisplay.Disable();
+                  return;
+                }
+                Line line = lineJig.GetOffsetLine();
+                using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                  
                   line.Layer = "P-DOMW-CWTR";
                   modelSpace.AppendEntity(line);
                   tr.AddNewlyCreatedDBObject(line, true);
-
                   tr.Commit();
                 }
               }
