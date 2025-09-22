@@ -293,7 +293,11 @@ namespace GMEPPlumbing
     protected override SamplerStatus Sampler(JigPrompts prompts) {
       JigPromptPointOptions opts = new JigPromptPointOptions(
           "\nMove cursor to preview point on circle, click to select:"
-      );
+      ) {
+        BasePoint = _center,
+        UseBasePoint = true,
+        Cursor = CursorType.RubberBand,
+      };
       opts.UserInputControls =
           UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
       PromptPointResult res = prompts.AcquirePoint(opts);
