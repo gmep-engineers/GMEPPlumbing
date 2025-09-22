@@ -424,7 +424,7 @@ namespace GMEPPlumbing
         peo.AddAllowedClass(typeof(Line), true);
         PromptEntityResult per = ed.GetEntity(peo);
 
-        if (per.Status != PromptStatus.OK) {
+        if (per.Status != PromptStatus.OK || per.Status == PromptStatus.Cancel || per.ObjectId == ObjectId.Null) {
           ed.WriteMessage("\nCommand cancelled.");
           routeHeightDisplay.Disable();
           break;
