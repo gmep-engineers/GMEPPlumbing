@@ -152,7 +152,7 @@ namespace GMEPPlumbing
       double routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
       HorizontalRoute(-1);
     }
-    public List<PlumbingHorizontalRoute> HorizontalRoute(double? routeHeight = null, string result = null, bool hasArrows = true, string direction = null, Point3d? startPoint = null) {
+    public List<PlumbingHorizontalRoute> HorizontalRoute(double? routeHeight = null, string result = null, bool hasArrows = true, string direction = null, Point3d? startPoint = null, bool selectStart = true, string startMessage = "\nSpecify start point for route: ", string selectLinePointMessage = "\nSelect a Line: ", string endMessage = "\nSelect End Point: ") {
 
       List<PlumbingHorizontalRoute> horizontalRoutes = new List<PlumbingHorizontalRoute>();
       string BasePointId = CADObjectCommands.GetActiveView();
@@ -334,67 +334,68 @@ namespace GMEPPlumbing
           slope = 0.02;
         }
       }
+      if (selectStart) {
+        if (startPoint == null) {
+          PromptPointOptions ppo2 = new PromptPointOptions(startMessage);
+          ppo2.AllowNone = false;
+          PromptPointResult ppr2 = ed.GetPoint(ppo2);
+          if (ppr2.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nCommand cancelled.");
+            routeHeightDisplay.Disable();
+            return horizontalRoutes;
+          }
 
-      if (startPoint == null) {
-        PromptPointOptions ppo2 = new PromptPointOptions("\nSpecify start point for route: ");
-        ppo2.AllowNone = false;
-        PromptPointResult ppr2 = ed.GetPoint(ppo2);
-        if (ppr2.Status != PromptStatus.OK) {
+          startPoint = ppr2.Value;
+        }
+        Point3d startPointLocation2 = (Point3d)startPoint;
+
+        ObjectId addedLineId2 = ObjectId.Null;
+        string LineGUID2 = Guid.NewGuid().ToString();
+
+        HorizontalRouteJig routeJig = new HorizontalRouteJig(startPointLocation2, layer, endMessage);
+
+        PromptResult routeResult = ed.Drag(routeJig);
+        if (routeResult.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
           routeHeightDisplay.Disable();
           return horizontalRoutes;
         }
 
-        startPoint = ppr2.Value;
+        Point3d endPointLocation2 = routeJig.line.EndPoint;
+
+        using (Transaction tr2 = db.TransactionManager.StartTransaction()) {
+          BlockTable bt = (BlockTable)tr2.GetObject(db.BlockTableId, OpenMode.ForWrite);
+          BlockTableRecord btr = (BlockTableRecord)
+            tr2.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+          Line line = new Line();
+          line.StartPoint = new Point3d(startPointLocation2.X, startPointLocation2.Y, zIndex);
+          line.EndPoint = new Point3d(endPointLocation2.X, endPointLocation2.Y, zIndex);
+
+          line.Layer = layer;
+          btr.AppendEntity(line);
+          tr2.AddNewlyCreatedDBObject(line, true);
+          addedLineId2 = line.ObjectId;
+          tr2.Commit();
+        }
+
+        //routeGUIDS.Add(LineGUID2);
+        AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType, slope);
+        if (hasArrows) {
+          AddArrowsToLine(addedLineId2, LineGUID2);
+        }
+        PlumbingHorizontalRoute firstRoute = new PlumbingHorizontalRoute(
+          LineGUID2,
+          ProjectId,
+          result,
+          startPointLocation2,
+          endPointLocation2,
+          BasePointId,
+          pipeType,
+          slope
+        );
+        horizontalRoutes.Add(firstRoute);
       }
-      Point3d startPointLocation2 = (Point3d)startPoint;
-
-      ObjectId addedLineId2 = ObjectId.Null;
-      string LineGUID2 = Guid.NewGuid().ToString();
-
-      HorizontalRouteJig routeJig = new HorizontalRouteJig(startPointLocation2, layer);
-
-      PromptResult routeResult = ed.Drag(routeJig);
-      if (routeResult.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nCommand cancelled.");
-        routeHeightDisplay.Disable();
-        return horizontalRoutes;
-      }
-
-      Point3d endPointLocation2 = routeJig.line.EndPoint;
-
-      using (Transaction tr2 = db.TransactionManager.StartTransaction()) {
-        BlockTable bt = (BlockTable)tr2.GetObject(db.BlockTableId, OpenMode.ForWrite);
-        BlockTableRecord btr = (BlockTableRecord)
-          tr2.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-
-        Line line = new Line();
-        line.StartPoint = new Point3d(startPointLocation2.X, startPointLocation2.Y, zIndex);
-        line.EndPoint = new Point3d(endPointLocation2.X, endPointLocation2.Y, zIndex);
-
-        line.Layer = layer;
-        btr.AppendEntity(line);
-        tr2.AddNewlyCreatedDBObject(line, true);
-        addedLineId2 = line.ObjectId;
-        tr2.Commit();
-      }
-      
-      //routeGUIDS.Add(LineGUID2);
-      AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType, slope);
-      if (hasArrows) {
-        AddArrowsToLine(addedLineId2, LineGUID2);
-      }
-      PlumbingHorizontalRoute firstRoute = new PlumbingHorizontalRoute(
-        LineGUID2,
-        ProjectId,
-        result,
-        startPointLocation2,
-        endPointLocation2,
-        BasePointId,
-        pipeType,
-        slope
-      );
-      horizontalRoutes.Add(firstRoute);
 
       while (true) {
 
@@ -418,7 +419,7 @@ namespace GMEPPlumbing
         }
 
         //Select a starting point/object
-        PromptEntityOptions peo = new PromptEntityOptions("\nSelect a line");
+        PromptEntityOptions peo = new PromptEntityOptions(selectLinePointMessage);
         peo.SetRejectMessage("\nSelect a line");
         peo.AddAllowedClass(typeof(Line), true);
         PromptEntityResult per = ed.GetEntity(peo);
@@ -3620,7 +3621,7 @@ namespace GMEPPlumbing
                 }
                 Point3d firstPoint = jig.ProjectedPoint;
 
-                List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint);
+                List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint, true, "\nSelect start point for route: ", "\nSelect next line in route toward WHA: ");
                 foreach (PlumbingHorizontalRoute r in routes) {
                   SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.EndPoint, r.StartPoint);
                 }
@@ -3631,14 +3632,6 @@ namespace GMEPPlumbing
                   BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
                   BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
 
-                  //Place the fixture block
-                  BlockReference br = new BlockReference(routes.Last().EndPoint, btr.ObjectId);
-                  br.Rotation = route.Rotation;
-                  modelSpace.AppendEntity(br);
-                  tr.AddNewlyCreatedDBObject(br, true);
-                  blockId = br.Id;
-                  point = br.Position;
-                  rotation = br.Rotation;
 
                   Point3d newPos = new Point3d(routes.Last().EndPoint.X, routes.Last().EndPoint.Y, routes.Last().EndPoint.Z - (route.Length * 12));
                   Circle circle = new Circle(newPos, Vector3d.ZAxis, 1);
@@ -3679,6 +3672,31 @@ namespace GMEPPlumbing
                   line.Layer = "P-DOMW-CWTR";
                   modelSpace.AppendEntity(line);
                   tr.AddNewlyCreatedDBObject(line, true);
+                  tr.Commit();
+                }
+
+                List<PlumbingHorizontalRoute> fixtureRoutes = HorizontalRoute(routeHeight, route.Type, false, "Forward", null, false, "", "\nSelect line to route to fixture: ");
+                foreach (PlumbingHorizontalRoute r in fixtureRoutes) {
+                  if (r == fixtureRoutes.Last()) {
+                    Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
+                    Vector3d offset = direction.GetNormal() * offsetDistance;
+                    r.EndPoint = r.EndPoint + offset;
+                  }
+                  SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.EndPoint, r.StartPoint);
+                }
+                Vector3d direction2 = new Vector3d(fixtureRoutes.Last().StartPoint.X - fixtureRoutes.Last().EndPoint.X, fixtureRoutes.Last().StartPoint.Y - fixtureRoutes.Last().EndPoint.Y, 0);
+
+                using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                  BlockReference br = new BlockReference(fixtureRoutes.Last().EndPoint, btr.ObjectId);
+                  br.Rotation = Math.Atan2(direction2.Y, direction2.X) + Math.PI / 2;
+                  modelSpace.AppendEntity(br);
+                  tr.AddNewlyCreatedDBObject(br, true);
+                  blockId = br.Id;
+                  point = br.Position;
+                  rotation = br.Rotation;
                   tr.Commit();
                 }
               }

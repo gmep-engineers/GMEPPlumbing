@@ -142,13 +142,14 @@ namespace GMEPPlumbing
     private Point3d startPoint;
     private Point3d endPoint;
     public Line line;
-    public string message = "\nSelect end point:";
+    public string message;
 
-    public HorizontalRouteJig(Point3d startPt, string layer) {
+    public HorizontalRouteJig(Point3d startPt, string layer, string _message = "\nSelect end point:") {
       startPoint = startPt;
       endPoint = startPt;
       line = new Line(startPoint, startPoint);
       line.Layer = layer;
+      message = _message;
     }
 
     protected override bool WorldDraw(WorldDraw draw) {
