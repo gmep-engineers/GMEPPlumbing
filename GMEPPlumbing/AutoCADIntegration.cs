@@ -192,9 +192,11 @@ namespace GMEPPlumbing
 
 
       switch (result) {
+        case "Hot Water":
         case "HotWater":
           layer = "P-DOMW-HOTW";
           break;
+        case "Cold Water":
         case "ColdWater":
           layer = "P-DOMW-CWTR";
           break;
@@ -204,6 +206,7 @@ namespace GMEPPlumbing
         case "Waste":
           layer = "P-WV-W-BELOW";
           break;
+        case "Grease Waste":
         case "GreaseWaste":
           layer = "P-GREASE-WASTE";
           break;
@@ -4094,38 +4097,19 @@ namespace GMEPPlumbing
                     routeHeightDisplay.Disable();
                     return;
                   }
-                  Entity ent = (Entity)per.ObjectId.GetObject(OpenMode.ForRead);
-                  if (ent == null) {
-                    continue;
-                  }
-                  if (ent is BlockReference blockRef && FindObjectType(blockRef) == "VerticalRoute") {
-                    PlumbingVerticalRoute selectedRoute = AssembleVerticalRoute(blockRef);
-                    if (selectedRoute == null || selectedRoute.FixtureType != "Flush Tank" || selectedRoute.Type != "Cold Water") {
-                      ed.WriteMessage("\nMust select a Flush Tank Route, Cold Water: ");
+                  using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                    DBObject obj = tr.GetObject(per.ObjectId, OpenMode.ForRead);
+                    if (obj == null) {
                       continue;
                     }
-                    route = selectedRoute;
-                    CircleStartPointPreviewJig jig = new CircleStartPointPreviewJig(route.Position, 1.5);
-                    PromptResult jigResult = ed.Drag(jig);
-                    if (jigResult.Status != PromptStatus.OK) {
-                      ed.WriteMessage("\nCommand cancelled.");
-                      routeHeightDisplay.Disable();
-                      return;
-                    }
-                    firstPoint = jig.ProjectedPoint;
-                    break;
-                  }
-                  else if (ent is Line line) {
-                    ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
-                    if (xdata != null && xdata.AsArray().Length >= 6) {
-                      string dropId = xdata.AsArray()[5].Value.ToString();
-                      PlumbingVerticalRoute selectedRoute = GetVerticalRoutesFromCAD().Where(r => r.Id == dropId).FirstOrDefault();
+                    if (obj is BlockReference blockRef && FindObjectType(blockRef) == "VerticalRoute") {
+                      PlumbingVerticalRoute selectedRoute = AssembleVerticalRoute(blockRef);
                       if (selectedRoute == null || selectedRoute.FixtureType != "Flush Tank" || selectedRoute.Type != "Cold Water") {
                         ed.WriteMessage("\nMust select a Flush Tank Route, Cold Water: ");
                         continue;
                       }
                       route = selectedRoute;
-                      LineStartPointPreviewJig jig = new LineStartPointPreviewJig(line);
+                      CircleStartPointPreviewJig jig = new CircleStartPointPreviewJig(route.Position, 1.5);
                       PromptResult jigResult = ed.Drag(jig);
                       if (jigResult.Status != PromptStatus.OK) {
                         ed.WriteMessage("\nCommand cancelled.");
@@ -4134,6 +4118,27 @@ namespace GMEPPlumbing
                       }
                       firstPoint = jig.ProjectedPoint;
                       break;
+                    }
+                    else if (obj is Line line) {
+                      ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
+                      if (xdata != null && xdata.AsArray().Length >= 6) {
+                        string dropId = xdata.AsArray()[5].Value.ToString();
+                        PlumbingVerticalRoute selectedRoute = GetVerticalRoutesFromCAD().Where(r => r.Id == dropId).FirstOrDefault();
+                        if (selectedRoute == null || selectedRoute.FixtureType != "Flush Tank" || selectedRoute.Type != "Cold Water") {
+                          ed.WriteMessage("\nMust select a Flush Tank Route, Cold Water: ");
+                          continue;
+                        }
+                        route = selectedRoute;
+                        LineStartPointPreviewJig jig = new LineStartPointPreviewJig(line);
+                        PromptResult jigResult = ed.Drag(jig);
+                        if (jigResult.Status != PromptStatus.OK) {
+                          ed.WriteMessage("\nCommand cancelled.");
+                          routeHeightDisplay.Disable();
+                          return;
+                        }
+                        firstPoint = jig.ProjectedPoint;
+                        break;
+                      }
                     }
                   }
                 }
