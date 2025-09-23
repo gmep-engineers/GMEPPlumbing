@@ -550,15 +550,18 @@ namespace GMEPPlumbing
       string layer = "";
 
       switch (type) {
+        case "Hot Water":
         case "HotWater":
           layer = "P-DOMW-HOTW";
           break;
+        case "Cold Water":
         case "ColdWater":
           layer = "P-DOMW-CWTR";
           break;
         case "Gas":
           layer = "P-GAS";
           break;
+        case "Grease Waste":
         case "GreaseWaste":
           layer = "P-GREASE-WASTE";
           break;
