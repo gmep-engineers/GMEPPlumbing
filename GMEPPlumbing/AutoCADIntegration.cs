@@ -4174,73 +4174,68 @@ namespace GMEPPlumbing
                 }
               }
               else if (flowTypeId == 2) {
-                PlumbingVerticalRoute route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
+                PlumbingVerticalRoute route = null;
+                Point3d firstPoint = Point3d.Origin;
+                while (true) {
+                  PromptEntityOptions peo = new PromptEntityOptions("\nSelect existing drop or vertical route to attach to: ");
+                  peo.SetRejectMessage("\nMust select a drop or vertical route.");
+                  peo.AddAllowedClass(typeof(BlockReference), true);
+                  peo.AddAllowedClass(typeof(Line), true);
+                  PromptEntityResult per = ed.GetEntity(peo);
+                  if (per.Status != PromptStatus.OK) {
+                    ed.WriteMessage("\nCommand cancelled.");
+                    routeHeightDisplay.Disable();
+                    return;
+                  }
+                  using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                    DBObject obj = tr.GetObject(per.ObjectId, OpenMode.ForRead);
+                    if (obj == null) {
+                      continue;
+                    }
+                    if (obj is BlockReference blockRef && FindObjectType(blockRef) == "VerticalRoute") {
+                      PlumbingVerticalRoute selectedRoute = AssembleVerticalRoute(blockRef);
+                      if (selectedRoute == null || selectedRoute.FixtureType != "Flush Valve" || selectedRoute.Type != "Cold Water") {
+                        ed.WriteMessage("\nMust select a Flush Valve Route, Cold Water: ");
+                        continue;
+                      }
+                      route = selectedRoute;
+                      CircleStartPointPreviewJig jig = new CircleStartPointPreviewJig(route.Position, 1.5);
+                      PromptResult jigResult = ed.Drag(jig);
+                      if (jigResult.Status != PromptStatus.OK) {
+                        ed.WriteMessage("\nCommand cancelled.");
+                        routeHeightDisplay.Disable();
+                        return;
+                      }
+                      firstPoint = jig.ProjectedPoint;
+                      break;
+                    }
+                    else if (obj is Line line2) {
+                      ResultBuffer xdata = line2.GetXDataForApplication(XRecordKey);
+                      if (xdata != null && xdata.AsArray().Length >= 6) {
+                        string dropId = xdata.AsArray()[5].Value.ToString();
+                        PlumbingVerticalRoute selectedRoute = GetVerticalRoutesFromCAD().Where(r => r.Id == dropId).FirstOrDefault();
+                        if (selectedRoute == null || selectedRoute.FixtureType != "Flush Valve" || selectedRoute.Type != "Cold Water") {
+                          ed.WriteMessage("\nMust select a Flush Valve Route, Cold Water: ");
+                          continue;
+                        }
+                        route = selectedRoute;
+                        LineStartPointPreviewJig jig = new LineStartPointPreviewJig(line2);
+                        PromptResult jigResult = ed.Drag(jig);
+                        if (jigResult.Status != PromptStatus.OK) {
+                          ed.WriteMessage("\nCommand cancelled.");
+                          routeHeightDisplay.Disable();
+                          return;
+                        }
+                        firstPoint = jig.ProjectedPoint;
+                        break;
+                      }
+                    }
+                  }
+                }
+
                 double offsetDistance = 2.125;
 
-                CircleStartPointPreviewJig jig = new CircleStartPointPreviewJig(route.Position, 1.5);
-                PromptResult jigResult = ed.Drag(jig);
-                if (jigResult.Status != PromptStatus.OK) {
-                  ed.WriteMessage("\nCommand cancelled.");
-                  routeHeightDisplay.Disable();
-                  return;
-                }
-                Point3d firstPoint = jig.ProjectedPoint;
-
-                List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint, true, "\nSelect start point for route: ", "\nSelect next line in route toward WHA: ");
-                foreach (PlumbingHorizontalRoute r in routes) {
-                  SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.EndPoint, r.StartPoint);
-                }
-
-
-                using (Transaction tr = db.TransactionManager.StartTransaction()) {
-                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
-                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-
-
-                  Point3d newPos = new Point3d(routes.Last().EndPoint.X, routes.Last().EndPoint.Y, routes.Last().EndPoint.Z - (route.Length * 12));
-                  Circle circle = new Circle(newPos, Vector3d.ZAxis, 1);
-                  modelSpace.AppendEntity(circle);
-                  tr.AddNewlyCreatedDBObject(circle, true);
-
-                  Hatch hatch = new Hatch();
-                  hatch.SetDatabaseDefaults();
-                  hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
-                  hatch.Associative = false;
-                  hatch.Layer = "P-DOMW-CWTR";
-                  hatch.Elevation = newPos.Z;
-
-                  modelSpace.AppendEntity(hatch);
-                  tr.AddNewlyCreatedDBObject(hatch, true);
-
-                  ObjectIdCollection ids = new ObjectIdCollection { circle.ObjectId };
-                  hatch.AppendLoop(HatchLoopTypes.Default, ids);
-                  hatch.EvaluateHatch(true);
-                  circle.Erase();
-
-                  tr.Commit();
-                }
-
-                OffsetLineJig lineJig = new OffsetLineJig(routes.Last(), 4.0);
-                PromptResult linePromptResult = ed.Drag(lineJig);
-                if (linePromptResult.Status != PromptStatus.OK) {
-                  ed.WriteMessage("\nCommand cancelled.");
-                  routeHeightDisplay.Disable();
-                  return;
-                }
-                Line line = lineJig.GetOffsetLine();
-                using (Transaction tr = db.TransactionManager.StartTransaction()) {
-                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                  BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
-                  BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-
-                  line.Layer = "P-DOMW-CWTR";
-                  modelSpace.AppendEntity(line);
-                  tr.AddNewlyCreatedDBObject(line, true);
-                  tr.Commit();
-                }
-
-                List<PlumbingHorizontalRoute> fixtureRoutes = HorizontalRoute(routeHeight, route.Type, false, "Forward", null, false, "", "\nSelect line to route to fixture: ");
+                List<PlumbingHorizontalRoute> fixtureRoutes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint, true, "", "\nSelect line to route to fixture: ");
                 foreach (PlumbingHorizontalRoute r in fixtureRoutes) {
                   if (r == fixtureRoutes.Last()) {
                     Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
@@ -4267,17 +4262,65 @@ namespace GMEPPlumbing
               }
             }
             else if (blockName == "GMEP HW FIXTURE POINT") {
-              PlumbingVerticalRoute route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
-              double offsetDistance = 2.125;
-
-              CircleStartPointPreviewJig jig = new CircleStartPointPreviewJig(route.Position, 1.5);
-              PromptResult jigResult = ed.Drag(jig);
-              if (jigResult.Status != PromptStatus.OK) {
-                ed.WriteMessage("\nCommand cancelled.");
-                routeHeightDisplay.Disable();
-                return;
+              PlumbingVerticalRoute route = null;
+              Point3d firstPoint = Point3d.Origin;
+              while (true) {
+                PromptEntityOptions peo = new PromptEntityOptions("\nSelect existing drop or vertical route to attach to: ");
+                peo.SetRejectMessage("\nMust select a drop or vertical route.");
+                peo.AddAllowedClass(typeof(BlockReference), true);
+                peo.AddAllowedClass(typeof(Line), true);
+                PromptEntityResult per = ed.GetEntity(peo);
+                if (per.Status != PromptStatus.OK) {
+                  ed.WriteMessage("\nCommand cancelled.");
+                  routeHeightDisplay.Disable();
+                  return;
+                }
+                using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                  DBObject obj = tr.GetObject(per.ObjectId, OpenMode.ForRead);
+                  if (obj == null) {
+                    continue;
+                  }
+                  if (obj is BlockReference blockRef && FindObjectType(blockRef) == "VerticalRoute") {
+                    PlumbingVerticalRoute selectedRoute = AssembleVerticalRoute(blockRef);
+                    if (selectedRoute == null || selectedRoute.FixtureType != "Flush Tank" || selectedRoute.Type != "Hot Water") {
+                      ed.WriteMessage("\nMust select a Hot Water route: ");
+                      continue;
+                    }
+                    route = selectedRoute;
+                    CircleStartPointPreviewJig jig = new CircleStartPointPreviewJig(route.Position, 1.5);
+                    PromptResult jigResult = ed.Drag(jig);
+                    if (jigResult.Status != PromptStatus.OK) {
+                      ed.WriteMessage("\nCommand cancelled.");
+                      routeHeightDisplay.Disable();
+                      return;
+                    }
+                    firstPoint = jig.ProjectedPoint;
+                    break;
+                  }
+                  else if (obj is Line line) {
+                    ResultBuffer xdata = line.GetXDataForApplication(XRecordKey);
+                    if (xdata != null && xdata.AsArray().Length >= 6) {
+                      string dropId = xdata.AsArray()[5].Value.ToString();
+                      PlumbingVerticalRoute selectedRoute = GetVerticalRoutesFromCAD().Where(r => r.Id == dropId).FirstOrDefault();
+                      if (selectedRoute == null || selectedRoute.FixtureType != "Flush Tank" || selectedRoute.Type != "Hot Water") {
+                        ed.WriteMessage("\nMust select a Hot Water route: ");
+                        continue;
+                      }
+                      route = selectedRoute;
+                      LineStartPointPreviewJig jig = new LineStartPointPreviewJig(line);
+                      PromptResult jigResult = ed.Drag(jig);
+                      if (jigResult.Status != PromptStatus.OK) {
+                        ed.WriteMessage("\nCommand cancelled.");
+                        routeHeightDisplay.Disable();
+                        return;
+                      }
+                      firstPoint = jig.ProjectedPoint;
+                      break;
+                    }
+                  }
+                }
               }
-              Point3d firstPoint = jig.ProjectedPoint;
+              double offsetDistance = 2.125;
 
               List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint);
               foreach (PlumbingHorizontalRoute r in routes) {
