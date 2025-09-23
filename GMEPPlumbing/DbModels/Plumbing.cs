@@ -319,11 +319,13 @@ namespace GMEPPlumbing {
     public string PipeType;
     public bool IsUp;
     public double Rotation;
+    
     public double FixtureUnits { get; set; } = 0;
     public int FlowTypeId { get; set; } = 1;
     public int GPM { get; set; } = 0;
     public double LongestRunLength { get; set; } = 0;
     public string PipeSize { get; set; } = "";
+    public string FixtureType { get; set; } = "";
 
     public PlumbingVerticalRoute(
       string id,
