@@ -3500,12 +3500,6 @@ namespace GMEPPlumbing
       var db = doc.Database;
       var ed = doc.Editor;
 
-      CADObjectCommands.GetActiveView();
-
-      while (!CADObjectCommands.ActiveViewTypes.Contains("Water") && !CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) {
-        CADObjectCommands.SetActiveView("View must contain water or waste.");
-      }
-
       string basePointId = CADObjectCommands.GetActiveView();
 
       List<PlumbingFixtureType> plumbingFixtureTypes = MariaDBService.GetPlumbingFixtureTypes();
@@ -3515,13 +3509,12 @@ namespace GMEPPlumbing
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
       PromptResult keywordResult;
 
-
       if (fixtureString == null) {
         keywordOptions.Message = "\nSelect fixture type:";
         plumbingFixtureTypes.ForEach(t => {
           if (allPlumbingFixtureCatalogItems.ContainsKey(t.Id)) {
             List<PlumbingFixtureCatalogItem> catalogItems = allPlumbingFixtureCatalogItems[t.Id];
-            if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && !catalogItems.All(item => string.IsNullOrEmpty(item.WaterBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && !catalogItems.All(item => string.IsNullOrEmpty(item.WasteBlockNames)))) && !catalogItems.All(item => !item.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") && !item.WaterBlockNames.Contains("GMEP CW FIXTURE POINT")) && ((CADObjectCommands.IsResidential && !catalogItems.All(item => item.Residential == false)) || (!CADObjectCommands.IsResidential && !catalogItems.All(item => item.Commercial == false)))) {
+            if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && !catalogItems.All(item => string.IsNullOrEmpty(item.WaterBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && !catalogItems.All(item => string.IsNullOrEmpty(item.WasteBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && !catalogItems.All(item => string.IsNullOrEmpty(item.GasBlockNames)))) && !catalogItems.All(item => !item.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") && !item.WaterBlockNames.Contains("GMEP CW FIXTURE POINT") && !item.GasBlockNames.Contains("GMEP PLUMBING GAS OUTPUT")) && ((CADObjectCommands.IsResidential && !catalogItems.All(item => item.Residential == false)) || (!CADObjectCommands.IsResidential && !catalogItems.All(item => item.Commercial == false)))) {
               keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
             }
           }
@@ -3551,7 +3544,7 @@ namespace GMEPPlumbing
         keywordOptions = new PromptKeywordOptions("");
         keywordOptions.Message = "\nSelect catalog item:";
         plumbingFixtureCatalogItems.ForEach(i => {
-          if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && i.WaterBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && i.WasteBlockNames != "")) && (i.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") || i.WaterBlockNames.Contains("GMEP CW FIXTURE POINT")) && ((CADObjectCommands.IsResidential && i.Residential == true) || (!CADObjectCommands.IsResidential && i.Commercial == true))) {
+          if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && i.WaterBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && i.WasteBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && i.GasBlockNames != "")) && (i.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") || i.WaterBlockNames.Contains("GMEP CW FIXTURE POINT") || i.GasBlockNames.Contains("GMEP PLUMBING GAS OUTPUT")) && ((CADObjectCommands.IsResidential && i.Residential == true) || (!CADObjectCommands.IsResidential && i.Commercial == true))) {
             keywordOptions.Keywords.Add(i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model);
           }
         });
@@ -3580,6 +3573,9 @@ namespace GMEPPlumbing
       }
       if (viewType.Contains("Sewer-Vent")) {
         selectedBlockNames.AddRange(selectedCatalogItem.WasteBlockNames.Split(','));
+      }
+      if (viewType.Contains("Gas")) {
+        selectedBlockNames.AddRange(selectedCatalogItem.GasBlockNames.Split(','));
       }
       selectedBlockNames = selectedBlockNames.Distinct().ToList();
       List<string> selectedBlockNames2 = new List<string>(selectedBlockNames);
@@ -3741,7 +3737,47 @@ namespace GMEPPlumbing
             }
             else if (blockName == "GMEP HW FIXTURE POINT") {
               PlumbingVerticalRoute route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength, null, "Vertical Route", "Flush Tank").First().Value;
-              double offsetDistance = 2.125;
+              double offsetDistance = 10.25;
+
+              CircleStartPointPreviewJig jig = new CircleStartPointPreviewJig(route.Position, 1.5);
+              PromptResult jigResult = ed.Drag(jig);
+              if (jigResult.Status != PromptStatus.OK) {
+                ed.WriteMessage("\nCommand cancelled.");
+                routeHeightDisplay.Disable();
+                return;
+              }
+              Point3d firstPoint = jig.ProjectedPoint;
+
+              List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint, true, "\nSpecify start point for route: ", "\nSelect a Line: ", "\nSelect End Point: ", route.Id);
+              foreach (PlumbingHorizontalRoute r in routes) {
+                if (r == routes.Last()) {
+                  Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
+                  Vector3d offset = direction.GetNormal() * offsetDistance;
+                  r.EndPoint = r.EndPoint + offset;
+                }
+                SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.EndPoint, r.StartPoint, route.Id);
+              }
+              Vector3d direction2 = new Vector3d(routes.Last().StartPoint.X - routes.Last().EndPoint.X, routes.Last().StartPoint.Y - routes.Last().EndPoint.Y, 0);
+
+
+              using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
+                BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                BlockReference br = new BlockReference(routes.Last().EndPoint, btr.ObjectId);
+                br.Rotation = Math.Atan2(direction2.Y, direction2.X) + Math.PI / 2;
+                modelSpace.AppendEntity(br);
+                tr.AddNewlyCreatedDBObject(br, true);
+                blockId = br.Id;
+                point = br.Position;
+                rotation = br.Rotation;
+                tr.Commit();
+              }
+              
+            }
+            else if (blockName == "GMEP PLUMBING GAS OUTPUT") {
+              PlumbingVerticalRoute route = VerticalRoute("Gas", startHeight, CADObjectCommands.ActiveFloor, "Down", verticalRouteLength).First().Value;
+              double offsetDistance = 3.5;
 
               CircleStartPointPreviewJig jig = new CircleStartPointPreviewJig(route.Position, 1.5);
               PromptResult jigResult = ed.Drag(jig);
@@ -3768,7 +3804,7 @@ namespace GMEPPlumbing
                 BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
                 BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
                 BlockReference br = new BlockReference(routes.Last().EndPoint, btr.ObjectId);
-                br.Rotation = Math.Atan2(direction2.Y, direction2.X) + Math.PI / 2;
+                br.Rotation = Math.Atan2(direction2.Y, direction2.X) + Math.PI;
                 modelSpace.AppendEntity(br);
                 tr.AddNewlyCreatedDBObject(br, true);
                 blockId = br.Id;
@@ -3776,7 +3812,6 @@ namespace GMEPPlumbing
                 rotation = br.Rotation;
                 tr.Commit();
               }
-              
             }
             else {
               if (blockName == "GMEP DRAIN") {
