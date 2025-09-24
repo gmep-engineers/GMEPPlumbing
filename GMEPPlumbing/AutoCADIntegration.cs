@@ -224,9 +224,9 @@ namespace GMEPPlumbing
       if (result == "ColdWater" || result == "HotWater") {
         if (CADObjectCommands.IsResidential) {
           PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
-          pko1.Keywords.Add("Copper", "Copper Type L", "Copper Type L");
-          pko1.Keywords.Add("CPVCSCH80", "CPVC SCH80", "CPVC SCH80");
-          pko1.Keywords.Add("CPVCSDRII", "CPVC SDR II", "CPVC SDR II");
+          pko1.Keywords.Add("Copper", "CopperTypeL", "Copper Type L");
+          pko1.Keywords.Add("CPVCSCH80", "CPVCSCH80", "CPVC SCH80");
+          pko1.Keywords.Add("CPVCSDRII", "CPVCSDRII", "CPVC SDR II");
           pko1.Keywords.Add("PEX");
           PromptResult pr1 = ed.GetKeywords(pko1);
           if (pr1.Status != PromptStatus.OK) {
@@ -237,7 +237,7 @@ namespace GMEPPlumbing
         }
         else {
           {
-            pipeType = "Copper Type L";
+            pipeType = "Copper";
           }
         }
       }
@@ -721,9 +721,9 @@ namespace GMEPPlumbing
       if (type == "ColdWater" || type == "HotWater") {
         if (CADObjectCommands.IsResidential) {
           PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
-          pko1.Keywords.Add("Copper", "Copper Type L", "Copper Type L");
-          pko1.Keywords.Add("CPVCSCH80", "CPVC SCH80", "CPVC SCH80");
-          pko1.Keywords.Add("CPVCSDRII", "CPVC SDR II", "CPVC SDR II");
+          pko1.Keywords.Add("Copper", "CopperTypeL", "Copper Type L");
+          pko1.Keywords.Add("CPVCSCH80", "CPVCSCH80", "CPVC SCH80");
+          pko1.Keywords.Add("CPVCSDRII", "CPVCSDRII", "CPVC SDR II");
           pko1.Keywords.Add("PEX");
           PromptResult pr1 = ed.GetKeywords(pko1);
           if (pr1.Status != PromptStatus.OK) {
@@ -734,7 +734,7 @@ namespace GMEPPlumbing
         }
         else 
         {
-            pipeType = "Copper Type L";
+            pipeType = "Copper";
         }
       }
      /* else if (type == "Gas") {
@@ -4720,8 +4720,8 @@ namespace GMEPPlumbing
 
             if (blockName == "GMEP DRAIN") {
               PromptKeywordOptions pko2 = new PromptKeywordOptions("Select Vent Option: ");
-              pko2.Keywords.Add("Add");
-              pko2.Keywords.Add("Connect");
+              pko2.Keywords.Add("Add", "AddVent", "Add Vent");
+              pko2.Keywords.Add("Connect", "ConnectToExistingVent", "Connect To Existing Vent");
               pko2.Keywords.Default = "Add";
               pko2.AllowNone = false;
               PromptResult res2 = ed.GetKeywords(pko2);
