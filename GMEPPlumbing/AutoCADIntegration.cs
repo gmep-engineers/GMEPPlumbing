@@ -372,8 +372,26 @@ namespace GMEPPlumbing
             tr2.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
           Line line = new Line();
-          line.StartPoint = new Point3d(startPointLocation2.X, startPointLocation2.Y, zIndex);
-          line.EndPoint = new Point3d(endPointLocation2.X, endPointLocation2.Y, zIndex);
+          if (direction == "Forward") {
+            line.StartPoint = new Point3d(startPointLocation2.X, startPointLocation2.Y, zIndex);
+            line.EndPoint = new Point3d(endPointLocation2.X, endPointLocation2.Y, zIndex);
+          }
+          else if (direction == "Backward") {
+            line.StartPoint = new Point3d(endPointLocation2.X, endPointLocation2.Y, zIndex);
+            line.EndPoint = new Point3d(startPointLocation2.X, startPointLocation2.Y, zIndex);
+          }
+
+          PlumbingHorizontalRoute firstRoute = new PlumbingHorizontalRoute(
+            LineGUID2,
+            ProjectId,
+            result,
+            line.StartPoint,
+            line.EndPoint,
+            BasePointId,
+            pipeType,
+            slope
+          );
+          horizontalRoutes.Add(firstRoute);
 
           line.Layer = layer;
           btr.AppendEntity(line);
@@ -387,17 +405,6 @@ namespace GMEPPlumbing
         if (hasArrows) {
           AddArrowsToLine(addedLineId2, LineGUID2);
         }
-        PlumbingHorizontalRoute firstRoute = new PlumbingHorizontalRoute(
-          LineGUID2,
-          ProjectId,
-          result,
-          startPointLocation2,
-          endPointLocation2,
-          BasePointId,
-          pipeType,
-          slope
-        );
-        horizontalRoutes.Add(firstRoute);
       }
 
       while (true) {
@@ -508,7 +515,18 @@ namespace GMEPPlumbing
             line.StartPoint = new Point3d(endPointLocation3.X, endPointLocation3.Y, zIndex);
             line.EndPoint = new Point3d(startPointLocation.X, startPointLocation.Y, zIndex);
           }
-      
+          PlumbingHorizontalRoute nextRoute = new PlumbingHorizontalRoute(
+            LineGUID,
+            ProjectId,
+            result,
+            line.StartPoint,
+            line.EndPoint,
+            BasePointId,
+            pipeType,
+            slope
+          );
+          horizontalRoutes.Add(nextRoute);
+
           line.Layer = layer;
           btr.AppendEntity(line);
           tr.AddNewlyCreatedDBObject(line, true);
@@ -521,18 +539,7 @@ namespace GMEPPlumbing
         AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType, slope, fixtureDropId);
         if (hasArrows) {
           AddArrowsToLine(addedLineId, LineGUID);
-        }
-        PlumbingHorizontalRoute nextRoute = new PlumbingHorizontalRoute(
-          LineGUID,
-          ProjectId,
-          result,
-          startPointLocation,
-          endPointLocation3,
-          BasePointId,
-          pipeType,
-          slope
-        );
-        horizontalRoutes.Add(nextRoute);
+        }  
       }
       routeHeightDisplay.Disable();
       return horizontalRoutes;
