@@ -1627,6 +1627,9 @@ namespace GMEPPlumbing
       var prompt = new Views.BasePointPromptWindow();
       bool? result = prompt.ShowDialog();
       double currentFloorHeight = -10;
+      if (!CADObjectCommands.IsResidential) {
+        currentFloorHeight = -15;
+      }
       double currentCeilingHeight = -1;
       double currentRouteHeight = 3;
       if (result != true) {
@@ -1699,6 +1702,9 @@ namespace GMEPPlumbing
         ceilingHeightOptions.AllowNegative = false;
         ceilingHeightOptions.AllowZero = false;
         ceilingHeightOptions.DefaultValue = currentFloorHeight + 10;
+        if (!CADObjectCommands.IsResidential) {
+          ceilingHeightOptions.DefaultValue = currentFloorHeight + 15;
+        }
 
         while (true) {
           PromptDoubleResult ceilingHeightResult = ed.GetDouble(ceilingHeightOptions);
