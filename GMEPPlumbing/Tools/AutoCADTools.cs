@@ -22,6 +22,7 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
+using System.Security.Cryptography.X509Certificates;
 
 namespace GMEPPlumbing
 {
@@ -38,6 +39,8 @@ namespace GMEPPlumbing
     public static bool SettingFlag = false;
 
     public static double ActiveFloorHeight = 0;
+
+    public static double ActiveCeilingHeight = 0;
 
     public static string ActiveViewName { get; set; } = "";
 
@@ -274,7 +277,10 @@ namespace GMEPPlumbing
     }
 
     [CommandMethod("SetActiveView")]
-    public static void SetActiveView() {
+    public static void SetActiveViewMethod() {
+      SetActiveView();
+    }
+    public static void SetActiveView(string message = "\nPick View: ") {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
@@ -337,7 +343,7 @@ namespace GMEPPlumbing
             }
           }
         }
-        PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nPick View: ");
+        PromptKeywordOptions promptOptions = new PromptKeywordOptions(message);
         foreach (var keyword in keywords) {
           promptOptions.Keywords.Add(keyword);
         }
@@ -371,6 +377,7 @@ namespace GMEPPlumbing
 
           int floor = 0;
           double floorHeight = 0;
+          double ceilingHeight = 0;
           string basePointId = "";
           double routeHeight = 0;
           List<string> viewTypes = new List<string>();
@@ -383,6 +390,9 @@ namespace GMEPPlumbing
             }
             if (prop.PropertyName == "floor_height") {
               floorHeight = Convert.ToDouble(prop.Value);
+            }
+            if (prop.PropertyName == "ceiling_height") {
+              ceilingHeight = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "route_height") {
               routeHeight = Convert.ToDouble(prop.Value);
@@ -406,6 +416,7 @@ namespace GMEPPlumbing
             AutoCADIntegration.ZoomToBlock(ed, entity2);
             ActiveBasePointId = basePointId;
             ActiveFloorHeight = floorHeight;
+            ActiveCeilingHeight = ceilingHeight;
             ActiveRouteHeight = routeHeight;
             ActiveFloor = floor;
             ActiveViewName = resultKeyword;

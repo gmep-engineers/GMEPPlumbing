@@ -839,16 +839,16 @@ namespace GMEPPlumbing.Tools
 
     public string FindSize(string pipeType, double psi, bool isHot, double gpm) {
       List<WaterPipeSizingEntry> searchChart = null;
-      if (pipeType == "Copper Type L") {
+      if (pipeType == "Copper") {
         searchChart = CopperTypeLChart;
       }
       else if (pipeType == "PEX") {
         searchChart = PEXChart;
       }
-      else if (pipeType == "CPVC SCH80") {
+      else if (pipeType == "CPVCSCH80") {
         searchChart = CPVCSCH80Chart;
       }
-      else if (pipeType == "CPVC SDR II") {
+      else if (pipeType == "CPVCSDRII") {
         searchChart = CPVCSDRIIChart;
       }
       double selectedPSI = searchChart.Where(e => e.PressureLossPer100Ft <= psi).OrderByDescending(e => e.PressureLossPer100Ft).Select(e => e.PressureLossPer100Ft).FirstOrDefault();

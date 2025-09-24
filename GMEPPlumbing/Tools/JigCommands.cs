@@ -66,6 +66,119 @@ namespace GMEPPlumbing
       return SamplerStatus.OK;
     }
   }
+  public class OffsetLineJig : DrawJig {
+    private readonly Line _baseLine;
+    private double _offsetDistance;
+    private Point3d _mousePoint;
+    private Line _previewLine;
+
+    public OffsetLineJig(PlumbingHorizontalRoute route, double initialOffset = 4.0) {
+      _baseLine = new Line(route.StartPoint, route.EndPoint);
+      _offsetDistance = initialOffset;
+      _mousePoint = route.StartPoint;
+
+      Vector3d routeVec = _baseLine.EndPoint - _baseLine.StartPoint;
+      Vector3d direction = routeVec.GetNormal();
+
+      _previewLine = new Line(_baseLine.EndPoint + (direction * 3.1), _baseLine.EndPoint - (direction * 3.1));
+      _previewLine.Layer = "P-DOMW-CWTR";
+    }
+
+    protected override bool WorldDraw(WorldDraw draw) {
+      if (_previewLine != null)
+        draw.Geometry.Draw(_previewLine);
+      return true;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts) {
+      JigPromptPointOptions opts = new JigPromptPointOptions("\nSpecify offset position:");
+      opts.UserInputControls = UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+      PromptPointResult res = prompts.AcquirePoint(opts);
+
+      if (res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
+      if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+        return SamplerStatus.NoChange;
+
+      _mousePoint = res.Value;
+
+      UpdatePreviewLine();
+      return SamplerStatus.OK;
+    }
+
+    private void UpdatePreviewLine() {
+      // Get the normal vector of the base line
+      Vector3d routeVec = _baseLine.EndPoint - _baseLine.StartPoint;
+      Vector3d normal = routeVec.CrossProduct(Vector3d.ZAxis).GetNormal();
+
+      // Determine sign of offset based on mouse position
+      Vector3d mouseVec = _mousePoint - _baseLine.StartPoint;
+      double side = normal.DotProduct(mouseVec) >= 0 ? 1.0 : -1.0;
+
+      double offsetDistance = _offsetDistance * side;
+
+   
+      Point3d offsetMid = _baseLine.EndPoint + (normal * offsetDistance);
+
+      Vector3d halfVec = routeVec.GetNormal() * (3.1);
+
+      Point3d newStart = offsetMid - halfVec;
+      Point3d newEnd = offsetMid + halfVec;
+
+      // Optionally adjust Z as in your example
+      // newStart = new Point3d(newStart.X, newStart.Y, newStart.Z - (_baseLine.Length * 12));
+      // newEnd = new Point3d(newEnd.X, newEnd.Y, newEnd.Z - (_baseLine.Length * 12));
+
+      _previewLine.StartPoint = newStart;
+      _previewLine.EndPoint = newEnd;
+    }
+
+    public Line GetOffsetLine() {
+      return new Line(_previewLine.StartPoint, _previewLine.EndPoint) { Layer = _previewLine.Layer };
+    }
+  }
+  public class HorizontalRouteJig : DrawJig {
+    private Point3d startPoint;
+    private Point3d endPoint;
+    public Line line;
+    public string message;
+
+    public HorizontalRouteJig(Point3d startPt, string layer, string _message = "\nSelect end point:") {
+      startPoint = startPt;
+      endPoint = startPt;
+      line = new Line(startPoint, startPoint);
+      line.Layer = layer;
+      message = _message;
+    }
+
+    protected override bool WorldDraw(WorldDraw draw) {
+      if (line != null) {
+        draw.Geometry.Draw(line);
+      }
+      return true;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts) {
+      JigPromptPointOptions opts = new JigPromptPointOptions(message);
+      opts.BasePoint = startPoint;
+      opts.UseBasePoint = true;
+      opts.Cursor = CursorType.RubberBand;
+
+      PromptPointResult res = prompts.AcquirePoint(opts);
+      if (res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
+      if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+        return SamplerStatus.NoChange;
+
+      endPoint = new Point3d(res.Value.X, res.Value.Y, startPoint.Z);
+      line.EndPoint = endPoint;
+
+      return SamplerStatus.OK;
+    }
+  }
+
 
   public class LineStartPointPreviewJig : DrawJig
   {
@@ -137,6 +250,75 @@ namespace GMEPPlumbing
       double t = ab.DotProduct(ap) / ab.LengthSqrd;
       t = Math.Max(0, Math.Min(1, t)); // Clamp to segment
       return a + ab * t;
+    }
+  }
+  public class CircleStartPointPreviewJig : DrawJig {
+    private Point3d _center;
+    private double _radius;
+    private Point3d _mousePoint;
+    public Point3d ProjectedPoint { get; private set; }
+
+    public CircleStartPointPreviewJig(Point3d center, double radius) {
+      _center = center;
+      _radius = radius;
+      _mousePoint = center;
+      ProjectedPoint = center + new Vector3d(radius, 0, 0); // Default to right
+    }
+
+    protected override bool WorldDraw(WorldDraw draw) {
+      Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+      ViewTableRecord view = ed.GetCurrentView();
+
+      double unitsPerPixel = view.Width / 6000;
+      double markerRadius = unitsPerPixel * 10;
+
+      // Draw an "X" at the projected point
+      Point3d p1 = ProjectedPoint + new Vector3d(-markerRadius, -markerRadius, 0);
+      Point3d p2 = ProjectedPoint + new Vector3d(markerRadius, markerRadius, 0);
+      Point3d p3 = ProjectedPoint + new Vector3d(-markerRadius, markerRadius, 0);
+      Point3d p4 = ProjectedPoint + new Vector3d(markerRadius, -markerRadius, 0);
+
+      Line line1 = new Line(p1, p2);
+      Line line2 = new Line(p3, p4);
+
+      draw.Geometry.Draw(line1);
+      draw.Geometry.Draw(line2);
+
+      line1.Dispose();
+      line2.Dispose();
+
+      return true;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts) {
+      JigPromptPointOptions opts = new JigPromptPointOptions(
+          "\nMove cursor to preview point on circle, click to select:"
+      ) {
+        BasePoint = _center,
+        UseBasePoint = true,
+        Cursor = CursorType.RubberBand,
+      };
+      opts.UserInputControls =
+          UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+      PromptPointResult res = prompts.AcquirePoint(opts);
+
+      if (res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
+      if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+        return SamplerStatus.NoChange;
+
+      _mousePoint = new Point3d(res.Value.X, res.Value.Y, _center.Z);
+      ProjectedPoint = ProjectPointToCircle(_center, _radius, _mousePoint);
+      return SamplerStatus.OK;
+    }
+
+    public static Point3d ProjectPointToCircle(Point3d center, double radius, Point3d p) {
+      Vector3d dir = (p - center).GetNormal();
+      if (dir.Length < Tolerance.Global.EqualPoint)
+        dir = new Vector3d(1, 0, 0); // Default direction if mouse is at center
+      dir = dir.GetNormal();
+      return center + dir * radius;
     }
   }
 

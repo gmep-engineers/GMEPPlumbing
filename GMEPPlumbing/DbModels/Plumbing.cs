@@ -88,6 +88,7 @@ namespace GMEPPlumbing {
     public int Cfh;
     public bool Residential;
     public bool Commercial;
+    public bool Island;
 
     public PlumbingFixtureCatalogItem(
       int id,
@@ -109,7 +110,8 @@ namespace GMEPPlumbing {
       string gasBlockNames,
       int cfh,
       bool residential,
-      bool commercial
+      bool commercial,
+      bool island
     ) {
       Id = id;
       TypeId = typeId;
@@ -131,6 +133,7 @@ namespace GMEPPlumbing {
       Cfh = cfh;
       Residential = residential;
       Commercial = commercial;
+      Island = island;
     }
   }
 
@@ -316,11 +319,13 @@ namespace GMEPPlumbing {
     public string PipeType;
     public bool IsUp;
     public double Rotation;
+    
     public double FixtureUnits { get; set; } = 0;
     public int FlowTypeId { get; set; } = 1;
     public int GPM { get; set; } = 0;
     public double LongestRunLength { get; set; } = 0;
     public string PipeSize { get; set; } = "";
+    public string FixtureType { get; set; } = "";
 
     public PlumbingVerticalRoute(
       string id,
