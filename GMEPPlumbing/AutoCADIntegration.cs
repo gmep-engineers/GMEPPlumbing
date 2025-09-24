@@ -4719,61 +4719,111 @@ namespace GMEPPlumbing
             );
 
             if (blockName == "GMEP DRAIN") {
-              PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
-              pko.Keywords.Add("Ceiling");
-              pko.Keywords.Add("Roof");
-              pko.Keywords.Add("None", "No Vent Needed", "No Vent Needed");
-              pko.AllowNone = false;
-              PromptResult res = ed.GetKeywords(pko);
-              ed.WriteMessage("\nYou selected: " + res.StringResult);
-              if (res.Status != PromptStatus.OK) {
+              PromptKeywordOptions pko2 = new PromptKeywordOptions("Select Vent Option: ");
+              pko2.Keywords.Add("Add");
+              pko2.Keywords.Add("Connect");
+              pko2.Keywords.Default = "Add";
+              pko2.AllowNone = false;
+              PromptResult res2 = ed.GetKeywords(pko2);
+              ed.WriteMessage("\nYou selected: " + res2.StringResult);
+              if (res2.Status != PromptStatus.OK) {
                 ed.WriteMessage("\nCommand cancelled.");
                 routeHeightDisplay.Disable();
                 return;
               }
-              Dictionary<string, PlumbingVerticalRoute> ventRoutes = null;
-              if (res.StringResult == "None") {
-                continue;
-              }
-              if (res.StringResult == "Ceiling") {
-                ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "UpToCeiling");
-              }
-              else if (res.StringResult == "Roof") {
-                List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
-                PlumbingPlanBasePoint activeBasePoint = basePoints.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
-                List<PlumbingPlanBasePoint> aboveBasePoints = basePoints.Where(bp => bp.Floor >= activeBasePoint.Floor && bp.ViewportId == activeBasePoint.ViewportId).ToList();
-                PlumbingPlanBasePoint highestFloorBasePoint = aboveBasePoints
-                .OrderByDescending(bp => bp.Floor)
-                .FirstOrDefault();
+              Point3d newEndPoint = Point3d.Origin;
+              Point3d newStartPoint = Point3d.Origin;
+              if (res2.StringResult == "Add") {
+                PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
+                pko.Keywords.Add("Ceiling");
+                pko.Keywords.Add("Roof");
+                pko.AllowNone = false;
+                PromptResult res = ed.GetKeywords(pko);
+                ed.WriteMessage("\nYou selected: " + res.StringResult);
+                if (res.Status != PromptStatus.OK) {
+                  ed.WriteMessage("\nCommand cancelled.");
+                  routeHeightDisplay.Disable();
+                  return;
+                }
+                Dictionary<string, PlumbingVerticalRoute> ventRoutes = null;
+                if (res.StringResult == "Ceiling") {
+                  ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "UpToCeiling");
+                }
+                else if (res.StringResult == "Roof") {
+                  List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
+                  PlumbingPlanBasePoint activeBasePoint = basePoints.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
+                  List<PlumbingPlanBasePoint> aboveBasePoints = basePoints.Where(bp => bp.Floor >= activeBasePoint.Floor && bp.ViewportId == activeBasePoint.ViewportId).ToList();
+                  PlumbingPlanBasePoint highestFloorBasePoint = aboveBasePoints
+                  .OrderByDescending(bp => bp.Floor)
+                  .FirstOrDefault();
 
-                ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, "UpToCeiling", null, highestFloorBasePoint.CeilingHeight - highestFloorBasePoint.FloorHeight);
-                if (highestFloorBasePoint.Floor > CADObjectCommands.ActiveFloor) {
-                  PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
-                  ZoomToPoint(ed, startRoute.Position);
+                  ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, "UpToCeiling", null, highestFloorBasePoint.CeilingHeight - highestFloorBasePoint.FloorHeight);
+                  if (highestFloorBasePoint.Floor > CADObjectCommands.ActiveFloor) {
+                    PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
+                    ZoomToPoint(ed, startRoute.Position);
+                  }
+                }
+                if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
+                  ed.WriteMessage("\nError: Could not find vent route for base point.");
+                  routeHeightDisplay.Disable();
+                  return;
+                }
+                Point3d ventPoint = ventRoutes[CADObjectCommands.ActiveBasePointId].Position;
+                ventPoint = new Point3d(ventPoint.X, ventPoint.Y, point.Z);
+                double shortenBy = 1.5;
+                Vector3d direction = point - ventPoint;
+                double length = direction.Length;
+
+                newEndPoint = ventPoint;
+                newStartPoint = point;
+                if (length > 0) {
+                  Vector3d offset = direction.GetNormal() * shortenBy;
+                  newEndPoint = ventPoint + offset;
+                  newStartPoint = point - offset;
                 }
               }
-              if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
-                ed.WriteMessage("\nError: Could not find vent route for base point.");
-                routeHeightDisplay.Disable();
-                return;
-              }
-              Point3d ventPoint = ventRoutes[CADObjectCommands.ActiveBasePointId].Position;
-              ventPoint = new Point3d(ventPoint.X, ventPoint.Y, point.Z);
-              double shortenBy = 1.5;
-              Vector3d direction = point - ventPoint;
-              double length = direction.Length;
+              if (res2.StringResult == "Connect") {
+                while (true) {
+                  PromptEntityOptions peo = new PromptEntityOptions("\nSelect existing vent drop or vertical route to attach to: ");
+                  peo.SetRejectMessage("\nMust select a vent drop or vertical route.");
+                  peo.AddAllowedClass(typeof(BlockReference), true);
+                  PromptEntityResult per = ed.GetEntity(peo);
+                  if (per.Status != PromptStatus.OK) {
+                    ed.WriteMessage("\nCommand cancelled.");
+                    routeHeightDisplay.Disable();
+                    return;
+                  }
+                  using (Transaction tr = db.TransactionManager.StartTransaction()) {
+                    DBObject obj = tr.GetObject(per.ObjectId, OpenMode.ForRead);
+                    if (obj == null) {
+                      continue;
+                    }
+                    if (obj is BlockReference blockRef && FindObjectType(blockRef) == "VerticalRoute") {
+                      PlumbingVerticalRoute selectedRoute = AssembleVerticalRoute(blockRef);
+                      if (selectedRoute == null || selectedRoute.Type != "Vent") {
+                        ed.WriteMessage("\nMust select a Vent Route: ");
+                        continue;
+                      }
+                      Point3d ventPoint = selectedRoute.Position;
+                      ventPoint = new Point3d(ventPoint.X, ventPoint.Y, point.Z);
+                      double shortenBy = 1.5;
+                      Vector3d direction = point - ventPoint;
+                      double length = direction.Length;
 
-              Point3d newEndPoint = ventPoint;
-              Point3d newStartPoint = point;
-              if (length > 0) {
-                Vector3d offset = direction.GetNormal() * shortenBy;
-                newEndPoint = ventPoint + offset;
-                newStartPoint = point - offset;
+                      newEndPoint = ventPoint;
+                      newStartPoint = point;
+                      if (length > 0) {
+                        Vector3d offset = direction.GetNormal() * shortenBy;
+                        newEndPoint = ventPoint + offset;
+                        newStartPoint = point - offset;
+                      }
+                      break;
+                    }
+                  }
+                }
               }
 
-              SpecializedHorizontalRoute(
-                   "Waste", "", 0, newStartPoint, newEndPoint
-              );
+              SpecializedHorizontalRoute("Waste", "", 0, newStartPoint, newEndPoint);
             }
           }
           catch (System.Exception ex) {
