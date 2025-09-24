@@ -4088,7 +4088,7 @@ namespace GMEPPlumbing
         plumbingFixtureTypes.ForEach(t => {
           if (allPlumbingFixtureCatalogItems.ContainsKey(t.Id)) {
             List<PlumbingFixtureCatalogItem> catalogItems = allPlumbingFixtureCatalogItems[t.Id];
-            if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && !catalogItems.All(item => string.IsNullOrEmpty(item.WaterBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && !catalogItems.All(item => string.IsNullOrEmpty(item.WasteBlockNames))) || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && !catalogItems.All(item => string.IsNullOrEmpty(item.GasBlockNames)))) && !catalogItems.All(item => !item.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") && !item.WaterBlockNames.Contains("GMEP CW FIXTURE POINT") && !item.GasBlockNames.Contains("GMEP PLUMBING GAS OUTPUT")) && ((CADObjectCommands.IsResidential && !catalogItems.All(item => item.Residential == false)) || (!CADObjectCommands.IsResidential && !catalogItems.All(item => item.Commercial == false)))) {
+            if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && catalogItems.Any(item => !string.IsNullOrEmpty(item.WaterBlockNames) && (item.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") || item.WaterBlockNames.Contains("GMEP CW FIXTURE POINT")))) || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && catalogItems.Any(item => !string.IsNullOrEmpty(item.WasteBlockNames) && (item.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") || item.WaterBlockNames.Contains("GMEP CW FIXTURE POINT")))) || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && catalogItems.Any(item => !string.IsNullOrEmpty(item.GasBlockNames)))) && ((CADObjectCommands.IsResidential && !catalogItems.All(item => item.Residential == false)) || (!CADObjectCommands.IsResidential && !catalogItems.All(item => item.Commercial == false)))) {
               keywordOptions.Keywords.Add(t.Abbreviation + " - " + t.Name);
             }
           }
@@ -4118,7 +4118,7 @@ namespace GMEPPlumbing
         keywordOptions = new PromptKeywordOptions("");
         keywordOptions.Message = "\nSelect catalog item:";
         plumbingFixtureCatalogItems.ForEach(i => {
-          if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && i.WaterBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && i.WasteBlockNames != "") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && i.GasBlockNames != "")) && (i.WaterBlockNames.Contains("GMEP HW FIXTURE POINT") || i.WaterBlockNames.Contains("GMEP CW FIXTURE POINT") || i.GasBlockNames.Contains("GMEP PLUMBING GAS OUTPUT")) && ((CADObjectCommands.IsResidential && i.Residential == true) || (!CADObjectCommands.IsResidential && i.Commercial == true))) {
+          if (((CADObjectCommands.ActiveViewTypes.Contains("Water") && i.WaterBlockNames != "" && (i.WaterBlockNames.Contains("GMEP CW FIXTURE POINT") || i.WaterBlockNames.Contains("GMEP HW FIXTURE POINT"))) || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && i.WasteBlockNames != "" && (i.WaterBlockNames.Contains("GMEP CW FIXTURE POINT") || i.WaterBlockNames.Contains("GMEP HW FIXTURE POINT"))) || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && i.GasBlockNames != "")) && ((CADObjectCommands.IsResidential && i.Residential == true) || (!CADObjectCommands.IsResidential && i.Commercial == true))) {
             keywordOptions.Keywords.Add(i.Id.ToString() + " - " + i.Description + " - " + i.Make + " " + i.Model);
           }
         });
@@ -4155,7 +4155,65 @@ namespace GMEPPlumbing
       List<string> selectedBlockNames2 = new List<string>(selectedBlockNames);
 
 
+      foreach (string blockName in selectedBlockNames) {
+        if (blockName.Contains("%WHSIZE%")) {
+          if (selectedFixtureType.Abbreviation == "WH") {
+            keywordOptions = new PromptKeywordOptions("");
+            keywordOptions.Message = "\nSelect WH size";
+            keywordOptions.Keywords.Add("50 gal.");
+            keywordOptions.Keywords.Add("80 gal.");
+            keywordOptions.Keywords.Default = "50 gal.";
+            keywordOptions.AllowNone = false;
+            keywordResult = ed.GetKeywords(keywordOptions);
+            if (keywordResult.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            string whSize = keywordResult.StringResult;
+            if (whSize.Contains(' ')) {
+              whSize = whSize.Split(' ')[0];
+            }
+            selectedBlockNames2[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+              "%WHSIZE%",
+              whSize
+            );
+          }
+        }
+      }
+
       double routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
+      if (selectedFixtureType.Abbreviation == "WH" || selectedFixtureType.Abbreviation == "IWH") {
+        PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the fixture from the floor (in feet): ");
+        pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
+        while (true) {
+          try {
+            PromptDoubleResult pdr = ed.GetDouble(pdo);
+            if (pdr.Status == PromptStatus.Cancel) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            if (pdr.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+              continue;
+            }
+            routeHeight = pdr.Value;
+            // GetHeightLimits returns Tuple<double, double> (min, max)
+            var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+            double minHeight = heightLimits.Item1;
+            double maxHeight = heightLimits.Item2;
+            if (routeHeight < minHeight || routeHeight > maxHeight) {
+              ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
+              pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
+              continue;
+            }
+            break; // Valid input
+          }
+          catch (System.Exception ex) {
+            ed.WriteMessage($"\nError: {ex.Message}");
+            continue;
+          }
+        }
+      }
 
 
       PlumbingFixture plumbingFixture = null;
