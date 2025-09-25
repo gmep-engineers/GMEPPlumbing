@@ -1627,6 +1627,9 @@ namespace GMEPPlumbing
       var prompt = new Views.BasePointPromptWindow();
       bool? result = prompt.ShowDialog();
       double currentFloorHeight = -10;
+      if (!CADObjectCommands.IsResidential) {
+        currentFloorHeight = -15;
+      }
       double currentCeilingHeight = -1;
       double currentRouteHeight = 3;
       if (result != true) {
@@ -1699,6 +1702,9 @@ namespace GMEPPlumbing
         ceilingHeightOptions.AllowNegative = false;
         ceilingHeightOptions.AllowZero = false;
         ceilingHeightOptions.DefaultValue = currentFloorHeight + 10;
+        if (!CADObjectCommands.IsResidential) {
+          ceilingHeightOptions.DefaultValue = currentFloorHeight + 15;
+        }
 
         while (true) {
           PromptDoubleResult ceilingHeightResult = ed.GetDouble(ceilingHeightOptions);
@@ -2508,8 +2514,7 @@ namespace GMEPPlumbing
       
 
       var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
-
+  
       if (selectedBlockNames2.Count() != 0) {
         foreach (string blockName in selectedBlockNames2) {
           ObjectId blockId = ObjectId.Null;
@@ -2742,6 +2747,7 @@ namespace GMEPPlumbing
               }
             }
             else {
+              routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
@@ -2792,7 +2798,7 @@ namespace GMEPPlumbing
                   routeHeightDisplay.Disable();
                   return;
                 }
-
+                routeHeightDisplay.Disable();
                 blockId = br.Id;
                 tr.Commit();
               }
@@ -2871,7 +2877,6 @@ namespace GMEPPlumbing
               ed.WriteMessage("\nYou selected: " + res.StringResult);
               if (res.Status != PromptStatus.OK) {
                 ed.WriteMessage("\nCommand cancelled.");
-                routeHeightDisplay.Disable();
                 return;
               }
               Dictionary<string, PlumbingVerticalRoute> ventRoutes = null;
@@ -2897,7 +2902,6 @@ namespace GMEPPlumbing
               }
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
-                routeHeightDisplay.Disable();
                 return;
               }
               Point3d ventPoint = ventRoutes[CADObjectCommands.ActiveBasePointId].Position;
@@ -3033,7 +3037,7 @@ namespace GMEPPlumbing
 
 
       var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+    
 
       if (selectedBlockNames2.Count() != 0) {
         foreach (string blockName in selectedBlockNames2) {
@@ -3053,7 +3057,6 @@ namespace GMEPPlumbing
               PromptResult circlePromptResult = ed.Drag(circleJig);
               if (circlePromptResult.Status != PromptStatus.OK) {
                 ed.WriteMessage("\nCommand cancelled.");
-                routeHeightDisplay.Disable();
                 return;
               }
               Point3d firstPoint = circleJig.ProjectedPoint;
@@ -3213,7 +3216,6 @@ namespace GMEPPlumbing
               PromptResult circlePromptResult = ed.Drag(circleJig);
               if (circlePromptResult.Status != PromptStatus.OK) {
                 ed.WriteMessage("\nCommand cancelled.");
-                routeHeightDisplay.Disable();
                 return;
               }
               Point3d firstPoint = circleJig.ProjectedPoint;
@@ -3257,7 +3259,6 @@ namespace GMEPPlumbing
               PromptResult circlePromptResult = ed.Drag(circleJig);
               if (circlePromptResult.Status != PromptStatus.OK) {
                 ed.WriteMessage("\nCommand cancelled.");
-                routeHeightDisplay.Disable();
                 return;
               }
               Point3d firstPoint = circleJig.ProjectedPoint;
@@ -3294,6 +3295,7 @@ namespace GMEPPlumbing
               }
             }
             else {
+              routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
@@ -3344,7 +3346,7 @@ namespace GMEPPlumbing
                   routeHeightDisplay.Disable();
                   return;
                 }
-
+                routeHeightDisplay.Disable();
                 blockId = br.Id;
                 tr.Commit();
               }
@@ -3451,7 +3453,6 @@ namespace GMEPPlumbing
               ed.WriteMessage("\nYou selected: " + res.StringResult);
               if (res.Status != PromptStatus.OK) {
                 ed.WriteMessage("\nCommand cancelled.");
-                routeHeightDisplay.Disable();
                 return;
               }
               if (res.StringResult == "None") {
@@ -3476,7 +3477,6 @@ namespace GMEPPlumbing
              }
              if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                ed.WriteMessage("\nError: Could not find vent route for base point.");
-               routeHeightDisplay.Disable();
                return;
              }
 
@@ -3647,12 +3647,9 @@ namespace GMEPPlumbing
         }
       }
 
-
       PlumbingFixture plumbingFixture = null;
 
-
       var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       if (selectedBlockNames2.Count() != 0) {
         foreach (string blockName in selectedBlockNames2) {
@@ -3676,7 +3673,6 @@ namespace GMEPPlumbing
                 PromptResult jigResult = ed.Drag(jig);
                 if (jigResult.Status != PromptStatus.OK) {
                   ed.WriteMessage("\nCommand cancelled.");
-                  routeHeightDisplay.Disable();
                   return;
                 }
                 Point3d firstPoint = jig.ProjectedPoint;
@@ -3715,7 +3711,6 @@ namespace GMEPPlumbing
                 PromptResult jigResult = ed.Drag(jig);
                 if (jigResult.Status != PromptStatus.OK) {
                   ed.WriteMessage("\nCommand cancelled.");
-                  routeHeightDisplay.Disable();
                   return;
                 }
                 Point3d firstPoint = jig.ProjectedPoint;
@@ -3759,7 +3754,6 @@ namespace GMEPPlumbing
                 PromptResult linePromptResult = ed.Drag(lineJig);
                 if (linePromptResult.Status != PromptStatus.OK) {
                   ed.WriteMessage("\nCommand cancelled.");
-                  routeHeightDisplay.Disable();
                   return;
                 }
                 Line line = lineJig.GetOffsetLine();
@@ -3809,7 +3803,6 @@ namespace GMEPPlumbing
               PromptResult jigResult = ed.Drag(jig);
               if (jigResult.Status != PromptStatus.OK) {
                 ed.WriteMessage("\nCommand cancelled.");
-                routeHeightDisplay.Disable();
                 return;
               }
               Point3d firstPoint = jig.ProjectedPoint;
@@ -3850,7 +3843,6 @@ namespace GMEPPlumbing
               PromptResult jigResult = ed.Drag(jig);
               if (jigResult.Status != PromptStatus.OK) {
                 ed.WriteMessage("\nCommand cancelled.");
-                routeHeightDisplay.Disable();
                 return;
               }
               Point3d firstPoint = jig.ProjectedPoint;
@@ -3882,6 +3874,7 @@ namespace GMEPPlumbing
               }
             }
             else {
+              routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
@@ -3932,7 +3925,7 @@ namespace GMEPPlumbing
                   routeHeightDisplay.Disable();
                   return;
                 }
-
+                routeHeightDisplay.Disable();
                 blockId = br.Id;
                 tr.Commit();
               }
@@ -4011,7 +4004,6 @@ namespace GMEPPlumbing
               ed.WriteMessage("\nYou selected: " + res.StringResult);
               if (res.Status != PromptStatus.OK) {
                 ed.WriteMessage("\nCommand cancelled.");
-                routeHeightDisplay.Disable();
                 return;
               }
               Dictionary<string, PlumbingVerticalRoute> ventRoutes = null;
@@ -4037,7 +4029,6 @@ namespace GMEPPlumbing
               }
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
-                routeHeightDisplay.Disable();
                 return;
               }
               Point3d ventPoint = ventRoutes[CADObjectCommands.ActiveBasePointId].Position;
@@ -4067,7 +4058,6 @@ namespace GMEPPlumbing
         }
         MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
       }
-      routeHeightDisplay.Disable();
     }
     [CommandMethod("PlumbingSharedFixture")]
     public void PlumbingSharedFixture() {
@@ -4226,12 +4216,9 @@ namespace GMEPPlumbing
         }
       }
 
-
       PlumbingFixture plumbingFixture = null;
 
-
       var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       if (selectedBlockNames2.Count() != 0) {
         foreach (string blockName in selectedBlockNames2) {
@@ -4257,7 +4244,6 @@ namespace GMEPPlumbing
                   PromptEntityResult per = ed.GetEntity(peo);
                   if (per.Status != PromptStatus.OK) {
                     ed.WriteMessage("\nCommand cancelled.");
-                    routeHeightDisplay.Disable();
                     return;
                   }
                   using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -4276,7 +4262,6 @@ namespace GMEPPlumbing
                       PromptResult jigResult = ed.Drag(jig);
                       if (jigResult.Status != PromptStatus.OK) {
                         ed.WriteMessage("\nCommand cancelled.");
-                        routeHeightDisplay.Disable();
                         return;
                       }
                       firstPoint = jig.ProjectedPoint;
@@ -4296,7 +4281,6 @@ namespace GMEPPlumbing
                         PromptResult jigResult = ed.Drag(jig);
                         if (jigResult.Status != PromptStatus.OK) {
                           ed.WriteMessage("\nCommand cancelled.");
-                          routeHeightDisplay.Disable();
                           return;
                         }
                         firstPoint = jig.ProjectedPoint;
@@ -4345,7 +4329,6 @@ namespace GMEPPlumbing
                   PromptEntityResult per = ed.GetEntity(peo);
                   if (per.Status != PromptStatus.OK) {
                     ed.WriteMessage("\nCommand cancelled.");
-                    routeHeightDisplay.Disable();
                     return;
                   }
                   using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -4364,7 +4347,6 @@ namespace GMEPPlumbing
                       PromptResult jigResult = ed.Drag(jig);
                       if (jigResult.Status != PromptStatus.OK) {
                         ed.WriteMessage("\nCommand cancelled.");
-                        routeHeightDisplay.Disable();
                         return;
                       }
                       firstPoint = jig.ProjectedPoint;
@@ -4384,7 +4366,6 @@ namespace GMEPPlumbing
                         PromptResult jigResult = ed.Drag(jig);
                         if (jigResult.Status != PromptStatus.OK) {
                           ed.WriteMessage("\nCommand cancelled.");
-                          routeHeightDisplay.Disable();
                           return;
                         }
                         firstPoint = jig.ProjectedPoint;
@@ -4434,7 +4415,6 @@ namespace GMEPPlumbing
                 PromptEntityResult per = ed.GetEntity(peo);
                 if (per.Status != PromptStatus.OK) {
                   ed.WriteMessage("\nCommand cancelled.");
-                  routeHeightDisplay.Disable();
                   return;
                 }
                 using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -4453,7 +4433,6 @@ namespace GMEPPlumbing
                     PromptResult jigResult = ed.Drag(jig);
                     if (jigResult.Status != PromptStatus.OK) {
                       ed.WriteMessage("\nCommand cancelled.");
-                      routeHeightDisplay.Disable();
                       return;
                     }
                     firstPoint = jig.ProjectedPoint;
@@ -4473,7 +4452,6 @@ namespace GMEPPlumbing
                       PromptResult jigResult = ed.Drag(jig);
                       if (jigResult.Status != PromptStatus.OK) {
                         ed.WriteMessage("\nCommand cancelled.");
-                        routeHeightDisplay.Disable();
                         return;
                       }
                       firstPoint = jig.ProjectedPoint;
@@ -4521,7 +4499,6 @@ namespace GMEPPlumbing
                 PromptEntityResult per = ed.GetEntity(peo);
                 if (per.Status != PromptStatus.OK) {
                   ed.WriteMessage("\nCommand cancelled.");
-                  routeHeightDisplay.Disable();
                   return;
                 }
                 using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -4540,7 +4517,6 @@ namespace GMEPPlumbing
                     PromptResult jigResult = ed.Drag(jig);
                     if (jigResult.Status != PromptStatus.OK) {
                       ed.WriteMessage("\nCommand cancelled.");
-                      routeHeightDisplay.Disable();
                       return;
                     }
                     firstPoint = jig.ProjectedPoint;
@@ -4560,7 +4536,6 @@ namespace GMEPPlumbing
                       PromptResult jigResult = ed.Drag(jig);
                       if (jigResult.Status != PromptStatus.OK) {
                         ed.WriteMessage("\nCommand cancelled.");
-                        routeHeightDisplay.Disable();
                         return;
                       }
                       firstPoint = jig.ProjectedPoint;
@@ -4599,6 +4574,7 @@ namespace GMEPPlumbing
 
             }
             else {
+              routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
@@ -4649,7 +4625,7 @@ namespace GMEPPlumbing
                   routeHeightDisplay.Disable();
                   return;
                 }
-
+                routeHeightDisplay.Disable();
                 blockId = br.Id;
                 tr.Commit();
               }
@@ -4728,7 +4704,6 @@ namespace GMEPPlumbing
               ed.WriteMessage("\nYou selected: " + res2.StringResult);
               if (res2.Status != PromptStatus.OK) {
                 ed.WriteMessage("\nCommand cancelled.");
-                routeHeightDisplay.Disable();
                 return;
               }
               Point3d newEndPoint = Point3d.Origin;
@@ -4742,7 +4717,6 @@ namespace GMEPPlumbing
                 ed.WriteMessage("\nYou selected: " + res.StringResult);
                 if (res.Status != PromptStatus.OK) {
                   ed.WriteMessage("\nCommand cancelled.");
-                  routeHeightDisplay.Disable();
                   return;
                 }
                 Dictionary<string, PlumbingVerticalRoute> ventRoutes = null;
@@ -4765,7 +4739,6 @@ namespace GMEPPlumbing
                 }
                 if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                   ed.WriteMessage("\nError: Could not find vent route for base point.");
-                  routeHeightDisplay.Disable();
                   return;
                 }
                 Point3d ventPoint = ventRoutes[CADObjectCommands.ActiveBasePointId].Position;
@@ -4790,7 +4763,6 @@ namespace GMEPPlumbing
                   PromptEntityResult per = ed.GetEntity(peo);
                   if (per.Status != PromptStatus.OK) {
                     ed.WriteMessage("\nCommand cancelled.");
-                    routeHeightDisplay.Disable();
                     return;
                   }
                   using (Transaction tr = db.TransactionManager.StartTransaction()) {
