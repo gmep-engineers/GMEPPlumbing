@@ -6326,11 +6326,11 @@ namespace GMEPPlumbing
                         ViewId,
                         Floor,
                         FloorHeight,
-                        CeilingHeight
+                        CeilingHeight,
+                        isSite,
+                        isSiteRef
                       );
                       BasePoint.RouteHeight = RouteHeight;
-                      BasePoint.IsSite = isSite;
-                      BasePoint.IsSiteRef = isSiteRef;
                       points.Add(BasePoint);
                     }
                   }
