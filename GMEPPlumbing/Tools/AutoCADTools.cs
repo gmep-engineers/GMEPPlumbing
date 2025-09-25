@@ -41,6 +41,7 @@ namespace GMEPPlumbing
     public static double ActiveFloorHeight = 0;
 
     public static double ActiveCeilingHeight = 0;
+    public static string ActiveViewId { get; set; } = "";
 
     public static string ActiveViewName { get; set; } = "";
 
@@ -380,6 +381,7 @@ namespace GMEPPlumbing
           double ceilingHeight = 0;
           string basePointId = "";
           double routeHeight = 0;
+          string viewId = "";
           List<string> viewTypes = new List<string>();
           foreach (DynamicBlockReferenceProperty prop in pc2) {
             if (prop.PropertyName == "floor") {
@@ -411,6 +413,9 @@ namespace GMEPPlumbing
                 viewTypes.Add("Storm");
               }
             }
+            if (prop.PropertyName == "view_id") {
+              viewId = prop.Value.ToString();
+            }
           }
           if (floor == startFloor) {
             AutoCADIntegration.ZoomToBlock(ed, entity2);
@@ -421,6 +426,7 @@ namespace GMEPPlumbing
             ActiveFloor = floor;
             ActiveViewName = resultKeyword;
             ActiveViewTypes = viewTypes;
+            ActiveViewId = viewId;
           }
         }
         tr.Commit();

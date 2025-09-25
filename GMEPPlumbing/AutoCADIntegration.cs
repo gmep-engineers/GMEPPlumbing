@@ -1640,6 +1640,7 @@ namespace GMEPPlumbing
       bool gas = prompt.Gas;
       bool sewerVent = prompt.SewerVent;
       bool storm = false;
+      bool site = prompt.Site;
       string planName = prompt.PlanName.ToUpper();
       string floorQtyResult = prompt.FloorQty;
       string ViewId = Guid.NewGuid().ToString();
@@ -1819,7 +1820,115 @@ namespace GMEPPlumbing
           tr.Commit();
         }
       }
+      if (site) {
+        SetSiteBasePoint(ViewId);
+      }
       SettingObjects = false;
+    }
+    [CommandMethod("SETPLUMBINGSITEBASEPOINT")]
+    public async void SetPlumbingSiteBasePoint() {
+      SettingObjects = true;
+      CADObjectCommands.GetActiveView();
+      string viewId = CADObjectCommands.ActiveViewId;
+      bool sitePointExists = GetPlumbingBasePointsFromCAD().Any(i => i.ViewportId == viewId && (i.IsSite || i.IsSiteRef));
+      if (!sitePointExists) {
+        SetSiteBasePoint(viewId);
+      }
+      else {
+        var doc = Application.DocumentManager.MdiActiveDocument;
+        if (doc == null) return;
+        var ed = doc.Editor;
+        ed.WriteMessage("\nA Site Base Point already exists for this view. Operation cancelled.");
+      }
+      SettingObjects = false;
+
+    }
+    public async void SetSiteBasePoint(string viewId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
+      var db = doc.Database;
+      var ed = doc.Editor;
+      List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD().Where(i => i.ViewportId == viewId).OrderBy(i => i.Floor).ToList();
+      PlumbingPlanBasePoint lowestPoint = basePoints.OrderBy(i => i.FloorHeight).First();
+
+      for (int i = 0; i < 2; i++) {
+        string message = $"Site Base Point for plan {lowestPoint.Plan}:{lowestPoint.Type}.";
+        if (i == 1) {
+          message = $"Site Base Point for plan {lowestPoint.Plan}:{lowestPoint.Type}(relative to floor {lowestPoint.Floor}).";
+          ZoomToPoint(ed, new Point3d(lowestPoint.Point.X, lowestPoint.Point.Y, 0));
+        }
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord curSpace = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          BlockTableRecord block;
+          //string message = "\nCreating Plumbing Base Point for Site";
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            "GMEP_PLUMBING_BASEPOINT",
+            message,
+            out block,
+            out Point3d point
+          );
+          if (br == null) {
+            ed.WriteMessage("\nOperation cancelled.");
+            SettingObjects = false;
+            return;
+          }
+          br.Layer = "xref";
+          br.Rotation = br.Rotation + Math.PI / 4;
+          curSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+          DynamicBlockReferencePropertyCollection properties =
+            br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in properties) {
+            if (prop.PropertyName == "plan") {
+              prop.Value = lowestPoint.Plan;
+            }
+            else if (prop.PropertyName == "floor") {
+              prop.Value = lowestPoint.Floor;
+            }
+            else if (prop.PropertyName == "type") {
+              prop.Value = lowestPoint.Type;
+            }
+            else if (prop.PropertyName == "view_id") {
+              prop.Value = viewId;
+            }
+            else if (prop.PropertyName == "id") {
+              prop.Value = Guid.NewGuid().ToString();
+            }
+            else if (prop.PropertyName == "pos_x") {
+              prop.Value = point.X;
+            }
+            else if (prop.PropertyName == "pos_y") {
+              prop.Value = point.Y;
+            }
+            else if (prop.PropertyName == "floor_height") {
+              prop.Value = lowestPoint.FloorHeight;
+            }
+            else if (prop.PropertyName == "route_height") {
+              prop.Value = lowestPoint.RouteHeight;
+            }
+            else if (prop.PropertyName == "ceiling_height") {
+              prop.Value = lowestPoint.CeilingHeight;
+            }
+            else if (prop.PropertyName == "is_site" && i == 0) {
+              prop.Value = 1;
+            }
+            else if (prop.PropertyName == "is_site_ref" && i == 1) {
+              prop.Value = 1;
+            }
+          }
+          tr.Commit();
+        }
+      }
+
+      
+      
+
+     
     }
 
 
@@ -6170,6 +6279,9 @@ namespace GMEPPlumbing
                     int Floor = 0;
                     double FloorHeight = 0;
                     double CeilingHeight = 0;
+                    double RouteHeight = 0;
+                    bool isSite = false;
+                    bool isSiteRef = false;
 
                     foreach (DynamicBlockReferenceProperty prop in pc) {
                       if (prop.PropertyName == "floor") {
@@ -6193,6 +6305,15 @@ namespace GMEPPlumbing
                       if (prop.PropertyName == "ceiling_height") {
                         CeilingHeight = Convert.ToDouble(prop.Value);
                       }
+                      if (prop.PropertyName == "route_height") {
+                        RouteHeight = Convert.ToDouble(prop.Value);
+                      }
+                      if (prop.PropertyName == "is_site") {
+                        isSite = Convert.ToDouble(prop.Value) == 1.0;
+                      }
+                      if (prop.PropertyName == "is_site_ref") {
+                        isSiteRef = Convert.ToDouble(prop.Value) == 1.0;
+                      }
 
                     }
                     if (Id != "0") {
@@ -6207,6 +6328,9 @@ namespace GMEPPlumbing
                         FloorHeight,
                         CeilingHeight
                       );
+                      BasePoint.RouteHeight = RouteHeight;
+                      BasePoint.IsSite = isSite;
+                      BasePoint.IsSiteRef = isSiteRef;
                       points.Add(BasePoint);
                     }
                   }

@@ -182,6 +182,9 @@ namespace GMEPPlumbing {
     public Point3d Point;
     public double FloorHeight;
     public double CeilingHeight;
+    public double RouteHeight { get; set; } = 0;
+    public bool IsSite { get; set; } = false;
+    public bool IsSiteRef { get; set; } = false;
 
     public PlumbingPlanBasePoint(string id, string projectId, Point3d point, string plan, string type, string viewportId, int floor, double floorHeight, double ceilingHeight) {
       Id = id;
