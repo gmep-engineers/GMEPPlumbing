@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:GMEPPlumbing.Views"
         mc:Ignorable="d"
         Title="Base Points"
-        Height="280" Width="417">
+        Height="310" Width="417">
     <Grid>
         <Border BorderThickness="2" BorderBrush="Black">
             <StackPanel Orientation="Vertical">
@@ -14,7 +14,10 @@
                 <TextBox x:Name="PlanNameText" HorizontalAlignment="Center" Width="200" Height="25"/>
                 <Label HorizontalAlignment="Center" Content="# Floors" FontWeight="Bold" Margin="10,10,0,0" FontSize="14"/>
                 <TextBox x:Name="FloorQtyText" HorizontalAlignment="Center" Width="200" Height="25"/>
-        
+                <Border BorderThickness="1" BorderBrush="Black" HorizontalAlignment="Center" Width="120" Margin="0,20,0,0" Background="#e6ecf2">
+                    <CheckBox HorizontalAlignment="Center" x:Name="SiteCheck" Content="Site Basepoints" FontWeight="DemiBold" Margin="0 5 0 5" />
+                </Border>
+
                 <Line X1="0" Y1="0" X2="350" Y2="0" Stroke="Black" Margin="0 20 0 0" Height="1" HorizontalAlignment="Center" StrokeThickness="1"/>
                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 20 0 0">
                     <CheckBox x:Name="WaterCheck" FontWeight="Demibold" Content="COLD/HOT WATER" Margin="1,0,0,20"/>

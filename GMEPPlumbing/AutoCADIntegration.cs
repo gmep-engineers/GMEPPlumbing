@@ -1652,6 +1652,7 @@ namespace GMEPPlumbing
       bool gas = prompt.Gas;
       bool sewerVent = prompt.SewerVent;
       bool storm = false;
+      bool site = prompt.Site;
       string planName = prompt.PlanName.ToUpper();
       string floorQtyResult = prompt.FloorQty;
       string ViewId = Guid.NewGuid().ToString();
@@ -1831,16 +1832,19 @@ namespace GMEPPlumbing
           tr.Commit();
         }
       }
+      if (site) {
+        SetSiteBasePoint(ViewId);
+      }
       SettingObjects = false;
     }
     [CommandMethod("SETPLUMBINGSITEBASEPOINT")]
     public async void SetPlumbingSiteBasePoint() {
       SettingObjects = true;
       
-      string basePointId = CADObjectCommands.GetActiveView();
-      bool sitePointExists = GetPlumbingBasePointsFromCAD().Any(i => i.ViewportId == CADObjectCommands.ActiveViewId && i.Floor == CADObjectCommands.ActiveFloor && (i.IsSite || i.IsSiteRef));
+      CADObjectCommands.GetActiveView();
+      bool sitePointExists = GetPlumbingBasePointsFromCAD().Any(i => i.ViewportId == CADObjectCommands.ActiveViewId && (i.IsSite || i.IsSiteRef));
       if (!sitePointExists) {
-        SetSiteBasePoint(basePointId);
+        SetSiteBasePoint(CADObjectCommands.ActiveViewId);
       }
       else {
         var doc = Application.DocumentManager.MdiActiveDocument;
@@ -1852,21 +1856,43 @@ namespace GMEPPlumbing
       SettingObjects = false;
 
     }
-    public async void SetSiteBasePoint(string basePointId) {
+    public async void SetSiteBasePoint(string viewId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
 
       var db = doc.Database;
       var ed = doc.Editor;
-      //List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD().Where(i => i.ViewportId == viewId).OrderBy(i => i.Floor).ToList();
-      PlumbingPlanBasePoint lowestPoint = GetPlumbingBasePointsFromCAD().Where(i => i.Id == basePointId).FirstOrDefault();
+      List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD().Where(i => i.ViewportId == viewId).OrderBy(i => i.Floor).ToList();
+      List<int> floors = basePoints.Select(i => i.Floor).Distinct().ToList();
 
-      for (int i = 0; i < 2; i++) {
-        string message = $"Site Base Point for plan {lowestPoint.Plan}:{lowestPoint.Type}.";
-        if (i == 1) {
-          message = $"Site Base Point for plan {lowestPoint.Plan}:{lowestPoint.Type}(relative to floor {lowestPoint.Floor}).";
-          ZoomToPoint(ed, new Point3d(lowestPoint.Point.X, lowestPoint.Point.Y, 0));
-        }
+      PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect bottom floor of site plan: " );
+      foreach (int floor in floors) {
+        pko.Keywords.Add(floor.ToString());
+      }
+      PromptResult pr = ed.GetKeywords(pko);
+      if (pr.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nOperation cancelled.");
+        SettingObjects = false;
+        return;
+      }
+      int bottomPointFloor = int.Parse(pr.StringResult);
+
+      floors.RemoveAll(i => i < bottomPointFloor);
+      PromptKeywordOptions pko2 = new PromptKeywordOptions("\nSelect top floor of site plan: ");
+      foreach (int floor in floors) {
+        pko2.Keywords.Add(floor.ToString());
+      }
+      PromptResult pr2 = ed.GetKeywords(pko2);
+      if (pr2.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nOperation cancelled.");
+        SettingObjects = false;
+        return;
+      }
+      int topPointFloor = int.Parse(pr2.StringResult);
+
+      for (int i = bottomPointFloor; i <= topPointFloor; i++) {
+        PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
+        string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}, Floor {i}";
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
           BlockTableRecord curSpace = (BlockTableRecord)
@@ -1894,16 +1920,16 @@ namespace GMEPPlumbing
             br.DynamicBlockReferencePropertyCollection;
           foreach (DynamicBlockReferenceProperty prop in properties) {
             if (prop.PropertyName == "plan") {
-              prop.Value = lowestPoint.Plan;
+              prop.Value = basePoint.Plan;
             }
             else if (prop.PropertyName == "floor") {
-              prop.Value = lowestPoint.Floor;
+              prop.Value = basePoint.Floor;
             }
             else if (prop.PropertyName == "type") {
-              prop.Value = lowestPoint.Type;
+              prop.Value = basePoint.Type;
             }
             else if (prop.PropertyName == "view_id") {
-              prop.Value = lowestPoint.ViewportId;
+              prop.Value = basePoint.ViewportId;
             }
             else if (prop.PropertyName == "id") {
               prop.Value = Guid.NewGuid().ToString();
@@ -1915,29 +1941,89 @@ namespace GMEPPlumbing
               prop.Value = point.Y;
             }
             else if (prop.PropertyName == "floor_height") {
-              prop.Value = lowestPoint.FloorHeight;
+              prop.Value = basePoint.FloorHeight;
             }
             else if (prop.PropertyName == "route_height") {
-              prop.Value = lowestPoint.RouteHeight;
+              prop.Value = basePoint.RouteHeight;
             }
             else if (prop.PropertyName == "ceiling_height") {
-              prop.Value = lowestPoint.CeilingHeight;
+              prop.Value = basePoint.CeilingHeight;
             }
-            else if (prop.PropertyName == "is_site" && i == 0) {
-              prop.Value = 1;
-            }
-            else if (prop.PropertyName == "is_site_ref" && i == 1) {
+            else if (prop.PropertyName == "is_site") {
               prop.Value = 1;
             }
           }
           tr.Commit();
         }
       }
-
-      
-      
-
-     
+      for (int i = bottomPointFloor; i <= topPointFloor; i++) {
+        PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
+        string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}(relative to floor {basePoint.Floor}).";
+        ZoomToPoint(ed, new Point3d(basePoint.Point.X, basePoint.Point.Y, 0));
+        
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord curSpace = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          BlockTableRecord block;
+          //string message = "\nCreating Plumbing Base Point for Site";
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            "GMEP_PLUMBING_BASEPOINT",
+            message,
+            out block,
+            out Point3d point
+          );
+          if (br == null) {
+            ed.WriteMessage("\nOperation cancelled.");
+            SettingObjects = false;
+            return;
+          }
+          br.Layer = "xref";
+          br.Rotation = br.Rotation + Math.PI / 4;
+          curSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+          DynamicBlockReferencePropertyCollection properties =
+            br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in properties) {
+            if (prop.PropertyName == "plan") {
+              prop.Value = basePoint.Plan;
+            }
+            else if (prop.PropertyName == "floor") {
+              prop.Value = basePoint.Floor;
+            }
+            else if (prop.PropertyName == "type") {
+              prop.Value = basePoint.Type;
+            }
+            else if (prop.PropertyName == "view_id") {
+              prop.Value = basePoint.ViewportId;
+            }
+            else if (prop.PropertyName == "id") {
+              prop.Value = Guid.NewGuid().ToString();
+            }
+            else if (prop.PropertyName == "pos_x") {
+              prop.Value = point.X;
+            }
+            else if (prop.PropertyName == "pos_y") {
+              prop.Value = point.Y;
+            }
+            else if (prop.PropertyName == "floor_height") {
+              prop.Value = basePoint.FloorHeight;
+            }
+            else if (prop.PropertyName == "route_height") {
+              prop.Value = basePoint.RouteHeight;
+            }
+            else if (prop.PropertyName == "ceiling_height") {
+              prop.Value = basePoint.CeilingHeight;
+            }
+            else if (prop.PropertyName == "is_site_ref") {
+              prop.Value = 1;
+            }
+          }
+          tr.Commit();
+        }
+      }
     }
 
 
