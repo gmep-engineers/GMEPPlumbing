@@ -1640,7 +1640,6 @@ namespace GMEPPlumbing
       bool gas = prompt.Gas;
       bool sewerVent = prompt.SewerVent;
       bool storm = false;
-      bool site = prompt.Site;
       string planName = prompt.PlanName.ToUpper();
       string floorQtyResult = prompt.FloorQty;
       string ViewId = Guid.NewGuid().ToString();
@@ -1820,19 +1819,16 @@ namespace GMEPPlumbing
           tr.Commit();
         }
       }
-      if (site) {
-        SetSiteBasePoint(ViewId);
-      }
       SettingObjects = false;
     }
     [CommandMethod("SETPLUMBINGSITEBASEPOINT")]
     public async void SetPlumbingSiteBasePoint() {
       SettingObjects = true;
-      CADObjectCommands.GetActiveView();
-      string viewId = CADObjectCommands.ActiveViewId;
-      bool sitePointExists = GetPlumbingBasePointsFromCAD().Any(i => i.ViewportId == viewId && (i.IsSite || i.IsSiteRef));
+      
+      string basePointId = CADObjectCommands.GetActiveView();
+      bool sitePointExists = GetPlumbingBasePointsFromCAD().Any(i => i.ViewportId == CADObjectCommands.ActiveViewId && i.Floor == CADObjectCommands.ActiveFloor && (i.IsSite || i.IsSiteRef));
       if (!sitePointExists) {
-        SetSiteBasePoint(viewId);
+        SetSiteBasePoint(basePointId);
       }
       else {
         var doc = Application.DocumentManager.MdiActiveDocument;
@@ -1840,17 +1836,18 @@ namespace GMEPPlumbing
         var ed = doc.Editor;
         ed.WriteMessage("\nA Site Base Point already exists for this view. Operation cancelled.");
       }
+     
       SettingObjects = false;
 
     }
-    public async void SetSiteBasePoint(string viewId) {
+    public async void SetSiteBasePoint(string basePointId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
 
       var db = doc.Database;
       var ed = doc.Editor;
-      List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD().Where(i => i.ViewportId == viewId).OrderBy(i => i.Floor).ToList();
-      PlumbingPlanBasePoint lowestPoint = basePoints.OrderBy(i => i.FloorHeight).First();
+      //List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD().Where(i => i.ViewportId == viewId).OrderBy(i => i.Floor).ToList();
+      PlumbingPlanBasePoint lowestPoint = GetPlumbingBasePointsFromCAD().Where(i => i.Id == basePointId).FirstOrDefault();
 
       for (int i = 0; i < 2; i++) {
         string message = $"Site Base Point for plan {lowestPoint.Plan}:{lowestPoint.Type}.";
@@ -1894,7 +1891,7 @@ namespace GMEPPlumbing
               prop.Value = lowestPoint.Type;
             }
             else if (prop.PropertyName == "view_id") {
-              prop.Value = viewId;
+              prop.Value = lowestPoint.ViewportId;
             }
             else if (prop.PropertyName == "id") {
               prop.Value = Guid.NewGuid().ToString();
