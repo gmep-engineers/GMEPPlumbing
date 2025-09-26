@@ -6110,7 +6110,7 @@ namespace GMEPPlumbing
           await mariaDBService.UpdatePlumbingFixtures(fixtures, ProjectId);
         }
         catch (System.Exception ex) {
-          ed.WriteMessage("\nError getting ProjectId: " + ex.Message);
+          ed.WriteMessage("\nError getting ProjectId: " + ex.Message + ex.StackTrace);
           return;
         }
       }

@@ -1047,6 +1047,8 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@type", point.Type);
           command.Parameters.AddWithValue("@posX", point.Point.X);
           command.Parameters.AddWithValue("@posY", point.Point.Y);
+          command.Parameters.AddWithValue("@isSite", point.IsSite);
+          command.Parameters.AddWithValue("@isSiteRef", point.IsSiteRef);
           await command.ExecuteNonQueryAsync();
         }
       }
