@@ -851,15 +851,27 @@ namespace GMEPPlumbing
                 foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
                   var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                   var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                  string key = "";
+                  bool isSite = false;
+                  bool isSiteRef = false;
                   foreach (DynamicBlockReferenceProperty prop in pc) {
                     if (prop.PropertyName == "view_id") {
-                      string key = prop.Value.ToString();
-                      if (key != "0") {
-                        if (!basePoints.ContainsKey(key)) {
-                          basePoints[key] = new List<ObjectId>();
-                        }
-                        basePoints[key].Add(entity.ObjectId);
+                      key = prop.Value.ToString();
+                    }
+                    if (prop.PropertyName == "is_site") {
+                      isSite = Convert.ToDouble(prop.Value) == 1;
+                    }
+                    if (prop.PropertyName == "is_site_ref") {
+                      isSiteRef = Convert.ToDouble(prop.Value) == 1;
+                    }
+                  }
+                  if (key != "0" && !isSiteRef) {
+                    if (CADObjectCommands.ActiveIsSite == isSite) {
+                      if (!basePoints.ContainsKey(key)) {
+                        basePoints[key] = new List<ObjectId>();
                       }
+                      basePoints[key].Add(entity.ObjectId);
                     }
                   }
                 }

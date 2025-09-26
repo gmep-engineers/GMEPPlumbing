@@ -53,6 +53,8 @@ namespace GMEPPlumbing
 
     public static bool IsResidential { get; set; } = false;
 
+    public static bool ActiveIsSite { get; set; } = false;
+
     //public static bool SettingFlag= false;
 
     [CommandMethod("SetPlumbingRouteHeight")]
@@ -353,6 +355,7 @@ namespace GMEPPlumbing
       string basePointId = chosenPoint.Id;
       double routeHeight = chosenPoint.RouteHeight;
       string viewId = chosenPoint.ViewportId;
+      bool isSite = chosenPoint.IsSite; 
 
       List<string> viewTypes = new List<string>();
       if (chosenPoint.Type.Contains("Water")) {
@@ -377,6 +380,7 @@ namespace GMEPPlumbing
       ActiveViewName = resultKeyword;
       ActiveViewTypes = viewTypes;
       ActiveViewId = viewId;
+      ActiveIsSite = isSite;
     }
     public static string GetActiveView() {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
