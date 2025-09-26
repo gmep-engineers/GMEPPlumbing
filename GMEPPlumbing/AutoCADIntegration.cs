@@ -665,6 +665,7 @@ namespace GMEPPlumbing
       bool isUp = false;
       Dictionary<int, double> floorHeights = new Dictionary<int, double>();
       Dictionary<string, PlumbingVerticalRoute> verticalRoutes = new Dictionary<string, PlumbingVerticalRoute>();
+      List<int> floors = new List<int>();
 
       if (type == null) {
         PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
@@ -882,12 +883,8 @@ namespace GMEPPlumbing
         ed.WriteMessage("\nFound " + basePoints.Count + " base points in the drawing.");
 
         basePointIds = basePoints[viewGUID];
-
-
-
-
         BlockReference firstFloorBasePoint = null;
-
+       
         foreach (ObjectId objId in basePointIds) {
           var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
           var pc2 = entity2.DynamicBlockReferencePropertyCollection;
@@ -898,6 +895,7 @@ namespace GMEPPlumbing
           foreach (DynamicBlockReferenceProperty prop in pc2) {
             if (prop.PropertyName == "floor") {
               tempFloor = Convert.ToInt32(prop.Value);
+              floors.Add(tempFloor);
             }
             if (prop.PropertyName == "id") {
               if (prop.Value.ToString() == basePointGUID) {
@@ -953,7 +951,7 @@ namespace GMEPPlumbing
       //picking end floor
       if (endFloor == null) {
         PromptKeywordOptions endFloorOptions = new PromptKeywordOptions("\nEnding Floor: ");
-        for (int i = 1; i <= basePointIds.Count; i++) {
+        for (int i = floors.First(); i <= floors.Last(); i++) {
           endFloorOptions.Keywords.Add(i.ToString());
         }
         PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
