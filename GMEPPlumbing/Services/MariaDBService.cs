@@ -1021,8 +1021,8 @@ namespace GMEPPlumbing.Services
       if (points.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_plan_base_points
-              (id, project_id, viewport_id, floor, floor_height, ceiling_height, plan, type, pos_x, pos_y)
-              VALUES (@id, @projectId, @viewportId, @floor, @floorHeight, @ceilingHeight, @plan, @type, @posX, @posY)
+              (id, project_id, viewport_id, floor, floor_height, ceiling_height, plan, type, pos_x, pos_y, is_site, is_site_ref)
+              VALUES (@id, @projectId, @viewportId, @floor, @floorHeight, @ceilingHeight, @plan, @type, @posX, @posY, @isSite, @isSiteRef)
               ON DUPLICATE KEY UPDATE
                   viewport_id = @viewportId,
                   floor = @floor,
@@ -1031,7 +1031,9 @@ namespace GMEPPlumbing.Services
                   plan = @plan,
                   type = @type,
                   pos_x = @posX,
-                  pos_y = @posY
+                  pos_y = @posY,
+                  is_site = @isSite,
+                  is_site_ref = @isSiteRef
           ";
         foreach (var point in points) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -1045,6 +1047,8 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@type", point.Type);
           command.Parameters.AddWithValue("@posX", point.Point.X);
           command.Parameters.AddWithValue("@posY", point.Point.Y);
+          command.Parameters.AddWithValue("@isSite", point.IsSite);
+          command.Parameters.AddWithValue("@isSiteRef", point.IsSiteRef);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1326,7 +1330,9 @@ namespace GMEPPlumbing.Services
           reader.GetString("viewport_id"),
           reader.GetInt32("floor"),
           reader.GetDouble("floor_height"),
-          reader.GetDouble("ceiling_height")
+          reader.GetDouble("ceiling_height"),
+          reader.GetBoolean("is_site"),
+          reader.GetBoolean("is_site_ref")
         );
         points.Add(point);
       }

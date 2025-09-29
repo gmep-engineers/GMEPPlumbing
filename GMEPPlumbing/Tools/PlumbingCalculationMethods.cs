@@ -42,6 +42,7 @@ namespace GMEPPlumbing {
         PlumbingFixtures = await MariaDBService.GetPlumbingFixtures(ProjectId);
         BasePoints = await MariaDBService.GetPlumbingPlanBasePoints(ProjectId);
         BasePointLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp);
+        ConvertSiteComponents();
         FullRoutes.Clear();
 
         foreach (var source in Sources) {
@@ -153,7 +154,7 @@ namespace GMEPPlumbing {
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
 
-    
+
       //Vertical Routes
       foreach (var verticalRoute in verticalRoutes) {
         double length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
@@ -207,8 +208,8 @@ namespace GMEPPlumbing {
         foreach (var kvp in verticalRouteObjects.Reverse()) {
           routeObjectsTemp.Add(kvp.Value);
           length += kvp.Value.Length * 12;
-      }
-      foreach (var kvp in verticalRouteObjects) {
+        }
+        foreach (var kvp in verticalRouteObjects) {
           var verticalRoute2 = kvp.Value;
           if (adjustedRoute.IsUp) {
             if (verticalRoute2.NodeTypeId == 3) {
@@ -274,7 +275,7 @@ namespace GMEPPlumbing {
 
 
       return new Tuple<double, int, double>(fixtureUnits, flowTypeId, longestRunLength);
-     
+
     }
     public Tuple<double, int, double> TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, double fixtureUnits, int flowTypeId, double longestRunLength, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
       if (visited == null)
@@ -293,7 +294,7 @@ namespace GMEPPlumbing {
       var db = doc.Database;
       var ed = doc.Editor;
       var routePos = new Point3d(route.Position.X, route.Position.Y, 0);
-      
+
       double startHeight = route.Position.Z;
       double endHeight = route.Position.Z + (route.Length * 12);
       if (route.NodeTypeId == 3) {
@@ -320,7 +321,7 @@ namespace GMEPPlumbing {
       bool isUpRoute = (route.NodeTypeId == 1 || route.NodeTypeId == 2);
       foreach (var childRoute in childRoutes) {
         double newLength = Math.Abs(startZ - childRoute.StartPoint.Z) / 12.0;
-  
+
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
           route.Id,
           route.ProjectId,
@@ -588,7 +589,7 @@ namespace GMEPPlumbing {
       Point3d endPoint = new Point3d(targetRoute.EndPoint.X, targetRoute.EndPoint.Y, 0);
 
       return VerticalRoutes.Where(route => {
-        if (route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type ) {
+        if (route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type) {
           ed.WriteMessage($"\nChecking vertical route {route.Id} for target route {targetRoute.Id}");
           Point3d routePos = new Point3d(route.Position.X, route.Position.Y, 0);
           double startHeight = route.Position.Z;
@@ -668,10 +669,72 @@ namespace GMEPPlumbing {
 
       // Sort accordingly
       var sorted = isUp
-          ? new SortedDictionary<int, PlumbingVerticalRoute>(filtered, Comparer<int>.Create((a, b) => b.CompareTo(a))) 
+          ? new SortedDictionary<int, PlumbingVerticalRoute>(filtered, Comparer<int>.Create((a, b) => b.CompareTo(a)))
           : new SortedDictionary<int, PlumbingVerticalRoute>(filtered);
 
       return sorted;
+    }
+    public void ConvertSiteComponents() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      foreach (var route in VerticalRoutes) {
+        var bp = BasePointLookup[route.BasePointId];
+        if (bp.IsSite) {
+          var mainBp = BasePoints.FirstOrDefault(x => !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+          var siteRefBp = BasePoints.FirstOrDefault(x => !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+
+          if (mainBp != null && siteRefBp != null) {
+            Vector3d componentOffset = new Vector3d(route.Position.X - bp.Point.X, route.Position.Y - bp.Point.Y, route.Position.Z);
+            route.Position = siteRefBp.Point + componentOffset;
+            route.BasePointId = mainBp.Id;
+          }
+        }
+      }
+      foreach (var route in HorizontalRoutes) {
+        var bp = BasePointLookup[route.BasePointId];
+        if (bp.IsSite) {
+          var mainBp = BasePoints.FirstOrDefault(x => !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+          var siteRefBp = BasePoints.FirstOrDefault(x => !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+
+          if (mainBp != null && siteRefBp != null) {
+            Vector3d componentOffsetStart = new Vector3d(route.StartPoint.X - bp.Point.X, route.StartPoint.Y - bp.Point.Y, route.StartPoint.Z);
+            Vector3d componentOffsetEnd = new Vector3d(route.EndPoint.X - bp.Point.X , route.EndPoint.Y - bp.Point.Y, route.EndPoint.Z);
+            route.StartPoint = siteRefBp.Point + componentOffsetStart;
+            route.EndPoint = siteRefBp.Point + componentOffsetEnd;
+            route.BasePointId = mainBp.Id;
+            ed.WriteMessage($"\nConverted horizontal route {route.Id} to main base point {mainBp.Id} at position {route.StartPoint} to {route.EndPoint}");
+            ed.WriteMessage($"\nSiteRef point is {siteRefBp.Point}");
+          }
+        }
+      }
+      foreach (var fixture in PlumbingFixtures) {
+        var bp = BasePointLookup[fixture.BasePointId];
+        if (bp.IsSite) {
+          var mainBp = BasePoints.FirstOrDefault(x => !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+          var siteRefBp = BasePoints.FirstOrDefault(x => !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+
+          if (mainBp != null && siteRefBp != null) {
+            Vector3d componentOffset = new Vector3d(fixture.Position.X - bp.Point.X, fixture.Position.Y - bp.Point.Y, fixture.Position.Z);
+            fixture.Position = siteRefBp.Point + componentOffset;
+            fixture.BasePointId = mainBp.Id;
+          }
+        }
+      }
+      foreach (var source in Sources) {
+        var bp = BasePointLookup[source.BasePointId];
+        if (bp.IsSite) {
+          var mainBp = BasePoints.FirstOrDefault(x => !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+          var siteRefBp = BasePoints.FirstOrDefault(x => !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+
+          if (mainBp != null && siteRefBp != null) {
+            Vector3d componentOffset = new Vector3d(source.Position.X - bp.Point.X, source.Position.Y - bp.Point.Y, source.Position.Z);
+            source.Position = siteRefBp.Point + componentOffset;
+            source.BasePointId = mainBp.Id;
+          }
+        }
+      }
     }
   }
 }

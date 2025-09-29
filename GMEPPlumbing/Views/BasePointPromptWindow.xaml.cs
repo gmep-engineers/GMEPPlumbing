@@ -25,7 +25,7 @@ namespace GMEPPlumbing.Views
         //public bool Storm => StormCheck.IsChecked == true;
         public string PlanName => PlanNameText.Text;
         public string FloorQty => FloorQtyText.Text;
-
+        public bool Site => SiteCheck.IsChecked == true;
 
         public BasePointPromptWindow()
         {

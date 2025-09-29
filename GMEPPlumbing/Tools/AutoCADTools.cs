@@ -41,6 +41,7 @@ namespace GMEPPlumbing
     public static double ActiveFloorHeight = 0;
 
     public static double ActiveCeilingHeight = 0;
+    public static string ActiveViewId { get; set; } = "";
 
     public static string ActiveViewName { get; set; } = "";
 
@@ -51,6 +52,8 @@ namespace GMEPPlumbing
     public static List<string> ActiveViewTypes = new List<string>();
 
     public static bool IsResidential { get; set; } = false;
+
+    public static bool ActiveIsSite { get; set; } = false;
 
     //public static bool SettingFlag= false;
 
@@ -284,147 +287,100 @@ namespace GMEPPlumbing
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
-
-      List<ObjectId> basePointIds = new List<ObjectId>();
-
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
-        Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
-
-        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
-          if (id.IsValid) {
-            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
-              if (anonymousBtr != null) {
-                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
-                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-                  var pc = entity.DynamicBlockReferencePropertyCollection;
-                  foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "view_id") {
-                      string key = prop.Value.ToString();
-                      if (key != "0") {
-                        if (!basePoints.ContainsKey(key)) {
-                          basePoints[key] = new List<ObjectId>();
-                        }
-                        basePoints[key].Add(entity.ObjectId);
-                      }
-                    }
-                  }
-                }
-              }
-            }
+      List<PlumbingPlanBasePoint> basePoints =  AutoCADIntegration.GetPlumbingBasePointsFromCAD().OrderBy(i => i.Floor).ToList();
+      Dictionary<string, List<PlumbingPlanBasePoint>> basePointDict = new Dictionary<string, List<PlumbingPlanBasePoint>>();
+      foreach (var bp in basePoints) {
+        if (!bp.IsSiteRef && bp.Id != "0") {
+          if (!basePointDict.ContainsKey(bp.ViewportId)) {
+            basePointDict[bp.ViewportId] = new List<PlumbingPlanBasePoint>();
           }
+          basePointDict[bp.ViewportId].Add(bp);
         }
-        ed.WriteMessage("\nFound " + basePoints.Count + " base points in the drawing.");
-        //meow meow
-        List<string> keywords = new List<string>();
-        foreach (var key in basePoints.Keys) {
-          var objId = basePoints[key][0];
-          var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-          var pc = entity.DynamicBlockReferencePropertyCollection;
-          string planName = "";
-          string viewport = "";
-          foreach (DynamicBlockReferenceProperty prop in pc) {
-            if (prop.PropertyName == "plan") {
-              planName = prop.Value.ToString();
-            }
-            if (prop.PropertyName == "type") {
-              viewport = prop.Value.ToString();
-            }
-          }
-          if (planName != "" && viewport != "") {
-            string keyword = planName + ":" + viewport;
-            if (!keywords.Contains(keyword)) {
-              keywords.Add(keyword);
-            }
-            else {
-              int count = keywords.Count(x => x == keyword || (x.StartsWith(keyword + "(") && x.EndsWith(")")));
-              keywords.Add(keyword + "(" + (count + 1).ToString() + ")");
-            }
-          }
-        }
-        PromptKeywordOptions promptOptions = new PromptKeywordOptions(message);
-        foreach (var keyword in keywords) {
-          promptOptions.Keywords.Add(keyword);
-        }
-        PromptResult pr = ed.GetKeywords(promptOptions);
-        if (pr.Status != PromptStatus.OK) {
-          ed.WriteMessage("\nOperation cancelled.");
-          tr.Commit();
-          return;
-        }
-        string resultKeyword = pr.StringResult;
-        int index = keywords.IndexOf(resultKeyword);
-        if (index < 0 || index >= basePoints.Count) {
-          ed.WriteMessage("\nInvalid view selection. Operation cancelled.");
-          tr.Commit();
-          return;
-        }
-        basePointIds = basePoints.ElementAt(index).Value;
-
-        //Picking start floor
-        PromptKeywordOptions floorOptions = new PromptKeywordOptions("\nPick Floor: ");
-        for (int i = 1; i <= basePointIds.Count; i++) {
-          floorOptions.Keywords.Add(i.ToString());
-        }
-        PromptResult floorResult = ed.GetKeywords(floorOptions);
-        int startFloor = int.Parse(floorResult.StringResult);
-
-
-        foreach (ObjectId objId in basePointIds) {
-          var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-          var pc2 = entity2.DynamicBlockReferencePropertyCollection;
-
-          int floor = 0;
-          double floorHeight = 0;
-          double ceilingHeight = 0;
-          string basePointId = "";
-          double routeHeight = 0;
-          List<string> viewTypes = new List<string>();
-          foreach (DynamicBlockReferenceProperty prop in pc2) {
-            if (prop.PropertyName == "floor") {
-              floor = Convert.ToInt32(prop.Value);
-            }
-            if (prop.PropertyName == "id") {
-              basePointId = prop.Value.ToString();
-            }
-            if (prop.PropertyName == "floor_height") {
-              floorHeight = Convert.ToDouble(prop.Value);
-            }
-            if (prop.PropertyName == "ceiling_height") {
-              ceilingHeight = Convert.ToDouble(prop.Value);
-            }
-            if (prop.PropertyName == "route_height") {
-              routeHeight = Convert.ToDouble(prop.Value);
-            }
-            if (prop.PropertyName == "type") {
-              if (prop.Value.ToString().Contains("Water")) {
-                viewTypes.Add("Water");
-              }
-              if (prop.Value.ToString().Contains("Gas")) {
-                viewTypes.Add("Gas");
-              }
-              if (prop.Value.ToString().Contains("Sewer-Vent")) {
-                viewTypes.Add("Sewer-Vent");
-              }
-              if (prop.Value.ToString().Contains("Storm")) {
-                viewTypes.Add("Storm");
-              }
-            }
-          }
-          if (floor == startFloor) {
-            AutoCADIntegration.ZoomToBlock(ed, entity2);
-            ActiveBasePointId = basePointId;
-            ActiveFloorHeight = floorHeight;
-            ActiveCeilingHeight = ceilingHeight;
-            ActiveRouteHeight = routeHeight;
-            ActiveFloor = floor;
-            ActiveViewName = resultKeyword;
-            ActiveViewTypes = viewTypes;
-          }
-        }
-        tr.Commit();
       }
+
+      List<string> keywords = new List<string>();
+      foreach (var key in basePointDict.Keys) {
+        PlumbingPlanBasePoint bp = basePointDict[key][0];
+        string planName = bp.Plan;
+        string viewport =bp.Type ;
+        if (planName != "" && viewport != "") {
+          string keyword = planName + ":" + viewport;
+          if (!keywords.Contains(keyword)) {
+            keywords.Add(keyword);
+          }
+          else {
+            int count = keywords.Count(x => x == keyword || (x.StartsWith(keyword + "(") && x.EndsWith(")")));
+            keywords.Add(keyword + "(" + (count + 1).ToString() + ")");
+          }
+        }
+      }
+      PromptKeywordOptions promptOptions = new PromptKeywordOptions(message);
+      foreach (var keyword in keywords) {
+        promptOptions.Keywords.Add(keyword);
+      }
+      PromptResult pr = ed.GetKeywords(promptOptions);
+      if (pr.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nOperation cancelled.");
+        return;
+      }
+      string resultKeyword = pr.StringResult;
+      int index = keywords.IndexOf(resultKeyword);
+      if (index < 0 || index >= basePoints.Count) {
+        ed.WriteMessage("\nInvalid view selection. Operation cancelled.");
+        return;
+      }
+
+      List<PlumbingPlanBasePoint> chosenBasePoints = basePointDict.ElementAt(index).Value;
+
+      PromptKeywordOptions floorOptions = new PromptKeywordOptions("\nPick Floor: ");
+      List<string> keywords2 = new List<string>();
+      foreach (var point in chosenBasePoints) {
+        string keyword = point.Floor.ToString();
+        if (point.IsSite) {
+          keyword += "(Site)";
+        }
+        keywords2.Add(keyword);
+      }
+      foreach(var keyword in keywords2) {
+        floorOptions.Keywords.Add(keyword);
+      }
+      PromptResult floorResult = ed.GetKeywords(floorOptions);
+      string resultKeyword2 = floorResult.StringResult;
+      int index2 = keywords2.IndexOf(resultKeyword2);
+      PlumbingPlanBasePoint chosenPoint = chosenBasePoints[index2];
+
+      int floor = chosenPoint.Floor;
+      double floorHeight = chosenPoint.FloorHeight;
+      double ceilingHeight = chosenPoint.CeilingHeight;
+      string basePointId = chosenPoint.Id;
+      double routeHeight = chosenPoint.RouteHeight;
+      string viewId = chosenPoint.ViewportId;
+      bool isSite = chosenPoint.IsSite; 
+
+      List<string> viewTypes = new List<string>();
+      if (chosenPoint.Type.Contains("Water")) {
+        viewTypes.Add("Water");
+      }
+      if (chosenPoint.Type.Contains("Gas")) {
+        viewTypes.Add("Gas");
+      }
+      if (chosenPoint.Type.Contains("Sewer-Vent")) {
+        viewTypes.Add("Sewer-Vent");
+      }
+      if (chosenPoint.Type.Contains("Storm")) {
+        viewTypes.Add("Storm");
+      }
+  
+      AutoCADIntegration.ZoomToPoint(ed, chosenPoint.Point);
+      ActiveBasePointId = basePointId;
+      ActiveFloorHeight = floorHeight;
+      ActiveCeilingHeight = ceilingHeight;
+      ActiveRouteHeight = routeHeight;
+      ActiveFloor = floor;
+      ActiveViewName = resultKeyword;
+      ActiveViewTypes = viewTypes;
+      ActiveViewId = viewId;
+      ActiveIsSite = isSite;
     }
     public static string GetActiveView() {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;

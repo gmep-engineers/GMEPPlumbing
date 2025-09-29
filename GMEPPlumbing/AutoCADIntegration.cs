@@ -223,17 +223,20 @@ namespace GMEPPlumbing
       string pipeType = "";
       if (result == "ColdWater" || result == "HotWater") {
         if (CADObjectCommands.IsResidential) {
-          PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
-          pko1.Keywords.Add("Copper", "CopperTypeL", "Copper Type L");
-          pko1.Keywords.Add("CPVCSCH80", "CPVCSCH80", "CPVC SCH80");
-          pko1.Keywords.Add("CPVCSDRII", "CPVCSDRII", "CPVC SDR II");
-          pko1.Keywords.Add("PEX");
-          PromptResult pr1 = ed.GetKeywords(pko1);
-          if (pr1.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return horizontalRoutes;
+          if (CADObjectCommands.ActiveIsSite) {
+            PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
+            pko1.Keywords.Add("CPVCSCH80");
+            pko1.Keywords.Add("CPVCSDRII");
+            PromptResult pr1 = ed.GetKeywords(pko1);
+            if (pr1.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return horizontalRoutes;
+            }
+            pipeType = pr1.StringResult;
           }
-          pipeType = pr1.StringResult;
+          else {
+            pipeType = "PEX";
+          }
         }
         else {
           {
@@ -665,6 +668,7 @@ namespace GMEPPlumbing
       bool isUp = false;
       Dictionary<int, double> floorHeights = new Dictionary<int, double>();
       Dictionary<string, PlumbingVerticalRoute> verticalRoutes = new Dictionary<string, PlumbingVerticalRoute>();
+      List<int> floors = new List<int>();
 
       if (type == null) {
         PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect route type: ");
@@ -720,17 +724,21 @@ namespace GMEPPlumbing
       string pipeType = "";
       if (type == "ColdWater" || type == "HotWater") {
         if (CADObjectCommands.IsResidential) {
-          PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
-          pko1.Keywords.Add("Copper", "CopperTypeL", "Copper Type L");
-          pko1.Keywords.Add("CPVCSCH80", "CPVCSCH80", "CPVC SCH80");
-          pko1.Keywords.Add("CPVCSDRII", "CPVCSDRII", "CPVC SDR II");
-          pko1.Keywords.Add("PEX");
-          PromptResult pr1 = ed.GetKeywords(pko1);
-          if (pr1.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return null;
+          if (CADObjectCommands.ActiveIsSite) {
+            PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
+            pko1.Keywords.Add("CPVCSCH80");
+            pko1.Keywords.Add("CPVCSDRII");
+            
+            PromptResult pr1 = ed.GetKeywords(pko1);
+            if (pr1.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return null;
+            }
+            pipeType = pr1.StringResult;
           }
-          pipeType = pr1.StringResult;
+          else {
+            pipeType = "PEX";
+          }
         }
         else 
         {
@@ -851,15 +859,27 @@ namespace GMEPPlumbing
                 foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
                   var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                   var pc = entity.DynamicBlockReferencePropertyCollection;
+
+                  string key = "";
+                  bool isSite = false;
+                  bool isSiteRef = false;
                   foreach (DynamicBlockReferenceProperty prop in pc) {
                     if (prop.PropertyName == "view_id") {
-                      string key = prop.Value.ToString();
-                      if (key != "0") {
-                        if (!basePoints.ContainsKey(key)) {
-                          basePoints[key] = new List<ObjectId>();
-                        }
-                        basePoints[key].Add(entity.ObjectId);
+                      key = prop.Value.ToString();
+                    }
+                    if (prop.PropertyName == "is_site") {
+                      isSite = Convert.ToDouble(prop.Value) == 1;
+                    }
+                    if (prop.PropertyName == "is_site_ref") {
+                      isSiteRef = Convert.ToDouble(prop.Value) == 1;
+                    }
+                  }
+                  if (key != "0" && !isSiteRef) {
+                    if (CADObjectCommands.ActiveIsSite == isSite) {
+                      if (!basePoints.ContainsKey(key)) {
+                        basePoints[key] = new List<ObjectId>();
                       }
+                      basePoints[key].Add(entity.ObjectId);
                     }
                   }
                 }
@@ -870,12 +890,8 @@ namespace GMEPPlumbing
         ed.WriteMessage("\nFound " + basePoints.Count + " base points in the drawing.");
 
         basePointIds = basePoints[viewGUID];
-
-
-
-
         BlockReference firstFloorBasePoint = null;
-
+       
         foreach (ObjectId objId in basePointIds) {
           var entity2 = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
           var pc2 = entity2.DynamicBlockReferencePropertyCollection;
@@ -886,6 +902,7 @@ namespace GMEPPlumbing
           foreach (DynamicBlockReferenceProperty prop in pc2) {
             if (prop.PropertyName == "floor") {
               tempFloor = Convert.ToInt32(prop.Value);
+              floors.Add(tempFloor);
             }
             if (prop.PropertyName == "id") {
               if (prop.Value.ToString() == basePointGUID) {
@@ -941,7 +958,7 @@ namespace GMEPPlumbing
       //picking end floor
       if (endFloor == null) {
         PromptKeywordOptions endFloorOptions = new PromptKeywordOptions("\nEnding Floor: ");
-        for (int i = 1; i <= basePointIds.Count; i++) {
+        for (int i = floors.First(); i <= floors.Last(); i++) {
           endFloorOptions.Keywords.Add(i.ToString());
         }
         PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
@@ -1640,6 +1657,7 @@ namespace GMEPPlumbing
       bool gas = prompt.Gas;
       bool sewerVent = prompt.SewerVent;
       bool storm = false;
+      bool site = prompt.Site;
       string planName = prompt.PlanName.ToUpper();
       string floorQtyResult = prompt.FloorQty;
       string ViewId = Guid.NewGuid().ToString();
@@ -1819,7 +1837,198 @@ namespace GMEPPlumbing
           tr.Commit();
         }
       }
+      if (site) {
+        SetSiteBasePoint(ViewId);
+      }
       SettingObjects = false;
+    }
+    [CommandMethod("SETPLUMBINGSITEBASEPOINT")]
+    public async void SetPlumbingSiteBasePoint() {
+      SettingObjects = true;
+      
+      CADObjectCommands.GetActiveView();
+      bool sitePointExists = GetPlumbingBasePointsFromCAD().Any(i => i.ViewportId == CADObjectCommands.ActiveViewId && (i.IsSite || i.IsSiteRef));
+      if (!sitePointExists) {
+        SetSiteBasePoint(CADObjectCommands.ActiveViewId);
+      }
+      else {
+        var doc = Application.DocumentManager.MdiActiveDocument;
+        if (doc == null) return;
+        var ed = doc.Editor;
+        ed.WriteMessage("\nA Site Base Point already exists for this view. Operation cancelled.");
+      }
+     
+      SettingObjects = false;
+
+    }
+    public async void SetSiteBasePoint(string viewId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
+      var db = doc.Database;
+      var ed = doc.Editor;
+      List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD().Where(i => i.ViewportId == viewId).OrderBy(i => i.Floor).ToList();
+      List<int> floors = basePoints.Select(i => i.Floor).Distinct().ToList();
+
+      PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect bottom floor of site plan: " );
+      foreach (int floor in floors) {
+        pko.Keywords.Add(floor.ToString());
+      }
+      PromptResult pr = ed.GetKeywords(pko);
+      if (pr.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nOperation cancelled.");
+        SettingObjects = false;
+        return;
+      }
+      int bottomPointFloor = int.Parse(pr.StringResult);
+
+      floors.RemoveAll(i => i < bottomPointFloor);
+      PromptKeywordOptions pko2 = new PromptKeywordOptions("\nSelect top floor of site plan: ");
+      foreach (int floor in floors) {
+        pko2.Keywords.Add(floor.ToString());
+      }
+      PromptResult pr2 = ed.GetKeywords(pko2);
+      if (pr2.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nOperation cancelled.");
+        SettingObjects = false;
+        return;
+      }
+      int topPointFloor = int.Parse(pr2.StringResult);
+
+      for (int i = bottomPointFloor; i <= topPointFloor; i++) {
+        PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
+        string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}, Floor {i}";
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord curSpace = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          BlockTableRecord block;
+          //string message = "\nCreating Plumbing Base Point for Site";
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            "GMEP_PLUMBING_BASEPOINT",
+            message,
+            out block,
+            out Point3d point
+          );
+          if (br == null) {
+            ed.WriteMessage("\nOperation cancelled.");
+            SettingObjects = false;
+            return;
+          }
+          br.Layer = "xref";
+          br.Rotation = br.Rotation + Math.PI / 4;
+          curSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+          DynamicBlockReferencePropertyCollection properties =
+            br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in properties) {
+            if (prop.PropertyName == "plan") {
+              prop.Value = basePoint.Plan;
+            }
+            else if (prop.PropertyName == "floor") {
+              prop.Value = basePoint.Floor;
+            }
+            else if (prop.PropertyName == "type") {
+              prop.Value = basePoint.Type;
+            }
+            else if (prop.PropertyName == "view_id") {
+              prop.Value = basePoint.ViewportId;
+            }
+            else if (prop.PropertyName == "id") {
+              prop.Value = Guid.NewGuid().ToString();
+            }
+            else if (prop.PropertyName == "pos_x") {
+              prop.Value = point.X;
+            }
+            else if (prop.PropertyName == "pos_y") {
+              prop.Value = point.Y;
+            }
+            else if (prop.PropertyName == "floor_height") {
+              prop.Value = basePoint.FloorHeight;
+            }
+            else if (prop.PropertyName == "route_height") {
+              prop.Value = basePoint.RouteHeight;
+            }
+            else if (prop.PropertyName == "ceiling_height") {
+              prop.Value = basePoint.CeilingHeight;
+            }
+            else if (prop.PropertyName == "is_site") {
+              prop.Value = 1;
+            }
+          }
+          tr.Commit();
+        }
+      }
+      for (int i = bottomPointFloor; i <= topPointFloor; i++) {
+        PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
+        string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}(relative to floor {basePoint.Floor}).";
+        ZoomToPoint(ed, new Point3d(basePoint.Point.X, basePoint.Point.Y, 0));
+        
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord curSpace = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          BlockTableRecord block;
+          //string message = "\nCreating Plumbing Base Point for Site";
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            "GMEP_PLUMBING_BASEPOINT",
+            message,
+            out block,
+            out Point3d point
+          );
+          if (br == null) {
+            ed.WriteMessage("\nOperation cancelled.");
+            SettingObjects = false;
+            return;
+          }
+          br.Layer = "xref";
+          br.Rotation = br.Rotation + Math.PI / 4;
+          curSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+          DynamicBlockReferencePropertyCollection properties =
+            br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in properties) {
+            if (prop.PropertyName == "plan") {
+              prop.Value = basePoint.Plan;
+            }
+            else if (prop.PropertyName == "floor") {
+              prop.Value = basePoint.Floor;
+            }
+            else if (prop.PropertyName == "type") {
+              prop.Value = basePoint.Type;
+            }
+            else if (prop.PropertyName == "view_id") {
+              prop.Value = basePoint.ViewportId;
+            }
+            else if (prop.PropertyName == "id") {
+              prop.Value = Guid.NewGuid().ToString();
+            }
+            else if (prop.PropertyName == "pos_x") {
+              prop.Value = point.X;
+            }
+            else if (prop.PropertyName == "pos_y") {
+              prop.Value = point.Y;
+            }
+            else if (prop.PropertyName == "floor_height") {
+              prop.Value = basePoint.FloorHeight;
+            }
+            else if (prop.PropertyName == "route_height") {
+              prop.Value = basePoint.RouteHeight;
+            }
+            else if (prop.PropertyName == "ceiling_height") {
+              prop.Value = basePoint.CeilingHeight;
+            }
+            else if (prop.PropertyName == "is_site_ref") {
+              prop.Value = 1;
+            }
+          }
+          tr.Commit();
+        }
+      }
     }
 
 
@@ -5908,7 +6117,7 @@ namespace GMEPPlumbing
           await mariaDBService.UpdatePlumbingFixtures(fixtures, ProjectId);
         }
         catch (System.Exception ex) {
-          ed.WriteMessage("\nError getting ProjectId: " + ex.Message);
+          ed.WriteMessage("\nError getting ProjectId: " + ex.Message + ex.StackTrace);
           return;
         }
       }
@@ -6170,6 +6379,9 @@ namespace GMEPPlumbing
                     int Floor = 0;
                     double FloorHeight = 0;
                     double CeilingHeight = 0;
+                    double RouteHeight = 0;
+                    bool isSite = false;
+                    bool isSiteRef = false;
 
                     foreach (DynamicBlockReferenceProperty prop in pc) {
                       if (prop.PropertyName == "floor") {
@@ -6193,6 +6405,15 @@ namespace GMEPPlumbing
                       if (prop.PropertyName == "ceiling_height") {
                         CeilingHeight = Convert.ToDouble(prop.Value);
                       }
+                      if (prop.PropertyName == "route_height") {
+                        RouteHeight = Convert.ToDouble(prop.Value);
+                      }
+                      if (prop.PropertyName == "is_site") {
+                        isSite = Convert.ToDouble(prop.Value) == 1.0;
+                      }
+                      if (prop.PropertyName == "is_site_ref") {
+                        isSiteRef = Convert.ToDouble(prop.Value) == 1.0;
+                      }
 
                     }
                     if (Id != "0") {
@@ -6205,8 +6426,11 @@ namespace GMEPPlumbing
                         ViewId,
                         Floor,
                         FloorHeight,
-                        CeilingHeight
+                        CeilingHeight,
+                        isSite,
+                        isSiteRef
                       );
+                      BasePoint.RouteHeight = RouteHeight;
                       points.Add(BasePoint);
                     }
                   }
