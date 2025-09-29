@@ -1531,12 +1531,12 @@ namespace GMEPPlumbing
         }
 
         if (direction == "UpToCeiling") {
-          double heightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item2;
+          double heightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor], true).Item2;
           double height = (double)routeHeight;
           length = heightLimit - height;
         }
         else if (direction == "DownToFloor") {
-          double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item1;
+          double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor], true).Item1;
           double height = (double)routeHeight;
           length = height - lowerHeightLimit;
         }

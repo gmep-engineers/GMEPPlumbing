@@ -171,45 +171,33 @@ namespace GMEPPlumbing
       return ActiveRouteHeight;
     }
 
-    public static Tuple<double, double> GetHeightLimits(string GUID) {
+    public static Tuple<double, double> GetHeightLimits(string GUID, bool endCaps = false) {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
       Tuple<double, double> heightLimits = new Tuple<double, double>(0, 0);
 
-
-
       double floorHeight = 0;
       double ceilingHeight = 0;
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
-        // Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
-        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
-          if (id.IsValid) {
-            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
-              if (anonymousBtr != null) {
-                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
-                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-                  var pc = entity.DynamicBlockReferencePropertyCollection;
-                  foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "floor_height") {
-                      floorHeight = Convert.ToDouble(prop.Value);
-                    }
-                    if (prop.PropertyName == "ceiling_height") {
-                      ceilingHeight = Convert.ToDouble(prop.Value);
-                    }
-
-                  }
-                
-                }
-              }
-            }
-          }
-        }
+      List<PlumbingPlanBasePoint> basePoints = AutoCADIntegration.GetPlumbingBasePointsFromCAD().OrderBy(i => i.Floor).Where(i => !i.IsSiteRef).ToList();
+      PlumbingPlanBasePoint selectedBasePoint = basePoints.Find(bp => bp.Id == GUID);
+      if (selectedBasePoint == null) {
+        ed.WriteMessage("\nNo base point found. Please set an active view.");
+        return heightLimits;
       }
+
+      List<PlumbingPlanBasePoint> viewBasePoints = basePoints.FindAll(bp => bp.ViewportId == selectedBasePoint.ViewportId && bp.IsSite == selectedBasePoint.IsSite).OrderBy(i => i.Floor).ToList();
+
       double upperHeightLimit = ceilingHeight - floorHeight;
       double lowerHeightLimit = 0;
+      if (!endCaps) {
+       if(viewBasePoints.Last() == selectedBasePoint) {
+          upperHeightLimit = 10000;
+        } 
+       if (viewBasePoints.First() == selectedBasePoint) {
+          lowerHeightLimit = -10000;
+       }
+      }
 
       heightLimits = new Tuple<double, double>(
         lowerHeightLimit,
