@@ -1076,7 +1076,6 @@ namespace GMEPPlumbing
           // Set the vertical route ID
           tr.Commit();
         }
-        MakeVerticalRouteLabel(labelPoint, "UP TO UPPER");
 
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           //Continue Pipe
@@ -1231,7 +1230,6 @@ namespace GMEPPlumbing
           verticalRoutes.Add(newRoute2.BasePointId, newRoute2);
           tr.Commit();
         }
-        MakeVerticalRouteLabel(labelPoint2, "UP FROM LOWER");
       }
       else if (endFloor < startFloor) {
         isUp = false;
@@ -1305,7 +1303,6 @@ namespace GMEPPlumbing
           verticalRoutes.Add(newRoute.BasePointId, newRoute);
           tr.Commit();
         }
-        MakeVerticalRouteLabel(labelPoint, "DOWN TO LOWER");
 
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           //Continue Pipe
@@ -1456,7 +1453,6 @@ namespace GMEPPlumbing
           verticalRoutes.Add(endRoute.BasePointId, endRoute);
           tr.Commit();
         }
-        MakeVerticalRouteLabel(labelPoint2, "DOWN FROM UPPER");
       }
       else if (endFloor == startFloor) {
         string blockName = "GMEP_PLUMBING_LINE_DOWN";
@@ -1626,7 +1622,6 @@ namespace GMEPPlumbing
           tr.Commit();
           
         }
-        MakeVerticalRouteLabel(labelPoint3, direction.ToUpper());
       }
       SettingObjects = false;
       return verticalRoutes;
@@ -2445,7 +2440,7 @@ namespace GMEPPlumbing
       }
     }
 
-    public void MakeVerticalRouteLabel(Point3d dnPoint, string direction) {
+    /*public void MakeVerticalRouteLabel(Point3d dnPoint, string direction) {
       if (dnPoint == null || double.IsNaN(dnPoint.X) || double.IsNaN(dnPoint.Y) || double.IsNaN(dnPoint.Z)) {
         WriteMessage("\nError: Invalid point for vertical route label.");
         return;
@@ -2456,7 +2451,7 @@ namespace GMEPPlumbing
         TextHorizontalMode.TextLeft,
         direction
       );
-    }
+    }*/
 
 
     private void MakePlumbingFixtureLabel(PlumbingFixture fixture, PlumbingFixtureType type) {
