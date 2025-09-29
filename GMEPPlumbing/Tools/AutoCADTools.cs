@@ -177,9 +177,10 @@ namespace GMEPPlumbing
       Database db = doc.Database;
       Tuple<double, double> heightLimits = new Tuple<double, double>(0, 0);
 
-      int activefloor = 0;
 
-      Dictionary<int, double> floorHeights = new Dictionary<int, double>();
+
+      double floorHeight = 0;
+      double ceilingHeight = 0;
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
@@ -191,57 +192,31 @@ namespace GMEPPlumbing
                 foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
                   var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                   var pc = entity.DynamicBlockReferencePropertyCollection;
-                  string basePointId = "";
-                  double floorHeight = 0;
-                  int floor = 0;
                   foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "id") {
-                      basePointId = prop.Value.ToString();
-                    }
                     if (prop.PropertyName == "floor_height") {
                       floorHeight = Convert.ToDouble(prop.Value);
                     }
-                    if (prop.PropertyName == "floor") {
-                      floor = Convert.ToInt32(prop.Value);
+                    if (prop.PropertyName == "ceiling_height") {
+                      ceilingHeight = Convert.ToDouble(prop.Value);
                     }
+
                   }
-                  if (basePointId != "") {
-                    floorHeights[floor] = floorHeight;
-                  }
-                  if (basePointId == GUID) {
-                    activefloor = floor;
-                  }
+                
                 }
               }
             }
           }
         }
       }
-      if (floorHeights.Count == 0) {
-        ed.WriteMessage("\nNo base points found in the drawing.");
-        return new Tuple<double, double>(0,0);
-      }
-      if (floorHeights.ContainsKey(activefloor)) {
-        double upperHeightLimit = 0;
-        double lowerHeightLimit = 0;
-        if (activefloor != floorHeights.Count) {
-          upperHeightLimit = floorHeights[activefloor + 1] - floorHeights[activefloor];
-        }
-        else {
-          upperHeightLimit = 10000;
-        }
-        if (activefloor == 1) {
-          lowerHeightLimit = -10000;
-        }
-        heightLimits = new Tuple<double, double>(
-          lowerHeightLimit,
-          upperHeightLimit
-        );
-      }
-      else {
-        ed.WriteMessage("\nNo height limit found for the active base point.");
-        return new Tuple<double, double>(0, 0);
-      }
+      double upperHeightLimit = ceilingHeight - floorHeight;
+      double lowerHeightLimit = 0;
+
+      heightLimits = new Tuple<double, double>(
+        lowerHeightLimit,
+        upperHeightLimit
+      );
+      
+
       return heightLimits;
     }
 

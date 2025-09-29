@@ -2440,18 +2440,45 @@ namespace GMEPPlumbing
       }
     }
 
-    /*public void MakeVerticalRouteLabel(Point3d dnPoint, string direction) {
-      if (dnPoint == null || double.IsNaN(dnPoint.X) || double.IsNaN(dnPoint.Y) || double.IsNaN(dnPoint.Z)) {
-        WriteMessage("\nError: Invalid point for vertical route label.");
+    [CommandMethod("LABELROUTES")]
+    public void RouteLabels() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      PromptSelectionOptions opts = new PromptSelectionOptions();
+      opts.MessageForAdding = "\nSelect plumbing routes to label:";
+
+      PromptSelectionResult res = ed.GetSelection(opts);
+
+      if (res.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nNo items selected.");
         return;
       }
-      CADObjectCommands.CreateArrowJig("D0", dnPoint);
-      CADObjectCommands.CreateTextWithJig(
-        CADObjectCommands.TextLayer,
-        TextHorizontalMode.TextLeft,
-        direction
-      );
-    }*/
+
+      SelectionSet selSet = res.Value;
+      ed.WriteMessage($"\nSelected {selSet.Count} items.");
+      List<PlumbingHorizontalRoute> horizontalRoutes = new List<PlumbingHorizontalRoute>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        foreach (SelectedObject selObj in selSet) {
+          if (selObj != null) {
+            Entity ent = tr.GetObject(selObj.ObjectId, OpenMode.ForRead) as Entity;
+            if (ent is Line line) {
+            }
+            else if (ent is BlockReference blockRef) {
+
+            }
+            else {
+              ed.WriteMessage($"\nSelected object is not a Line or BlockReference. Skipping.");
+              continue;
+            }
+          }
+        }
+      }           
+    }
+
 
 
     private void MakePlumbingFixtureLabel(PlumbingFixture fixture, PlumbingFixtureType type) {
