@@ -601,7 +601,8 @@ namespace GMEPPlumbing
     public static void CreateTextWithJig(
       string layerName,
       TextHorizontalMode horizontalMode,
-      string defaultText = null
+      string defaultText = null,
+      bool underline = false
     )
     {
       Document acDoc = Autodesk
@@ -631,6 +632,9 @@ namespace GMEPPlumbing
       double textHeight = (baseScale / Scale) * baseTextHeight;
 
       string userText = defaultText;
+      if (underline) {
+        userText = "%%U" + userText;
+      }
 
       if (string.IsNullOrEmpty(userText))
       {

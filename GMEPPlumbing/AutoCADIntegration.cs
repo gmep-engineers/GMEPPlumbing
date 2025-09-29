@@ -2475,7 +2475,8 @@ namespace GMEPPlumbing
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
           TextHorizontalMode.TextLeft,
-          fixture.TypeAbbreviation + "-" + fixture.Number.ToString()
+          fixture.TypeAbbreviation + "-" + fixture.Number.ToString(),
+          true
         );
       }
       else {
@@ -2490,7 +2491,6 @@ namespace GMEPPlumbing
           case "GMEP CO FLOOR":
             typeAbb = "2\" GCO";
             break;
-
         }
         CADObjectCommands.CreateTextWithJig(
          CADObjectCommands.TextLayer,
