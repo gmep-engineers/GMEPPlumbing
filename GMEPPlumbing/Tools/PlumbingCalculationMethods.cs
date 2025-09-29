@@ -701,7 +701,6 @@ namespace GMEPPlumbing {
           if (mainBp != null && siteRefBp != null) {
             Vector3d componentOffsetStart = new Vector3d(route.StartPoint.X - bp.Point.X, route.StartPoint.Y - bp.Point.Y, route.StartPoint.Z);
             Vector3d componentOffsetEnd = new Vector3d(route.EndPoint.X - bp.Point.X , route.EndPoint.Y - bp.Point.Y, route.EndPoint.Z);
-            //Vector3d siteRefOffset = siteRefBp.Point - mainBp.Point;
             route.StartPoint = siteRefBp.Point + componentOffsetStart;
             route.EndPoint = siteRefBp.Point + componentOffsetEnd;
             route.BasePointId = mainBp.Id;
