@@ -177,14 +177,15 @@ namespace GMEPPlumbing
       Database db = doc.Database;
       Tuple<double, double> heightLimits = new Tuple<double, double>(0, 0);
 
-      double floorHeight = 0;
-      double ceilingHeight = 0;
+     
       List<PlumbingPlanBasePoint> basePoints = AutoCADIntegration.GetPlumbingBasePointsFromCAD().OrderBy(i => i.Floor).Where(i => !i.IsSiteRef).ToList();
       PlumbingPlanBasePoint selectedBasePoint = basePoints.Find(bp => bp.Id == GUID);
       if (selectedBasePoint == null) {
         ed.WriteMessage("\nNo base point found. Please set an active view.");
         return heightLimits;
       }
+      double ceilingHeight = selectedBasePoint.CeilingHeight;
+      double floorHeight = selectedBasePoint.FloorHeight;
 
       List<PlumbingPlanBasePoint> viewBasePoints = basePoints.FindAll(bp => bp.ViewportId == selectedBasePoint.ViewportId && bp.IsSite == selectedBasePoint.IsSite).OrderBy(i => i.Floor).ToList();
 
