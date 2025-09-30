@@ -1284,14 +1284,14 @@ namespace GMEPPlumbing.Services
       return routes;
     }
 
-    public async Task<List<RouteInfoBox>> GetPlumbingRouteInfoBoxes(string viewportId) {
+    public async Task<List<RouteInfoBox>> GetPlumbingRouteInfoBoxes(string basepointId) {
       var boxes = new List<RouteInfoBox>();
       await OpenConnectionAsync();
       string query = @"
             SELECT * FROM plumbing_route_info_boxes
-            WHERE viewport_id = @viewportId";
+            WHERE base_point_id = @basepointId";
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@viewportId", viewportId);
+      command.Parameters.AddWithValue("@basepointId", basepointId);
       MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
       while (reader.Read()) {
         var box = new RouteInfoBox(

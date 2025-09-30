@@ -299,6 +299,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Views\RouteLabelWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Routing.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -315,6 +319,9 @@
     <Compile Include="Services\WaterMeterLossCalculationService.cs" />
     <Compile Include="Views\BasePointPromptWindow.xaml.cs">
       <DependentUpon>BasePointPromptWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\RouteLabelWindow.xaml.cs">
+      <DependentUpon>RouteLabelWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Routing.xaml.cs">
       <DependentUpon>Routing.xaml</DependentUpon>
