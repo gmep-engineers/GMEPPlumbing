@@ -111,7 +111,7 @@ namespace GMEPPlumbing.Views
       ChangeFlag = !ChangeFlag;
     }
 
-    public async Task BuildScene() {
+    public async void BuildScene() {
       RouteInfoBoxes.Clear();
       RouteVisuals.Clear();
       List<TextVisual3D> textVisuals = new List<TextVisual3D>();
