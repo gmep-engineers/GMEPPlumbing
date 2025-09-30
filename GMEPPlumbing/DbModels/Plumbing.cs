@@ -175,7 +175,8 @@ namespace GMEPPlumbing {
     public string ViewportId;
 
     //route info
-    public Point3d Position;
+    public Point3d StartPosition;
+    public Point3d EndPosition;
     public string BasePointId;
     public string PipeSize;
     public string Type;
@@ -189,11 +190,12 @@ namespace GMEPPlumbing {
     public string DirectionDescription;
     public bool IsVerticalRoute = false;
 
-    public RouteInfoBox(string viewportId, Point3d position, string basePointId, string pipeSize, string type, string locationDescription, string cfh, string longestRunLength, string directionDescription, bool isVerticalRoute) {
+    public RouteInfoBox(string viewportId, Point3d startPosition, Point3d endPosition, string basePointId, string pipeSize, string type, string locationDescription, string cfh, string longestRunLength, string directionDescription, bool isVerticalRoute) {
       ViewportId = viewportId;
 
       //route info
-      Position = position;
+      StartPosition = startPosition;
+      EndPosition = endPosition;
       BasePointId = basePointId;
       PipeSize = pipeSize;
       Type = type;

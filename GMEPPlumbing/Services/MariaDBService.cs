@@ -1009,13 +1009,15 @@ namespace GMEPPlumbing.Services
       if (boxes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_route_info_boxes
-              (viewport_id, pos_x, pos_y, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route)
-              VALUES (@viewportId, @posX, @posY, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute)";
+              (viewport_id, start_pos_x, start_pos_y, end_pos_x, end_pos_y, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route)
+              VALUES (@viewportId, @startPosX, @startPosY, @endPosX, @endPosY, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute)";
         foreach (var box in boxes) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
           command.Parameters.AddWithValue("@viewportId", viewportId);
-          command.Parameters.AddWithValue("@posX", box.Position.X);
-          command.Parameters.AddWithValue("@posY", box.Position.Y);
+          command.Parameters.AddWithValue("@startPosX", box.StartPosition.X);
+          command.Parameters.AddWithValue("@startPosY", box.StartPosition.Y);
+          command.Parameters.AddWithValue("@endPosX", box.EndPosition.X);
+          command.Parameters.AddWithValue("@endPosY", box.EndPosition.Y);
           command.Parameters.AddWithValue("@basePointId", box.BasePointId);
           command.Parameters.AddWithValue("@pipeSize", box.PipeSize);
           command.Parameters.AddWithValue("@type", box.Type);
@@ -1295,8 +1297,13 @@ namespace GMEPPlumbing.Services
         var box = new RouteInfoBox(
           reader.GetString("viewport_id"),
           new Point3d(
-            reader.GetDouble("pos_x"),
-            reader.GetDouble("pos_y"),
+            reader.GetDouble("start_pos_x"),
+            reader.GetDouble("start_pos_y"),
+            0
+          ),
+           new Point3d(
+            reader.GetDouble("end_pos_x"),
+            reader.GetDouble("end_pos_y"),
             0
           ),
           reader.GetString("base_point_id"),

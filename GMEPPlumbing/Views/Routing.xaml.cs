@@ -205,7 +205,8 @@ namespace GMEPPlumbing.Views
 
           RouteInfoBoxes.Add(new RouteInfoBox(
             ViewportId,
-            new Point3d(textPos.X, textPos.Y, 0),
+            horizontalRoute.StartPoint,
+            horizontalRoute.EndPoint,
             horizontalRoute.BasePointId,
             cleanedSize,
             horizontalRoute.Type,
@@ -396,7 +397,8 @@ namespace GMEPPlumbing.Views
         foreach (var verticalRoute in verticalRoutes) {
           RouteInfoBoxes.Add(new RouteInfoBox(
             ViewportId,
-            new Point3d(pos.X, pos.Y, 0),
+            verticalRoute.Position,
+            verticalRoute.Position,
             verticalRoute.BasePointId,
             cleanedSize,
             verticalRoutes.First().Type,
