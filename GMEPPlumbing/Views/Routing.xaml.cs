@@ -193,11 +193,21 @@ namespace GMEPPlumbing.Views
           );
 
           //upload the route data
+          string cleanedSize = recommendedSize;
+          int idx = cleanedSize.IndexOf("Nominal Pipe Size: ");
+          if (idx >= 0)
+            cleanedSize = cleanedSize.Substring(idx + "Nominal Pipe Size: ".Length);
+          else {
+            idx = cleanedSize.IndexOf("Pipe Size: ");
+            if (idx >= 0)
+              cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
+          }
+
           RouteInfoBoxes.Add(new RouteInfoBox(
             ViewportId,
             new Point3d(textPos.X, textPos.Y, 0),
             horizontalRoute.BasePointId,
-            recommendedSize,
+            cleanedSize,
             horizontalRoute.Type,
             "",
             cfh,
