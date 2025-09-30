@@ -991,29 +991,29 @@ namespace GMEPPlumbing.Services
         }
       }
     }
-    public async Task UpdatePlumbingRouteInfoBoxes(List<RouteInfoBox> boxes, string projectId) {
+    public async Task ClearPlumbingRouteInfoBoxes(string viewportId) {
+      MySqlConnection conn = await OpenNewConnectionAsync();
+      string deleteQuery = @"
+            DELETE FROM plumbing_route_info_boxes
+            WHERE viewport_id = @viewportId";
+      MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+      deleteCommand.Parameters.AddWithValue("@viewportId", viewportId);
+      await deleteCommand.ExecuteNonQueryAsync();
+    }
+    public async Task InsertPlumbingRouteInfoBoxes(List<RouteInfoBox> boxes, string viewportId) {
       if (boxes == null) {
         return;
       }
       MySqlConnection conn = await OpenNewConnectionAsync();
-
-      string deleteQuery = @"
-            DELETE FROM plumbing_route_info_boxes
-            WHERE project_id = @projectId
-        ";
-      MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
-      deleteCommand.Parameters.AddWithValue("@projectId", projectId);
-      await deleteCommand.ExecuteNonQueryAsync();
       
       if (boxes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_route_info_boxes
-              (project_id, pos_x, pos_y, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route)
-              VALUES (@projectId, @posX, @posY, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute)
-          ";
+              (viewport_id, pos_x, pos_y, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route)
+              VALUES (@viewportId, @posX, @posY, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute)";
         foreach (var box in boxes) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
-          command.Parameters.AddWithValue("@projectId", projectId);
+          command.Parameters.AddWithValue("@viewportId", viewportId);
           command.Parameters.AddWithValue("@posX", box.Position.X);
           command.Parameters.AddWithValue("@posY", box.Position.Y);
           command.Parameters.AddWithValue("@basePointId", box.BasePointId);
@@ -1282,18 +1282,18 @@ namespace GMEPPlumbing.Services
       return routes;
     }
 
-    public async Task<List<RouteInfoBox>> GetPlumbingRouteInfoBoxes(string ProjectId) {
+    public async Task<List<RouteInfoBox>> GetPlumbingRouteInfoBoxes(string viewportId) {
       var boxes = new List<RouteInfoBox>();
       await OpenConnectionAsync();
       string query = @"
             SELECT * FROM plumbing_route_info_boxes
-            WHERE project_id = @projectId";
+            WHERE viewport_id = @viewportId";
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@projectId", ProjectId);
+      command.Parameters.AddWithValue("@viewportId", viewportId);
       MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
       while (reader.Read()) {
         var box = new RouteInfoBox(
-          reader.GetString("project_id"),
+          reader.GetString("viewport_id"),
           new Point3d(
             reader.GetDouble("pos_x"),
             reader.GetDouble("pos_y"),

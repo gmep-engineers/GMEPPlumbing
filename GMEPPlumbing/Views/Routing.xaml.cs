@@ -40,7 +40,7 @@ namespace GMEPPlumbing.Views
     public void GenerateViews(Dictionary<string, List<PlumbingFullRoute>> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup) {
       Views.Clear();
       foreach (var routeScene in fullRoutes) {
-        View view = new View(routeScene.Value, basePointLookup);
+        View view = new View(routeScene.Key, routeScene.Value, basePointLookup);
         Views.Add(view);
       }
     }
@@ -60,6 +60,10 @@ namespace GMEPPlumbing.Views
 
       public HashSet<string> BasePointIds = new HashSet<string>();
 
+      public List<RouteInfoBox> RouteInfoBoxes { get; set; } = new List<RouteInfoBox>();
+
+      public string ViewportId { get; set; } = "";
+
       public bool _changeFlag = true;
       public bool ChangeFlag {
         get { return _changeFlag; }
@@ -76,25 +80,26 @@ namespace GMEPPlumbing.Views
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
       }
 
-    public Scene(PlumbingFullRoute fullRoute, Dictionary<string, PlumbingPlanBasePoint> basePoints) {
-          RouteItems = fullRoute.RouteItems;
-          Length = fullRoute.Length;
-          BasePoints = basePoints;
-          /*switch (fullRoute.TypeId) {
-            case 1:
-              RouteColor = System.Windows.Media.Brushes.Yellow;
-              break;
-            case 2:
-              RouteColor = System.Windows.Media.Brushes.Magenta;
-              break;
-            case 3:
-              RouteColor = System.Windows.Media.Brushes.SteelBlue;
-              break;
-            case 4:
-              RouteColor = System.Windows.Media.Brushes.Magenta;
-              break;
-          } */
-          BuildScene();
+      public Scene(string viewportId, PlumbingFullRoute fullRoute, Dictionary<string, PlumbingPlanBasePoint> basePoints) {
+        ViewportId = viewportId;
+        RouteItems = fullRoute.RouteItems;
+        Length = fullRoute.Length;
+        BasePoints = basePoints;
+        /*switch (fullRoute.TypeId) {
+          case 1:
+            RouteColor = System.Windows.Media.Brushes.Yellow;
+            break;
+          case 2:
+            RouteColor = System.Windows.Media.Brushes.Magenta;
+            break;
+          case 3:
+            RouteColor = System.Windows.Media.Brushes.SteelBlue;
+            break;
+          case 4:
+            RouteColor = System.Windows.Media.Brushes.Magenta;
+            break;
+        } */
+        BuildScene();
       }
     public Scene() {
       
@@ -106,7 +111,8 @@ namespace GMEPPlumbing.Views
       ChangeFlag = !ChangeFlag;
     }
 
-    public void BuildScene() {
+    public async Task BuildScene() {
+      RouteInfoBoxes.Clear();
       RouteVisuals.Clear();
       List<TextVisual3D> textVisuals = new List<TextVisual3D>();
       Dictionary<string, List<PlumbingVerticalRoute>> fullVerticalRoutes = new Dictionary<string, List<PlumbingVerticalRoute>>();
@@ -148,11 +154,16 @@ namespace GMEPPlumbing.Views
           double longestRunLength = horizontalRoute.LongestRunLength;
           int longestRunFeet = (int)(longestRunLength / 12); // Convert to feet
           int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
+          string recommendedSize = horizontalRoute.PipeSize;
+          string cfh = "";
+          string longestRun = "";
 
           double textHeight = 8;
-          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n ---------------------- \n {horizontalRoute.PipeSize}\n";
+          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n ---------------------- \n {recommendedSize}\n";
           if (horizontalRoute.Type == "Gas") {
-            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\"\n ---------------------- \n {horizontalRoute.PipeSize}\n";
+            cfh = horizontalRoute.FixtureUnits.ToString();
+            longestRun = $"{longestRunFeet}' {longestRunInches}\"";
+            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRun}\n ---------------------- \n {recommendedSize}\n";
           }
           else if (horizontalRoute.Type == "Waste" || horizontalRoute.Type == "Grease Waste") {
             WasteSizingChart chart = new WasteSizingChart();
@@ -160,7 +171,7 @@ namespace GMEPPlumbing.Views
             if (horizontalRoute.Slope == 0.02) {
               slope = "2%";
             }
-            string recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, slope);
+            recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, slope);
             textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits}\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
           }
           else if (horizontalRoute.Type == "Vent") {
@@ -169,7 +180,7 @@ namespace GMEPPlumbing.Views
             if (horizontalRoute.Slope == 0.02) {
               slope = "2%";
             }
-            string recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, horizontalRoute.LongestRunLength);
+            recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, horizontalRoute.LongestRunLength);
             textString = $" {feet}' {inches}\"\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
           }
           double textWidth = textHeight * textString.Length * 0.03;
@@ -181,6 +192,20 @@ namespace GMEPPlumbing.Views
               horizontalRoute.EndPoint.Z + 6 // +5 for vertical offset
           );
 
+          //upload the route data
+          RouteInfoBoxes.Add(new RouteInfoBox(
+            ViewportId,
+            new Point3d(textPos.X, textPos.Y, 0),
+            horizontalRoute.BasePointId,
+            recommendedSize,
+            horizontalRoute.Type,
+            "",
+            cfh,
+            longestRun,
+            "",
+            false
+          ));
+          // Create and configure the TextVisual3D
           var textModel = new TextVisual3D {
             Position = textPos,
             Text = textString,
@@ -308,6 +333,8 @@ namespace GMEPPlumbing.Views
         int longestLengthFeet = (int)(longestLength / 12); // Convert to feet
         int longestLengthInches = (int)Math.Round(longestLength % 12); // Remaining inches
         string routeBasePointId = verticalRoutes.First().BasePointId;
+        string cfh = "";
+        string longestRun = ""; 
         if (verticalRoutes.First().IsUp) {
           flowTypeId = verticalRoutes.Last().FlowTypeId;
           gpm = verticalRoutes.Last().GPM;
@@ -322,12 +349,14 @@ namespace GMEPPlumbing.Views
         int inches = (int)Math.Round(pipeLength % 12);
         string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n ---------------------- \n {pipeSize}\n";
         if (verticalRoutes.First().Type == "Gas") {
-          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\"\n ---------------------- \n {pipeSize}\n";
+          cfh = pipeFixtureUnits.ToString();
+          longestRun = $"{longestLengthFeet}' {longestLengthInches}\"";
+          textString = $" {feet}' {inches}\"\n CFH: {cfh} \n Longest Run: {longestRun}\n ---------------------- \n {pipeSize}\n";
         }
         else if (verticalRoutes.First().Type == "Waste" || verticalRoutes.First().Type == "Grease Waste") {
           WasteSizingChart chart = new WasteSizingChart();
-          string recommendedSize = chart.FindSize(pipeFixtureUnits, "Vertical", pipeLength);
-          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n ---------------------- \n {recommendedSize}\n";
+          pipeSize = chart.FindSize(pipeFixtureUnits, "Vertical", pipeLength);
+          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n ---------------------- \n {pipeSize}\n";
         }
         else if (verticalRoutes.First().Type == "Vent") {
           VentSizingChart chart = new VentSizingChart();
@@ -344,6 +373,23 @@ namespace GMEPPlumbing.Views
         else
           pos = new Point3D(pos.X + 6, pos.Y, pos.Z + offset);
 
+        //upload the route data
+        foreach (var verticalRoute in verticalRoutes) {
+          RouteInfoBoxes.Add(new RouteInfoBox(
+            ViewportId,
+            new Point3d(pos.X, pos.Y, 0),
+            verticalRoute.BasePointId,
+            pipeSize,
+            verticalRoutes.First().Type,
+            "",
+            cfh,
+            longestRun,
+            isUp ? "Up" : "Down",
+            true
+          ));
+        }
+
+        // Create and configure the TextVisual3D
         var textModel = new TextVisual3D {
           Position = pos,
           Text = textString,
@@ -391,6 +437,8 @@ namespace GMEPPlumbing.Views
       foreach (var text in textVisuals) {
         RouteVisuals.Add(text);
       }
+      var service = ServiceLocator.MariaDBService;
+      await service.InsertPlumbingRouteInfoBoxes(RouteInfoBoxes, ViewportId);
     }
     public SolidColorBrush TypeToBrushColor(string type) {
       switch (type) {
@@ -446,9 +494,9 @@ namespace GMEPPlumbing.Views
         OnPropertyChanged(nameof(MainScene));
       }
     }
+    public string ViewportId { get; set; } = "";
 
     public ObservableCollection<Scene> Scenes { get; set; } = new ObservableCollection<Scene>();
-
 
     public bool IsCalculatorEnabled { get; set; } = false;
     public Dictionary<string, WaterCalculator> WaterCalculators { get; set; } = new Dictionary<string, WaterCalculator>();
@@ -456,8 +504,8 @@ namespace GMEPPlumbing.Views
     public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
     public string Name { get; set; } = "";
     public ICommand CalculateCommand { get; }
-    public View(List<PlumbingFullRoute> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup) {
-
+    public View(string viewportId, List<PlumbingFullRoute> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup) {
+      ViewportId = viewportId;
       CalculateCommand = new RelayCommand(ExecuteCalculate);
       PlumbingSource source1 = fullRoutes[0].RouteItems[0] as PlumbingSource;
       if (source1 != null) {
@@ -640,12 +688,15 @@ namespace GMEPPlumbing.Views
         }
       }
     }
-    public void GenerateScenes() {
+    public async void GenerateScenes() {
+      var service = ServiceLocator.MariaDBService;
+      await service.ClearPlumbingRouteInfoBoxes(ViewportId);
+      
       Scenes.Clear();
       Scene fullScene = new Scene();
       foreach (var fullRoute in FullRoutes) {
-        var scene = new Scene(fullRoute, BasePointLookup);
-        var scene2 = new Scene(fullRoute, BasePointLookup);
+        var scene = new Scene(ViewportId, fullRoute, BasePointLookup);
+        var scene2 = new Scene(ViewportId, fullRoute, BasePointLookup);
         Scenes.Add(scene);
         foreach (var visual in scene2.RouteVisuals) {
           fullScene.RouteVisuals.Add(visual);
@@ -654,12 +705,15 @@ namespace GMEPPlumbing.Views
       fullScene.RemoveDuplicateRouteVisuals();
       MainScene = fullScene;
     }
-    public void RegenerateScenes() {
+    public async void RegenerateScenes() {
+      var service = ServiceLocator.MariaDBService;
+      await service.ClearPlumbingRouteInfoBoxes(ViewportId);
+
       Scene fullScene = new Scene();
       int index = 0;
       foreach (var fullRoute in FullRoutes) {
         Scenes[index].RebuildScene(fullRoute);
-        var scene2 = new Scene(fullRoute, BasePointLookup);
+        var scene2 = new Scene(ViewportId, fullRoute, BasePointLookup);
         foreach (var visual in scene2.RouteVisuals) {
           fullScene.RouteVisuals.Add(visual);
         }
@@ -883,6 +937,7 @@ namespace GMEPPlumbing.Views
       return element.GetValue(TypeProperty);
     }
   }
-
-
+  public class ServiceLocator {
+    public static MariaDBService MariaDBService { get; } = new MariaDBService();
+  }
 }

@@ -172,7 +172,7 @@ namespace GMEPPlumbing {
     }
   }
   public class RouteInfoBox {
-    public string ProjectId;
+    public string ViewportId;
 
     //route info
     public Point3d Position;
@@ -189,8 +189,8 @@ namespace GMEPPlumbing {
     public string DirectionDescription;
     public bool IsVerticalRoute = false;
 
-    public RouteInfoBox(string projectId, Point3d position, string basePointId, string pipeSize, string type, string locationDescription, string cfh, string longestRunLength, string directionDescription, bool isVerticalRoute) {
-      ProjectId = projectId;
+    public RouteInfoBox(string viewportId, Point3d position, string basePointId, string pipeSize, string type, string locationDescription, string cfh, string longestRunLength, string directionDescription, bool isVerticalRoute) {
+      ViewportId = viewportId;
 
       //route info
       Position = position;
