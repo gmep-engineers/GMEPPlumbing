@@ -437,8 +437,10 @@ namespace GMEPPlumbing.Views
       foreach (var text in textVisuals) {
         RouteVisuals.Add(text);
       }
-      var service = ServiceLocator.MariaDBService;
-      await service.InsertPlumbingRouteInfoBoxes(RouteInfoBoxes, ViewportId);
+      if (ViewportId != "") {
+        var service = ServiceLocator.MariaDBService;
+        await service.InsertPlumbingRouteInfoBoxes(RouteInfoBoxes, ViewportId);
+      }
     }
     public SolidColorBrush TypeToBrushColor(string type) {
       switch (type) {
@@ -696,7 +698,7 @@ namespace GMEPPlumbing.Views
       Scene fullScene = new Scene();
       foreach (var fullRoute in FullRoutes) {
         var scene = new Scene(ViewportId, fullRoute, BasePointLookup);
-        var scene2 = new Scene(ViewportId, fullRoute, BasePointLookup);
+        var scene2 = new Scene("", fullRoute, BasePointLookup);
         Scenes.Add(scene);
         foreach (var visual in scene2.RouteVisuals) {
           fullScene.RouteVisuals.Add(visual);
@@ -713,7 +715,7 @@ namespace GMEPPlumbing.Views
       int index = 0;
       foreach (var fullRoute in FullRoutes) {
         Scenes[index].RebuildScene(fullRoute);
-        var scene2 = new Scene(ViewportId, fullRoute, BasePointLookup);
+        var scene2 = new Scene("", fullRoute, BasePointLookup);
         foreach (var visual in scene2.RouteVisuals) {
           fullScene.RouteVisuals.Add(visual);
         }
