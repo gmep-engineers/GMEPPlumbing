@@ -571,7 +571,6 @@ namespace GMEPPlumbing.Views
           }
         }
       }
-      RegenerateScenes();
     }
     public void GenerateGasPipeSizing() {
       foreach (var fullRoute in FullRoutes) {
@@ -630,13 +629,13 @@ namespace GMEPPlumbing.Views
             }
           }
       }
-      RegenerateScenes();
     }
     private void ExecuteCalculate(object parameter) {
       var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
       ed.WriteMessage("\nCalculating pipe sizes...");
       GenerateWaterPipeSizing();
       GenerateGasPipeSizing();
+      RegenerateScenes();
     }
 
     public void GenerateWaterCalculators() {
