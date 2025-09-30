@@ -383,13 +383,22 @@ namespace GMEPPlumbing.Views
         else
           pos = new Point3D(pos.X + 6, pos.Y, pos.Z + offset);
 
+        string cleanedSize = pipeSize;
+        int idx = cleanedSize.IndexOf("Nominal Pipe Size: ");
+        if (idx >= 0)
+          cleanedSize = cleanedSize.Substring(idx + "Nominal Pipe Size: ".Length);
+        else {
+          idx = cleanedSize.IndexOf("Pipe Size: ");
+          if (idx >= 0)
+            cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
+        }
         //upload the route data
         foreach (var verticalRoute in verticalRoutes) {
           RouteInfoBoxes.Add(new RouteInfoBox(
             ViewportId,
             new Point3d(pos.X, pos.Y, 0),
             verticalRoute.BasePointId,
-            pipeSize,
+            cleanedSize,
             verticalRoutes.First().Type,
             "",
             cfh,
