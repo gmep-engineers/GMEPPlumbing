@@ -922,6 +922,8 @@ namespace GMEPPlumbing.Services
 
         await conn.CloseAsync();
     }
+
+
     public async Task UpdatePlumbingVerticalRoutes(List<PlumbingVerticalRoute> routes, string projectId) {
       if (routes == null) {
         return;
@@ -985,6 +987,43 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@type", route.Type);
           command.Parameters.AddWithValue("@pipeType", route.PipeType);
           command.Parameters.AddWithValue("@isUp", route.IsUp);
+          await command.ExecuteNonQueryAsync();
+        }
+      }
+    }
+    public async Task UpdatePlumbingRouteInfoBoxes(List<RouteInfoBox> boxes, string projectId) {
+      if (boxes == null) {
+        return;
+      }
+      MySqlConnection conn = await OpenNewConnectionAsync();
+
+      string deleteQuery = @"
+            DELETE FROM plumbing_route_info_boxes
+            WHERE project_id = @projectId
+        ";
+      MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+      deleteCommand.Parameters.AddWithValue("@projectId", projectId);
+      await deleteCommand.ExecuteNonQueryAsync();
+      
+      if (boxes.Count > 0) {
+        string upsertQuery = @"
+              INSERT INTO plumbing_route_info_boxes
+              (project_id, pos_x, pos_y, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route)
+              VALUES (@projectId, @posX, @posY, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute)
+          ";
+        foreach (var box in boxes) {
+          MySqlCommand command = new MySqlCommand(upsertQuery, conn);
+          command.Parameters.AddWithValue("@projectId", projectId);
+          command.Parameters.AddWithValue("@posX", box.Position.X);
+          command.Parameters.AddWithValue("@posY", box.Position.Y);
+          command.Parameters.AddWithValue("@basePointId", box.BasePointId);
+          command.Parameters.AddWithValue("@pipeSize", box.PipeSize);
+          command.Parameters.AddWithValue("@type", box.Type);
+          command.Parameters.AddWithValue("@locationDescription", box.LocationDescription);
+          command.Parameters.AddWithValue("@cfh", box.CFH);
+          command.Parameters.AddWithValue("@longestRunLength", box.LongestRunLength);
+          command.Parameters.AddWithValue("@directionDescription", box.DirectionDescription);
+          command.Parameters.AddWithValue("@isVerticalRoute", box.IsVerticalRoute);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1241,6 +1280,39 @@ namespace GMEPPlumbing.Services
       reader.Close();
       await CloseConnectionAsync();
       return routes;
+    }
+
+    public async Task<List<RouteInfoBox>> GetPlumbingRouteInfoBoxes(string ProjectId) {
+      var boxes = new List<RouteInfoBox>();
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_route_info_boxes
+            WHERE project_id = @projectId";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        var box = new RouteInfoBox(
+          reader.GetString("project_id"),
+          new Point3d(
+            reader.GetDouble("pos_x"),
+            reader.GetDouble("pos_y"),
+            0
+          ),
+          reader.GetString("base_point_id"),
+          reader.GetString("pipe_size"),
+          reader.GetString("type"),
+          reader.GetString("location_description"),
+          reader.GetString("cfh"),
+          reader.GetString("longest_run_length"),
+          reader.GetString("direction_description"),
+          reader.GetBoolean("is_vertical_route")
+        );
+        boxes.Add(box);
+      }
+      reader.Close();
+      await CloseConnectionAsync();
+      return boxes;
     }
 
     public async Task<List<PlumbingSource>> GetPlumbingSources(string ProjectId) {

@@ -171,6 +171,43 @@ namespace GMEPPlumbing {
       Type = type;
     }
   }
+  public class RouteInfoBox {
+    public string ProjectId;
+
+    //route info
+    public Point3d Position;
+    public string BasePointId;
+    public string PipeSize;
+    public string Type;
+    public string LocationDescription;
+
+    //gas info
+    public string CFH;
+    public string LongestRunLength;
+
+    //vertical route info
+    public string DirectionDescription;
+    public bool IsVerticalRoute = false;
+
+    public RouteInfoBox(string projectId, Point3d position, string basePointId, string pipeSize, string type, string locationDescription, string cfh, string longestRunLength, string directionDescription, bool isVerticalRoute) {
+      ProjectId = projectId;
+
+      //route info
+      Position = position;
+      BasePointId = basePointId;
+      PipeSize = pipeSize;
+      Type = type;
+      LocationDescription = locationDescription;
+
+      //gas info
+      CFH = cfh;
+      LongestRunLength = longestRunLength;
+
+      //vertical route info
+      DirectionDescription = directionDescription;
+      IsVerticalRoute = isVerticalRoute;
+    }
+  }
 
   public class PlumbingPlanBasePoint {
     public string Id;
