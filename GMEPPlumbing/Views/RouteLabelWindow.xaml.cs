@@ -45,10 +45,9 @@ namespace GMEPPlumbing.Views
         }
         public async void Startup() {
           RouteInfoBoxes = await MariaDBService.GetPlumbingRouteInfoBoxes(BasePointId);
-
+          DrawDiagram();
         }
         public void DrawDiagram() {
-          DiagramCanvas.Children.Clear();
 
           double scale = 2.0; // Adjust as needed
           double canvasCenterX = DiagramCanvas.ActualWidth / 2.0;
@@ -68,9 +67,6 @@ namespace GMEPPlumbing.Views
               Stroke = Brushes.DarkSlateBlue,
               StrokeThickness = 2
             };
-            DiagramCanvas.Children.Add(line);
-
-            // Optionally add points and labels as before, using x1/y1 and x2/y2
           }
         }
 

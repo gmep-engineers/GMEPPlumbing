@@ -16,7 +16,21 @@
         <rc:RichCanvas Grid.Row="0" x:Name="DiagramCanvas"
                Background="White"
                HorizontalAlignment="Stretch"
-               VerticalAlignment="Stretch"/>
+               VerticalAlignment="Stretch" ItemsSource="{Binding RouteInfoBoxes}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Line 
+                  Stroke="{Binding Stroke}" 
+                  StrokeThickness="{Binding StrokeThickness}"
+                  
+                  X1="{Binding StartPosition.X}"
+                  Y1="{Binding StartPosition.Y}"
+                  X2="{Binding EndPosition.X}"
+                  Y2="{Binding EndPosition.Y}"
+                  />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </rc:RichCanvas>
         <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Gray" ShowsPreview="True"/>
         <ListBox Grid.Row="2" Margin="10 0 10 0" x:Name="LabelListBox" HorizontalAlignment="Stretch">
           
