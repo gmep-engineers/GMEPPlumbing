@@ -74,7 +74,7 @@ namespace GMEPPlumbing.Views
 
             MessageBox.Show($"Selected Point: X={selectedPoint.X}, Y={selectedPoint.Y}, Z={selectedPoint.Z}");
             // You can now use selectedPoint as needed
-            var boxes = RouteInfoBoxes
+            /*var boxes = RouteInfoBoxes
             .Where(r =>
                 DistancePointToSegment(adjustedPoint, r.StartPosition, r.EndPosition) <= 3.0
             )
@@ -88,7 +88,7 @@ namespace GMEPPlumbing.Views
             foreach (var box in boxes) {
               ed.WriteMessage($"\nFound Route with Pipe Size: {box.PipeSize}");
               SelectedRouteInfoBoxes.Add(box);
-            }
+            }*/
           }
           else {
             MessageBox.Show("Point selection cancelled or failed.");
