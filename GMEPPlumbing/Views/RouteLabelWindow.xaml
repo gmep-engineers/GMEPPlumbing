@@ -13,7 +13,7 @@
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Background="LightSlateGray" BorderBrush="Black" BorderThickness="2"  Padding="5" HorizontalAlignment="Stretch" VerticalAlignment="Top">
             <Grid>
-                <Button Content="Select Point" Background="LightGray" FontWeight="DemiBold" Click="SelectPoint_Click" Width="300" Height="20"  HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                <Button Content="Select" Background="LightGray" FontWeight="DemiBold" Click="Select_Click" Width="300" Height="20"  HorizontalAlignment="Center" VerticalAlignment="Top"/>
             </Grid>
         </Border>
         <ListBox Margin="10 0 10 0" x:Name="LabelListBox" Grid.Row="1"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding SelectedRouteInfoBoxes}">

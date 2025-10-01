@@ -11,10 +11,16 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Autodesk.AutoCAD.Geometry;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.ApplicationServices;
+using System.Windows.Markup;
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace GMEPPlumbing.Views
 {
@@ -25,10 +31,9 @@ namespace GMEPPlumbing.Views
     {
         public MariaDBService MariaDBService { get; } = new MariaDBService();
         public List<RouteInfoBox> RouteInfoBoxes{ get; set; }
-
         public string BasePointId { get; set; }
-        private ObservableCollection<RouteInfoBox> _selectedRouteInfoBoxes = new ObservableCollection<RouteInfoBox>();
-        public ObservableCollection<RouteInfoBox> SelectedRouteInfoBoxes {
+        private Dictionary<string, ObservableCollection<RouteInfoBox>> _selectedRouteInfoBoxes = new Dictionary<string, ObservableCollection<RouteInfoBox>>();
+        public Dictionary<string, ObservableCollection<RouteInfoBox>> SelectedRouteInfoBoxes {
           get => _selectedRouteInfoBoxes;
           set {
             _selectedRouteInfoBoxes = value;
@@ -46,13 +51,13 @@ namespace GMEPPlumbing.Views
         public async void Startup() {
           RouteInfoBoxes = await MariaDBService.GetPlumbingRouteInfoBoxes(BasePointId);
         }
-        public void SelectPoint_Click(object sender, RoutedEventArgs e) {
+        public void Select_Click(object sender, RoutedEventArgs e) {
           // Get the active AutoCAD document and editor
           var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
           var ed = doc.Editor;
-          
+
           this.Hide();
-         // Prompt the user to select a point
+          // Prompt the user to select a point
           PlumbingPlanBasePoint activeBasePoint = AutoCADIntegration.GetPlumbingBasePointsFromCAD()
             .FirstOrDefault(bp => bp.Id == BasePointId);
           if (activeBasePoint == null) {
@@ -60,41 +65,52 @@ namespace GMEPPlumbing.Views
             this.Show();
             return;
           }
-          var promptPointOptions = new Autodesk.AutoCAD.EditorInput.PromptPointOptions("\nSelect a point:");
-          var promptPointResult = ed.GetPoint(promptPointOptions);
+          var promptSelectionOptions = new Autodesk.AutoCAD.EditorInput.PromptSelectionOptions();
+          var promptSelectionResult = ed.GetSelection(promptSelectionOptions);
 
-          if (promptPointResult.Status == Autodesk.AutoCAD.EditorInput.PromptStatus.OK) {
-            var selectedPoint = promptPointResult.Value;
-            Vector3d basePointInsertion = selectedPoint - activeBasePoint.Point;
-            var adjustedPoint = new Point3d(
-              0 + basePointInsertion.X,
-              0 + basePointInsertion.Y,
-              0
-             );
-
-            MessageBox.Show($"Selected Point: X={selectedPoint.X}, Y={selectedPoint.Y}, Z={selectedPoint.Z}");
-            // You can now use selectedPoint as needed
-            /*var boxes = RouteInfoBoxes
-            .Where(r =>
-                DistancePointToSegment(adjustedPoint, r.StartPosition, r.EndPosition) <= 3.0
-            )
-            .ToList();
-            if (boxes.Count == 0) {
-              MessageBox.Show("No route found near the selected point.");
-              this.Show();
-              return;
+          if (promptSelectionResult.Status == Autodesk.AutoCAD.EditorInput.PromptStatus.OK) {
+            this.Show();
+            var selectedIds = promptSelectionResult.Value.GetObjectIds();
+            using (Transaction tr = doc.Database.TransactionManager.StartTransaction()) {
+              var selectedRouteInfoBoxes = new Dictionary<string, ObservableCollection<RouteInfoBox>>();
+              foreach (var objId in selectedIds) {
+                var ent = tr.GetObject(objId, OpenMode.ForRead) as Entity;
+                if (ent is Line line) {
+                  ResultBuffer xdata = line.GetXDataForApplication("GMEPPlumbingID");
+                  if (xdata != null && xdata.AsArray().Length >= 5) {
+                    List<RouteInfoBox> boxes = RouteInfoBoxes.Where(r => r.ComponentId == xdata.AsArray()[1].Value.ToString()).ToList();
+                    if (boxes.Count > 0) {
+                      if (!selectedRouteInfoBoxes.ContainsKey(xdata.AsArray()[1].Value.ToString())) {
+                        selectedRouteInfoBoxes[xdata.AsArray()[1].Value.ToString()] = new ObservableCollection<RouteInfoBox>();
+                      }
+                      foreach (var box in boxes) {
+                        selectedRouteInfoBoxes[xdata.AsArray()[1].Value.ToString()].Add(box);
+                      }
+                    }
+                  }
+                }
+                if (ent is BlockReference blockReference) {
+                  DynamicBlockReferencePropertyCollection pc = blockReference.DynamicBlockReferencePropertyCollection;
+                  foreach (DynamicBlockReferenceProperty prop in pc) {
+                    if (prop.PropertyName == "id") {
+                      List<RouteInfoBox> boxes = RouteInfoBoxes.Where(r => r.ComponentId == prop.Value.ToString()).ToList();
+                      if (boxes.Count > 0) {
+                        if (!selectedRouteInfoBoxes.ContainsKey(prop.Value.ToString())) {
+                          selectedRouteInfoBoxes[prop.Value.ToString()] = new ObservableCollection<RouteInfoBox>();
+                        }
+                        foreach (var box in boxes) {
+                          selectedRouteInfoBoxes[prop.Value.ToString()].Add(box);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              SelectedRouteInfoBoxes = selectedRouteInfoBoxes;
             }
-            SelectedRouteInfoBoxes.Clear();
-            foreach (var box in boxes) {
-              ed.WriteMessage($"\nFound Route with Pipe Size: {box.PipeSize}");
-              SelectedRouteInfoBoxes.Add(box);
-            }*/
           }
-          else {
-            MessageBox.Show("Point selection cancelled or failed.");
-          }
-          this.Show();
         }
+
         public static double DistancePointToSegment(Point3d pt, Point3d segStart, Point3d segEnd) {
           var v = segEnd - segStart;
           var w = pt - segStart;

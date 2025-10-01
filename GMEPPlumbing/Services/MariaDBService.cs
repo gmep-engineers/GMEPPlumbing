@@ -1009,8 +1009,8 @@ namespace GMEPPlumbing.Services
       if (boxes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_route_info_boxes
-              (viewport_id, component_id, end_pos_x, end_pos_y, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route, segment_length)
-              VALUES (@viewportId, @componentId, @endPosX, @endPosY, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute, @segmentLength)";
+              (viewport_id, component_id, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route, segment_length)
+              VALUES (@viewportId, @componentId, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute, @segmentLength)";
         foreach (var box in boxes) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
           command.Parameters.AddWithValue("@viewportId", viewportId);
@@ -1024,6 +1024,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@directionDescription", box.DirectionDescription);
           command.Parameters.AddWithValue("@isVerticalRoute", box.IsVerticalRoute);
           command.Parameters.AddWithValue("@segmentLength", box.SegmentLength);
+
           await command.ExecuteNonQueryAsync();
         }
       }
