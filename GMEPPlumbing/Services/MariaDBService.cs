@@ -1009,15 +1009,12 @@ namespace GMEPPlumbing.Services
       if (boxes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_route_info_boxes
-              (viewport_id, start_pos_x, start_pos_y, end_pos_x, end_pos_y, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route)
-              VALUES (@viewportId, @startPosX, @startPosY, @endPosX, @endPosY, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute)";
+              (viewport_id, component_id, end_pos_x, end_pos_y, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route, segment_length)
+              VALUES (@viewportId, @componentId, @endPosX, @endPosY, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute, @segmentLength)";
         foreach (var box in boxes) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
           command.Parameters.AddWithValue("@viewportId", viewportId);
-          command.Parameters.AddWithValue("@startPosX", box.StartPosition.X);
-          command.Parameters.AddWithValue("@startPosY", box.StartPosition.Y);
-          command.Parameters.AddWithValue("@endPosX", box.EndPosition.X);
-          command.Parameters.AddWithValue("@endPosY", box.EndPosition.Y);
+          command.Parameters.AddWithValue("@componentId", box.ComponentId);
           command.Parameters.AddWithValue("@basePointId", box.BasePointId);
           command.Parameters.AddWithValue("@pipeSize", box.PipeSize);
           command.Parameters.AddWithValue("@type", box.Type);
@@ -1026,6 +1023,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@longestRunLength", box.LongestRunLength);
           command.Parameters.AddWithValue("@directionDescription", box.DirectionDescription);
           command.Parameters.AddWithValue("@isVerticalRoute", box.IsVerticalRoute);
+          command.Parameters.AddWithValue("@segmentLength", box.SegmentLength);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1296,16 +1294,7 @@ namespace GMEPPlumbing.Services
       while (reader.Read()) {
         var box = new RouteInfoBox(
           reader.GetString("viewport_id"),
-          new Point3d(
-            reader.GetDouble("start_pos_x"),
-            reader.GetDouble("start_pos_y"),
-            0
-          ),
-           new Point3d(
-            reader.GetDouble("end_pos_x"),
-            reader.GetDouble("end_pos_y"),
-            0
-          ),
+          reader.GetString("component_id"),
           reader.GetString("base_point_id"),
           reader.GetString("pipe_size"),
           reader.GetString("type"),
@@ -1313,7 +1302,8 @@ namespace GMEPPlumbing.Services
           reader.GetString("cfh"),
           reader.GetString("longest_run_length"),
           reader.GetString("direction_description"),
-          reader.GetBoolean("is_vertical_route")
+          reader.GetBoolean("is_vertical_route"),
+          reader.GetString("segment_length")
         );
         boxes.Add(box);
       }

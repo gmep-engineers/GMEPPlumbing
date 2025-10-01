@@ -203,10 +203,11 @@ namespace GMEPPlumbing.Views
               cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
           }
 
+          double segmentLength = horizontalRoute.EndPoint.DistanceTo(horizontalRoute.StartPoint);
+          string segmentLengthString = ToFeetInchesString(segmentLength);
           RouteInfoBoxes.Add(new RouteInfoBox(
             ViewportId,
-            horizontalRoute.StartPoint,
-            horizontalRoute.EndPoint,
+            horizontalRoute.Id,
             horizontalRoute.BasePointId,
             cleanedSize,
             horizontalRoute.Type,
@@ -214,7 +215,8 @@ namespace GMEPPlumbing.Views
             cfh,
             longestRun,
             "",
-            false
+            false,
+            segmentLengthString
           ));
           // Create and configure the TextVisual3D
           var textModel = new TextVisual3D {
@@ -393,12 +395,12 @@ namespace GMEPPlumbing.Views
           if (idx >= 0)
             cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
         }
+        string pipeLengthString = ToFeetInchesString(pipeLength);
         //upload the route data
         foreach (var verticalRoute in verticalRoutes) {
           RouteInfoBoxes.Add(new RouteInfoBox(
             ViewportId,
-            verticalRoute.Position,
-            verticalRoute.Position,
+            verticalRoute.Id,
             verticalRoute.BasePointId,
             cleanedSize,
             verticalRoutes.First().Type,
@@ -406,7 +408,8 @@ namespace GMEPPlumbing.Views
             cfh,
             longestRun,
             isUp ? "Up" : "Down",
-            true
+            true,
+            pipeLengthString
           ));
         }
 
@@ -504,6 +507,11 @@ namespace GMEPPlumbing.Views
 
       foreach (var visual in toRemove)
         RouteVisuals.Remove(visual);
+    }
+    public static string ToFeetInchesString(double lengthInInches) {
+      int feet = (int)(lengthInInches / 12);
+      int inches = (int)Math.Round(lengthInInches % 12);
+      return $"{feet}' {inches}\"";
     }
   }
   public class View : INotifyPropertyChanged {
