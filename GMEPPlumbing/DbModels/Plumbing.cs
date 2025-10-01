@@ -172,23 +172,23 @@ namespace GMEPPlumbing {
     }
   }
   public class RouteInfoBox {
-    public string ViewportId;
+    public string ViewportId { get; set; }
 
     //route info
-    public Point3d StartPosition;
-    public Point3d EndPosition;
-    public string BasePointId;
-    public string PipeSize;
-    public string Type;
-    public string LocationDescription;
+    public Point3d StartPosition { get; set; }
+    public Point3d EndPosition { get; set; }
+    public string BasePointId { get; set; }
+    public string PipeSize { get; set; }
+    public string Type { get; set; }
+    public string LocationDescription { get; set; }
 
     //gas info
-    public string CFH;
-    public string LongestRunLength;
+    public string CFH { get; set; }
+    public string LongestRunLength { get; set; }
 
     //vertical route info
-    public string DirectionDescription;
-    public bool IsVerticalRoute = false;
+    public string DirectionDescription { get; set; }
+    public bool IsVerticalRoute { get; set; } = false;
 
     public RouteInfoBox(string viewportId, Point3d startPosition, Point3d endPosition, string basePointId, string pipeSize, string type, string locationDescription, string cfh, string longestRunLength, string directionDescription, bool isVerticalRoute) {
       ViewportId = viewportId;

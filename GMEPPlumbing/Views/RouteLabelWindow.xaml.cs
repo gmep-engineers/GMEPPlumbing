@@ -35,11 +35,13 @@ namespace GMEPPlumbing.Views
             OnPropertyChanged(nameof(SelectedRouteInfoBoxes));
           }
         }
-         public RouteLabelWindow(string basePointId)
+        public RouteLabelWindow(string basePointId)
         {
           BasePointId = basePointId;
-          Startup();
+         
           InitializeComponent();
+          DataContext = this;
+          Startup();
         }
         public async void Startup() {
           RouteInfoBoxes = await MariaDBService.GetPlumbingRouteInfoBoxes(BasePointId);
@@ -84,6 +86,7 @@ namespace GMEPPlumbing.Views
             }
             SelectedRouteInfoBoxes.Clear();
             foreach (var box in boxes) {
+              ed.WriteMessage($"\nFound Route with Pipe Size: {box.PipeSize}");
               SelectedRouteInfoBoxes.Add(box);
             }
           }
@@ -91,7 +94,7 @@ namespace GMEPPlumbing.Views
             MessageBox.Show("Point selection cancelled or failed.");
           }
           this.Show();
-    }
+        }
         public static double DistancePointToSegment(Point3d pt, Point3d segStart, Point3d segEnd) {
           var v = segEnd - segStart;
           var w = pt - segStart;

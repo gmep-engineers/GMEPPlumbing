@@ -24,12 +24,10 @@
                             <TextBlock FontWeight="Bold" Text="{Binding Type}" Foreground="DarkSlateBlue"/>
                             <TextBlock Text="Pipe Size:" FontWeight="SemiBold" Foreground="Gray" />
                             <TextBlock Text="{Binding PipeSize}" Margin="0,0,0,4"/>
-                            <TextBlock Text="Base Point:" FontWeight="SemiBold" Foreground="Gray" />
-                            <TextBlock Text="{Binding BasePointId}" Margin="0,0,0,4"/>
                             <TextBlock Text="CFH:" FontWeight="SemiBold" Foreground="Gray" />
                             <TextBlock Text="{Binding CFH}" Margin="0,0,0,4"/>
                             <TextBlock Text="Longest Run:" FontWeight="SemiBold" Foreground="Gray" />
-                            <TextBlock Text="{Binding LongestRun}" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding LongestRunLength}" Margin="0,0,0,4"/>
                         </StackPanel>
                     </Border>
                 </DataTemplate>
