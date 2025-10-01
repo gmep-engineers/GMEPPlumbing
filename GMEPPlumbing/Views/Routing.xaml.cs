@@ -466,6 +466,7 @@ namespace GMEPPlumbing.Views
         await service.InsertPlumbingRouteInfoBoxes(RouteInfoBoxes, ViewportId);
       }
     }
+
     public SolidColorBrush TypeToBrushColor(string type) {
       switch (type) {
         case "Cold Water":

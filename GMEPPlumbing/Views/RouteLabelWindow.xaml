@@ -16,18 +16,32 @@
                 <Button Content="Select" Background="LightGray" FontWeight="DemiBold" Click="Select_Click" Width="300" Height="20"  HorizontalAlignment="Center" VerticalAlignment="Top"/>
             </Grid>
         </Border>
-        <ListBox Margin="10 0 10 0" x:Name="LabelListBox" Grid.Row="1"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding SelectedRouteInfoBoxes}">
+        <ListBox Grid.Row="1" ItemsSource="{Binding SelectedRouteInfoBoxes}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Border Margin="2" Padding="8" Background="White" CornerRadius="4" BorderBrush="SlateGray" BorderThickness="1">
+                    <Border Margin="4" Padding="4" Background="LightGray" CornerRadius="4">
                         <StackPanel>
-                            <TextBlock FontWeight="Bold" Text="{Binding Type}" Foreground="DarkSlateBlue"/>
-                            <TextBlock Text="Pipe Size:" FontWeight="SemiBold" Foreground="Gray" />
-                            <TextBlock Text="{Binding PipeSize}" Margin="0,0,0,4"/>
-                            <TextBlock Text="CFH:" FontWeight="SemiBold" Foreground="Gray" />
-                            <TextBlock Text="{Binding CFH}" Margin="0,0,0,4"/>
-                            <TextBlock Text="Longest Run:" FontWeight="SemiBold" Foreground="Gray" />
-                            <TextBlock Text="{Binding LongestRunLength}" Margin="0,0,0,4"/>
+                            <!-- Display the key -->
+                            <TextBlock FontWeight="Bold" Text="{Binding Key}" Foreground="DarkSlateBlue"/>
+                            <!-- Inner ListBox for the ObservableCollection -->
+                            <ListBox ItemsSource="{Binding Value}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="2" Padding="8" Background="White" CornerRadius="4" BorderBrush="SlateGray" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock FontWeight="Bold" Text="{Binding Type}" Foreground="DarkSlateBlue"/>
+                                                <TextBlock FontWeight="Bold" Text="{Binding SegmentLength}" Foreground="DarkSlateBlue"/>
+                                                <TextBlock Text="Pipe Size:" FontWeight="SemiBold" Foreground="Gray" />
+                                                <TextBlock Text="{Binding PipeSize}" Margin="0,0,0,4"/>
+                                                <TextBlock Text="CFH:" FontWeight="SemiBold" Foreground="Gray" />
+                                                <TextBlock Text="{Binding CFH}" Margin="0,0,0,4"/>
+                                                <TextBlock Text="Longest Run:" FontWeight="SemiBold" Foreground="Gray" />
+                                                <TextBlock Text="{Binding LongestRunLength}" Margin="0,0,0,4"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </StackPanel>
                     </Border>
                 </DataTemplate>

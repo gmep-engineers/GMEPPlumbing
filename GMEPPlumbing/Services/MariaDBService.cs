@@ -12,6 +12,7 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.GraphicsInterface;
 using GMEPPlumbing.ViewModels;
 using MySql.Data.MySqlClient;
 using Mysqlx.Crud;
@@ -1027,6 +1028,27 @@ namespace GMEPPlumbing.Services
 
           await command.ExecuteNonQueryAsync();
         }
+
+        /*// Remove full duplicates, keeping the row with the smallest id
+        string dedupeQuery = @"
+            DELETE t1 FROM plumbing_route_info_boxes t1
+            INNER JOIN plumbing_route_info_boxes t2
+            ON t1.viewport_id = t2.viewport_id
+            AND t1.component_id = t2.component_id
+            AND t1.base_point_id = t2.base_point_id
+            AND t1.pipe_size = t2.pipe_size
+            AND t1.type = t2.type
+            AND t1.location_description = t2.location_description
+            AND t1.cfh = t2.cfh
+            AND t1.longest_run_length = t2.longest_run_length
+            AND t1.direction_description = t2.direction_description
+            AND t1.is_vertical_route = t2.is_vertical_route
+            AND t1.segment_length = t2.segment_length
+            AND t1.id > t2.id;";
+
+        MySqlCommand dedupeCommand = new MySqlCommand(dedupeQuery, conn);
+        await dedupeCommand.ExecuteNonQueryAsync();*/
+      
       }
     }
     public async Task UpdatePlumbingPlanBasePoints(List<PlumbingPlanBasePoint> points, string ProjectId) {
