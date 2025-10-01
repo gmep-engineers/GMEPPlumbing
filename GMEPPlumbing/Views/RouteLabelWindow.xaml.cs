@@ -45,73 +45,36 @@ namespace GMEPPlumbing.Views
         }
         public async void Startup() {
           RouteInfoBoxes = await MariaDBService.GetPlumbingRouteInfoBoxes(BasePointId);
+
         }
-        public void SelectPoint_Click(object sender, RoutedEventArgs e) {
-          // Get the active AutoCAD document and editor
-          var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-          var ed = doc.Editor;
-          
-          this.Hide();
-         // Prompt the user to select a point
-          PlumbingPlanBasePoint activeBasePoint = AutoCADIntegration.GetPlumbingBasePointsFromCAD()
-            .FirstOrDefault(bp => bp.Id == BasePointId);
-          if (activeBasePoint == null) {
-            MessageBox.Show("Active base point not found.");
-            this.Show();
-            return;
-          }
-          var promptPointOptions = new Autodesk.AutoCAD.EditorInput.PromptPointOptions("\nSelect a point:");
-          var promptPointResult = ed.GetPoint(promptPointOptions);
+        public void DrawDiagram() {
+          DiagramCanvas.Children.Clear();
 
-          if (promptPointResult.Status == Autodesk.AutoCAD.EditorInput.PromptStatus.OK) {
-            var selectedPoint = promptPointResult.Value;
-            Vector3d basePointInsertion = selectedPoint - activeBasePoint.Point;
-            var adjustedPoint = new Point3d(
-              0 + basePointInsertion.X,
-              0 + basePointInsertion.Y,
-              0
-             );
+          double scale = 2.0; // Adjust as needed
+          double canvasCenterX = DiagramCanvas.ActualWidth / 2.0;
+          double canvasCenterY = DiagramCanvas.ActualHeight / 2.0;
 
-            MessageBox.Show($"Selected Point: X={selectedPoint.X}, Y={selectedPoint.Y}, Z={selectedPoint.Z}");
-            // You can now use selectedPoint as needed
-            var boxes = RouteInfoBoxes
-            .Where(r =>
-                DistancePointToSegment(adjustedPoint, r.StartPosition, r.EndPosition) <= 3.0
-            )
-            .ToList();
-            if (boxes.Count == 0) {
-              MessageBox.Show("No route found near the selected point.");
-              this.Show();
-              return;
-            }
-            SelectedRouteInfoBoxes.Clear();
-            foreach (var box in boxes) {
-              ed.WriteMessage($"\nFound Route with Pipe Size: {box.PipeSize}");
-              SelectedRouteInfoBoxes.Add(box);
-            }
+          foreach (var box in RouteInfoBoxes) {
+            double x1 = box.StartPosition.X * scale + canvasCenterX;
+            double y1 = -box.StartPosition.Y * scale + canvasCenterY;
+            double x2 = box.EndPosition.X * scale + canvasCenterX;
+            double y2 = -box.EndPosition.Y * scale + canvasCenterY;
+
+            var line = new System.Windows.Shapes.Line {
+              X1 = x1,
+              Y1 = y1,
+              X2 = x2,
+              Y2 = y2,
+              Stroke = Brushes.DarkSlateBlue,
+              StrokeThickness = 2
+            };
+            DiagramCanvas.Children.Add(line);
+
+            // Optionally add points and labels as before, using x1/y1 and x2/y2
           }
-          else {
-            MessageBox.Show("Point selection cancelled or failed.");
-          }
-          this.Show();
         }
-        public static double DistancePointToSegment(Point3d pt, Point3d segStart, Point3d segEnd) {
-          var v = segEnd - segStart;
-          var w = pt - segStart;
 
-          double c1 = v.DotProduct(w);
-          if (c1 <= 0)
-            return pt.DistanceTo(segStart);
-
-          double c2 = v.DotProduct(v);
-          if (c2 <= c1)
-            return pt.DistanceTo(segEnd);
-
-          double b = c1 / c2;
-          var pb = segStart + (v * b);
-          return pt.DistanceTo(pb);
-        }
-        public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName) {
           PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
