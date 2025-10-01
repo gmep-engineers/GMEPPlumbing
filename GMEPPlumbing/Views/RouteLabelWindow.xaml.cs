@@ -25,6 +25,8 @@ namespace GMEPPlumbing.Views
     {
         public MariaDBService MariaDBService { get; } = new MariaDBService();
         public List<RouteInfoBox> RouteInfoBoxes{ get; set; }
+
+        public string BasePointId { get; set; }
         private ObservableCollection<RouteInfoBox> _selectedRouteInfoBoxes = new ObservableCollection<RouteInfoBox>();
         public ObservableCollection<RouteInfoBox> SelectedRouteInfoBoxes {
           get => _selectedRouteInfoBoxes;
@@ -35,11 +37,12 @@ namespace GMEPPlumbing.Views
         }
          public RouteLabelWindow(string basePointId)
         {
-          Startup(basePointId);
+          BasePointId = basePointId;
+          Startup();
           InitializeComponent();
         }
-        public async void Startup(string basePointId) {
-          RouteInfoBoxes = await MariaDBService.GetPlumbingRouteInfoBoxes(basePointId);
+        public async void Startup() {
+          RouteInfoBoxes = await MariaDBService.GetPlumbingRouteInfoBoxes(BasePointId);
         }
         public void SelectPoint_Click(object sender, RoutedEventArgs e) {
           // Get the active AutoCAD document and editor
@@ -47,17 +50,31 @@ namespace GMEPPlumbing.Views
           var ed = doc.Editor;
           
           this.Hide();
-          // Prompt the user to select a point
+         // Prompt the user to select a point
+          PlumbingPlanBasePoint activeBasePoint = AutoCADIntegration.GetPlumbingBasePointsFromCAD()
+            .FirstOrDefault(bp => bp.Id == BasePointId);
+          if (activeBasePoint == null) {
+            MessageBox.Show("Active base point not found.");
+            this.Show();
+            return;
+          }
           var promptPointOptions = new Autodesk.AutoCAD.EditorInput.PromptPointOptions("\nSelect a point:");
           var promptPointResult = ed.GetPoint(promptPointOptions);
 
           if (promptPointResult.Status == Autodesk.AutoCAD.EditorInput.PromptStatus.OK) {
             var selectedPoint = promptPointResult.Value;
+            Vector3d basePointInsertion = selectedPoint - activeBasePoint.Point;
+            var adjustedPoint = new Point3d(
+              0 + basePointInsertion.X,
+              0 + basePointInsertion.Y,
+              0
+             );
+
             MessageBox.Show($"Selected Point: X={selectedPoint.X}, Y={selectedPoint.Y}, Z={selectedPoint.Z}");
-              // You can now use selectedPoint as needed
+            // You can now use selectedPoint as needed
             var boxes = RouteInfoBoxes
             .Where(r =>
-                DistancePointToSegment(selectedPoint, r.StartPosition, r.EndPosition) <= 3.0
+                DistancePointToSegment(adjustedPoint, r.StartPosition, r.EndPosition) <= 3.0
             )
             .ToList();
             if (boxes.Count == 0) {
