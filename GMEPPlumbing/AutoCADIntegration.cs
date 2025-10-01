@@ -6721,6 +6721,13 @@ namespace GMEPPlumbing
       CADObjectCommands.GetActiveView();
       VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "DownToFloor");
     }
+
+    [CommandMethod("PLACEROUTELABELS")]
+    public void PlaceRouteLabels() {
+      string basePointId = CADObjectCommands.GetActiveView();
+      var window = new RouteLabelWindow(basePointId);
+      window.Show();
+    }
     public static void Db_ObjectAppended(object sender, ObjectEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;

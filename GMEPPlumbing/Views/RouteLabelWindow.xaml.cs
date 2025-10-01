@@ -41,11 +41,12 @@ namespace GMEPPlumbing.Views
         public async void Startup(string basePointId) {
           RouteInfoBoxes = await MariaDBService.GetPlumbingRouteInfoBoxes(basePointId);
         }
-        private void SelectPoint_Click(object sender, RoutedEventArgs e) {
+        public void SelectPoint_Click(object sender, RoutedEventArgs e) {
           // Get the active AutoCAD document and editor
           var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
           var ed = doc.Editor;
-
+          
+          this.Hide();
           // Prompt the user to select a point
           var promptPointOptions = new Autodesk.AutoCAD.EditorInput.PromptPointOptions("\nSelect a point:");
           var promptPointResult = ed.GetPoint(promptPointOptions);
@@ -61,6 +62,7 @@ namespace GMEPPlumbing.Views
             .ToList();
             if (boxes.Count == 0) {
               MessageBox.Show("No route found near the selected point.");
+              this.Show();
               return;
             }
             SelectedRouteInfoBoxes.Clear();
@@ -71,7 +73,8 @@ namespace GMEPPlumbing.Views
           else {
             MessageBox.Show("Point selection cancelled or failed.");
           }
-        }
+          this.Show();
+    }
         public static double DistancePointToSegment(Point3d pt, Point3d segStart, Point3d segEnd) {
           var v = segEnd - segStart;
           var w = pt - segStart;
