@@ -103,6 +103,15 @@
     <Reference Include="Google.Protobuf, Version=3.30.0.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
       <HintPath>packages\Google.Protobuf.3.30.0\lib\net45\Google.Protobuf.dll</HintPath>
     </Reference>
+    <Reference Include="GraphX.Standard.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\GraphX.3.0.0\lib\net461\GraphX.Standard.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="GraphX.Standard.Logic, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\GraphX.3.0.0\lib\net461\GraphX.Standard.Logic.dll</HintPath>
+    </Reference>
+    <Reference Include="GraphX.WPF.Controls, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\GraphX.3.0.0\lib\net461\GraphX.WPF.Controls.dll</HintPath>
+    </Reference>
     <Reference Include="HelixToolkit.Wpf, Version=2.27.0.0, Culture=neutral, PublicKeyToken=52aa3500039caf0d, processorArchitecture=MSIL">
       <HintPath>packages\HelixToolkit.Wpf.2.27.0\lib\net462\HelixToolkit.Wpf.dll</HintPath>
     </Reference>
@@ -162,6 +171,9 @@
     </Reference>
     <Reference Include="MySql.Data, Version=9.3.0.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <HintPath>packages\MySql.Data.9.3.0\lib\net48\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="QuickGraph, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\QuickGraphCore.1.0.0\lib\net40\QuickGraph.dll</HintPath>
     </Reference>
     <Reference Include="SharpCompress, Version=0.30.1.0, Culture=neutral, PublicKeyToken=afb0a02973931d96, processorArchitecture=MSIL">
       <HintPath>packages\SharpCompress.0.30.1\lib\net461\SharpCompress.dll</HintPath>
