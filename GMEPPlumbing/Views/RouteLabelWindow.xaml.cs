@@ -37,7 +37,18 @@ namespace GMEPPlumbing.Views
           get => _selectedRouteInfoBoxes;
           set {
             _selectedRouteInfoBoxes = value;
+            RouteInfoBoxGroups = new ObservableCollection<RouteInfoBoxGroup>(
+                value.Select(kvp => new RouteInfoBoxGroup { Key = kvp.Key, Value = kvp.Value })
+            );
             OnPropertyChanged(nameof(SelectedRouteInfoBoxes));
+          }
+        }
+        private ObservableCollection<RouteInfoBoxGroup> _routeInfoBoxGroups;
+        public ObservableCollection<RouteInfoBoxGroup> RouteInfoBoxGroups {
+          get => _routeInfoBoxGroups;
+          set {
+            _routeInfoBoxGroups = value;
+            OnPropertyChanged(nameof(RouteInfoBoxGroups));
           }
         }
         public RouteLabelWindow(string basePointId)
@@ -131,5 +142,23 @@ namespace GMEPPlumbing.Views
         protected void OnPropertyChanged(string propertyName) {
           PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+    }
+    public class RouteInfoBoxGroup : INotifyPropertyChanged {
+      public string Key { get; set; }
+      public ObservableCollection<RouteInfoBox> Value { get; set; }
+
+      private RouteInfoBox _selectedRouteInfoBox;
+      public RouteInfoBox SelectedRouteInfoBox {
+        get => _selectedRouteInfoBox;
+        set {
+          _selectedRouteInfoBox = value;
+          OnPropertyChanged(nameof(SelectedRouteInfoBox));
+        }
+      }
+
+      public event PropertyChangedEventHandler PropertyChanged;
+      protected void OnPropertyChanged(string propertyName) {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+      }
     }
 }
