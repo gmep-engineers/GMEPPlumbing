@@ -21,6 +21,8 @@ using System.Windows.Markup;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using static Google.Protobuf.Reflection.SourceCodeInfo.Types;
+using static Mysqlx.Crud.Order.Types;
 
 namespace GMEPPlumbing.Views
 {
@@ -145,59 +147,47 @@ namespace GMEPPlumbing.Views
           .GroupBy(b => b.PipeSize);
 
       var labelParts = new List<string>();
-
       foreach (var pipeSizeGroup in pipeSizeGroups) {
+        var sizeParts = new List<string>();
         var pipeSize = pipeSizeGroup.Key;
+        sizeParts.Add(pipeSize);
 
-        var locationGroups = pipeSizeGroup
-            .GroupBy(b => b.LocationDescription);
+        var typeGroups = pipeSizeGroup
+            .GroupBy(b => b.Type);
+        foreach (var typeGroup in typeGroups) {
+          var typeParts = new List<string>();
+          var type = typeGroup.Key;
+          typeParts.Add(type);
 
-        foreach (var locationGroup in locationGroups) {
-          var location = locationGroup.Key;
-          var typeDirectionList = new List<string>();
-
-          foreach (var box in locationGroup) {
-            string abbreviation = "";
-            switch (box.Type) {
-              case "Cold Water": abbreviation = "cw"; break;
-              case "Hot Water": abbreviation = "hw"; break;
-              case "Waste": abbreviation = "w"; break;
-              case "Vent": abbreviation = "v"; break;
-              case "Gas": abbreviation = "g"; break;
-              case "Grease Waste": abbreviation = "gw"; break;
-            }
-
-            string typeDir = abbreviation;
-            if (!string.IsNullOrWhiteSpace(box.DirectionDescription)) {
-              typeDir += " " + box.DirectionDescription.ToLower();
-            }
-            typeDirectionList.Add(typeDir.Trim());
+          switch (type) {
+            case "Cold Water": type = "cw"; break;
+            case "Hot Water": type = "hw"; break;
+            case "Waste": type = "w"; break;
+            case "Vent": type = "v"; break;
+            case "Gas": type = "g"; break;
+            case "Grease Waste": type = "gw"; break;
           }
-
-          // Group by direction for combining
-          var directionGroups = typeDirectionList
-              .GroupBy(td => td.Contains(" ") ? td.Split(' ')[1] : "");
-
-          var typeDirLabel = string.Join(" ", directionGroups.Select(dg =>
-          {
-            var types = dg.Select(td => td.Split(' ')[0]).Distinct();
-            var direction = dg.Key;
-            if (!string.IsNullOrEmpty(direction))
-              return string.Join(" & ", types) + " " + direction;
-            else
-              return string.Join(" & ", types);
-          }));
-
-          // Add location to the label part
-          if (!string.IsNullOrWhiteSpace(location))
-            labelParts.Add($"{pipeSize} {typeDirLabel} {location}");
-          else
-            labelParts.Add($"{pipeSize} {typeDirLabel}");
+          var directionGroups = typeGroup
+              .GroupBy(b => b.DirectionDescription);
+          foreach (var directionGroup in directionGroups) {
+            var directionParts = new List<string>();
+            var direction = directionGroup.Key;
+            directionParts.Add(direction);
+            var locationGroups = directionGroup
+                .GroupBy(b => b.LocationDescription);
+            foreach (var locationGroup in locationGroups) {
+              var location = locationGroup.Key;
+              directionParts.Add(string.Join("", location));
+            }
+            typeParts.Add(string.Join("", directionParts));
+          }
+          sizeParts.Add(string.Join("", typeParts));
         }
+        labelParts.Add(string.Join("", sizeParts));
       }
-
+           
       // Final label
-      LabelText = string.Join(" ", labelParts).ToUpper();
+      LabelText = string.Join("", labelParts).ToUpper();
       OnPropertyChanged(nameof(LabelText));
     }
   }
