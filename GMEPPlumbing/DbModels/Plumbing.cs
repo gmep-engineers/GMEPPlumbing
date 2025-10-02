@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using GMEPPlumbing.Tools;
+using System.Windows.Media;
 
 namespace GMEPPlumbing {
   public class PlumbingFixture {
@@ -190,6 +192,7 @@ namespace GMEPPlumbing {
     //vertical route info
     public string DirectionDescription { get; set; }
     public bool IsVerticalRoute { get; set; } = false;
+    public SolidColorBrush SourceColor { get; set; } = System.Windows.Media.Brushes.Black;
 
     public RouteInfoBox(string viewportId, string componentId, string basePointId, string pipeSize, string type, string locationDescription, string cfh, string longestRunLength, string directionDescription, bool isVerticalRoute, string segmentLength) {
       ViewportId = viewportId;
@@ -210,6 +213,27 @@ namespace GMEPPlumbing {
       DirectionDescription = directionDescription;
       IsVerticalRoute = isVerticalRoute;
       SegmentLength = segmentLength;
+      DetermineRouteColor();
+    }
+    public void DetermineRouteColor() {
+      switch (Type) {
+        case "Cold Water":
+          SourceColor = System.Windows.Media.Brushes.Yellow;
+          break;
+        case "Grease Waste":
+        case "Hot Water":
+          SourceColor = System.Windows.Media.Brushes.Magenta;
+          break;
+        case "Gas":
+          SourceColor = System.Windows.Media.Brushes.SteelBlue;
+          break;;
+        case "Waste":
+          SourceColor = System.Windows.Media.Brushes.Cyan;
+          break;
+        case "Vent":
+          SourceColor = System.Windows.Media.Brushes.Green;
+          break;
+      }
     }
   }
 
