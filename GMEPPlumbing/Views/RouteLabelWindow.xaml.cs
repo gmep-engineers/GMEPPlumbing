@@ -51,6 +51,15 @@ namespace GMEPPlumbing.Views
             OnPropertyChanged(nameof(RouteInfoBoxGroups));
           }
         }
+
+        public string _labelText = "Label Text";
+        public string LabelText {
+          get => _labelText;
+          set {
+            _labelText = value;
+            OnPropertyChanged(nameof(LabelText));
+          }
+        }
         public RouteLabelWindow(string basePointId)
         {
           BasePointId = basePointId;
@@ -122,28 +131,77 @@ namespace GMEPPlumbing.Views
           }
         }
 
-        public static double DistancePointToSegment(Point3d pt, Point3d segStart, Point3d segEnd) {
-          var v = segEnd - segStart;
-          var w = pt - segStart;
-
-          double c1 = v.DotProduct(w);
-          if (c1 <= 0)
-            return pt.DistanceTo(segStart);
-
-          double c2 = v.DotProduct(v);
-          if (c2 <= c1)
-            return pt.DistanceTo(segEnd);
-
-          double b = c1 / c2;
-          var pb = segStart + (v * b);
-          return pt.DistanceTo(pb);
-        }
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName) {
           PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+    public void GenerateLabel(object sender, RoutedEventArgs e) {
+      var selectedBoxes = RouteInfoBoxGroups
+          .Where(g => g.SelectedRouteInfoBox != null)
+          .Select(g => g.SelectedRouteInfoBox)
+          .ToList();
+
+      var pipeSizeGroups = selectedBoxes
+          .GroupBy(b => b.PipeSize);
+
+      var labelParts = new List<string>();
+
+      foreach (var pipeSizeGroup in pipeSizeGroups) {
+        var pipeSize = pipeSizeGroup.Key;
+
+        var locationGroups = pipeSizeGroup
+            .GroupBy(b => b.LocationDescription);
+
+        foreach (var locationGroup in locationGroups) {
+          var location = locationGroup.Key;
+          var typeDirectionList = new List<string>();
+
+          foreach (var box in locationGroup) {
+            string abbreviation = "";
+            switch (box.Type) {
+              case "Cold Water": abbreviation = "cw"; break;
+              case "Hot Water": abbreviation = "hw"; break;
+              case "Waste": abbreviation = "w"; break;
+              case "Vent": abbreviation = "v"; break;
+              case "Gas": abbreviation = "g"; break;
+              case "Grease Waste": abbreviation = "gw"; break;
+            }
+
+            string typeDir = abbreviation;
+            if (!string.IsNullOrWhiteSpace(box.DirectionDescription)) {
+              typeDir += " " + box.DirectionDescription.ToLower();
+            }
+            typeDirectionList.Add(typeDir.Trim());
+          }
+
+          // Group by direction for combining
+          var directionGroups = typeDirectionList
+              .GroupBy(td => td.Contains(" ") ? td.Split(' ')[1] : "");
+
+          var typeDirLabel = string.Join(" ", directionGroups.Select(dg =>
+          {
+            var types = dg.Select(td => td.Split(' ')[0]).Distinct();
+            var direction = dg.Key;
+            if (!string.IsNullOrEmpty(direction))
+              return string.Join(" & ", types) + " " + direction;
+            else
+              return string.Join(" & ", types);
+          }));
+
+          // Add location to the label part
+          if (!string.IsNullOrWhiteSpace(location))
+            labelParts.Add($"{pipeSize} {typeDirLabel} {location}");
+          else
+            labelParts.Add($"{pipeSize} {typeDirLabel}");
+        }
+      }
+
+      // Final label
+      LabelText = string.Join(" ", labelParts).ToUpper();
+      OnPropertyChanged(nameof(LabelText));
     }
-    public class RouteInfoBoxGroup : INotifyPropertyChanged {
+  }
+  public class RouteInfoBoxGroup : INotifyPropertyChanged {
       public string Key { get; set; }
       public ObservableCollection<RouteInfoBox> Value { get; set; }
 
