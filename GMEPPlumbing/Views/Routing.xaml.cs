@@ -461,10 +461,6 @@ namespace GMEPPlumbing.Views
       foreach (var text in textVisuals) {
         RouteVisuals.Add(text);
       }
-      if (ViewportId != "") {
-        var service = ServiceLocator.MariaDBService;
-        await service.InsertPlumbingRouteInfoBoxes(RouteInfoBoxes, ViewportId);
-      }
     }
 
     public SolidColorBrush TypeToBrushColor(string type) {
@@ -722,11 +718,13 @@ namespace GMEPPlumbing.Views
     public async void GenerateScenes() {
       var service = ServiceLocator.MariaDBService;
       await service.ClearPlumbingRouteInfoBoxes(ViewportId);
-      
+      List<RouteInfoBox> allInfoBoxes = new List<RouteInfoBox>();
+
       Scenes.Clear();
       Scene fullScene = new Scene();
       foreach (var fullRoute in FullRoutes) {
         var scene = new Scene(ViewportId, fullRoute, BasePointLookup);
+        allInfoBoxes.AddRange(scene.RouteInfoBoxes);
         var scene2 = new Scene("", fullRoute, BasePointLookup);
         Scenes.Add(scene);
         foreach (var visual in scene2.RouteVisuals) {
@@ -735,15 +733,21 @@ namespace GMEPPlumbing.Views
       }
       fullScene.RemoveDuplicateRouteVisuals();
       MainScene = fullScene;
+      if (ViewportId != "") {
+        allInfoBoxes = RemoveDuplicateInfoBoxes(allInfoBoxes);
+        await service.InsertPlumbingRouteInfoBoxes(allInfoBoxes, ViewportId);
+      }
     }
     public async void RegenerateScenes() {
       var service = ServiceLocator.MariaDBService;
       await service.ClearPlumbingRouteInfoBoxes(ViewportId);
+      List<RouteInfoBox> allInfoBoxes = new List<RouteInfoBox>();
 
       Scene fullScene = new Scene();
       int index = 0;
       foreach (var fullRoute in FullRoutes) {
         Scenes[index].RebuildScene(fullRoute);
+        allInfoBoxes.AddRange(Scenes[index].RouteInfoBoxes);
         var scene2 = new Scene("", fullRoute, BasePointLookup);
         foreach (var visual in scene2.RouteVisuals) {
           fullScene.RouteVisuals.Add(visual);
@@ -753,6 +757,28 @@ namespace GMEPPlumbing.Views
       fullScene.RemoveDuplicateRouteVisuals();
       fullScene.InitialBuild = false;
       MainScene = fullScene;
+      if (ViewportId != "") {
+        allInfoBoxes = RemoveDuplicateInfoBoxes(allInfoBoxes);
+        await service.InsertPlumbingRouteInfoBoxes(allInfoBoxes, ViewportId);
+      }
+    }
+    public List<RouteInfoBox> RemoveDuplicateInfoBoxes(List<RouteInfoBox> infoBoxes) {
+      List<RouteInfoBox> boxes = infoBoxes
+      .GroupBy(b => new {
+        b.ComponentId,
+        b.BasePointId,
+        b.PipeSize,
+        b.Type,
+        b.LocationDescription,
+        b.SegmentLength,
+        b.CFH,
+        b.LongestRunLength,
+        b.DirectionDescription,
+        b.IsVerticalRoute
+      })
+      .Select(g => g.First())
+      .ToList();
+      return boxes;
     }
     public void NormalizeRoutes() {
       foreach (var route in FullRoutes) {
