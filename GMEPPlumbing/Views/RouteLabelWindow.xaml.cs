@@ -150,6 +150,9 @@ namespace GMEPPlumbing.Views
       foreach (var pipeSizeGroup in pipeSizeGroups) {
         var sizeParts = new List<string>();
         var pipeSize = pipeSizeGroup.Key;
+        if (pipeSize != pipeSizeGroups.First().Key) {
+          sizeParts.Add("&");
+        }
         sizeParts.Add(pipeSize);
 
         var typeGroups = pipeSizeGroup
@@ -157,6 +160,9 @@ namespace GMEPPlumbing.Views
         foreach (var typeGroup in typeGroups) {
           var typeParts = new List<string>();
           var type = typeGroup.Key;
+          if (type != typeGroups.First().Key) {
+            typeParts.Add("&");
+          }
           typeParts.Add(type);
 
           switch (type) {
@@ -172,11 +178,17 @@ namespace GMEPPlumbing.Views
           foreach (var directionGroup in directionGroups) {
             var directionParts = new List<string>();
             var direction = directionGroup.Key;
+            if (direction != directionGroups.First().Key) {
+              directionParts.Add("&");
+            }
             directionParts.Add(direction);
             var locationGroups = directionGroup
                 .GroupBy(b => b.LocationDescription);
             foreach (var locationGroup in locationGroups) {
               var location = locationGroup.Key;
+              if (location != locationGroups.First().Key) {
+                directionParts.Add("&");
+              }
               directionParts.Add(string.Join("", location));
             }
             typeParts.Add(string.Join("", directionParts));
