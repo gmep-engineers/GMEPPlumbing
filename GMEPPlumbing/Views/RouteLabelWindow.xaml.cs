@@ -169,6 +169,14 @@ namespace GMEPPlumbing.Views
         }
       }
     }
+    private void GenerateLabel_Click(object sender, RoutedEventArgs e) {
+      var button = sender as Button;
+      var routeInfoBoxGroupBunch = button?.CommandParameter as RouteInfoBoxGroupBunch;
+      if (routeInfoBoxGroupBunch != null) {
+        routeInfoBoxGroupBunch.GenerateLabel(sender, e);
+        LabelText = routeInfoBoxGroupBunch.LabelText;
+      }
+    }
     public void DragOver(IDropInfo dropInfo) {
       if (dropInfo.Data is RouteInfoBoxGroup && dropInfo.TargetCollection != null) {
         dropInfo.Effects = DragDropEffects.Move;
