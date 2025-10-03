@@ -358,6 +358,15 @@ namespace GMEPPlumbing.Views
       OnPropertyChanged(nameof(LabelText));
     }
     public void PlaceLabel() {
+      if (RouteInfoBoxGroups.First().RouteType != "Horizontal") {
+        List<PlumbingVerticalRoute> routes = AutoCADIntegration.GetVerticalRoutesFromCAD();
+        foreach (var group in RouteInfoBoxGroups) {
+          if (group.RouteType == "Vertical Up" || group.RouteType == "Vertical Down") {
+            PlumbingVerticalRoute route = routes.FirstOrDefault(r => r.Id == group.Key);
+            CADObjectCommands.CreateArrowJig("D0", route.Position);
+          }
+        }
+      }
       List<string> lines = LabelText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
       foreach (var line in lines) {
         CADObjectCommands.CreateTextWithJig(
