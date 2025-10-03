@@ -143,7 +143,7 @@ namespace GMEPPlumbing.Views
           .Select(g => g.SelectedRouteInfoBox)
           .ToList();
 
-      var pipeSizeGroups = selectedBoxes
+      var pipeSizeGroups = selectedBoxes.Where(b => !string.IsNullOrEmpty(b.PipeSize))
           .GroupBy(b => b.PipeSize);
 
       var labelParts = new List<string>();
@@ -155,7 +155,7 @@ namespace GMEPPlumbing.Views
         }
         sizeParts.Add(pipeSize);
 
-        var typeGroups = pipeSizeGroup
+        var typeGroups = pipeSizeGroup.Where(b => !string.IsNullOrEmpty(b.Type))
             .GroupBy(b => b.Type);
         foreach (var typeGroup in typeGroups) {
           var typeParts = new List<string>();
@@ -173,7 +173,7 @@ namespace GMEPPlumbing.Views
             case "Gas": type = "g"; break;
             case "Grease Waste": type = "gw"; break;
           }
-          var directionGroups = typeGroup
+          var directionGroups = typeGroup.Where(b => !string.IsNullOrEmpty(b.DirectionDescription))
               .GroupBy(b => b.DirectionDescription);
           foreach (var directionGroup in directionGroups) {
             var directionParts = new List<string>();
@@ -181,13 +181,19 @@ namespace GMEPPlumbing.Views
             if (direction != directionGroups.First().Key) {
               directionParts.Add("&");
             }
+            else {
+              directionParts.Add(" ");
+            }
             directionParts.Add(direction);
-            var locationGroups = directionGroup
+            var locationGroups = directionGroup.Where(b => !string.IsNullOrEmpty(b.LocationDescription))
                 .GroupBy(b => b.LocationDescription);
             foreach (var locationGroup in locationGroups) {
               var location = locationGroup.Key;
               if (location != locationGroups.First().Key) {
                 directionParts.Add("&");
+              }
+              else {
+                directionParts.Add(" ");
               }
               directionParts.Add(string.Join("", location));
             }
