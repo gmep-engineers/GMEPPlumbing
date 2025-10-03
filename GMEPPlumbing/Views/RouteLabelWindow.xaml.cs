@@ -190,12 +190,17 @@ namespace GMEPPlumbing.Views
       var sourceCollection = dropInfo.DragInfo.SourceCollection as ObservableCollection<RouteInfoBoxGroup>;
 
       if (sourceGroup != null && targetCollection != null && sourceCollection != null) {
-        if (targetCollection.Count == 0 || targetCollection.First().RouteType == sourceGroup.RouteType || (targetCollection.First().RouteType == "Vertical Down" && sourceGroup.RouteType == "Vertical Up" ) || (targetCollection.First().RouteType == "Vertical Up" && sourceGroup.RouteType == "Vertical Down")) {
-          sourceCollection.Remove(sourceGroup);
-          targetCollection.Add(sourceGroup);
+        if (targetCollection.Count == 0 || targetCollection.First().RouteType == sourceGroup.RouteType) {
+          if (targetCollection.First().Type == sourceGroup.Type || (targetCollection.First().Type == "Cold Water" && sourceGroup.Type == "Hot Water") || (targetCollection.First().Type == "Hot Water" && sourceGroup.Type == "Cold Water")) {
+            sourceCollection.Remove(sourceGroup);
+            targetCollection.Add(sourceGroup);
+          }
+          else {
+            MessageBox.Show("You can only group routes of the same type together.", "Invalid Grouping", MessageBoxButton.OK, MessageBoxImage.Warning);
+          }
         }
         else {
-          MessageBox.Show("You can only group routes of the same type together (e.g., all Horizontal or all Vertical).", "Invalid Grouping", MessageBoxButton.OK, MessageBoxImage.Warning);
+          MessageBox.Show("You can only group routes of the same type together.", "Invalid Grouping", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
       }
     }
