@@ -20,78 +20,84 @@
         <ListBox HorizontalContentAlignment="Stretch" Grid.Row="1" ItemsSource="{Binding RouteInfoBoxGroupBunches}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Border Margin="4" Padding="4" Background="LightGray" CornerRadius="4">
-                        <StackPanel HorizontalAlignment="Stretch">
-                            <Button Background="Transparent"
-                                BorderThickness="0"
-                                Padding="0"
-                                Width="15"
-                                Height="15"
-                                Cursor="Hand"
-                                ToolTip="Go to component on CAD"
-                                Click="GoToLocation_Click"
-                                CommandParameter="{Binding}">      
-                                <Image Source="/GMEPPlumbing;component/Images/location-pin.png" Width="15" Height="15"/>
-                            </Button>
-                            <ComboBox ItemsSource="{Binding Value}" DisplayMemberPath="SegmentLength" SelectedItem="{Binding SelectedRouteInfoBox, Mode=TwoWay}" />
-                            <StackPanel>
-                                <StackPanel.Style>
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SelectedRouteInfoBox}" Value="{x:Null}">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <TextBlock HorizontalAlignment="Center" FontWeight="Bold" Text="{Binding SelectedRouteInfoBox.Type}" Foreground="{Binding SelectedRouteInfoBox.SourceColor}"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
-                                    <TextBlock Text="Segment Length: " FontWeight="SemiBold"/>
-                                    <TextBlock FontWeight="Bold" Text="{Binding SelectedRouteInfoBox.SegmentLength}"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
-                                    <TextBlock HorizontalAlignment="Center" Text="Pipe Size: " FontWeight="SemiBold" />
-                                    <TextBlock HorizontalAlignment="Center" Text="{Binding SelectedRouteInfoBox.PipeSize}"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding SelectedRouteInfoBox.CFH}" Value="">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                    <TextBlock HorizontalAlignment="Center" Text="CFH: " FontWeight="SemiBold" />
-                                    <TextBlock HorizontalAlignment="Center" Text="{Binding SelectedRouteInfoBox.CFH}" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding SelectedRouteInfoBox.LongestRunLength}" Value="">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                    <TextBlock HorizontalAlignment="Center" Text="Longest Run: " FontWeight="SemiBold"/>
-                                    <TextBlock HorizontalAlignment="Center" Text="{Binding SelectedRouteInfoBox.LongestRunLength}"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
+                    <ListBox Margin="10" ItemsSource="{Binding RouteInfoBoxGroups}" HorizontalContentAlignment="Stretch">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="4" Padding="4" Background="LightGray" CornerRadius="4">
+                                    <StackPanel HorizontalAlignment="Stretch">
+                                        <Button Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="0"
+                                    Width="15"
+                                    Height="15"
+                                    Cursor="Hand"
+                                    ToolTip="Go to component on CAD"
+                                    Click="GoToLocation_Click"
+                                    CommandParameter="{Binding}">
+                                            <Image Source="/GMEPPlumbing;component/Images/location-pin.png" Width="15" Height="15"/>
+                                        </Button>
+                                        <ComboBox ItemsSource="{Binding Value}" DisplayMemberPath="SegmentLength" SelectedItem="{Binding SelectedRouteInfoBox, Mode=TwoWay}" />
+                                        <StackPanel>
+                                            <StackPanel.Style>
+                                                <Style TargetType="StackPanel">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SelectedRouteInfoBox}" Value="{x:Null}">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </StackPanel.Style>
+                                            <TextBlock HorizontalAlignment="Center" FontWeight="Bold" Text="{Binding SelectedRouteInfoBox.Type}" Foreground="{Binding SelectedRouteInfoBox.SourceColor}"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                <TextBlock Text="Segment Length: " FontWeight="SemiBold"/>
+                                                <TextBlock FontWeight="Bold" Text="{Binding SelectedRouteInfoBox.SegmentLength}"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                <TextBlock HorizontalAlignment="Center" Text="Pipe Size: " FontWeight="SemiBold" />
+                                                <TextBlock HorizontalAlignment="Center" Text="{Binding SelectedRouteInfoBox.PipeSize}"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                <StackPanel.Style>
+                                                    <Style TargetType="StackPanel">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedRouteInfoBox.CFH}" Value="">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </StackPanel.Style>
+                                                <TextBlock HorizontalAlignment="Center" Text="CFH: " FontWeight="SemiBold" />
+                                                <TextBlock HorizontalAlignment="Center" Text="{Binding SelectedRouteInfoBox.CFH}" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                <StackPanel.Style>
+                                                    <Style TargetType="StackPanel">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedRouteInfoBox.LongestRunLength}" Value="">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </StackPanel.Style>
+                                                <TextBlock HorizontalAlignment="Center" Text="Longest Run: " FontWeight="SemiBold"/>
+                                                <TextBlock HorizontalAlignment="Center" Text="{Binding SelectedRouteInfoBox.LongestRunLength}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
         <Border Grid.Row="2" Background="LightSlateGray" BorderBrush="Black" BorderThickness="2"  Padding="5" HorizontalAlignment="Stretch" VerticalAlignment="Top">
             <StackPanel Orientation="Vertical">
                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                    <Button Content="Generate" Background="LightGray" FontWeight="DemiBold" Click="GenerateLabel" Width="60" Height="50" HorizontalAlignment="Center"/>
+                    <Button Content="Generate" Background="LightGray" FontWeight="DemiBold" Width="60" Height="50" HorizontalAlignment="Center"/>
                     <TextBox HorizontalAlignment="Center" AcceptsReturn="True" Text="{Binding LabelText}" IsReadOnly="True"  FontWeight="DemiBold" Width="300" Height="50" VerticalAlignment="Center"/>
                 </StackPanel>
                 <Button HorizontalAlignment="Center" FontWeight="DemiBold" Content="Place" Background="LightGray" Width="200" Margin="0 5 0 5"/>
