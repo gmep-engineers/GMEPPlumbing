@@ -338,8 +338,14 @@ namespace GMEPPlumbing.Views
         labelParts.Add(string.Join("", sizeParts));
       }
 
+      //Gas Stuffs
+      string tempLabel = string.Join("", labelParts);
+      foreach (var box in selectedBoxes.Where(b => b.Type == "Gas" )) {
+       tempLabel +=$"\n({box.CFH}CFH@~{box.LongestRunLength})";
+      }
+
       // Final label
-      LabelText = string.Join("", labelParts).ToUpper();
+      LabelText = tempLabel.ToUpper();
       OnPropertyChanged(nameof(LabelText));
     }
 

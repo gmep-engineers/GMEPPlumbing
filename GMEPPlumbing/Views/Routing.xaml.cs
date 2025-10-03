@@ -152,8 +152,8 @@ namespace GMEPPlumbing.Views
           horizontalRoute.GenerateGallonsPerMinute();
           string flow = (horizontalRoute.FlowTypeId == 1) ? "Flush Tank" : "Flush Valve";
           double longestRunLength = horizontalRoute.LongestRunLength;
-          int longestRunFeet = (int)(longestRunLength / 12); // Convert to feet
-          int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
+          int longestRunFeet = (int)Math.Ceiling(longestRunLength / 12); // Convert to feet
+          //int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
           string recommendedSize = horizontalRoute.PipeSize;
           string cfh = "";
           string longestRun = "";
@@ -162,7 +162,7 @@ namespace GMEPPlumbing.Views
           string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n ---------------------- \n {recommendedSize}\n";
           if (horizontalRoute.Type == "Gas") {
             cfh = horizontalRoute.FixtureUnits.ToString();
-            longestRun = $"{longestRunFeet}' {longestRunInches}\"";
+            longestRun = $"{longestRunFeet}'";
             textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRun}\n ---------------------- \n {recommendedSize}\n";
           }
           else if (horizontalRoute.Type == "Waste" || horizontalRoute.Type == "Grease Waste") {
@@ -343,8 +343,8 @@ namespace GMEPPlumbing.Views
         int gpm = verticalRoutes.First().GPM;
         string pipeSize = verticalRoutes.First().PipeSize;
         double longestLength = verticalRoutes.Max(vr => vr.LongestRunLength);
-        int longestLengthFeet = (int)(longestLength / 12); // Convert to feet
-        int longestLengthInches = (int)Math.Round(longestLength % 12); // Remaining inches
+        int longestLengthFeet = (int)Math.Ceiling(longestLength / 12); // Convert to feet
+        //int longestLengthInches = (int)Math.Round(longestLength % 12); // Remaining inches
         string routeBasePointId = verticalRoutes.First().BasePointId;
         string cfh = "";
         string longestRun = ""; 
@@ -363,7 +363,7 @@ namespace GMEPPlumbing.Views
         string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n ---------------------- \n {pipeSize}\n";
         if (verticalRoutes.First().Type == "Gas") {
           cfh = pipeFixtureUnits.ToString();
-          longestRun = $"{longestLengthFeet}' {longestLengthInches}\"";
+          longestRun = $"{longestLengthFeet}'";
           textString = $" {feet}' {inches}\"\n CFH: {cfh} \n Longest Run: {longestRun}\n ---------------------- \n {pipeSize}\n";
         }
         else if (verticalRoutes.First().Type == "Waste" || verticalRoutes.First().Type == "Grease Waste") {
