@@ -39,18 +39,24 @@ namespace GMEPPlumbing.Views
           get => _selectedRouteInfoBoxes;
           set {
             _selectedRouteInfoBoxes = value;
-            RouteInfoBoxGroups = new ObservableCollection<RouteInfoBoxGroup>(
-                value.Select(kvp => new RouteInfoBoxGroup { Key = kvp.Key, Value = kvp.Value })
+            RouteInfoBoxGroupBunches = new ObservableCollection<RouteInfoBoxGroupBunch>(
+              value.Select(kvp => new RouteInfoBoxGroupBunch 
+              {
+                RouteInfoBoxGroups = new ObservableCollection<RouteInfoBoxGroup>
+                {
+                  new RouteInfoBoxGroup { Key = kvp.Key, Value = kvp.Value }
+                }
+              })
             );
             OnPropertyChanged(nameof(SelectedRouteInfoBoxes));
           }
         }
-        private ObservableCollection<RouteInfoBoxGroup> _routeInfoBoxGroups;
-        public ObservableCollection<RouteInfoBoxGroup> RouteInfoBoxGroups {
-          get => _routeInfoBoxGroups;
+        private ObservableCollection<RouteInfoBoxGroupBunch> _routeInfoBoxGroupBunches;
+        public ObservableCollection<RouteInfoBoxGroupBunch> RouteInfoBoxGroupBunches {
+          get => _routeInfoBoxGroupBunches;
           set {
-            _routeInfoBoxGroups = value;
-            OnPropertyChanged(nameof(RouteInfoBoxGroups));
+            _routeInfoBoxGroupBunches = value;
+            OnPropertyChanged(nameof(RouteInfoBoxGroupBunches));
           }
         }
 
@@ -65,7 +71,6 @@ namespace GMEPPlumbing.Views
         public RouteLabelWindow(string basePointId)
         {
           BasePointId = basePointId;
-         
           InitializeComponent();
           DataContext = this;
           Startup();
@@ -163,6 +168,36 @@ namespace GMEPPlumbing.Views
         }
       }
     }
+    
+  }
+  public class RouteInfoBoxGroup : INotifyPropertyChanged {
+      public string Key { get; set; }
+      public ObservableCollection<RouteInfoBox> Value { get; set; }
+
+      private RouteInfoBox _selectedRouteInfoBox;
+      public RouteInfoBox SelectedRouteInfoBox {
+        get => _selectedRouteInfoBox;
+        set {
+          _selectedRouteInfoBox = value;
+          OnPropertyChanged(nameof(SelectedRouteInfoBox));
+        }
+      }
+
+      public event PropertyChangedEventHandler PropertyChanged;
+      protected void OnPropertyChanged(string propertyName) {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+      }
+  }
+  public class RouteInfoBoxGroupBunch: INotifyPropertyChanged {
+    public ObservableCollection<RouteInfoBoxGroup> RouteInfoBoxGroups { get; set; }
+    public string _labelText = "";
+    public string LabelText {
+      get => _labelText;
+      set {
+        _labelText = value;
+        OnPropertyChanged(nameof(LabelText));
+      }
+    }
     public void GenerateLabel(object sender, RoutedEventArgs e) {
       var selectedBoxes = RouteInfoBoxGroups
           .Where(g => g.SelectedRouteInfoBox != null)
@@ -229,28 +264,16 @@ namespace GMEPPlumbing.Views
         }
         labelParts.Add(string.Join("", sizeParts));
       }
-           
+
       // Final label
       LabelText = string.Join("", labelParts).ToUpper();
       OnPropertyChanged(nameof(LabelText));
     }
-  }
-  public class RouteInfoBoxGroup : INotifyPropertyChanged {
-      public string Key { get; set; }
-      public ObservableCollection<RouteInfoBox> Value { get; set; }
 
-      private RouteInfoBox _selectedRouteInfoBox;
-      public RouteInfoBox SelectedRouteInfoBox {
-        get => _selectedRouteInfoBox;
-        set {
-          _selectedRouteInfoBox = value;
-          OnPropertyChanged(nameof(SelectedRouteInfoBox));
-        }
-      }
-
-      public event PropertyChangedEventHandler PropertyChanged;
-      protected void OnPropertyChanged(string propertyName) {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-      }
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void OnPropertyChanged(string propertyName) {
+      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+  }
 }
