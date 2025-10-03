@@ -202,7 +202,16 @@ namespace GMEPPlumbing.Views
     public void DragEnter(IDropInfo dropInfo) { }
     public void DragLeave(IDropInfo dropInfo) { }
     public void DropHint(IDropHintInfo dropHintInfo) { }
-
+    public void Place_Click(object sender, RoutedEventArgs e) {
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var button = sender as Button;
+      var routeInfoBoxGroupBunch = button?.CommandParameter as RouteInfoBoxGroupBunch;
+      if (routeInfoBoxGroupBunch != null) {
+        using (var docLock = doc.LockDocument()) {
+          routeInfoBoxGroupBunch.PlaceLabel();
+        }
+      }
+    }
   }
   public class RouteInfoBoxGroup : INotifyPropertyChanged {
       public string Key { get; set; }
@@ -347,6 +356,16 @@ namespace GMEPPlumbing.Views
       // Final label
       LabelText = tempLabel.ToUpper();
       OnPropertyChanged(nameof(LabelText));
+    }
+    public void PlaceLabel() {
+      List<string> lines = LabelText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+      foreach (var line in lines) {
+        CADObjectCommands.CreateTextWithJig(
+          CADObjectCommands.TextLayer,
+          TextHorizontalMode.TextLeft,
+          line
+        );
+      }
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
