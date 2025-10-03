@@ -293,8 +293,6 @@ namespace GMEPPlumbing.Views
           if (type != typeGroups.First().Key) {
             typeParts.Add("&");
           }
-          typeParts.Add(type);
-
           switch (type) {
             case "Cold Water": type = "cw"; break;
             case "Hot Water": type = "hw"; break;
@@ -303,6 +301,7 @@ namespace GMEPPlumbing.Views
             case "Gas": type = "g"; break;
             case "Grease Waste": type = "gw"; break;
           }
+          typeParts.Add(type);
           var directionGroups = typeGroup.Where(b => !string.IsNullOrEmpty(b.DirectionDescription))
               .GroupBy(b => b.DirectionDescription);
           foreach (var directionGroup in directionGroups) {
