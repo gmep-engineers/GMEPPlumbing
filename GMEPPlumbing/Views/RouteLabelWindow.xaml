@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GMEPPlumbing.Views"
+        xmlns:dd="urn:gong-wpf-dragdrop"
         mc:Ignorable="d"
         Title="RouteLabelWindow" Height="450" Width="500">
     <Grid Background="Transparent">
@@ -20,20 +21,25 @@
         <ListBox HorizontalContentAlignment="Stretch" Grid.Row="1" ItemsSource="{Binding RouteInfoBoxGroupBunches}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <ListBox Margin="10" ItemsSource="{Binding RouteInfoBoxGroups}" HorizontalContentAlignment="Stretch">
+                    <ListBox Margin="10" ItemsSource="{Binding RouteInfoBoxGroups}" 
+                        HorizontalContentAlignment="Stretch" 
+                        dd:DragDrop.IsDragSource="True"
+                        dd:DragDrop.IsDropTarget="True"
+                        dd:DragDrop.DropHandler="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
+                        DisplayMemberPath="Key">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border Margin="4" Padding="4" Background="LightGray" CornerRadius="4">
                                     <StackPanel HorizontalAlignment="Stretch">
                                         <Button Background="Transparent"
-                                    BorderThickness="0"
-                                    Padding="0"
-                                    Width="15"
-                                    Height="15"
-                                    Cursor="Hand"
-                                    ToolTip="Go to component on CAD"
-                                    Click="GoToLocation_Click"
-                                    CommandParameter="{Binding}">
+                                        BorderThickness="0"
+                                        Padding="0"
+                                        Width="15"
+                                        Height="15"
+                                        Cursor="Hand"
+                                        ToolTip="Go to component on CAD"
+                                        Click="GoToLocation_Click"
+                                        CommandParameter="{Binding}">
                                             <Image Source="/GMEPPlumbing;component/Images/location-pin.png" Width="15" Height="15"/>
                                         </Button>
                                         <ComboBox ItemsSource="{Binding Value}" DisplayMemberPath="SegmentLength" SelectedItem="{Binding SelectedRouteInfoBox, Mode=TwoWay}" />

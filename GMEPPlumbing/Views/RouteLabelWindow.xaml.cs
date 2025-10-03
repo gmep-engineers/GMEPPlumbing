@@ -23,13 +23,14 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using static Google.Protobuf.Reflection.SourceCodeInfo.Types;
 using static Mysqlx.Crud.Order.Types;
+using GongSolutions.Wpf.DragDrop;
 
 namespace GMEPPlumbing.Views
 {
     /// <summary>
     /// Interaction logic for RouteLabelWindow.xaml
     /// </summary>
-    public partial class RouteLabelWindow : Window, INotifyPropertyChanged
+    public partial class RouteLabelWindow : Window, INotifyPropertyChanged, IDropTarget
     {
         public MariaDBService MariaDBService { get; } = new MariaDBService();
         public List<RouteInfoBox> RouteInfoBoxes{ get; set; }
@@ -168,7 +169,27 @@ namespace GMEPPlumbing.Views
         }
       }
     }
-    
+    public void DragOver(IDropInfo dropInfo) {
+      if (dropInfo.Data is RouteInfoBoxGroup && dropInfo.TargetCollection != null) {
+        dropInfo.Effects = DragDropEffects.Move;
+        dropInfo.DropTargetAdorner = DropTargetAdorners.Highlight;
+      }
+    }
+
+    public void Drop(IDropInfo dropInfo) {
+      var sourceGroup = dropInfo.Data as RouteInfoBoxGroup;
+      var targetCollection = dropInfo.TargetCollection as ObservableCollection<RouteInfoBoxGroup>;
+      var sourceCollection = dropInfo.DragInfo.SourceCollection as ObservableCollection<RouteInfoBoxGroup>;
+
+      if (sourceGroup != null && targetCollection != null && sourceCollection != null) {
+        sourceCollection.Remove(sourceGroup);
+        targetCollection.Add(sourceGroup);
+      }
+    }
+    public void DragEnter(IDropInfo dropInfo) { }
+    public void DragLeave(IDropInfo dropInfo) { }
+    public void DropHint(IDropHintInfo dropHintInfo) { }
+
   }
   public class RouteInfoBoxGroup : INotifyPropertyChanged {
       public string Key { get; set; }
