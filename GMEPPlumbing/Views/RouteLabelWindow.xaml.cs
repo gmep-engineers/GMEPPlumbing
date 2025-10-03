@@ -45,7 +45,7 @@ namespace GMEPPlumbing.Views
               {
                 RouteInfoBoxGroups = new ObservableCollection<RouteInfoBoxGroup>
                 {
-                  new RouteInfoBoxGroup { Key = kvp.Key, Value = kvp.Value }
+                  new RouteInfoBoxGroup(kvp.Value) { Key = kvp.Key }
                 }
               })
             );
@@ -211,10 +211,50 @@ namespace GMEPPlumbing.Views
           OnPropertyChanged(nameof(SelectedRouteInfoBox));
         }
       }
+      public string Type { get; set; }
+      public string RouteType { get; set; }
+      public SolidColorBrush SourceColor { get; set; } = System.Windows.Media.Brushes.Black;
 
-      public event PropertyChangedEventHandler PropertyChanged;
+      public RouteInfoBoxGroup(ObservableCollection<RouteInfoBox> boxes) {
+      Value = boxes;
+      DetermineInfo();
+    }
+
+    public event PropertyChangedEventHandler PropertyChanged;
       protected void OnPropertyChanged(string propertyName) {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+      }
+      public void DetermineInfo() {
+        Type = Value.First().Type;
+        if (Value.First().IsVerticalRoute) {
+          if (Value.First().DirectionDescription == "Up") {
+            RouteType = "Vertical Up";
+          }
+          else {
+            RouteType = "Vertical Down";
+          }
+        }
+        else {
+          RouteType = "Horizontal";
+        }
+        switch (Type) {
+          case "Cold Water":
+            SourceColor = System.Windows.Media.Brushes.Yellow;
+            break;
+          case "Grease Waste":
+          case "Hot Water":
+            SourceColor = System.Windows.Media.Brushes.Magenta;
+            break;
+          case "Gas":
+            SourceColor = System.Windows.Media.Brushes.SteelBlue;
+            break; ;
+          case "Waste":
+            SourceColor = System.Windows.Media.Brushes.Cyan;
+            break;
+          case "Vent":
+            SourceColor = System.Windows.Media.Brushes.Green;
+            break;
+        }
       }
   }
   public class RouteInfoBoxGroupBunch: INotifyPropertyChanged {

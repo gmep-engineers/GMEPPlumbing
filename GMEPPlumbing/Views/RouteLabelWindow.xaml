@@ -32,17 +32,56 @@
                                 <DataTemplate>
                                     <Border Margin="4" Padding="4" Background="LightGray" CornerRadius="4">
                                         <StackPanel HorizontalAlignment="Stretch">
-                                            <Button Background="Transparent"
-                                        BorderThickness="0"
-                                        Padding="0"
-                                        Width="15"
-                                        Height="15"
-                                        Cursor="Hand"
-                                        ToolTip="Go to component on CAD"
-                                        Click="GoToLocation_Click"
-                                        CommandParameter="{Binding}">
-                                                <Image Source="/GMEPPlumbing;component/Images/location-pin.png" Width="15" Height="15"/>
-                                            </Button>
+                                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                                <TextBlock Text="⬆️" FontWeight="Bold" FontSize="30" ToolTip="{Binding RouteType}" VerticalAlignment="Bottom">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RouteType}" Value="Vertical Up">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text="⬇️" FontWeight="Bold" FontSize="30" ToolTip="{Binding RouteType}" VerticalAlignment="Bottom">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RouteType}" Value="Vertical Down">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text="➡️" FontWeight="Bold" FontSize="30" ToolTip="{Binding RouteType}" VerticalAlignment="Bottom">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RouteType}" Value="Horizontal">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding Type}" FontWeight="Bold" Foreground="{Binding SourceColor}" FontSize="20" Margin="5 0 5 0" VerticalAlignment="Bottom"/>
+                                                <Button Background="Transparent" Margin="0 5 0 0"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    Width="20"
+                                                    Height="20"
+                                                    Cursor="Hand"
+                                                    ToolTip="Go to component on CAD"
+                                                    Click="GoToLocation_Click"
+                                                    CommandParameter="{Binding}">         
+                                                    <Image Source="/GMEPPlumbing;component/Images/location-pin.png" Width="20" Height="20" VerticalAlignment="Bottom"/>
+                                                </Button>
+                                            </StackPanel>
                                             <ComboBox ItemsSource="{Binding Value}" DisplayMemberPath="SegmentLength" SelectedItem="{Binding SelectedRouteInfoBox, Mode=TwoWay}" />
                                             <StackPanel>
                                                 <StackPanel.Style>
@@ -55,7 +94,6 @@
                                                         </Style.Triggers>
                                                     </Style>
                                                 </StackPanel.Style>
-                                                <TextBlock HorizontalAlignment="Center" FontWeight="Bold" Text="{Binding SelectedRouteInfoBox.Type}" Foreground="{Binding SelectedRouteInfoBox.SourceColor}"/>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
                                                     <TextBlock Text="Segment Length: " FontWeight="SemiBold"/>
                                                     <TextBlock FontWeight="Bold" Text="{Binding SelectedRouteInfoBox.SegmentLength}"/>
