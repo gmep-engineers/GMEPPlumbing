@@ -22,7 +22,17 @@
                 <DataTemplate>
                     <Border Margin="4" Padding="4" Background="LightGray" CornerRadius="4">
                         <StackPanel HorizontalAlignment="Stretch">
-                            <TextBlock HorizontalAlignment="Center" FontWeight="Bold" Text="{Binding Key}"/>
+                            <Button Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                Width="15"
+                                Height="15"
+                                Cursor="Hand"
+                                ToolTip="Go to component on CAD"
+                                Click="GoToLocation_Click"
+                                CommandParameter="{Binding}">      
+                                <Image Source="/GMEPPlumbing;component/Images/location-pin.png" Width="15" Height="15"/>
+                            </Button>
                             <ComboBox ItemsSource="{Binding Value}" DisplayMemberPath="SegmentLength" SelectedItem="{Binding SelectedRouteInfoBox, Mode=TwoWay}" />
                             <StackPanel>
                                 <StackPanel.Style>

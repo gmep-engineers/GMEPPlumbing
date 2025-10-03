@@ -137,6 +137,32 @@ namespace GMEPPlumbing.Views
         protected void OnPropertyChanged(string propertyName) {
           PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+    private void GoToLocation_Click(object sender, RoutedEventArgs e) {
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var ed = doc.Editor;
+      var button = sender as Button;
+      var routeInfoBoxGroup = button?.CommandParameter as RouteInfoBoxGroup;
+      if (routeInfoBoxGroup != null) {
+        string key = routeInfoBoxGroup.Key;
+        PlumbingVerticalRoute verticalRoute = AutoCADIntegration.GetVerticalRoutesFromCAD()
+            .FirstOrDefault(r => r.Id == key);
+        if (verticalRoute != null) {
+          AutoCADIntegration.ZoomToPoint(ed, verticalRoute.Position, 10);
+        }
+        else {
+          PlumbingHorizontalRoute horizontalRoute = AutoCADIntegration.GetHorizontalRoutesFromCAD()
+            .FirstOrDefault(r => r.Id == key);
+          if (horizontalRoute != null) {
+            var midpoint = new Point3d(
+                (horizontalRoute.StartPoint.X + horizontalRoute.EndPoint.X) / 2.0,
+                (horizontalRoute.StartPoint.Y + horizontalRoute.EndPoint.Y) / 2.0,
+                (horizontalRoute.StartPoint.Z + horizontalRoute.EndPoint.Z) / 2.0
+            );
+            AutoCADIntegration.ZoomToPoint(ed, midpoint, 10);
+          }
+        }
+      }
+    }
     public void GenerateLabel(object sender, RoutedEventArgs e) {
       var selectedBoxes = RouteInfoBoxGroups
           .Where(g => g.SelectedRouteInfoBox != null)

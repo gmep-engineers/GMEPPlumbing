@@ -2066,7 +2066,7 @@ namespace GMEPPlumbing
         }
       }
     }
-    public static void ZoomToPoint(Editor ed, Point3d wcsPos) {
+    public static void ZoomToPoint(Editor ed, Point3d wcsPos, double zoomDistance = 1) {
       var doc = ed.Document;
       using (doc.LockDocument()) {
         // Get the current view
@@ -2080,8 +2080,8 @@ namespace GMEPPlumbing
 
           Point3d dcsPos = wcsPos.TransformBy(matWcs2Dcs);
 
-          double zoomWidth = 400.0;
-          double zoomHeight = 400.0;
+          double zoomWidth = 400.0 / zoomDistance;
+          double zoomHeight = 400.0 / zoomDistance;
 
           view.CenterPoint = new Point2d(dcsPos.X, dcsPos.Y);
           view.Width = zoomWidth;
@@ -6146,7 +6146,7 @@ namespace GMEPPlumbing
 
     }
 
-    public static List<PlumbingHorizontalRoute> GetHorizontalRoutesFromCAD(string ProjectId) {
+    public static List<PlumbingHorizontalRoute> GetHorizontalRoutesFromCAD(string ProjectId = "") {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return new List<PlumbingHorizontalRoute>();
 

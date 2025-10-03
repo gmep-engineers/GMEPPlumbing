@@ -804,6 +804,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
+    <Resource Include="Images\location-pin.png" />
     <Content Include="mongocrypt.dll" />
     <Resource Include="packages\AutoCAD.NET.24.3.0\adsk.xml" />
     <Content Include="packages\AutoCAD.NET.24.3.0\lib\net47\AcCui.dll" />
