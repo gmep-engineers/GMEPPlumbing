@@ -278,24 +278,60 @@ namespace GMEPPlumbing.Views
   }
   public class RouteInfoBoxGroupBunch: INotifyPropertyChanged {
     public ObservableCollection<RouteInfoBoxGroup> RouteInfoBoxGroups { get; set; }
-    public string _labelText = "";
-    public string LabelText {
-      get => _labelText;
+    public string _locationLabelText = "";
+    public string LocationLabelText {
+      get => _locationLabelText;
       set {
-        _labelText = value;
-        OnPropertyChanged(nameof(LabelText));
+        _locationLabelText = value;
+        OnPropertyChanged(nameof(LocationLabelText));
       }
     }
+    public string _additionalLabelText = "";
+    public string AdditionalLabelText {
+      get => _additionalLabelText;
+      set {
+        _additionalLabelText = value;
+        OnPropertyChanged(nameof(AdditionalLabelText));
+      }
+    }
+    public string _sourceLabelText = "";
+    public string SourceLabelText {
+      get => _sourceLabelText;
+      set {
+        _sourceLabelText = value;
+        OnPropertyChanged(nameof(SourceLabelText));
+      }
+    }
+
     public void GenerateLabel(object sender, RoutedEventArgs e) {
       var selectedBoxes = RouteInfoBoxGroups
           .Where(g => g.SelectedRouteInfoBox != null)
           .Select(g => g.SelectedRouteInfoBox)
           .ToList();
+      
+      LocationLabelText = CreateLabelString(selectedBoxes);
+      SourceLabelText = CreateLabelString(selectedBoxes, true);
+      
+      //Gas Stuffs
+      string additionalLabels = "";
+      foreach (var box in selectedBoxes.Where(b => b.Type == "Gas" )) {
+        additionalLabels += $"\n({box.CFH}CFH@~{box.LongestRunLength})";
+      }
+      AdditionalLabelText = additionalLabels.ToUpper();
 
+
+      // Final label
+      OnPropertyChanged(nameof(LocationLabelText));
+      OnPropertyChanged(nameof(SourceLabelText));
+      OnPropertyChanged(nameof(AdditionalLabelText));
+
+    }
+    public string CreateLabelString(List<RouteInfoBox> selectedBoxes, bool isSource = false) {
       var pipeSizeGroups = selectedBoxes.Where(b => !string.IsNullOrEmpty(b.PipeSize))
           .GroupBy(b => b.PipeSize);
 
       var labelParts = new List<string>();
+
       foreach (var pipeSizeGroup in pipeSizeGroups) {
         var sizeParts = new List<string>();
         var pipeSize = pipeSizeGroup.Key;
@@ -335,6 +371,10 @@ namespace GMEPPlumbing.Views
             directionParts.Add(direction);
             var locationGroups = directionGroup.Where(b => !string.IsNullOrEmpty(b.LocationDescription))
                 .GroupBy(b => b.LocationDescription);
+            if (isSource) {
+              locationGroups = directionGroup.Where(b => !string.IsNullOrEmpty(b.SourceDescription))
+                .GroupBy(b => b.SourceDescription);
+            }
             foreach (var locationGroup in locationGroups) {
               var location = locationGroup.Key;
               if (location != locationGroups.First().Key) {
@@ -351,16 +391,7 @@ namespace GMEPPlumbing.Views
         }
         labelParts.Add(string.Join("", sizeParts));
       }
-
-      //Gas Stuffs
-      string tempLabel = string.Join("", labelParts);
-      foreach (var box in selectedBoxes.Where(b => b.Type == "Gas" )) {
-       tempLabel +=$"\n({box.CFH}CFH@~{box.LongestRunLength})";
-      }
-
-      // Final label
-      LabelText = tempLabel.ToUpper();
-      OnPropertyChanged(nameof(LabelText));
+      return string.Join("", labelParts).ToUpper();
     }
     public void PlaceLabel() {
       if (RouteInfoBoxGroups.First().RouteType != "Horizontal") {
