@@ -415,14 +415,14 @@ namespace GMEPPlumbing.Views
           if (BasePoints.ContainsKey(verticalRoute.BasePointId)) {
             int floor = BasePoints[verticalRoute.BasePointId].Floor;
             if (verticalRoute.IsUp) {
-              PlumbingVerticalRoute aboveRoute = verticalRoutes.FirstOrDefault(vr => BasePoints[vr.BasePointId].Floor == floor + 1);
-              
+              PlumbingVerticalRoute belowRoute = verticalRoutes.FirstOrDefault(vr => vr.VerticalRouteId == verticalRoute.VerticalRouteId && BasePoints[vr.BasePointId].Floor == floor - 1);
+              if (belowRoute != null) {
+                locationDescription += $"from {floor - 1}{GetSuffix(floor - 1)} floor\n";
+              }
+              PlumbingVerticalRoute aboveRoute = verticalRoutes.FirstOrDefault(vr => vr.VerticalRouteId == verticalRoute.VerticalRouteId && BasePoints[vr.BasePointId].Floor == floor + 1);
               if (aboveRoute != null) {
-                locationDescription += $"to{floor - 1}{GetSuffix(floor + 1)} floor\n";
-                PlumbingVerticalRoute belowRoute = verticalRoutes.FirstOrDefault(vr => BasePoints[vr.BasePointId].Floor == floor - 1);
-                if (belowRoute != null) {
-                  locationDescription += $"from {floor - 1}{GetSuffix(floor - 1)} floor\n";
-                }
+                locationDescription += $"to{floor + 1}{GetSuffix(floor + 1)} floor\n";
+               
               }
               else {
                 PlumbingPlanBasePoint point = BasePoints[verticalRoute.BasePointId];
@@ -432,13 +432,13 @@ namespace GMEPPlumbing.Views
               }
             }
             else {
-              PlumbingVerticalRoute belowRoute = verticalRoutes.FirstOrDefault(vr => BasePoints[vr.BasePointId].Floor == floor - 1);
-              locationDescription += $"to{floor - 1}{GetSuffix(floor - 1)} floor\n";
+              PlumbingVerticalRoute aboveRoute = verticalRoutes.FirstOrDefault(vr => vr.VerticalRouteId == verticalRoute.VerticalRouteId && BasePoints[vr.BasePointId].Floor == floor + 1);
+              if (aboveRoute != null) {
+                locationDescription += $"from {floor + 1}{GetSuffix(floor + 1)} floor\n";
+              }
+              PlumbingVerticalRoute belowRoute = verticalRoutes.FirstOrDefault(vr => vr.VerticalRouteId == verticalRoute.VerticalRouteId && BasePoints[vr.BasePointId].Floor == floor - 1);
               if (belowRoute != null) {
-                PlumbingVerticalRoute aboveRoute = verticalRoutes.FirstOrDefault(vr => BasePoints[vr.BasePointId].Floor == floor + 1);
-                if (aboveRoute != null) {
-                  locationDescription += $"from {floor - 1}{GetSuffix(floor + 1)} floor\n";
-                }
+                locationDescription += $"to{floor - 1}{GetSuffix(floor - 1)} floor\n";
               }
               else {
                 PlumbingPlanBasePoint point = BasePoints[verticalRoute.BasePointId];
