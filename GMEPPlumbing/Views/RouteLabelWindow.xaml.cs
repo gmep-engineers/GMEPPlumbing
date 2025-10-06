@@ -327,8 +327,15 @@ namespace GMEPPlumbing.Views
 
       //Gas Stuffs
       string additionalLabels = "";
-      foreach (var box in selectedBoxes.Where(b => b.Type == "Gas" )) {
-        additionalLabels += $"\n({box.CFH}CFH@~{box.LongestRunLength})";
+      bool endLineFlag = false;
+      foreach (var box in selectedBoxes.Where(b => b.Type == "Gas")) {
+        if (endLineFlag) {
+          additionalLabels += "\n";
+        }
+        else {
+          endLineFlag = true;
+        }
+        additionalLabels += $"({box.CFH}CFH@~{box.LongestRunLength})";
       }
       AdditionalLabelText = additionalLabels.ToUpper();
 
