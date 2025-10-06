@@ -151,10 +151,71 @@
                                     </Style.Triggers>
                                 </Style>
                             </StackPanel.Style>
-                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                                <Button Content="Generate" Click="GenerateLabel_Click" CommandParameter="{Binding}" Background="LightGray" FontWeight="DemiBold" Width="60" Height="50" HorizontalAlignment="Center"/>
-                                <TextBox HorizontalAlignment="Center" AcceptsReturn="True" Text="{Binding LabelText}" FontWeight="DemiBold" Width="300" Height="50" VerticalAlignment="Center"/>
-                                <Button Content="Place" Click="Place_Click" CommandParameter="{Binding}" Background="LightGray" FontWeight="DemiBold" Width="60" Height="50" HorizontalAlignment="Center">
+                            <Grid HorizontalAlignment="Stretch" MaxWidth="700" MinWidth="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="Generate" Click="GenerateLabel_Click" CommandParameter="{Binding}" Background="LightGray" FontWeight="DemiBold" Width="60" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
+                                <Grid Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" MinHeight="50"/>
+                                        <RowDefinition>
+                                            <RowDefinition.Style>
+                                                <Style TargetType="RowDefinition">
+                                                    <Setter Property="Height" Value="*"/>
+                                                    <Setter Property="MinHeight" Value="50"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SourceLabelText}" Value="">
+                                                            <Setter Property="Height" Value="0"/>
+                                                            <Setter Property="MinHeight" Value="0"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </RowDefinition.Style>
+                                        </RowDefinition>
+                                        <RowDefinition>
+                                            <RowDefinition.Style>
+                                                <Style TargetType="RowDefinition">
+                                                    <Setter Property="Height" Value="*"/>
+                                                    <Setter Property="MinHeight" Value="50"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding AdditionalLabelText}" Value="">
+                                                            <Setter Property="Height" Value="0"/>
+                                                            <Setter Property="MinHeight" Value="0"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </RowDefinition.Style>
+                                        </RowDefinition>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="Main Label" TextAlignment="Center" FontWeight="DemiBold" HorizontalAlignment="Stretch" Background="LightGray"/>
+                                        <TextBox Grid.Row="1" Text="{Binding LocationLabelText}" FontWeight="DemiBold"/>
+                                    </Grid>
+                                    <Grid Grid.Row="1">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="From Label" TextAlignment="Center" FontWeight="DemiBold" HorizontalAlignment="Stretch" Background="LightGray"/>
+                                        <TextBox Grid.Row="1" Text="{Binding SourceLabelText}" FontWeight="DemiBold"/>
+                                    </Grid>
+                                    <Grid Grid.Row="2">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="Additional Labels" TextAlignment="Center" FontWeight="DemiBold" HorizontalAlignment="Stretch" Background="LightGray"/>
+                                        <TextBox Grid.Row="1" AcceptsReturn="True" Text="{Binding AdditionalLabelText}" FontWeight="DemiBold"/>
+                                    </Grid>
+                                </Grid>
+                                <Button Grid.Column="2" Content="Place" Click="Place_Click" CommandParameter="{Binding}" Background="LightGray" FontWeight="DemiBold" Width="60"  HorizontalAlignment="Stretch">
                                     <Button.Style>
                                         <Style TargetType="Button">
                                             <Setter Property="IsEnabled" Value="True"/>
@@ -166,7 +227,7 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
-                            </StackPanel>
+                            </Grid>
                         </StackPanel>
                     </StackPanel>
                 </DataTemplate>
