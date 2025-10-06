@@ -365,12 +365,18 @@ namespace GMEPPlumbing.Views
     public void PlaceLabel() {
       if (RouteInfoBoxGroups.First().RouteType != "Horizontal") {
         List<PlumbingVerticalRoute> routes = AutoCADIntegration.GetVerticalRoutesFromCAD();
-        foreach (var group in RouteInfoBoxGroups) {
+        PlumbingVerticalRoute route = routes.FirstOrDefault(r => r.Id == RouteInfoBoxGroups.First().Key);
+        Point3d insertionPoint = CADObjectCommands.CreateArrowJig("D0", route.Position).Item1;
+
+        var tempGroups = RouteInfoBoxGroups.ToList();
+        tempGroups.Remove(RouteInfoBoxGroups.First());
+        foreach (var group in tempGroups) {
           if (group.RouteType == "Vertical Up" || group.RouteType == "Vertical Down") {
-            PlumbingVerticalRoute route = routes.FirstOrDefault(r => r.Id == group.Key);
-            CADObjectCommands.CreateArrowJig("D0", route.Position);
+            PlumbingVerticalRoute route2 = routes.FirstOrDefault(r => r.Id == group.Key);
+            CADObjectCommands.CreateArrowJig("D0", route2.Position, false, insertionPoint);
           }
         }
+        
       }
       List<string> lines = LabelText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
       foreach (var line in lines) {

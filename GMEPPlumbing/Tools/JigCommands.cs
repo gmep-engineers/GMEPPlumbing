@@ -544,6 +544,17 @@ namespace GMEPPlumbing
       ((BlockReference)Entity).Rotation = ((BlockReference)Entity).Rotation + Math.PI / 2;
       return true;
     }
+    public bool Set(Point3d setPoint) {
+      _insertionPoint = setPoint;
+      _direction = _dnLocation - _insertionPoint;
+      ((BlockReference)Entity).Rotation = Math.Atan2(_direction.Y, _direction.X) + Math.PI;
+      double x = _dnLocation.X + (1.5 * Math.Cos(((BlockReference)Entity).Rotation));
+      double y = _dnLocation.Y + (1.5 * Math.Sin(((BlockReference)Entity).Rotation));
+      _leaderPoint = new Point3d(x, y, 0);
+      ((BlockReference)Entity).Position = _leaderPoint;
+      ((BlockReference)Entity).Rotation = ((BlockReference)Entity).Rotation + Math.PI / 2;
+      return true;
+    }
 
     public Point3d InsertionPoint => _insertionPoint;
     public Point3d LeaderPoint => _leaderPoint;

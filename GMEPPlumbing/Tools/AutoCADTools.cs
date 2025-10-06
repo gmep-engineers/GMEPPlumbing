@@ -470,10 +470,11 @@ namespace GMEPPlumbing
       return br;
     }
 
-    public static Point3d CreateArrowJig(
+    public static Tuple<Point3d, Point3d> CreateArrowJig(
       string layerName,
       Point3d center,
-      bool createHorizontalLeg = true
+      bool createHorizontalLeg = true,
+      Point3d? promptPoint = null
     ) {
       Document acDoc = Autodesk
         .AutoCAD
@@ -493,7 +494,7 @@ namespace GMEPPlumbing
         Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
           "Please set the scale using the SetScale command before creating objects."
         );
-        return new Point3d();
+        return new Tuple<Point3d, Point3d>(Point3d.Origin, Point3d.Origin);
       }
       Point3d leaderPoint;
       Point3d insertionPoint;
@@ -508,15 +509,20 @@ namespace GMEPPlumbing
           Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
             $"Block 'ar{Scale}' not found in the BlockTable."
           );
-          return Point3d.Origin;
+          return new Tuple<Point3d, Point3d>(Point3d.Origin, Point3d.Origin);
         }
         using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId)) {
           ArrowJig arrowJig = new ArrowJig(acBlkRef, center);
-          PromptResult promptResult = ed.Drag(arrowJig);
-
-          if (promptResult.Status != PromptStatus.OK) {
-            return Point3d.Origin;
+          if (promptPoint.HasValue) {
+            arrowJig.Set((Point3d)promptPoint);
           }
+          else {
+            PromptResult promptResult = ed.Drag(arrowJig);
+            if (promptResult.Status != PromptStatus.OK) {
+              return new Tuple<Point3d, Point3d>(Point3d.Origin, Point3d.Origin);
+            }
+          }
+
           leaderPoint = arrowJig.LeaderPoint;
           insertionPoint = arrowJig.InsertionPoint;
           BlockTableRecord currentSpace =
@@ -559,7 +565,7 @@ namespace GMEPPlumbing
           }
         }
       }
-      return thirdClickPoint;
+      return new Tuple<Point3d, Point3d>(insertionPoint, thirdClickPoint);
     }
 
     public static void CreateTextWithJig(
