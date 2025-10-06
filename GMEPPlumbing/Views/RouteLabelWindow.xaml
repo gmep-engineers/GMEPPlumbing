@@ -82,6 +82,10 @@
                                                     <Image Source="/GMEPPlumbing;component/Images/location-pin.png" Width="20" Height="20" VerticalAlignment="Bottom"/>
                                                 </Button>
                                             </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                                <TextBlock Text="{Binding SourceDescription}" FontWeight="Bold" VerticalAlignment="Bottom"/>
+                                                <TextBlock Text="{Binding LocationDescription}" FontWeight="Bold" VerticalAlignment="Bottom"/>
+                                            </StackPanel>
                                             <ComboBox ItemsSource="{Binding Value}" DisplayMemberPath="SegmentLength" SelectedItem="{Binding SelectedRouteInfoBox, Mode=TwoWay}" />
                                             <StackPanel>
                                                 <StackPanel.Style>

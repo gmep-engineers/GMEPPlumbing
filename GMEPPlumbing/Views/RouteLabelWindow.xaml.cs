@@ -174,7 +174,6 @@ namespace GMEPPlumbing.Views
       var routeInfoBoxGroupBunch = button?.CommandParameter as RouteInfoBoxGroupBunch;
       if (routeInfoBoxGroupBunch != null) {
         routeInfoBoxGroupBunch.GenerateLabel(sender, e);
-        LabelText = routeInfoBoxGroupBunch.LabelText;
       }
     }
     public void DragOver(IDropInfo dropInfo) {
@@ -233,8 +232,10 @@ namespace GMEPPlumbing.Views
       public string Type { get; set; }
       public string RouteType { get; set; }
       public SolidColorBrush SourceColor { get; set; } = System.Windows.Media.Brushes.Black;
+      public string LocationDescription { get; set; }
+      public string SourceDescription { get; set; }
 
-      public RouteInfoBoxGroup(ObservableCollection<RouteInfoBox> boxes) {
+    public RouteInfoBoxGroup(ObservableCollection<RouteInfoBox> boxes) {
       Value = boxes;
       DetermineInfo();
     }
@@ -245,6 +246,8 @@ namespace GMEPPlumbing.Views
       }
       public void DetermineInfo() {
         Type = Value.First().Type;
+        LocationDescription = Value.First().LocationDescription;
+        SourceDescription = Value.First().SourceDescription;
         if (Value.First().IsVerticalRoute) {
           if (Value.First().DirectionDescription == "Up") {
             RouteType = "Vertical Up";
@@ -409,14 +412,14 @@ namespace GMEPPlumbing.Views
         }
         
       }
-      List<string> lines = LabelText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+     /* List<string> lines = LabelText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
       foreach (var line in lines) {
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
           TextHorizontalMode.TextLeft,
           line
         );
-      }
+      }*/
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
