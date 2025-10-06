@@ -1,0 +1,237 @@
+﻿<Window x:Class="GMEPPlumbing.Views.RouteLabelWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GMEPPlumbing.Views"
+        xmlns:dd="urn:gong-wpf-dragdrop"
+        mc:Ignorable="d"
+        Title="RouteLabelWindow" Height="450" Width="500">
+    <Grid Background="Transparent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Background="LightSlateGray" BorderBrush="Black" BorderThickness="2"  Padding="5" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+            <Grid>
+                <Button Content="Select" Background="LightGray" FontWeight="DemiBold" Click="Select_Click" Width="300" Height="20"  HorizontalAlignment="Center" VerticalAlignment="Top"/>
+            </Grid>
+        </Border>
+        <ListBox HorizontalContentAlignment="Stretch" Grid.Row="1" ItemsSource="{Binding RouteInfoBoxGroupBunches}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Vertical">
+                        <ListBox MinHeight="20" Margin="10" ItemsSource="{Binding RouteInfoBoxGroups}" 
+                        HorizontalContentAlignment="Stretch" 
+                        dd:DragDrop.IsDragSource="True"
+                        dd:DragDrop.IsDropTarget="True"
+                        dd:DragDrop.DropHandler="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
+                        DisplayMemberPath="Key">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="4" Padding="4" Background="LightGray" CornerRadius="4">
+                                        <StackPanel HorizontalAlignment="Stretch">
+                                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                                <TextBlock Text="⬆️" FontWeight="Bold" FontSize="30" ToolTip="{Binding RouteType}" VerticalAlignment="Bottom">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RouteType}" Value="Vertical Up">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text="⬇️" FontWeight="Bold" FontSize="30" ToolTip="{Binding RouteType}" VerticalAlignment="Bottom">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RouteType}" Value="Vertical Down">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text="➡️" FontWeight="Bold" FontSize="30" ToolTip="{Binding RouteType}" VerticalAlignment="Bottom">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RouteType}" Value="Horizontal">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding Type}" FontWeight="Bold" Foreground="{Binding SourceColor}" FontSize="20" Margin="5 0 5 0" VerticalAlignment="Bottom"/>
+                                                <Button Background="Transparent" Margin="0 5 0 0"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    Width="20"
+                                                    Height="20"
+                                                    Cursor="Hand"
+                                                    ToolTip="Go to component on CAD"
+                                                    Click="GoToLocation_Click"
+                                                    CommandParameter="{Binding}">         
+                                                    <Image Source="/GMEPPlumbing;component/Images/location-pin.png" Width="20" Height="20" VerticalAlignment="Bottom"/>
+                                                </Button>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                                <TextBlock Text="{Binding SourceDescription}" FontWeight="Bold" VerticalAlignment="Bottom"/>
+                                                <TextBlock Text="{Binding LocationDescription}" FontWeight="Bold" VerticalAlignment="Bottom"/>
+                                            </StackPanel>
+                                            <ComboBox ItemsSource="{Binding Value}" DisplayMemberPath="SegmentLength" SelectedItem="{Binding SelectedRouteInfoBox, Mode=TwoWay}" />
+                                            <StackPanel>
+                                                <StackPanel.Style>
+                                                    <Style TargetType="StackPanel">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedRouteInfoBox}" Value="{x:Null}">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </StackPanel.Style>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                    <TextBlock Text="Segment Length: " FontWeight="SemiBold"/>
+                                                    <TextBlock FontWeight="Bold" Text="{Binding SelectedRouteInfoBox.SegmentLength}"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                    <TextBlock HorizontalAlignment="Center" Text="Pipe Size: " FontWeight="SemiBold" />
+                                                    <TextBlock HorizontalAlignment="Center" Text="{Binding SelectedRouteInfoBox.PipeSize}"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                    <StackPanel.Style>
+                                                        <Style TargetType="StackPanel">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding SelectedRouteInfoBox.CFH}" Value="">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </StackPanel.Style>
+                                                    <TextBlock HorizontalAlignment="Center" Text="CFH: " FontWeight="SemiBold" />
+                                                    <TextBlock HorizontalAlignment="Center" Text="{Binding SelectedRouteInfoBox.CFH}" />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                    <StackPanel.Style>
+                                                        <Style TargetType="StackPanel">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding SelectedRouteInfoBox.LongestRunLength}" Value="">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </StackPanel.Style>
+                                                    <TextBlock HorizontalAlignment="Center" Text="Longest Run: " FontWeight="SemiBold"/>
+                                                    <TextBlock HorizontalAlignment="Center" Text="{Binding SelectedRouteInfoBox.LongestRunLength}"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <StackPanel Orientation="Vertical" Margin="0 10">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RouteInfoBoxGroups.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <Grid HorizontalAlignment="Stretch" MaxWidth="700" MinWidth="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="Generate" Click="GenerateLabel_Click" CommandParameter="{Binding}" Background="LightGray" FontWeight="DemiBold" Width="60" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
+                                <Grid Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" MinHeight="50"/>
+                                        <RowDefinition>
+                                            <RowDefinition.Style>
+                                                <Style TargetType="RowDefinition">
+                                                    <Setter Property="Height" Value="*"/>
+                                                    <Setter Property="MinHeight" Value="50"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SourceLabelText}" Value="">
+                                                            <Setter Property="Height" Value="0"/>
+                                                            <Setter Property="MinHeight" Value="0"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </RowDefinition.Style>
+                                        </RowDefinition>
+                                        <RowDefinition>
+                                            <RowDefinition.Style>
+                                                <Style TargetType="RowDefinition">
+                                                    <Setter Property="Height" Value="*"/>
+                                                    <Setter Property="MinHeight" Value="50"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding AdditionalLabelText}" Value="">
+                                                            <Setter Property="Height" Value="0"/>
+                                                            <Setter Property="MinHeight" Value="0"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </RowDefinition.Style>
+                                        </RowDefinition>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="Main Label" TextAlignment="Center" FontWeight="DemiBold" HorizontalAlignment="Stretch" Background="LightGray"/>
+                                        <TextBox Grid.Row="1" Text="{Binding LocationLabelText}" FontWeight="DemiBold"/>
+                                    </Grid>
+                                    <Grid Grid.Row="1">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="From Label" TextAlignment="Center" FontWeight="DemiBold" HorizontalAlignment="Stretch" Background="LightGray"/>
+                                        <TextBox Grid.Row="1" Text="{Binding SourceLabelText}" FontWeight="DemiBold"/>
+                                    </Grid>
+                                    <Grid Grid.Row="2">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="Additional Labels" TextAlignment="Center" FontWeight="DemiBold" HorizontalAlignment="Stretch" Background="LightGray"/>
+                                        <TextBox Grid.Row="1" AcceptsReturn="True" Text="{Binding AdditionalLabelText}" FontWeight="DemiBold"/>
+                                    </Grid>
+                                </Grid>
+                                <Button Grid.Column="2" Content="Place" Click="Place_Click" CommandParameter="{Binding}" Background="LightGray" FontWeight="DemiBold" Width="60"  HorizontalAlignment="Stretch">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="IsEnabled" Value="True"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding LabelText}" Value="">
+                                                    <Setter Property="IsEnabled" Value="False"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</Window>

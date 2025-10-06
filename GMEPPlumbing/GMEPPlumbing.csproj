@@ -100,6 +100,9 @@
     <Reference Include="DnsClient, Version=1.6.1.0, Culture=neutral, PublicKeyToken=4574bb5573c51424, processorArchitecture=MSIL">
       <HintPath>packages\DnsClient.1.6.1\lib\net471\DnsClient.dll</HintPath>
     </Reference>
+    <Reference Include="GongSolutions.WPF.DragDrop, Version=4.0.0.0, Culture=neutral, PublicKeyToken=91f1945125b7a587, processorArchitecture=MSIL">
+      <HintPath>packages\gong-wpf-dragdrop.4.0.0\lib\net462\GongSolutions.WPF.DragDrop.dll</HintPath>
+    </Reference>
     <Reference Include="Google.Protobuf, Version=3.30.0.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
       <HintPath>packages\Google.Protobuf.3.30.0\lib\net45\Google.Protobuf.dll</HintPath>
     </Reference>
@@ -299,6 +302,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Views\RouteLabelWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Routing.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -315,6 +322,9 @@
     <Compile Include="Services\WaterMeterLossCalculationService.cs" />
     <Compile Include="Views\BasePointPromptWindow.xaml.cs">
       <DependentUpon>BasePointPromptWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\RouteLabelWindow.xaml.cs">
+      <DependentUpon>RouteLabelWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Routing.xaml.cs">
       <DependentUpon>Routing.xaml</DependentUpon>
@@ -797,6 +807,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
+    <Resource Include="Images\location-pin.png" />
     <Content Include="mongocrypt.dll" />
     <Resource Include="packages\AutoCAD.NET.24.3.0\adsk.xml" />
     <Content Include="packages\AutoCAD.NET.24.3.0\lib\net47\AcCui.dll" />

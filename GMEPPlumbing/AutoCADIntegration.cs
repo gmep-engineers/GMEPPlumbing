@@ -1076,7 +1076,6 @@ namespace GMEPPlumbing
           // Set the vertical route ID
           tr.Commit();
         }
-        MakeVerticalRouteLabel(labelPoint, "UP TO UPPER");
 
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           //Continue Pipe
@@ -1231,7 +1230,6 @@ namespace GMEPPlumbing
           verticalRoutes.Add(newRoute2.BasePointId, newRoute2);
           tr.Commit();
         }
-        MakeVerticalRouteLabel(labelPoint2, "UP FROM LOWER");
       }
       else if (endFloor < startFloor) {
         isUp = false;
@@ -1305,7 +1303,6 @@ namespace GMEPPlumbing
           verticalRoutes.Add(newRoute.BasePointId, newRoute);
           tr.Commit();
         }
-        MakeVerticalRouteLabel(labelPoint, "DOWN TO LOWER");
 
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           //Continue Pipe
@@ -1456,7 +1453,6 @@ namespace GMEPPlumbing
           verticalRoutes.Add(endRoute.BasePointId, endRoute);
           tr.Commit();
         }
-        MakeVerticalRouteLabel(labelPoint2, "DOWN FROM UPPER");
       }
       else if (endFloor == startFloor) {
         string blockName = "GMEP_PLUMBING_LINE_DOWN";
@@ -1535,12 +1531,12 @@ namespace GMEPPlumbing
         }
 
         if (direction == "UpToCeiling") {
-          double heightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item2;
+          double heightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor], true).Item2;
           double height = (double)routeHeight;
           length = heightLimit - height;
         }
         else if (direction == "DownToFloor") {
-          double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item1;
+          double lowerHeightLimit = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor], true).Item1;
           double height = (double)routeHeight;
           length = height - lowerHeightLimit;
         }
@@ -1626,7 +1622,6 @@ namespace GMEPPlumbing
           tr.Commit();
           
         }
-        MakeVerticalRouteLabel(labelPoint3, direction.ToUpper());
       }
       SettingObjects = false;
       return verticalRoutes;
@@ -2071,7 +2066,7 @@ namespace GMEPPlumbing
         }
       }
     }
-    public static void ZoomToPoint(Editor ed, Point3d wcsPos) {
+    public static void ZoomToPoint(Editor ed, Point3d wcsPos, double zoomDistance = 1) {
       var doc = ed.Document;
       using (doc.LockDocument()) {
         // Get the current view
@@ -2085,8 +2080,8 @@ namespace GMEPPlumbing
 
           Point3d dcsPos = wcsPos.TransformBy(matWcs2Dcs);
 
-          double zoomWidth = 400.0;
-          double zoomHeight = 400.0;
+          double zoomWidth = 400.0 / zoomDistance;
+          double zoomHeight = 400.0 / zoomDistance;
 
           view.CenterPoint = new Point2d(dcsPos.X, dcsPos.Y);
           view.Width = zoomWidth;
@@ -2445,18 +2440,45 @@ namespace GMEPPlumbing
       }
     }
 
-    public void MakeVerticalRouteLabel(Point3d dnPoint, string direction) {
-      if (dnPoint == null || double.IsNaN(dnPoint.X) || double.IsNaN(dnPoint.Y) || double.IsNaN(dnPoint.Z)) {
-        WriteMessage("\nError: Invalid point for vertical route label.");
+    [CommandMethod("LABELROUTES")]
+    public void RouteLabels() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      PromptSelectionOptions opts = new PromptSelectionOptions();
+      opts.MessageForAdding = "\nSelect plumbing routes to label:";
+
+      PromptSelectionResult res = ed.GetSelection(opts);
+
+      if (res.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nNo items selected.");
         return;
       }
-      CADObjectCommands.CreateArrowJig("D0", dnPoint);
-      CADObjectCommands.CreateTextWithJig(
-        CADObjectCommands.TextLayer,
-        TextHorizontalMode.TextLeft,
-        direction
-      );
+
+      SelectionSet selSet = res.Value;
+      ed.WriteMessage($"\nSelected {selSet.Count} items.");
+      List<PlumbingHorizontalRoute> horizontalRoutes = new List<PlumbingHorizontalRoute>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        foreach (SelectedObject selObj in selSet) {
+          if (selObj != null) {
+            Entity ent = tr.GetObject(selObj.ObjectId, OpenMode.ForRead) as Entity;
+            if (ent is Line line) {
+            }
+            else if (ent is BlockReference blockRef) {
+
+            }
+            else {
+              ed.WriteMessage($"\nSelected object is not a Line or BlockReference. Skipping.");
+              continue;
+            }
+          }
+        }
+      }           
     }
+
 
 
     private void MakePlumbingFixtureLabel(PlumbingFixture fixture, PlumbingFixtureType type) {
@@ -2480,7 +2502,8 @@ namespace GMEPPlumbing
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
           TextHorizontalMode.TextLeft,
-          fixture.TypeAbbreviation + "-" + fixture.Number.ToString()
+          fixture.TypeAbbreviation + "-" + fixture.Number.ToString(),
+          true
         );
       }
       else {
@@ -2495,7 +2518,6 @@ namespace GMEPPlumbing
           case "GMEP CO FLOOR":
             typeAbb = "2\" GCO";
             break;
-
         }
         CADObjectCommands.CreateTextWithJig(
          CADObjectCommands.TextLayer,
@@ -6124,7 +6146,7 @@ namespace GMEPPlumbing
 
     }
 
-    public static List<PlumbingHorizontalRoute> GetHorizontalRoutesFromCAD(string ProjectId) {
+    public static List<PlumbingHorizontalRoute> GetHorizontalRoutesFromCAD(string ProjectId = "") {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return new List<PlumbingHorizontalRoute>();
 
@@ -6698,6 +6720,13 @@ namespace GMEPPlumbing
     public async void DownToFloor() {
       CADObjectCommands.GetActiveView();
       VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "DownToFloor");
+    }
+
+    [CommandMethod("PLACEROUTELABELS")]
+    public void PlaceRouteLabels() {
+      string basePointId = CADObjectCommands.GetActiveView();
+      var window = new RouteLabelWindow(basePointId);
+      window.Show();
     }
     public static void Db_ObjectAppended(object sender, ObjectEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;

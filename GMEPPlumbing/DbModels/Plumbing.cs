@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using GMEPPlumbing.Tools;
+using System.Windows.Media;
 
 namespace GMEPPlumbing {
   public class PlumbingFixture {
@@ -169,6 +171,49 @@ namespace GMEPPlumbing {
     public PlumbingSourceType(int id, string type) {
       Id = id;
       Type = type;
+    }
+  }
+  public class RouteInfoBox {
+    public string ViewportId { get; set; }
+
+    //route info
+    public string ComponentId { get; set; }
+    public string BasePointId { get; set; }
+    public string PipeSize { get; set; }
+    public string Type { get; set; }
+    public string LocationDescription { get; set; }
+    public string SourceDescription { get; set; }
+
+    public string SegmentLength { get; set; }
+
+    //gas info
+    public string CFH { get; set; }
+    public string LongestRunLength { get; set; }
+
+    //vertical route info
+    public string DirectionDescription { get; set; }
+    public bool IsVerticalRoute { get; set; } = false;
+
+    public RouteInfoBox(string viewportId, string componentId, string basePointId, string pipeSize, string type, string locationDescription, string sourceDescription, string cfh, string longestRunLength, string directionDescription, bool isVerticalRoute, string segmentLength) {
+      ViewportId = viewportId;
+
+      //route info
+      ComponentId = componentId;
+      BasePointId = basePointId;
+      PipeSize = pipeSize;
+      Type = type;
+      LocationDescription = locationDescription;
+      SourceDescription = sourceDescription;
+      SegmentLength = segmentLength;
+
+      //gas info
+      CFH = cfh;
+      LongestRunLength = longestRunLength;
+
+      //vertical route info
+      DirectionDescription = directionDescription;
+      IsVerticalRoute = isVerticalRoute;
+      SegmentLength = segmentLength;
     }
   }
 

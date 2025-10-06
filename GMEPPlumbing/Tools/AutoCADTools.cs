@@ -171,77 +171,41 @@ namespace GMEPPlumbing
       return ActiveRouteHeight;
     }
 
-    public static Tuple<double, double> GetHeightLimits(string GUID) {
+    public static Tuple<double, double> GetHeightLimits(string GUID, bool endCaps = false) {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
       Tuple<double, double> heightLimits = new Tuple<double, double>(0, 0);
 
-      int activefloor = 0;
+     
+      List<PlumbingPlanBasePoint> basePoints = AutoCADIntegration.GetPlumbingBasePointsFromCAD().OrderBy(i => i.Floor).Where(i => !i.IsSiteRef).ToList();
+      PlumbingPlanBasePoint selectedBasePoint = basePoints.Find(bp => bp.Id == GUID);
+      if (selectedBasePoint == null) {
+        ed.WriteMessage("\nNo base point found. Please set an active view.");
+        return heightLimits;
+      }
+      double ceilingHeight = selectedBasePoint.CeilingHeight;
+      double floorHeight = selectedBasePoint.FloorHeight;
 
-      Dictionary<int, double> floorHeights = new Dictionary<int, double>();
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
-        // Dictionary<string, List<ObjectId>> basePoints = new Dictionary<string, List<ObjectId>>();
-        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
-          if (id.IsValid) {
-            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
-              if (anonymousBtr != null) {
-                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
-                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-                  var pc = entity.DynamicBlockReferencePropertyCollection;
-                  string basePointId = "";
-                  double floorHeight = 0;
-                  int floor = 0;
-                  foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "id") {
-                      basePointId = prop.Value.ToString();
-                    }
-                    if (prop.PropertyName == "floor_height") {
-                      floorHeight = Convert.ToDouble(prop.Value);
-                    }
-                    if (prop.PropertyName == "floor") {
-                      floor = Convert.ToInt32(prop.Value);
-                    }
-                  }
-                  if (basePointId != "") {
-                    floorHeights[floor] = floorHeight;
-                  }
-                  if (basePointId == GUID) {
-                    activefloor = floor;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      if (floorHeights.Count == 0) {
-        ed.WriteMessage("\nNo base points found in the drawing.");
-        return new Tuple<double, double>(0,0);
-      }
-      if (floorHeights.ContainsKey(activefloor)) {
-        double upperHeightLimit = 0;
-        double lowerHeightLimit = 0;
-        if (activefloor != floorHeights.Count) {
-          upperHeightLimit = floorHeights[activefloor + 1] - floorHeights[activefloor];
-        }
-        else {
+      List<PlumbingPlanBasePoint> viewBasePoints = basePoints.FindAll(bp => bp.ViewportId == selectedBasePoint.ViewportId && bp.IsSite == selectedBasePoint.IsSite).OrderBy(i => i.Floor).ToList();
+
+      double upperHeightLimit = ceilingHeight - floorHeight;
+      double lowerHeightLimit = 0;
+      if (!endCaps) {
+       if(viewBasePoints.Last() == selectedBasePoint) {
           upperHeightLimit = 10000;
-        }
-        if (activefloor == 1) {
+        } 
+       if (viewBasePoints.First() == selectedBasePoint) {
           lowerHeightLimit = -10000;
-        }
-        heightLimits = new Tuple<double, double>(
-          lowerHeightLimit,
-          upperHeightLimit
-        );
+       }
       }
-      else {
-        ed.WriteMessage("\nNo height limit found for the active base point.");
-        return new Tuple<double, double>(0, 0);
-      }
+
+      heightLimits = new Tuple<double, double>(
+        lowerHeightLimit,
+        upperHeightLimit
+      );
+      
+
       return heightLimits;
     }
 
@@ -506,10 +470,11 @@ namespace GMEPPlumbing
       return br;
     }
 
-    public static Point3d CreateArrowJig(
+    public static Tuple<Point3d, Point3d> CreateArrowJig(
       string layerName,
       Point3d center,
-      bool createHorizontalLeg = true
+      bool createHorizontalLeg = true,
+      Point3d? promptPoint = null
     ) {
       Document acDoc = Autodesk
         .AutoCAD
@@ -529,7 +494,7 @@ namespace GMEPPlumbing
         Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
           "Please set the scale using the SetScale command before creating objects."
         );
-        return new Point3d();
+        return new Tuple<Point3d, Point3d>(Point3d.Origin, Point3d.Origin);
       }
       Point3d leaderPoint;
       Point3d insertionPoint;
@@ -544,15 +509,20 @@ namespace GMEPPlumbing
           Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
             $"Block 'ar{Scale}' not found in the BlockTable."
           );
-          return Point3d.Origin;
+          return new Tuple<Point3d, Point3d>(Point3d.Origin, Point3d.Origin);
         }
         using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId)) {
           ArrowJig arrowJig = new ArrowJig(acBlkRef, center);
-          PromptResult promptResult = ed.Drag(arrowJig);
-
-          if (promptResult.Status != PromptStatus.OK) {
-            return Point3d.Origin;
+          if (promptPoint.HasValue) {
+            arrowJig.Set((Point3d)promptPoint);
           }
+          else {
+            PromptResult promptResult = ed.Drag(arrowJig);
+            if (promptResult.Status != PromptStatus.OK) {
+              return new Tuple<Point3d, Point3d>(Point3d.Origin, Point3d.Origin);
+            }
+          }
+
           leaderPoint = arrowJig.LeaderPoint;
           insertionPoint = arrowJig.InsertionPoint;
           BlockTableRecord currentSpace =
@@ -595,13 +565,14 @@ namespace GMEPPlumbing
           }
         }
       }
-      return thirdClickPoint;
+      return new Tuple<Point3d, Point3d>(insertionPoint, thirdClickPoint);
     }
 
     public static void CreateTextWithJig(
       string layerName,
       TextHorizontalMode horizontalMode,
-      string defaultText = null
+      string defaultText = null,
+      bool underline = false
     )
     {
       Document acDoc = Autodesk
@@ -631,6 +602,9 @@ namespace GMEPPlumbing
       double textHeight = (baseScale / Scale) * baseTextHeight;
 
       string userText = defaultText;
+      if (underline) {
+        userText = "%%U" + userText;
+      }
 
       if (string.IsNullOrEmpty(userText))
       {

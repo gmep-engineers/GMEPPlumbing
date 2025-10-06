@@ -40,7 +40,7 @@ namespace GMEPPlumbing.Views
     public void GenerateViews(Dictionary<string, List<PlumbingFullRoute>> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup) {
       Views.Clear();
       foreach (var routeScene in fullRoutes) {
-        View view = new View(routeScene.Value, basePointLookup);
+        View view = new View(routeScene.Key, routeScene.Value, basePointLookup);
         Views.Add(view);
       }
     }
@@ -60,6 +60,10 @@ namespace GMEPPlumbing.Views
 
       public HashSet<string> BasePointIds = new HashSet<string>();
 
+      public List<RouteInfoBox> RouteInfoBoxes { get; set; } = new List<RouteInfoBox>();
+
+      public string ViewportId { get; set; } = "";
+
       public bool _changeFlag = true;
       public bool ChangeFlag {
         get { return _changeFlag; }
@@ -76,25 +80,26 @@ namespace GMEPPlumbing.Views
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
       }
 
-    public Scene(PlumbingFullRoute fullRoute, Dictionary<string, PlumbingPlanBasePoint> basePoints) {
-          RouteItems = fullRoute.RouteItems;
-          Length = fullRoute.Length;
-          BasePoints = basePoints;
-          /*switch (fullRoute.TypeId) {
-            case 1:
-              RouteColor = System.Windows.Media.Brushes.Yellow;
-              break;
-            case 2:
-              RouteColor = System.Windows.Media.Brushes.Magenta;
-              break;
-            case 3:
-              RouteColor = System.Windows.Media.Brushes.SteelBlue;
-              break;
-            case 4:
-              RouteColor = System.Windows.Media.Brushes.Magenta;
-              break;
-          } */
-          BuildScene();
+      public Scene(string viewportId, PlumbingFullRoute fullRoute, Dictionary<string, PlumbingPlanBasePoint> basePoints) {
+        ViewportId = viewportId;
+        RouteItems = fullRoute.RouteItems;
+        Length = fullRoute.Length;
+        BasePoints = basePoints;
+        /*switch (fullRoute.TypeId) {
+          case 1:
+            RouteColor = System.Windows.Media.Brushes.Yellow;
+            break;
+          case 2:
+            RouteColor = System.Windows.Media.Brushes.Magenta;
+            break;
+          case 3:
+            RouteColor = System.Windows.Media.Brushes.SteelBlue;
+            break;
+          case 4:
+            RouteColor = System.Windows.Media.Brushes.Magenta;
+            break;
+        } */
+        BuildScene();
       }
     public Scene() {
       
@@ -106,7 +111,8 @@ namespace GMEPPlumbing.Views
       ChangeFlag = !ChangeFlag;
     }
 
-    public void BuildScene() {
+    public async void BuildScene() {
+      RouteInfoBoxes.Clear();
       RouteVisuals.Clear();
       List<TextVisual3D> textVisuals = new List<TextVisual3D>();
       Dictionary<string, List<PlumbingVerticalRoute>> fullVerticalRoutes = new Dictionary<string, List<PlumbingVerticalRoute>>();
@@ -146,13 +152,18 @@ namespace GMEPPlumbing.Views
           horizontalRoute.GenerateGallonsPerMinute();
           string flow = (horizontalRoute.FlowTypeId == 1) ? "Flush Tank" : "Flush Valve";
           double longestRunLength = horizontalRoute.LongestRunLength;
-          int longestRunFeet = (int)(longestRunLength / 12); // Convert to feet
-          int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
+          int longestRunFeet = (int)Math.Ceiling(longestRunLength / 12); // Convert to feet
+          //int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
+          string recommendedSize = horizontalRoute.PipeSize;
+          string cfh = "";
+          string longestRun = "";
 
           double textHeight = 8;
-          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n ---------------------- \n {horizontalRoute.PipeSize}\n";
+          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n ---------------------- \n {recommendedSize}\n";
           if (horizontalRoute.Type == "Gas") {
-            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRunFeet}' {longestRunInches}\"\n ---------------------- \n {horizontalRoute.PipeSize}\n";
+            cfh = horizontalRoute.FixtureUnits.ToString();
+            longestRun = $"{longestRunFeet}'";
+            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRun}\n ---------------------- \n {recommendedSize}\n";
           }
           else if (horizontalRoute.Type == "Waste" || horizontalRoute.Type == "Grease Waste") {
             WasteSizingChart chart = new WasteSizingChart();
@@ -160,7 +171,7 @@ namespace GMEPPlumbing.Views
             if (horizontalRoute.Slope == 0.02) {
               slope = "2%";
             }
-            string recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, slope);
+            recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, slope);
             textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits}\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
           }
           else if (horizontalRoute.Type == "Vent") {
@@ -169,7 +180,7 @@ namespace GMEPPlumbing.Views
             if (horizontalRoute.Slope == 0.02) {
               slope = "2%";
             }
-            string recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, horizontalRoute.LongestRunLength);
+            recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, horizontalRoute.LongestRunLength);
             textString = $" {feet}' {inches}\"\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
           }
           double textWidth = textHeight * textString.Length * 0.03;
@@ -181,6 +192,45 @@ namespace GMEPPlumbing.Views
               horizontalRoute.EndPoint.Z + 6 // +5 for vertical offset
           );
 
+          //upload the route data
+          string cleanedSize = recommendedSize;
+          int idx = cleanedSize.IndexOf("Nominal Pipe Size: ");
+          if (idx >= 0)
+            cleanedSize = cleanedSize.Substring(idx + "Nominal Pipe Size: ".Length);
+          else {
+            idx = cleanedSize.IndexOf("Pipe Size: ");
+            if (idx >= 0)
+              cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
+          }
+
+          //Uploading Route Info
+          double segmentLength = horizontalRoute.EndPoint.DistanceTo(horizontalRoute.StartPoint);
+          string segmentLengthString = ToFeetInchesString(segmentLength);
+          string locationDescription = "";
+          if (BasePoints.ContainsKey(horizontalRoute.BasePointId)) {
+            PlumbingPlanBasePoint point = BasePoints[horizontalRoute.BasePointId];
+            if (horizontalRoute.StartPoint.Z == point.CeilingHeight * 12) {
+              locationDescription = "ABV. CLG";
+            }
+            else if (horizontalRoute.StartPoint.Z == point.FloorHeight * 12) {
+              locationDescription = "BLW. FLR";
+            }
+          }
+          RouteInfoBoxes.Add(new RouteInfoBox(
+            ViewportId,
+            horizontalRoute.Id,
+            horizontalRoute.BasePointId,
+            cleanedSize,
+            horizontalRoute.Type,
+            locationDescription,
+            "",
+            cfh,
+            longestRun,
+            "",
+            false,
+            segmentLengthString
+          ));
+          // Create and configure the TextVisual3D
           var textModel = new TextVisual3D {
             Position = textPos,
             Text = textString,
@@ -305,9 +355,11 @@ namespace GMEPPlumbing.Views
         int gpm = verticalRoutes.First().GPM;
         string pipeSize = verticalRoutes.First().PipeSize;
         double longestLength = verticalRoutes.Max(vr => vr.LongestRunLength);
-        int longestLengthFeet = (int)(longestLength / 12); // Convert to feet
-        int longestLengthInches = (int)Math.Round(longestLength % 12); // Remaining inches
+        int longestLengthFeet = (int)Math.Ceiling(longestLength / 12); // Convert to feet
+        //int longestLengthInches = (int)Math.Round(longestLength % 12); // Remaining inches
         string routeBasePointId = verticalRoutes.First().BasePointId;
+        string cfh = "";
+        string longestRun = ""; 
         if (verticalRoutes.First().IsUp) {
           flowTypeId = verticalRoutes.Last().FlowTypeId;
           gpm = verticalRoutes.Last().GPM;
@@ -322,12 +374,14 @@ namespace GMEPPlumbing.Views
         int inches = (int)Math.Round(pipeLength % 12);
         string textString = $" {feet}' {inches}\" \n {flow} \n FU: {pipeFixtureUnits}\n GPM: {gpm} \n ---------------------- \n {pipeSize}\n";
         if (verticalRoutes.First().Type == "Gas") {
-          textString = $" {feet}' {inches}\"\n CFH: {pipeFixtureUnits} \n Longest Run: {longestLengthFeet}' {longestLengthInches}\"\n ---------------------- \n {pipeSize}\n";
+          cfh = pipeFixtureUnits.ToString();
+          longestRun = $"{longestLengthFeet}'";
+          textString = $" {feet}' {inches}\"\n CFH: {cfh} \n Longest Run: {longestRun}\n ---------------------- \n {pipeSize}\n";
         }
         else if (verticalRoutes.First().Type == "Waste" || verticalRoutes.First().Type == "Grease Waste") {
           WasteSizingChart chart = new WasteSizingChart();
-          string recommendedSize = chart.FindSize(pipeFixtureUnits, "Vertical", pipeLength);
-          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n ---------------------- \n {recommendedSize}\n";
+          pipeSize = chart.FindSize(pipeFixtureUnits, "Vertical", pipeLength);
+          textString = $" {feet}' {inches}\"\n DFU: {pipeFixtureUnits} \n ---------------------- \n {pipeSize}\n";
         }
         else if (verticalRoutes.First().Type == "Vent") {
           VentSizingChart chart = new VentSizingChart();
@@ -344,6 +398,82 @@ namespace GMEPPlumbing.Views
         else
           pos = new Point3D(pos.X + 6, pos.Y, pos.Z + offset);
 
+        //upload the route data
+        string cleanedSize = pipeSize;
+        int idx = cleanedSize.IndexOf("Nominal Pipe Size: ");
+        if (idx >= 0)
+          cleanedSize = cleanedSize.Substring(idx + "Nominal Pipe Size: ".Length);
+        else {
+          idx = cleanedSize.IndexOf("Pipe Size: ");
+          if (idx >= 0)
+            cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
+        }
+        string pipeLengthString = ToFeetInchesString(pipeLength);
+
+
+        foreach (var verticalRoute in verticalRoutes) {
+          string locationDescription = "";
+          string sourceDescription = "";
+          if (BasePoints.ContainsKey(verticalRoute.BasePointId)) {
+            int floor = BasePoints[verticalRoute.BasePointId].Floor;
+            if (verticalRoute.IsUp) {
+              PlumbingVerticalRoute belowRoute = verticalRoutes.FirstOrDefault(vr => vr.VerticalRouteId == verticalRoute.VerticalRouteId && BasePoints[vr.BasePointId].Floor == floor - 1);
+              if (belowRoute != null) {
+                sourceDescription = $"from {floor - 1}{GetSuffix(floor - 1)} floor";
+              }
+              PlumbingVerticalRoute aboveRoute = verticalRoutes.FirstOrDefault(vr => vr.VerticalRouteId == verticalRoute.VerticalRouteId && BasePoints[vr.BasePointId].Floor == floor + 1);
+              if (aboveRoute != null) {
+                locationDescription = $"to{floor + 1}{GetSuffix(floor + 1)} floor\n";
+               
+              }
+              else {
+                PlumbingPlanBasePoint point = BasePoints[verticalRoute.BasePointId];
+                if (verticalRoute.Position.Z == point.CeilingHeight * 12) {
+                  locationDescription = "ABV. CLG";
+                }
+              }
+            }
+            else {
+              PlumbingVerticalRoute aboveRoute = verticalRoutes.FirstOrDefault(vr => vr.VerticalRouteId == verticalRoute.VerticalRouteId && BasePoints[vr.BasePointId].Floor == floor + 1);
+              if (aboveRoute != null) {
+                sourceDescription = $"from {floor + 1}{GetSuffix(floor + 1)} floor";
+              }
+              PlumbingVerticalRoute belowRoute = verticalRoutes.FirstOrDefault(vr => vr.VerticalRouteId == verticalRoute.VerticalRouteId && BasePoints[vr.BasePointId].Floor == floor - 1);
+              if (belowRoute != null) {
+                locationDescription = $"to{floor - 1}{GetSuffix(floor - 1)} floor";
+              }
+              else {
+                PlumbingPlanBasePoint point = BasePoints[verticalRoute.BasePointId];
+                if (verticalRoute.NodeTypeId == 1) {
+                  if (verticalRoute.Position.Z == point.FloorHeight * 12) {
+                    locationDescription = "BLW. FLR";
+                  }
+                }
+                else if (verticalRoute.NodeTypeId == 3) {
+                  if (verticalRoute.Position.Z - (verticalRoute.Length * 12) == point.FloorHeight * 12) {
+                    locationDescription = "BLW. FLR";
+                  }
+                }
+              }
+            }
+          }
+          RouteInfoBoxes.Add(new RouteInfoBox(
+            ViewportId,
+            verticalRoute.Id,
+            verticalRoute.BasePointId,
+            cleanedSize,
+            verticalRoutes.First().Type,
+            locationDescription,
+            sourceDescription,
+            cfh,
+            longestRun,
+            isUp ? "Up" : "Down",
+            true,
+            pipeLengthString
+          ));
+        }
+
+        // Create and configure the TextVisual3D
         var textModel = new TextVisual3D {
           Position = pos,
           Text = textString,
@@ -392,6 +522,7 @@ namespace GMEPPlumbing.Views
         RouteVisuals.Add(text);
       }
     }
+
     public SolidColorBrush TypeToBrushColor(string type) {
       switch (type) {
         case "Cold Water":
@@ -434,6 +565,26 @@ namespace GMEPPlumbing.Views
       foreach (var visual in toRemove)
         RouteVisuals.Remove(visual);
     }
+    public static string ToFeetInchesString(double lengthInInches) {
+      int feet = (int)(lengthInInches / 12);
+      int inches = (int)Math.Round(lengthInInches % 12);
+      return $"{feet}' {inches}\"";
+    }
+    public string GetSuffix(int number) {
+      if (number % 100 >= 11 && number % 100 <= 13) {
+        return "th";
+      }
+      switch (number % 10) {
+        case 1:
+          return "st";
+        case 2:
+          return "nd";
+        case 3:
+          return "rd";
+        default:
+          return "th";
+      }
+    }
   }
   public class View : INotifyPropertyChanged {
     public List<PlumbingFullRoute> FullRoutes { get; set; } = new List<PlumbingFullRoute>();
@@ -446,9 +597,9 @@ namespace GMEPPlumbing.Views
         OnPropertyChanged(nameof(MainScene));
       }
     }
+    public string ViewportId { get; set; } = "";
 
     public ObservableCollection<Scene> Scenes { get; set; } = new ObservableCollection<Scene>();
-
 
     public bool IsCalculatorEnabled { get; set; } = false;
     public Dictionary<string, WaterCalculator> WaterCalculators { get; set; } = new Dictionary<string, WaterCalculator>();
@@ -456,8 +607,8 @@ namespace GMEPPlumbing.Views
     public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
     public string Name { get; set; } = "";
     public ICommand CalculateCommand { get; }
-    public View(List<PlumbingFullRoute> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup) {
-
+    public View(string viewportId, List<PlumbingFullRoute> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup) {
+      ViewportId = viewportId;
       CalculateCommand = new RelayCommand(ExecuteCalculate);
       PlumbingSource source1 = fullRoutes[0].RouteItems[0] as PlumbingSource;
       if (source1 != null) {
@@ -511,7 +662,6 @@ namespace GMEPPlumbing.Views
           }
         }
       }
-      RegenerateScenes();
     }
     public void GenerateGasPipeSizing() {
       foreach (var fullRoute in FullRoutes) {
@@ -570,13 +720,13 @@ namespace GMEPPlumbing.Views
             }
           }
       }
-      RegenerateScenes();
     }
     private void ExecuteCalculate(object parameter) {
       var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
       ed.WriteMessage("\nCalculating pipe sizes...");
       GenerateWaterPipeSizing();
       GenerateGasPipeSizing();
+      RegenerateScenes();
     }
 
     public void GenerateWaterCalculators() {
@@ -640,12 +790,17 @@ namespace GMEPPlumbing.Views
         }
       }
     }
-    public void GenerateScenes() {
+    public async void GenerateScenes() {
+      var service = ServiceLocator.MariaDBService;
+      await service.ClearPlumbingRouteInfoBoxes(ViewportId);
+      List<RouteInfoBox> allInfoBoxes = new List<RouteInfoBox>();
+
       Scenes.Clear();
       Scene fullScene = new Scene();
       foreach (var fullRoute in FullRoutes) {
-        var scene = new Scene(fullRoute, BasePointLookup);
-        var scene2 = new Scene(fullRoute, BasePointLookup);
+        var scene = new Scene(ViewportId, fullRoute, BasePointLookup);
+        allInfoBoxes.AddRange(scene.RouteInfoBoxes);
+        var scene2 = new Scene("", fullRoute, BasePointLookup);
         Scenes.Add(scene);
         foreach (var visual in scene2.RouteVisuals) {
           fullScene.RouteVisuals.Add(visual);
@@ -653,13 +808,22 @@ namespace GMEPPlumbing.Views
       }
       fullScene.RemoveDuplicateRouteVisuals();
       MainScene = fullScene;
+      if (ViewportId != "") {
+        allInfoBoxes = RemoveDuplicateInfoBoxes(allInfoBoxes);
+        await service.InsertPlumbingRouteInfoBoxes(allInfoBoxes, ViewportId);
+      }
     }
-    public void RegenerateScenes() {
+    public async void RegenerateScenes() {
+      var service = ServiceLocator.MariaDBService;
+      await service.ClearPlumbingRouteInfoBoxes(ViewportId);
+      List<RouteInfoBox> allInfoBoxes = new List<RouteInfoBox>();
+
       Scene fullScene = new Scene();
       int index = 0;
       foreach (var fullRoute in FullRoutes) {
         Scenes[index].RebuildScene(fullRoute);
-        var scene2 = new Scene(fullRoute, BasePointLookup);
+        allInfoBoxes.AddRange(Scenes[index].RouteInfoBoxes);
+        var scene2 = new Scene("", fullRoute, BasePointLookup);
         foreach (var visual in scene2.RouteVisuals) {
           fullScene.RouteVisuals.Add(visual);
         }
@@ -668,6 +832,28 @@ namespace GMEPPlumbing.Views
       fullScene.RemoveDuplicateRouteVisuals();
       fullScene.InitialBuild = false;
       MainScene = fullScene;
+      if (ViewportId != "") {
+        allInfoBoxes = RemoveDuplicateInfoBoxes(allInfoBoxes);
+        await service.InsertPlumbingRouteInfoBoxes(allInfoBoxes, ViewportId);
+      }
+    }
+    public List<RouteInfoBox> RemoveDuplicateInfoBoxes(List<RouteInfoBox> infoBoxes) {
+      List<RouteInfoBox> boxes = infoBoxes
+      .GroupBy(b => new {
+        b.ComponentId,
+        b.BasePointId,
+        b.PipeSize,
+        b.Type,
+        b.LocationDescription,
+        b.SegmentLength,
+        b.CFH,
+        b.LongestRunLength,
+        b.DirectionDescription,
+        b.IsVerticalRoute
+      })
+      .Select(g => g.First())
+      .ToList();
+      return boxes;
     }
     public void NormalizeRoutes() {
       foreach (var route in FullRoutes) {
@@ -883,6 +1069,7 @@ namespace GMEPPlumbing.Views
       return element.GetValue(TypeProperty);
     }
   }
-
-
+  public class ServiceLocator {
+    public static MariaDBService MariaDBService { get; } = new MariaDBService();
+  }
 }
