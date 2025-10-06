@@ -450,6 +450,14 @@ namespace GMEPPlumbing.Views
          SourceLabelText
         );
       }
+      List<string> lines = AdditionalLabelText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+      foreach (var line in lines) {
+        CADObjectCommands.CreateTextWithJig(
+          CADObjectCommands.TextLayer,
+          TextHorizontalMode.TextLeft,
+          line
+        );
+      }
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
