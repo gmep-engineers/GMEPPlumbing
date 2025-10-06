@@ -318,8 +318,13 @@ namespace GMEPPlumbing.Views
           .ToList();
       
       LocationLabelText = CreateLabelString(selectedBoxes);
-      SourceLabelText = CreateLabelString(selectedBoxes, true);
-      
+      if (RouteInfoBoxGroups.First().SourceDescription != "") {
+        SourceLabelText = CreateLabelString(selectedBoxes, true);
+      }
+      else {
+        SourceLabelText = "";
+      }
+
       //Gas Stuffs
       string additionalLabels = "";
       foreach (var box in selectedBoxes.Where(b => b.Type == "Gas" )) {
@@ -402,29 +407,49 @@ namespace GMEPPlumbing.Views
       return string.Join("", labelParts).ToUpper();
     }
     public void PlaceLabel() {
-      if (RouteInfoBoxGroups.First().RouteType != "Horizontal") {
-        List<PlumbingVerticalRoute> routes = AutoCADIntegration.GetVerticalRoutesFromCAD();
-        PlumbingVerticalRoute route = routes.FirstOrDefault(r => r.Id == RouteInfoBoxGroups.First().Key);
-        Point3d insertionPoint = CADObjectCommands.CreateArrowJig("D0", route.Position).Item1;
+      List<PlumbingVerticalRoute> routes = new List<PlumbingVerticalRoute>();
+      if (LocationLabelText != "") {
+        if (RouteInfoBoxGroups.First().RouteType != "Horizontal") {
+          routes = AutoCADIntegration.GetVerticalRoutesFromCAD();
+          PlumbingVerticalRoute route = routes.FirstOrDefault(r => r.Id == RouteInfoBoxGroups.First().Key);
+          Point3d insertionPoint = CADObjectCommands.CreateArrowJig("D0", route.Position).Item1;
 
-        var tempGroups = RouteInfoBoxGroups.ToList();
-        tempGroups.Remove(RouteInfoBoxGroups.First());
-        foreach (var group in tempGroups) {
-          if (group.RouteType == "Vertical Up" || group.RouteType == "Vertical Down") {
-            PlumbingVerticalRoute route2 = routes.FirstOrDefault(r => r.Id == group.Key);
-            CADObjectCommands.CreateArrowJig("D0", route2.Position, false, insertionPoint);
+          var tempGroups = RouteInfoBoxGroups.ToList();
+          tempGroups.Remove(RouteInfoBoxGroups.First());
+          foreach (var group in tempGroups) {
+            if (group.RouteType == "Vertical Up" || group.RouteType == "Vertical Down") {
+              PlumbingVerticalRoute route2 = routes.FirstOrDefault(r => r.Id == group.Key);
+              CADObjectCommands.CreateArrowJig("D0", route2.Position, false, insertionPoint);
+            }
           }
         }
-        
-      }
-     /* List<string> lines = LabelText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-      foreach (var line in lines) {
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
           TextHorizontalMode.TextLeft,
-          line
+          LocationLabelText
         );
-      }*/
+      }
+
+      if (SourceLabelText != "") {
+        if (RouteInfoBoxGroups.First().RouteType != "Horizontal") {
+          PlumbingVerticalRoute route = routes.FirstOrDefault(r => r.Id == RouteInfoBoxGroups.First().Key);
+          Point3d insertionPoint = CADObjectCommands.CreateArrowJig("D0", route.Position).Item1;
+
+          var tempGroups = RouteInfoBoxGroups.ToList();
+          tempGroups.Remove(RouteInfoBoxGroups.First());
+          foreach (var group in tempGroups) {
+            if (group.RouteType == "Vertical Up" || group.RouteType == "Vertical Down") {
+              PlumbingVerticalRoute route2 = routes.FirstOrDefault(r => r.Id == group.Key);
+              CADObjectCommands.CreateArrowJig("D0", route2.Position, false, insertionPoint);
+            }
+          }
+        }
+        CADObjectCommands.CreateTextWithJig(
+          CADObjectCommands.TextLayer,
+          TextHorizontalMode.TextLeft,
+         SourceLabelText
+        );
+      }
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
