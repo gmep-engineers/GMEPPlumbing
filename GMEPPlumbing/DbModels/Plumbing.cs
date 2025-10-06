@@ -182,6 +182,7 @@ namespace GMEPPlumbing {
     public string PipeSize { get; set; }
     public string Type { get; set; }
     public string LocationDescription { get; set; }
+    public string SourceDescription { get; set; }
 
     public string SegmentLength { get; set; }
 
@@ -193,7 +194,7 @@ namespace GMEPPlumbing {
     public string DirectionDescription { get; set; }
     public bool IsVerticalRoute { get; set; } = false;
 
-    public RouteInfoBox(string viewportId, string componentId, string basePointId, string pipeSize, string type, string locationDescription, string cfh, string longestRunLength, string directionDescription, bool isVerticalRoute, string segmentLength) {
+    public RouteInfoBox(string viewportId, string componentId, string basePointId, string pipeSize, string type, string locationDescription, string sourceDescription, string cfh, string longestRunLength, string directionDescription, bool isVerticalRoute, string segmentLength) {
       ViewportId = viewportId;
 
       //route info
@@ -202,6 +203,7 @@ namespace GMEPPlumbing {
       PipeSize = pipeSize;
       Type = type;
       LocationDescription = locationDescription;
+      SourceDescription = sourceDescription;
       SegmentLength = segmentLength;
 
       //gas info
