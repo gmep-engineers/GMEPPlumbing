@@ -203,15 +203,26 @@ namespace GMEPPlumbing.Views
               cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
           }
 
+          //Uploading Route Info
           double segmentLength = horizontalRoute.EndPoint.DistanceTo(horizontalRoute.StartPoint);
           string segmentLengthString = ToFeetInchesString(segmentLength);
+          string locationDescription = "";
+          if (BasePoints.ContainsKey(horizontalRoute.BasePointId)) {
+            PlumbingPlanBasePoint point = BasePoints[horizontalRoute.BasePointId];
+            if (horizontalRoute.StartPoint.Z == point.CeilingHeight * 12) {
+              locationDescription = "ABV. CLG";
+            }
+            else if (horizontalRoute.StartPoint.Z == point.FloorHeight * 12) {
+              locationDescription = "BLW. FLR";
+            }
+          }
           RouteInfoBoxes.Add(new RouteInfoBox(
             ViewportId,
             horizontalRoute.Id,
             horizontalRoute.BasePointId,
             cleanedSize,
             horizontalRoute.Type,
-            "",
+            locationDescription,
             cfh,
             longestRun,
             "",
@@ -386,6 +397,7 @@ namespace GMEPPlumbing.Views
         else
           pos = new Point3D(pos.X + 6, pos.Y, pos.Z + offset);
 
+        //upload the route data
         string cleanedSize = pipeSize;
         int idx = cleanedSize.IndexOf("Nominal Pipe Size: ");
         if (idx >= 0)
@@ -396,15 +408,60 @@ namespace GMEPPlumbing.Views
             cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
         }
         string pipeLengthString = ToFeetInchesString(pipeLength);
-        //upload the route data
+
+
         foreach (var verticalRoute in verticalRoutes) {
+          string locationDescription = "";
+          if (BasePoints.ContainsKey(verticalRoute.BasePointId)) {
+            int floor = BasePoints[verticalRoute.BasePointId].Floor;
+            if (verticalRoute.IsUp) {
+              PlumbingVerticalRoute aboveRoute = verticalRoutes.FirstOrDefault(vr => BasePoints[vr.BasePointId].Floor == floor + 1);
+              
+              if (aboveRoute != null) {
+                locationDescription += $"to{floor - 1}{GetSuffix(floor + 1)} floor\n";
+                PlumbingVerticalRoute belowRoute = verticalRoutes.FirstOrDefault(vr => BasePoints[vr.BasePointId].Floor == floor - 1);
+                if (belowRoute != null) {
+                  locationDescription += $"from {floor - 1}{GetSuffix(floor - 1)} floor\n";
+                }
+              }
+              else {
+                PlumbingPlanBasePoint point = BasePoints[verticalRoute.BasePointId];
+                if (verticalRoute.Position.Z == point.CeilingHeight * 12) {
+                  locationDescription = "ABV. CLG";
+                }
+              }
+            }
+            else {
+              PlumbingVerticalRoute belowRoute = verticalRoutes.FirstOrDefault(vr => BasePoints[vr.BasePointId].Floor == floor - 1);
+              locationDescription += $"to{floor - 1}{GetSuffix(floor - 1)} floor\n";
+              if (belowRoute != null) {
+                PlumbingVerticalRoute aboveRoute = verticalRoutes.FirstOrDefault(vr => BasePoints[vr.BasePointId].Floor == floor + 1);
+                if (aboveRoute != null) {
+                  locationDescription += $"from {floor - 1}{GetSuffix(floor + 1)} floor\n";
+                }
+              }
+              else {
+                PlumbingPlanBasePoint point = BasePoints[verticalRoute.BasePointId];
+                if (verticalRoute.NodeTypeId == 1) {
+                  if (verticalRoute.Position.Z == point.FloorHeight * 12) {
+                    locationDescription = "BLW. FLR";
+                  }
+                }
+                else if (verticalRoute.NodeTypeId == 3) {
+                  if (verticalRoute.Position.Z - (verticalRoute.Length * 12) == point.FloorHeight * 12) {
+                    locationDescription = "BLW. FLR";
+                  }
+                }
+              }
+            }
+          }
           RouteInfoBoxes.Add(new RouteInfoBox(
             ViewportId,
             verticalRoute.Id,
             verticalRoute.BasePointId,
             cleanedSize,
             verticalRoutes.First().Type,
-            "",
+            locationDescription,
             cfh,
             longestRun,
             isUp ? "Up" : "Down",
@@ -509,6 +566,21 @@ namespace GMEPPlumbing.Views
       int feet = (int)(lengthInInches / 12);
       int inches = (int)Math.Round(lengthInInches % 12);
       return $"{feet}' {inches}\"";
+    }
+    public string GetSuffix(int number) {
+      if (number % 100 >= 11 && number % 100 <= 13) {
+        return "th";
+      }
+      switch (number % 10) {
+        case 1:
+          return "st";
+        case 2:
+          return "nd";
+        case 3:
+          return "rd";
+        default:
+          return "th";
+      }
     }
   }
   public class View : INotifyPropertyChanged {
