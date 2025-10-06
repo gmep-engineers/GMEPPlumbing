@@ -191,8 +191,13 @@ namespace GMEPPlumbing.Views
       if (sourceGroup != null && targetCollection != null && sourceCollection != null) {
         if (targetCollection.Count == 0 || targetCollection.First().RouteType == sourceGroup.RouteType) {
           if (targetCollection.First().Type == sourceGroup.Type || (targetCollection.First().Type == "Cold Water" && sourceGroup.Type == "Hot Water") || (targetCollection.First().Type == "Hot Water" && sourceGroup.Type == "Cold Water")) {
-            sourceCollection.Remove(sourceGroup);
-            targetCollection.Add(sourceGroup);
+            if (targetCollection.First().LocationDescription == sourceGroup.LocationDescription && targetCollection.First().SourceDescription == sourceGroup.SourceDescription) {
+              sourceCollection.Remove(sourceGroup);
+              targetCollection.Add(sourceGroup);
+            }
+            else {
+              MessageBox.Show("You can only group vertical routes from the same location and to the same location.", "Invalid Grouping", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
           }
           else {
             MessageBox.Show("You can only group routes of the same type together.", "Invalid Grouping", MessageBoxButton.OK, MessageBoxImage.Warning);
