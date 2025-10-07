@@ -829,7 +829,6 @@ namespace GMEPPlumbing.Views
             }
             Tuple<string, string, int, string> info = await ServiceLocator.MariaDBService.GetPlumbingGasCalculations(plumbingSource.Id);
             if (info != null) {
-              MessageBox.Show("Wow");
               GasPipeSizingChart gasChart = new GasPipeSizingChart(info.Item2, info.Item4, info.Item3);
               GasCalculators[plumbingSource.Id] = new GasCalculator(plumbingSource.Id, info.Item1, gasChart);
             }
