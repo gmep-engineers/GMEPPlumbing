@@ -993,10 +993,15 @@ namespace GMEPPlumbing.Services
       }
     }
     public async Task ClearPlumbingRouteInfoBoxes(string viewportId) {
+      List<PlumbingPlanBasePoint> points = AutoCADIntegration.GetPlumbingBasePointsFromCAD();
+      List<string> viewIds = points.Select(p => p.ViewportId).Distinct().ToList();
+      string formattedViewIds = string.Join(", ", viewIds.Select(id => $"'{id}'"));
+
       MySqlConnection conn = await OpenNewConnectionAsync();
-      string deleteQuery = @"
+      string deleteQuery = $@"
             DELETE FROM plumbing_route_info_boxes
-            WHERE viewport_id = @viewportId";
+            WHERE viewport_id = @viewportId
+            OR viewport_id NOT IN ({formattedViewIds})";
       MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
       deleteCommand.Parameters.AddWithValue("@viewportId", viewportId);
       await deleteCommand.ExecuteNonQueryAsync();
