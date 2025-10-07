@@ -219,7 +219,7 @@ namespace GMEPPlumbing.Views
           RouteInfoBoxes.Add(new RouteInfoBox(
             ViewportId,
             horizontalRoute.Id,
-            horizontalRoute.BasePointId,
+            horizontalRoute.ProjectId,
             cleanedSize,
             horizontalRoute.Type,
             locationDescription,
@@ -460,7 +460,7 @@ namespace GMEPPlumbing.Views
           RouteInfoBoxes.Add(new RouteInfoBox(
             ViewportId,
             verticalRoute.Id,
-            verticalRoute.BasePointId,
+            verticalRoute.ProjectId,
             cleanedSize,
             verticalRoutes.First().Type,
             locationDescription,
@@ -841,7 +841,7 @@ namespace GMEPPlumbing.Views
       List<RouteInfoBox> boxes = infoBoxes
       .GroupBy(b => new {
         b.ComponentId,
-        b.BasePointId,
+        b.ProjectId,
         b.PipeSize,
         b.Type,
         b.LocationDescription,

@@ -6723,9 +6723,10 @@ namespace GMEPPlumbing
     }
 
     [CommandMethod("PLACEROUTELABELS")]
-    public void PlaceRouteLabels() {
-      string basePointId = CADObjectCommands.GetActiveView();
-      var window = new RouteLabelWindow(basePointId);
+    public async void PlaceRouteLabels() {
+      string projectNo = CADObjectCommands.GetProjectNoFromFileName();
+      ProjectId = await MariaDBService.GetProjectId(projectNo);
+      var window = new RouteLabelWindow(ProjectId);
       window.Show();
     }
     public static void Db_ObjectAppended(object sender, ObjectEventArgs e) {
