@@ -761,9 +761,9 @@ namespace GMEPPlumbing.Views
       foreach (var calculator in WaterCalculators.Values) {
         await service.UpdatePlumbingWaterCalculations(calculator);
       }
-      /*foreach (var calculator in GasCalculators.Values) {
-        await service.UpsertPlumbingGasCalculator(calculator, ViewportId);
-      }*/
+      foreach (var calculator in GasCalculators.Values) {
+        await service.UpdatePlumbingGasCalculations(calculator);
+      }
     }
     public async Task GenerateWaterCalculators() {
       WaterCalculators.Clear();
@@ -827,8 +827,15 @@ namespace GMEPPlumbing.Views
                 name = "Waste Output";
                 break;
             }
-
-            GasCalculators[plumbingSource.Id] = new GasCalculator(name);
+            Tuple<string, string, int, string> info = await ServiceLocator.MariaDBService.GetPlumbingGasCalculations(plumbingSource.Id);
+            if (info != null) {
+              MessageBox.Show("Wow");
+              GasPipeSizingChart gasChart = new GasPipeSizingChart(info.Item2, info.Item4, info.Item3);
+              GasCalculators[plumbingSource.Id] = new GasCalculator(plumbingSource.Id, info.Item1, gasChart);
+            }
+            else {
+              GasCalculators[plumbingSource.Id] = new GasCalculator(plumbingSource.Id, name);
+            }
           }
         }
       }

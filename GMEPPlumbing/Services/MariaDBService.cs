@@ -903,6 +903,64 @@ namespace GMEPPlumbing.Services
       }
       return Tuple.Create(sourceName, minSourcePressure, losses, additions);
     }
+    public async Task<Tuple<string, string, int, string>> GetPlumbingGasCalculations(string sourceId) {
+      string sourceName = "";
+      string gasType = "";
+      int chartNo = 0;
+      string pipeType = "";
+      string tempSourceId = "";
+
+      using (var conn = await OpenNewConnectionAsync()) {
+        string query = "SELECT * FROM plumbing_gas_calculation_data WHERE source_id = @sourceId";
+        using (var cmd = new MySqlCommand(query, conn)) {
+          cmd.Parameters.AddWithValue("@sourceId", sourceId);
+          using (var reader = (MySqlDataReader)await cmd.ExecuteReaderAsync()) {
+            if (await reader.ReadAsync()) {
+              sourceName = GetSafeString(reader, "source_name");
+              gasType = GetSafeString(reader, "gas_type");
+              chartNo = GetSafeInt(reader, "chart_no");
+              pipeType = GetSafeString(reader, "pipe_type");
+              tempSourceId = GetSafeString(reader, "source_id");
+            }
+          }
+        }
+      }
+      if (tempSourceId == "") {
+        return null;
+      }
+      return Tuple.Create(sourceName, gasType, chartNo, pipeType);
+    }
+    public async Task UpdatePlumbingGasCalculations(GasCalculator calculator) {
+      using (var conn = await OpenNewConnectionAsync()) {
+        using (var transaction = conn.BeginTransaction()) {
+          string deleteQuery = @"
+                DELETE FROM plumbing_gas_calculation_data
+                WHERE source_id = @sourceId";
+          using (var cmd = new MySqlCommand(deleteQuery, conn, transaction)) {
+            cmd.Parameters.AddWithValue("@sourceId", calculator.SourceId);
+            await cmd.ExecuteNonQueryAsync();
+          }
+            string query = @"
+                INSERT INTO plumbing_gas_calculation_data
+                (source_id, source_name, gas_type, pipe_type, chart_no)
+                VALUES (@sourceId, @sourceName, @gasType, @pipeType, @chartNo)
+                ON DUPLICATE KEY UPDATE
+                    source_name = @sourceName,
+                    gas_type = @gasType,
+                    pipe_type = @pipeType,
+                    chart_no = @chartNo";
+          using (var cmd = new MySqlCommand(query, conn)) {
+            cmd.Parameters.AddWithValue("@sourceId", calculator.SourceId);
+            cmd.Parameters.AddWithValue("@sourceName", calculator.Description);
+            cmd.Parameters.AddWithValue("@gasType", calculator.ChosenChart.GasType);
+            cmd.Parameters.AddWithValue("@pipeType", calculator.ChosenChart.PipeType);
+            cmd.Parameters.AddWithValue("@chartNo", calculator.ChosenChart.ChartIndex);
+            await cmd.ExecuteNonQueryAsync();
+          }
+          transaction.Commit();
+        }
+      }
+    }
     public async Task UpdatePlumbingWaterCalculations(WaterCalculator calculator) {
       using (var conn = await OpenNewConnectionAsync()) {
         using (var transaction = conn.BeginTransaction()) {

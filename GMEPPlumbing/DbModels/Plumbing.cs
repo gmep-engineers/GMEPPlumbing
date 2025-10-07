@@ -497,7 +497,13 @@ namespace GMEPPlumbing {
       get => _description;
       set { if (_description != value) { _description = value; OnPropertyChanged(); } }
     }
-    public GasCalculator(string description, GasPipeSizingChart chosenChart = null) {
+    public string _sourceId;
+    public string SourceId {
+      get => _sourceId;
+      set { if (_sourceId != value) { _sourceId = value; OnPropertyChanged(); } }
+    }
+    public GasCalculator(string sourceId, string description, GasPipeSizingChart chosenChart = null) {
+      SourceId = sourceId;
       MenuItems = new ObservableCollection<MenuItemViewModel> {
         new MenuItemViewModel {
           Name = "Natural Gas",
