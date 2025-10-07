@@ -1010,11 +1010,12 @@ namespace GMEPPlumbing.Services
       if (boxes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_route_info_boxes
-              (viewport_id, component_id, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route, segment_length, source_description)
-              VALUES (@viewportId, @componentId, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute, @segmentLength, @sourceDescription)";
+              (project_id, viewport_id, component_id, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route, segment_length, source_description)
+              VALUES (@projectId, @viewportId, @componentId, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute, @segmentLength, @sourceDescription)";
         foreach (var box in boxes) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
           command.Parameters.AddWithValue("@viewportId", viewportId);
+          command.Parameters.AddWithValue("@projectId", box.ProjectId);
           command.Parameters.AddWithValue("@componentId", box.ComponentId);
           command.Parameters.AddWithValue("@basePointId", box.BasePointId);
           command.Parameters.AddWithValue("@pipeSize", box.PipeSize);
@@ -1285,17 +1286,18 @@ namespace GMEPPlumbing.Services
       return routes;
     }
 
-    public async Task<List<RouteInfoBox>> GetPlumbingRouteInfoBoxes(string basepointId) {
+    public async Task<List<RouteInfoBox>> GetPlumbingRouteInfoBoxes(string projectId) {
       var boxes = new List<RouteInfoBox>();
       await OpenConnectionAsync();
       string query = @"
             SELECT * FROM plumbing_route_info_boxes
-            WHERE base_point_id = @basepointId";
+            WHERE project_id = @projectId";
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@basepointId", basepointId);
+      command.Parameters.AddWithValue("@projectId", projectId);
       MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
       while (reader.Read()) {
         var box = new RouteInfoBox(
+          reader.GetString("project_id"),
           reader.GetString("viewport_id"),
           reader.GetString("component_id"),
           reader.GetString("base_point_id"),

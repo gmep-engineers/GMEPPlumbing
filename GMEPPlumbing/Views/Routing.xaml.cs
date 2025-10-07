@@ -217,6 +217,7 @@ namespace GMEPPlumbing.Views
             }
           }
           RouteInfoBoxes.Add(new RouteInfoBox(
+            horizontalRoute.ProjectId,
             ViewportId,
             horizontalRoute.Id,
             horizontalRoute.BasePointId,
@@ -458,6 +459,7 @@ namespace GMEPPlumbing.Views
             }
           }
           RouteInfoBoxes.Add(new RouteInfoBox(
+            verticalRoute.ProjectId,
             ViewportId,
             verticalRoute.Id,
             verticalRoute.BasePointId,
