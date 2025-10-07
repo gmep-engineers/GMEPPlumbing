@@ -275,6 +275,9 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsFormsIntegration" />
+    <Reference Include="WpfAnimatedGif, Version=2.0.0.0, Culture=neutral, PublicKeyToken=9e7cd3b544a090dc, processorArchitecture=MSIL">
+      <HintPath>packages\WpfAnimatedGif.2.0.2\lib\net40\WpfAnimatedGif.dll</HintPath>
+    </Reference>
     <Reference Include="ZstdSharp, Version=0.7.3.0, Culture=neutral, PublicKeyToken=8d151af33a4ad5cf, processorArchitecture=MSIL">
       <HintPath>packages\ZstdSharp.Port.0.8.5\lib\net462\ZstdSharp.dll</HintPath>
       <Private>True</Private>
@@ -808,6 +811,7 @@
   <ItemGroup>
     <Content Include=".gitignore" />
     <Resource Include="Images\location-pin.png" />
+    <Resource Include="Images\loading.gif" />
     <Content Include="mongocrypt.dll" />
     <Resource Include="packages\AutoCAD.NET.24.3.0\adsk.xml" />
     <Content Include="packages\AutoCAD.NET.24.3.0\lib\net47\AcCui.dll" />
