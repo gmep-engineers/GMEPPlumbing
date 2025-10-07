@@ -34,7 +34,6 @@ namespace GMEPPlumbing.Views
     {
         public MariaDBService MariaDBService { get; } = new MariaDBService();
         public List<RouteInfoBox> RouteInfoBoxes{ get; set; }
-        public string BasePointId { get; set; }
         private Dictionary<string, ObservableCollection<RouteInfoBox>> _selectedRouteInfoBoxes = new Dictionary<string, ObservableCollection<RouteInfoBox>>();
         public Dictionary<string, ObservableCollection<RouteInfoBox>> SelectedRouteInfoBoxes {
           get => _selectedRouteInfoBoxes;
@@ -69,15 +68,14 @@ namespace GMEPPlumbing.Views
             OnPropertyChanged(nameof(LabelText));
           }
         }
-        public RouteLabelWindow(string basePointId)
+        public RouteLabelWindow(string projectId)
         {
-          BasePointId = basePointId;
           InitializeComponent();
           DataContext = this;
-          Startup();
+          Startup(projectId);
         }
-        public async void Startup() {
-          RouteInfoBoxes = await MariaDBService.GetPlumbingRouteInfoBoxes(BasePointId);
+        public async void Startup(string projectId) {
+          RouteInfoBoxes = await MariaDBService.GetPlumbingRouteInfoBoxes(projectId);
         }
         public void Select_Click(object sender, RoutedEventArgs e) {
           // Get the active AutoCAD document and editor
@@ -85,14 +83,7 @@ namespace GMEPPlumbing.Views
           var ed = doc.Editor;
 
           this.Hide();
-          // Prompt the user to select a point
-          PlumbingPlanBasePoint activeBasePoint = AutoCADIntegration.GetPlumbingBasePointsFromCAD()
-            .FirstOrDefault(bp => bp.Id == BasePointId);
-          if (activeBasePoint == null) {
-            MessageBox.Show("Active base point not found.");
-            this.Show();
-            return;
-          }
+    
           var promptSelectionOptions = new Autodesk.AutoCAD.EditorInput.PromptSelectionOptions();
           var promptSelectionResult = ed.GetSelection(promptSelectionOptions);
 
@@ -330,7 +321,7 @@ namespace GMEPPlumbing.Views
       bool endLineFlag = false;
       foreach (var box in selectedBoxes.Where(b => b.Type == "Gas")) {
         if (endLineFlag) {
-          additionalLabels += "\n";
+          additionalLabels += "&";
         }
         else {
           endLineFlag = true;
@@ -457,12 +448,11 @@ namespace GMEPPlumbing.Views
          SourceLabelText
         );
       }
-      List<string> lines = AdditionalLabelText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-      foreach (var line in lines) {
+      if (AdditionalLabelText != "") {
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
           TextHorizontalMode.TextLeft,
-          line
+          AdditionalLabelText
         );
       }
     }
