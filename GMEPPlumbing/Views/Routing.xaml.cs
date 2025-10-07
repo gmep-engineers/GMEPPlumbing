@@ -609,19 +609,35 @@ namespace GMEPPlumbing.Views
     public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
     public string Name { get; set; } = "";
     public ICommand CalculateCommand { get; }
+    public ICommand SaveCommand { get; }
+
+    public bool isLoading = false;
+    public bool IsLoading {
+      get { return isLoading; }
+      set {
+        isLoading = value;
+        OnPropertyChanged(nameof(IsLoading));
+      }
+    }
+
     public View(string viewportId, List<PlumbingFullRoute> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup) {
       ViewportId = viewportId;
       CalculateCommand = new RelayCommand(ExecuteCalculate);
+      SaveCommand = new RelayCommand(ExecuteSave);
       PlumbingSource source1 = fullRoutes[0].RouteItems[0] as PlumbingSource;
       if (source1 != null) {
         Name = basePointLookup[source1.BasePointId].Plan + ": " + basePointLookup[source1.BasePointId].Type;
       }
-
       BasePointLookup = basePointLookup;
       FullRoutes = DeepCopyFullRoutes(fullRoutes);
+      InitializeView();
+    }
+    public async void InitializeView() {
       NormalizeRoutes();
-      GenerateWaterCalculators();
-      GenerateGasCalculators();
+      await GenerateWaterCalculators();
+      await GenerateGasCalculators();
+      GenerateWaterPipeSizing();
+      GenerateGasPipeSizing();
       GenerateScenes();
     }
 
@@ -723,15 +739,33 @@ namespace GMEPPlumbing.Views
           }
       }
     }
-    private void ExecuteCalculate(object parameter) {
+    private async void ExecuteCalculate(object parameter) {
       var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
       ed.WriteMessage("\nCalculating pipe sizes...");
+      IsLoading = true;
       GenerateWaterPipeSizing();
       GenerateGasPipeSizing();
+      await UploadCalculators();
       RegenerateScenes();
+      IsLoading = false;
     }
-
-    public void GenerateWaterCalculators() {
+    private async void ExecuteSave(object parameter) {
+      var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
+      ed.WriteMessage("\nSaving route info...");
+      IsLoading = true;
+      await UploadCalculators();
+      IsLoading = false;
+    }
+    public async Task UploadCalculators() {
+      var service = ServiceLocator.MariaDBService;
+      foreach (var calculator in WaterCalculators.Values) {
+        await service.UpdatePlumbingWaterCalculations(calculator);
+      }
+      foreach (var calculator in GasCalculators.Values) {
+        await service.UpdatePlumbingGasCalculations(calculator);
+      }
+    }
+    public async Task GenerateWaterCalculators() {
       WaterCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
@@ -759,13 +793,20 @@ namespace GMEPPlumbing.Views
                 name = "Waste Output";
                 break;
             }
-
-            WaterCalculators[plumbingSource.Id] = new WaterCalculator(name, plumbingSource.Pressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
+            double minSourcePressure =  plumbingSource.Pressure;
+            Tuple<string, double, ObservableCollection<WaterLoss>, ObservableCollection<WaterAddition>> info  = await ServiceLocator.MariaDBService.GetPlumbingWaterCalculations(plumbingSource.Id);
+            if (info != null) {
+              name = info.Item1;
+              minSourcePressure = info.Item2;
+              waterLosses = info.Item3;
+              waterAdditions = info.Item4;
+            }
+            WaterCalculators[plumbingSource.Id] = new WaterCalculator(plumbingSource.Id, name, minSourcePressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
           }
         }
       }
     }
-    public void GenerateGasCalculators() {
+    public async Task GenerateGasCalculators() {
      GasCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 3) {
@@ -786,8 +827,14 @@ namespace GMEPPlumbing.Views
                 name = "Waste Output";
                 break;
             }
-
-            GasCalculators[plumbingSource.Id] = new GasCalculator(name);
+            Tuple<string, string, int, string> info = await ServiceLocator.MariaDBService.GetPlumbingGasCalculations(plumbingSource.Id);
+            if (info != null) {
+              GasPipeSizingChart gasChart = new GasPipeSizingChart(info.Item2, info.Item4, info.Item3);
+              GasCalculators[plumbingSource.Id] = new GasCalculator(plumbingSource.Id, info.Item1, gasChart);
+            }
+            else {
+              GasCalculators[plumbingSource.Id] = new GasCalculator(plumbingSource.Id, name);
+            }
           }
         }
       }

@@ -497,7 +497,13 @@ namespace GMEPPlumbing {
       get => _description;
       set { if (_description != value) { _description = value; OnPropertyChanged(); } }
     }
-    public GasCalculator(string description, GasPipeSizingChart chosenChart = null) {
+    public string _sourceId;
+    public string SourceId {
+      get => _sourceId;
+      set { if (_sourceId != value) { _sourceId = value; OnPropertyChanged(); } }
+    }
+    public GasCalculator(string sourceId, string description, GasPipeSizingChart chosenChart = null) {
+      SourceId = sourceId;
       MenuItems = new ObservableCollection<MenuItemViewModel> {
         new MenuItemViewModel {
           Name = "Natural Gas",
@@ -612,6 +618,7 @@ namespace GMEPPlumbing {
     private double _systemLength;
     private double _developedSystemLength;
     private double _averagePressureDrop;
+    private string _sourceId;
 
     public string Description {
       get => _description;
@@ -637,12 +644,16 @@ namespace GMEPPlumbing {
       get => _averagePressureDrop;
       set { if (_averagePressureDrop != value) { _averagePressureDrop = value; OnPropertyChanged(); } }
     }
+    public string SourceId {
+      get => _sourceId;
+      set { if (_sourceId != value) { _sourceId = value; OnPropertyChanged(); } }
+    }
 
     public ObservableCollection<WaterLoss> Losses { get; } = new ObservableCollection<WaterLoss>();
     public ObservableCollection<WaterAddition> Additions { get; } = new ObservableCollection<WaterAddition>();
 
 
-    public WaterCalculator(string description,
+    public WaterCalculator(string sourceId, string description,
         double minSourcePressure,
         double availableFrictionPressure,
         double systemLength,
@@ -650,6 +661,7 @@ namespace GMEPPlumbing {
         double averagePressureDrop,
         ObservableCollection<WaterLoss> losses,
         ObservableCollection<WaterAddition> additions) {
+      SourceId = sourceId;
       Description = description;
       MinSourcePressure = minSourcePressure;
       AvailableFrictionPressure = availableFrictionPressure;
@@ -657,9 +669,15 @@ namespace GMEPPlumbing {
       DevelopedSystemLength = developedSystemLength;
       AveragePressureDrop = averagePressureDrop;
       if (losses != null)
-        foreach (var loss in losses) Losses.Add(loss);
+        foreach (var loss in losses) { 
+          loss.PropertyChanged += LossItem_PropertyChanged;
+          Losses.Add(loss); 
+        }
       if (additions != null)
-        foreach (var addition in additions) Additions.Add(addition);
+        foreach (var addition in additions) {
+          addition.PropertyChanged += AdditionItem_PropertyChanged;
+          Additions.Add(addition); 
+        }
       Losses.CollectionChanged += Losses_CollectionChanged;
       Additions.CollectionChanged += Additions_CollectionChanged;
       DeterminePressure();

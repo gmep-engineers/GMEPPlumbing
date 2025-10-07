@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:GMEPPlumbing.Views"
              xmlns:helix="http://helix-toolkit.org/wpf"
+             xmlns:wpfAnimatedGif="http://wpfanimatedgif.codeplex.com"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
@@ -177,7 +178,47 @@
                                         </ListBox.ItemTemplate>
                                     </ListBox>
                                     <Border HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70" Background="#FF4E4E52">
-                                        <Button HorizontalAlignment="Center" Margin="5" Content="Calculate" Command="{Binding CalculateCommand}"/>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition>
+                                                    <RowDefinition.Style>
+                                                        <Style TargetType="RowDefinition">
+                                                            <Setter Property="Height" Value="0"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                                                    <Setter Property="Height" Value="Auto"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </RowDefinition.Style>
+                                                </RowDefinition>
+                                            </Grid.RowDefinitions>
+                                            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Button Margin="5" Content="Save" Command="{Binding SaveCommand}"/>
+                                                <Button Margin="5" Content="Calculate" Command="{Binding CalculateCommand}"/>
+                                            </StackPanel>
+                                            <Viewbox Grid.Row="1" Width="40" Height="40" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <Canvas Width="32" Height="32">
+                                                    <Ellipse Width="32" Height="32" Stroke="#FF6E6E70" StrokeThickness="4" Opacity="0.3"/>
+                                                    <Ellipse Width="32" Height="32" Stroke="#FF6E6E70" StrokeThickness="4">
+                                                        <Ellipse.StrokeDashArray>2 6</Ellipse.StrokeDashArray>
+                                                        <Ellipse.RenderTransform>
+                                                            <RotateTransform x:Name="SpinnerRotate" CenterX="16" CenterY="16"/>
+                                                        </Ellipse.RenderTransform>
+                                                        <Ellipse.Triggers>
+                                                            <EventTrigger RoutedEvent="Loaded">
+                                                                <BeginStoryboard>
+                                                                    <Storyboard RepeatBehavior="Forever">
+                                                                        <DoubleAnimation Storyboard.TargetProperty="(Ellipse.RenderTransform).(RotateTransform.Angle)" From="0" To="360" Duration="0:0:1"/>
+                                                                    </Storyboard>
+                                                                </BeginStoryboard>
+                                                            </EventTrigger>
+                                                        </Ellipse.Triggers>
+                                                    </Ellipse>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Grid>
                                     </Border>
                                 </StackPanel>
                             </Expander.Content>

@@ -76,6 +76,13 @@ namespace GMEPPlumbing.Services
       }
       return 0;
     }
+    double GetSafeDouble(MySqlDataReader reader, string fieldName) {
+      int index = reader.GetOrdinal(fieldName);
+      if (!reader.IsDBNull(index)) {
+        return reader.GetDouble(index);
+      }
+      return 0;
+    }
 
     public void OpenConnectionSync() {
       if (Connection.State == System.Data.ConnectionState.Closed) {
@@ -847,6 +854,178 @@ namespace GMEPPlumbing.Services
       await command.ExecuteNonQueryAsync();
       await conn.CloseAsync();
     }*/
+    public async Task<Tuple<string, double, ObservableCollection<WaterLoss>, ObservableCollection<WaterAddition>>> GetPlumbingWaterCalculations(string sourceId) {
+      string sourceName = "";
+      double minSourcePressure = 0;
+      string tempSourceId = "";
+      ObservableCollection<WaterLoss> losses = new ObservableCollection<WaterLoss>();
+      ObservableCollection<WaterAddition> additions = new ObservableCollection<WaterAddition>();
+
+      using (var conn = await OpenNewConnectionAsync()) {
+        string query = "SELECT * FROM plumbing_water_calculation_data WHERE source_id = @sourceId";
+        using (var cmd = new MySqlCommand(query, conn)) {
+          cmd.Parameters.AddWithValue("@sourceId", sourceId);
+          using (var reader = (MySqlDataReader) await cmd.ExecuteReaderAsync()) {
+            if (await reader.ReadAsync()) {
+              sourceName = GetSafeString(reader, "source_name");
+              minSourcePressure = reader.GetDouble("min_source_pressure");
+              tempSourceId = GetSafeString(reader, "source_id");
+            }
+          }
+        }
+        query = "SELECT * FROM plumbing_water_calculation_losses WHERE source_id = @sourceId";
+        using (var cmd = new MySqlCommand(query, conn)) {
+          cmd.Parameters.AddWithValue("@sourceId", sourceId);
+          using (var reader = (MySqlDataReader)await cmd.ExecuteReaderAsync()) {
+            while (await reader.ReadAsync()) {
+              losses.Add(new WaterLoss {
+                Description = GetSafeString(reader, "description"),
+                Value = reader.GetDouble("psi")
+              });
+            }
+          }
+        }
+        query = "SELECT * FROM plumbing_water_calculation_additions WHERE source_id = @sourceId";
+        using (var cmd = new MySqlCommand(query, conn)) {
+          cmd.Parameters.AddWithValue("@sourceId", sourceId);
+          using (var reader = (MySqlDataReader)await cmd.ExecuteReaderAsync()) {
+            while (await reader.ReadAsync()) {
+              additions.Add(new WaterAddition {
+                Description = GetSafeString(reader, "description"),
+                Value = GetSafeDouble(reader, "psi")
+              });
+            }
+          }
+        }
+      }
+      if (tempSourceId == "") {
+        return null;
+      }
+      return Tuple.Create(sourceName, minSourcePressure, losses, additions);
+    }
+    public async Task<Tuple<string, string, int, string>> GetPlumbingGasCalculations(string sourceId) {
+      string sourceName = "";
+      string gasType = "";
+      int chartNo = 0;
+      string pipeType = "";
+      string tempSourceId = "";
+
+      using (var conn = await OpenNewConnectionAsync()) {
+        string query = "SELECT * FROM plumbing_gas_calculation_data WHERE source_id = @sourceId";
+        using (var cmd = new MySqlCommand(query, conn)) {
+          cmd.Parameters.AddWithValue("@sourceId", sourceId);
+          using (var reader = (MySqlDataReader)await cmd.ExecuteReaderAsync()) {
+            if (await reader.ReadAsync()) {
+              sourceName = GetSafeString(reader, "source_name");
+              gasType = GetSafeString(reader, "gas_type");
+              chartNo = GetSafeInt(reader, "chart_no");
+              pipeType = GetSafeString(reader, "pipe_type");
+              tempSourceId = GetSafeString(reader, "source_id");
+            }
+          }
+        }
+      }
+      if (tempSourceId == "") {
+        return null;
+      }
+      return Tuple.Create(sourceName, gasType, chartNo, pipeType);
+    }
+    public async Task UpdatePlumbingGasCalculations(GasCalculator calculator) {
+      using (var conn = await OpenNewConnectionAsync()) {
+        using (var transaction = conn.BeginTransaction()) {
+          string deleteQuery = @"
+                DELETE FROM plumbing_gas_calculation_data
+                WHERE source_id = @sourceId";
+          using (var cmd = new MySqlCommand(deleteQuery, conn, transaction)) {
+            cmd.Parameters.AddWithValue("@sourceId", calculator.SourceId);
+            await cmd.ExecuteNonQueryAsync();
+          }
+            string query = @"
+                INSERT INTO plumbing_gas_calculation_data
+                (source_id, source_name, gas_type, pipe_type, chart_no)
+                VALUES (@sourceId, @sourceName, @gasType, @pipeType, @chartNo)
+                ON DUPLICATE KEY UPDATE
+                    source_name = @sourceName,
+                    gas_type = @gasType,
+                    pipe_type = @pipeType,
+                    chart_no = @chartNo";
+          using (var cmd = new MySqlCommand(query, conn)) {
+            cmd.Parameters.AddWithValue("@sourceId", calculator.SourceId);
+            cmd.Parameters.AddWithValue("@sourceName", calculator.Description);
+            cmd.Parameters.AddWithValue("@gasType", calculator.ChosenChart.GasType);
+            cmd.Parameters.AddWithValue("@pipeType", calculator.ChosenChart.PipeType);
+            cmd.Parameters.AddWithValue("@chartNo", calculator.ChosenChart.ChartIndex);
+            await cmd.ExecuteNonQueryAsync();
+          }
+          transaction.Commit();
+        }
+      }
+    }
+    public async Task UpdatePlumbingWaterCalculations(WaterCalculator calculator) {
+      using (var conn = await OpenNewConnectionAsync()) {
+        using (var transaction = conn.BeginTransaction()) {
+          var tables = new[] { "plumbing_water_calculation_data", "plumbing_water_calculation_additions", "plumbing_water_calculation_losses"};
+          foreach (var table in tables) {
+            var deleteQuery = $"DELETE FROM {table} WHERE source_id = @sourceId";
+            using (var cmd = new MySqlCommand(deleteQuery, conn, transaction)) {
+              cmd.Parameters.AddWithValue("@sourceId", calculator.SourceId);
+              await cmd.ExecuteNonQueryAsync();
+            }
+          }
+          // Insert additions
+          string additionQuery = @"
+                INSERT INTO plumbing_water_calculation_additions
+                (source_id, description, psi)
+                VALUES (@sourceId, @description, @psi)
+                ON DUPLICATE KEY UPDATE
+                    description = @description,
+                    psi = @psi";
+          foreach (var addition in calculator.Additions) {
+            using (var cmd = new MySqlCommand(additionQuery, conn, transaction)) {
+              cmd.Parameters.AddWithValue("@sourceId", calculator.SourceId);
+              cmd.Parameters.AddWithValue("@description", addition.Description);
+              cmd.Parameters.AddWithValue("@psi", addition.Value);
+              await cmd.ExecuteNonQueryAsync();
+            }
+          }
+
+          // Insert losses
+          string lossQuery = @"
+                INSERT INTO plumbing_water_calculation_losses
+                (source_id, description, psi)
+                VALUES (@sourceId, @description, @psi)
+                ON DUPLICATE KEY UPDATE
+                    description = @description,
+                    psi = @psi";
+          foreach (var loss in calculator.Losses) {
+            using (var cmd = new MySqlCommand(lossQuery, conn, transaction)) {
+              cmd.Parameters.AddWithValue("@sourceId", calculator.SourceId);
+              cmd.Parameters.AddWithValue("@description", loss.Description);
+              cmd.Parameters.AddWithValue("@psi", loss.Value);
+              await cmd.ExecuteNonQueryAsync();
+            }
+          }
+
+          // Insert main calculation data
+          string mainQuery = @"
+                INSERT INTO plumbing_water_calculation_data
+                (source_id, source_name, min_source_pressure)
+                VALUES (@sourceId, @sourceName, @minSourcePressure)
+                ON DUPLICATE KEY UPDATE
+                    source_name = @sourceName,
+                    min_source_pressure = @minSourcePressure";
+
+          using (var cmd = new MySqlCommand(mainQuery, conn, transaction)) {
+            cmd.Parameters.AddWithValue("@sourceId", calculator.SourceId);
+            cmd.Parameters.AddWithValue("@sourceName", calculator.Description);
+            cmd.Parameters.AddWithValue("@minSourcePressure", calculator.MinSourcePressure);
+            await cmd.ExecuteNonQueryAsync();
+          }
+          transaction.Commit();
+        }
+
+      }
+    }
 
     public async Task UpdatePlumbingHorizontalRoutes(
       List<PlumbingHorizontalRoute> routes,
