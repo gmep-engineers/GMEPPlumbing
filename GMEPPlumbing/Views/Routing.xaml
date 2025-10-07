@@ -177,7 +177,28 @@
                                         </ListBox.ItemTemplate>
                                     </ListBox>
                                     <Border HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70" Background="#FF4E4E52">
-                                        <Button HorizontalAlignment="Center" Margin="5" Content="Calculate" Command="{Binding CalculateCommand}"/>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition>
+                                                    <RowDefinition.Style>
+                                                        <Style TargetType="RowDefinition">
+                                                            <Setter Property="Height" Value="0"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                                                    <Setter Property="Height" Value="Auto"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </RowDefinition.Style>
+                                                </RowDefinition>
+                                            </Grid.RowDefinitions>
+                                            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Button Margin="5" Content="Save" Command="{Binding SaveCommand}"/>
+                                                <Button Margin="5" Content="Calculate" Command="{Binding CalculateCommand}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Row="1" Text="Loading" FontSize="20" HorizontalAlignment="Center"  FontWeight="Bold"/>
+                                        </Grid>
                                     </Border>
                                 </StackPanel>
                             </Expander.Content>

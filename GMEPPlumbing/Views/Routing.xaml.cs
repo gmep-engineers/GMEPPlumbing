@@ -609,9 +609,21 @@ namespace GMEPPlumbing.Views
     public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
     public string Name { get; set; } = "";
     public ICommand CalculateCommand { get; }
+    public ICommand SaveCommand { get; }
+
+    public bool isLoading = false;
+    public bool IsLoading {
+      get { return isLoading; }
+      set {
+        isLoading = value;
+        OnPropertyChanged(nameof(IsLoading));
+      }
+    }
+
     public View(string viewportId, List<PlumbingFullRoute> fullRoutes, Dictionary<string, PlumbingPlanBasePoint> basePointLookup) {
       ViewportId = viewportId;
       CalculateCommand = new RelayCommand(ExecuteCalculate);
+      SaveCommand = new RelayCommand(ExecuteSave);
       PlumbingSource source1 = fullRoutes[0].RouteItems[0] as PlumbingSource;
       if (source1 != null) {
         Name = basePointLookup[source1.BasePointId].Plan + ": " + basePointLookup[source1.BasePointId].Type;
@@ -723,15 +735,24 @@ namespace GMEPPlumbing.Views
           }
       }
     }
-    private void ExecuteCalculate(object parameter) {
+    private async void ExecuteCalculate(object parameter) {
       var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
       ed.WriteMessage("\nCalculating pipe sizes...");
+      IsLoading = true;
       GenerateWaterPipeSizing();
       GenerateGasPipeSizing();
-      UploadCalculators();
+      await UploadCalculators();
       RegenerateScenes();
+      IsLoading = false;
     }
-    public async void UploadCalculators() {
+    private async void ExecuteSave(object parameter) {
+      var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
+      ed.WriteMessage("\nSaving route info...");
+      IsLoading = true;
+      await UploadCalculators();
+      IsLoading = false;
+    }
+    public async Task UploadCalculators() {
       var service = ServiceLocator.MariaDBService;
       foreach (var calculator in WaterCalculators.Values) {
         await service.UpdatePlumbingWaterCalculations(calculator);
