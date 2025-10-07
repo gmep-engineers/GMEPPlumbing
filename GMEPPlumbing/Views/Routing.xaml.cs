@@ -728,10 +728,19 @@ namespace GMEPPlumbing.Views
       ed.WriteMessage("\nCalculating pipe sizes...");
       GenerateWaterPipeSizing();
       GenerateGasPipeSizing();
+      UploadCalculators();
       RegenerateScenes();
     }
-
-    public void GenerateWaterCalculators() {
+    public async void UploadCalculators() {
+      var service = ServiceLocator.MariaDBService;
+      foreach (var calculator in WaterCalculators.Values) {
+        await service.UpdatePlumbingWaterCalculations(calculator);
+      }
+      /*foreach (var calculator in GasCalculators.Values) {
+        await service.UpsertPlumbingGasCalculator(calculator, ViewportId);
+      }*/
+    }
+    public async void GenerateWaterCalculators() {
       WaterCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
@@ -759,8 +768,15 @@ namespace GMEPPlumbing.Views
                 name = "Waste Output";
                 break;
             }
-
-            WaterCalculators[plumbingSource.Id] = new WaterCalculator(plumbingSource.Id, name, plumbingSource.Pressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
+            double minSourcePressure =  plumbingSource.Pressure;
+            Tuple<string, double, ObservableCollection<WaterLoss>, ObservableCollection<WaterAddition>> info  = await ServiceLocator.MariaDBService.GetPlumbingWaterCalculations(plumbingSource.Id);
+            if (info != null) {
+              name = info.Item1;
+              minSourcePressure = info.Item2;
+              waterLosses = info.Item3;
+              waterAdditions = info.Item4;
+            }
+            WaterCalculators[plumbingSource.Id] = new WaterCalculator(plumbingSource.Id, name, minSourcePressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
           }
         }
       }

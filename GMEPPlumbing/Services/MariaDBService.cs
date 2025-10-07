@@ -854,11 +854,12 @@ namespace GMEPPlumbing.Services
       await command.ExecuteNonQueryAsync();
       await conn.CloseAsync();
     }*/
-    public async Task<Tuple<string, double, List<WaterLoss>, List<WaterAddition>>> GetPlumbingWaterCalculations(string sourceId) {
+    public async Task<Tuple<string, double, ObservableCollection<WaterLoss>, ObservableCollection<WaterAddition>>> GetPlumbingWaterCalculations(string sourceId) {
       string sourceName = "";
       double minSourcePressure = 0;
-      List<WaterLoss> losses = new List<WaterLoss>();
-      List<WaterAddition> additions = new List<WaterAddition>();
+      string tempSourceId = "";
+      ObservableCollection<WaterLoss> losses = new ObservableCollection<WaterLoss>();
+      ObservableCollection<WaterAddition> additions = new ObservableCollection<WaterAddition>();
 
       using (var conn = await OpenNewConnectionAsync()) {
         string query = "SELECT * FROM plumbing_water_calculation_data WHERE source_id = @sourceId";
@@ -867,7 +868,8 @@ namespace GMEPPlumbing.Services
           using (var reader = (MySqlDataReader) await cmd.ExecuteReaderAsync()) {
             if (await reader.ReadAsync()) {
               sourceName = GetSafeString(reader, "source_name");
-              minSourcePressure = reader.GetDouble("min_source_pressure"); ;
+              minSourcePressure = reader.GetDouble("min_source_pressure");
+              tempSourceId = GetSafeString(reader, "source_id");
             }
           }
         }
@@ -878,7 +880,7 @@ namespace GMEPPlumbing.Services
             while (await reader.ReadAsync()) {
               losses.Add(new WaterLoss {
                 Description = GetSafeString(reader, "description"),
-                Value = reader.GetDouble("min_source_pressure")
+                Value = reader.GetDouble("psi")
               });
             }
           }
@@ -895,6 +897,9 @@ namespace GMEPPlumbing.Services
             }
           }
         }
+      }
+      if (tempSourceId == "") {
+        return null;
       }
       return Tuple.Create(sourceName, minSourcePressure, losses, additions);
     }
