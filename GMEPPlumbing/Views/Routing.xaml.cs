@@ -760,7 +760,7 @@ namespace GMEPPlumbing.Views
                 break;
             }
 
-            WaterCalculators[plumbingSource.Id] = new WaterCalculator(name, plumbingSource.Pressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
+            WaterCalculators[plumbingSource.Id] = new WaterCalculator(plumbingSource.Id, name, plumbingSource.Pressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
           }
         }
       }

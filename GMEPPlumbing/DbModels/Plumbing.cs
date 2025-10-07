@@ -612,6 +612,7 @@ namespace GMEPPlumbing {
     private double _systemLength;
     private double _developedSystemLength;
     private double _averagePressureDrop;
+    private string _sourceId;
 
     public string Description {
       get => _description;
@@ -637,12 +638,16 @@ namespace GMEPPlumbing {
       get => _averagePressureDrop;
       set { if (_averagePressureDrop != value) { _averagePressureDrop = value; OnPropertyChanged(); } }
     }
+    public string SourceId {
+      get => _sourceId;
+      set { if (_sourceId != value) { _sourceId = value; OnPropertyChanged(); } }
+    }
 
     public ObservableCollection<WaterLoss> Losses { get; } = new ObservableCollection<WaterLoss>();
     public ObservableCollection<WaterAddition> Additions { get; } = new ObservableCollection<WaterAddition>();
 
 
-    public WaterCalculator(string description,
+    public WaterCalculator(string sourceId, string description,
         double minSourcePressure,
         double availableFrictionPressure,
         double systemLength,
@@ -650,6 +655,7 @@ namespace GMEPPlumbing {
         double averagePressureDrop,
         ObservableCollection<WaterLoss> losses,
         ObservableCollection<WaterAddition> additions) {
+      SourceId = sourceId;
       Description = description;
       MinSourcePressure = minSourcePressure;
       AvailableFrictionPressure = availableFrictionPressure;
