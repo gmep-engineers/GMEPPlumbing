@@ -321,7 +321,7 @@ namespace GMEPPlumbing.Views
       bool endLineFlag = false;
       foreach (var box in selectedBoxes.Where(b => b.Type == "Gas")) {
         if (endLineFlag) {
-          additionalLabels += "\n";
+          additionalLabels += "&";
         }
         else {
           endLineFlag = true;
@@ -448,12 +448,11 @@ namespace GMEPPlumbing.Views
          SourceLabelText
         );
       }
-      List<string> lines = AdditionalLabelText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-      foreach (var line in lines) {
+      if (AdditionalLabelText != "") {
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
           TextHorizontalMode.TextLeft,
-          line
+          AdditionalLabelText
         );
       }
     }
