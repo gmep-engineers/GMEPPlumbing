@@ -663,9 +663,15 @@ namespace GMEPPlumbing {
       DevelopedSystemLength = developedSystemLength;
       AveragePressureDrop = averagePressureDrop;
       if (losses != null)
-        foreach (var loss in losses) Losses.Add(loss);
+        foreach (var loss in losses) { 
+          loss.PropertyChanged += LossItem_PropertyChanged;
+          Losses.Add(loss); 
+        }
       if (additions != null)
-        foreach (var addition in additions) Additions.Add(addition);
+        foreach (var addition in additions) {
+          addition.PropertyChanged += AdditionItem_PropertyChanged;
+          Additions.Add(addition); 
+        }
       Losses.CollectionChanged += Losses_CollectionChanged;
       Additions.CollectionChanged += Additions_CollectionChanged;
       DeterminePressure();
