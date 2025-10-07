@@ -628,12 +628,16 @@ namespace GMEPPlumbing.Views
       if (source1 != null) {
         Name = basePointLookup[source1.BasePointId].Plan + ": " + basePointLookup[source1.BasePointId].Type;
       }
-
       BasePointLookup = basePointLookup;
       FullRoutes = DeepCopyFullRoutes(fullRoutes);
+      InitializeView();
+    }
+    public async void InitializeView() {
       NormalizeRoutes();
-      GenerateWaterCalculators();
-      GenerateGasCalculators();
+      await GenerateWaterCalculators();
+      await GenerateGasCalculators();
+      GenerateWaterPipeSizing();
+      GenerateGasPipeSizing();
       GenerateScenes();
     }
 
@@ -761,7 +765,7 @@ namespace GMEPPlumbing.Views
         await service.UpsertPlumbingGasCalculator(calculator, ViewportId);
       }*/
     }
-    public async void GenerateWaterCalculators() {
+    public async Task GenerateWaterCalculators() {
       WaterCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
@@ -802,7 +806,7 @@ namespace GMEPPlumbing.Views
         }
       }
     }
-    public void GenerateGasCalculators() {
+    public async Task GenerateGasCalculators() {
      GasCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 3) {
