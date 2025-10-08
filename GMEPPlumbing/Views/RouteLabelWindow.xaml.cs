@@ -316,17 +316,34 @@ namespace GMEPPlumbing.Views
         SourceLabelText = "";
       }
 
-      //Gas Stuffs
+      //Fixture Unit Labels
       string additionalLabels = "";
       bool endLineFlag = false;
-      foreach (var box in selectedBoxes.Where(b => b.Type == "Gas")) {
+      if (selectedBoxes.Count > 0) {
+        additionalLabels += "(";
+      }
+      foreach (var box in selectedBoxes) {
         if (endLineFlag) {
           additionalLabels += "&";
         }
         else {
           endLineFlag = true;
         }
-        additionalLabels += $"({box.CFH}CFH@~{box.LongestRunLength})";
+        if (box.Type == "Gas") {
+          additionalLabels += $"{box.Units}CFH@~{box.LongestRunLength}";
+        }
+        if (box.Type == "Vent") {
+          additionalLabels += $"{box.Units}DFU";
+        }
+        if (box.Type == "Cold Water") {
+          additionalLabels += $"{box.Units}CWFU";
+        }
+        if (box.Type == "Hot Water") {
+          additionalLabels += $"{box.Units}HWFU";
+        }
+      }
+      if (selectedBoxes.Count > 0) {
+        additionalLabels += ")";
       }
       AdditionalLabelText = additionalLabels.ToUpper();
 

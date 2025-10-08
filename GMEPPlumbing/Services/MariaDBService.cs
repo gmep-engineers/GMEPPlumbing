@@ -1194,8 +1194,8 @@ namespace GMEPPlumbing.Services
       if (boxes.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_route_info_boxes
-              (project_id, viewport_id, component_id, base_point_id, pipe_size, type, location_description, cfh, longest_run_length, direction_description, is_vertical_route, segment_length, source_description)
-              VALUES (@projectId, @viewportId, @componentId, @basePointId, @pipeSize, @type, @locationDescription, @cfh, @longestRunLength, @directionDescription, @isVerticalRoute, @segmentLength, @sourceDescription)";
+              (project_id, viewport_id, component_id, base_point_id, pipe_size, type, location_description, units, longest_run_length, direction_description, is_vertical_route, segment_length, source_description)
+              VALUES (@projectId, @viewportId, @componentId, @basePointId, @pipeSize, @type, @locationDescription, @units, @longestRunLength, @directionDescription, @isVerticalRoute, @segmentLength, @sourceDescription)";
         foreach (var box in boxes) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
           command.Parameters.AddWithValue("@viewportId", viewportId);
@@ -1205,7 +1205,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@pipeSize", box.PipeSize);
           command.Parameters.AddWithValue("@type", box.Type);
           command.Parameters.AddWithValue("@locationDescription", box.LocationDescription);
-          command.Parameters.AddWithValue("@cfh", box.CFH);
+          command.Parameters.AddWithValue("@units", box.Units);
           command.Parameters.AddWithValue("@longestRunLength", box.LongestRunLength);
           command.Parameters.AddWithValue("@directionDescription", box.DirectionDescription);
           command.Parameters.AddWithValue("@isVerticalRoute", box.IsVerticalRoute);
@@ -1489,7 +1489,7 @@ namespace GMEPPlumbing.Services
           reader.GetString("type"),
           reader.GetString("location_description"),
           reader.GetString("source_description"),
-          reader.GetString("cfh"),
+          reader.GetString("units"),
           reader.GetString("longest_run_length"),
           reader.GetString("direction_description"),
           reader.GetBoolean("is_vertical_route"),

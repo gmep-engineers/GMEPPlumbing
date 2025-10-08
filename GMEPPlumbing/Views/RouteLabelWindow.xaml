@@ -111,14 +111,67 @@
                                                         <Style TargetType="StackPanel">
                                                             <Setter Property="Visibility" Value="Visible"/>
                                                             <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding SelectedRouteInfoBox.CFH}" Value="">
+                                                                <DataTrigger Binding="{Binding SelectedRouteInfoBox.Units}" Value="">
                                                                     <Setter Property="Visibility" Value="Collapsed"/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
                                                     </StackPanel.Style>
-                                                    <TextBlock HorizontalAlignment="Center" Text="CFH: " FontWeight="SemiBold" />
-                                                    <TextBlock HorizontalAlignment="Center" Text="{Binding SelectedRouteInfoBox.CFH}" />
+                                                    <TextBlock HorizontalAlignment="Center" Text="CFH: " FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding SelectedRouteInfoBox.Type}" Value="Gas">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Text="CWFU: " FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding SelectedRouteInfoBox.Type}" Value="Cold Water">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Text="HWFU: " FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding SelectedRouteInfoBox.Type}" Value="Hot Water">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Text="DFU: " FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding SelectedRouteInfoBox.Type}" Value="Waste">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding SelectedRouteInfoBox.Type}" Value="Grease Waste">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding SelectedRouteInfoBox.Type}" Value="Vent">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Text="{Binding SelectedRouteInfoBox.Units}" />
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
                                                     <StackPanel.Style>
