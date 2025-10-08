@@ -201,6 +201,7 @@ namespace GMEPPlumbing.Views
             if (idx >= 0)
               cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
           }
+          cleanedSize = cleanedSize.Replace("\n", "").Replace("\r", "");
 
           //Uploading Route Info
           double segmentLength = horizontalRoute.EndPoint.DistanceTo(horizontalRoute.StartPoint);
@@ -407,8 +408,9 @@ namespace GMEPPlumbing.Views
           if (idx >= 0)
             cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
         }
-        string pipeLengthString = ToFeetInchesString(pipeLength);
+        cleanedSize = cleanedSize.Replace("\n", "").Replace("\r", "");
 
+        string pipeLengthString = ToFeetInchesString(pipeLength);
 
         foreach (var verticalRoute in verticalRoutes) {
           string locationDescription = "";
