@@ -438,6 +438,9 @@ namespace GMEPPlumbing.Views
             }
           }
         }
+        else {
+          CADObjectCommands.CreateEllipseJig();
+        }
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
           TextHorizontalMode.TextLeft,
@@ -459,10 +462,13 @@ namespace GMEPPlumbing.Views
             }
           }
         }
+        else {
+          CADObjectCommands.CreateEllipseJig();
+        }
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
           TextHorizontalMode.TextLeft,
-         SourceLabelText
+          SourceLabelText
         );
       }
       if (AdditionalLabelText != "") {
