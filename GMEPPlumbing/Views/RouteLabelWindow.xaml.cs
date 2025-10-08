@@ -439,7 +439,9 @@ namespace GMEPPlumbing.Views
           }
         }
         else {
-          CADObjectCommands.CreateEllipseJig();
+          if (RouteInfoBoxGroups.Count > 1) {
+            CADObjectCommands.CreateEllipseJig();
+          }
         }
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
@@ -463,7 +465,9 @@ namespace GMEPPlumbing.Views
           }
         }
         else {
-          CADObjectCommands.CreateEllipseJig();
+          if (RouteInfoBoxGroups.Count > 1) {
+            CADObjectCommands.CreateEllipseJig();
+          }
         }
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
