@@ -500,7 +500,6 @@ namespace GMEPPlumbing
           }
         }
       }
-      
     }
     public static Tuple<Point3d, Point3d> CreateArrowJig(
       string layerName,
