@@ -1054,7 +1054,7 @@ namespace GMEPPlumbing
               newRoute.VerticalRouteId = prop.Value.ToString();
             }
             if (prop.PropertyName == "length") {
-              prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor]).Item2 - routeHeight;
+              prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[startFloor], false, true).Item2 - routeHeight;
               newRoute.Length = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "start_height") {
@@ -1118,7 +1118,7 @@ namespace GMEPPlumbing
                 newRoute.VerticalRouteId = prop.Value.ToString();
               }
               if (prop.PropertyName == "length") {
-                prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
+                prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i], false, true).Item2;
                 newRoute.Length = Convert.ToDouble(prop.Value);
               }
               if (prop.PropertyName == "pipe_type") {
@@ -1344,7 +1344,7 @@ namespace GMEPPlumbing
                 newRoute.VerticalRouteId = prop.Value.ToString();
               }
               if (prop.PropertyName == "length") {
-                prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i]).Item2;
+                prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[i], false, true).Item2;
                 newRoute.Length = Convert.ToDouble(prop.Value);
               }
               if (prop.PropertyName == "pipe_type") {
