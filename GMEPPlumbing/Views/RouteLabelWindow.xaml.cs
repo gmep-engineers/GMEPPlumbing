@@ -173,7 +173,10 @@ namespace GMEPPlumbing.Views
         dropInfo.DropTargetAdorner = DropTargetAdorners.Highlight;
       }
     }
-
+    /// <summary>
+    /// meomeow
+    /// </summary>
+    /// <param name="dropInfo"></param>
     public void Drop(IDropInfo dropInfo) {
       var sourceGroup = dropInfo.Data as RouteInfoBoxGroup;
       var targetCollection = dropInfo.TargetCollection as ObservableCollection<RouteInfoBoxGroup>;
