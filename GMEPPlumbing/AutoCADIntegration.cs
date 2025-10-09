@@ -1433,7 +1433,7 @@ namespace GMEPPlumbing
               endRoute.VerticalRouteId = prop.Value.ToString();
             }
             if (prop.PropertyName == "length") {
-              prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[(int)endFloor]).Item2 - (double)endFloorHeight;
+              prop.Value = CADObjectCommands.GetHeightLimits(BasePointGUIDs[(int)endFloor], false, true).Item2 - (double)endFloorHeight;
               endRoute.Length = Convert.ToDouble(prop.Value);
             }
             if (prop.PropertyName == "start_height") {
