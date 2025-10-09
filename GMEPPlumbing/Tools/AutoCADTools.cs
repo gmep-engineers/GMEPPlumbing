@@ -469,7 +469,38 @@ namespace GMEPPlumbing
       BlockReference br = new BlockReference(point, blockId);
       return br;
     }
+    public static void CreateEllipseJig() {
+      var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
+      if (Scale == -1.0) {
+        SetScale();
+      }
+      PromptPointResult ppr = ed.GetPoint("\nSelect first point for ellipse:");
+      if (ppr.Status != PromptStatus.OK)
+        return;
 
+      EllipseJig jig = new EllipseJig(ppr.Value); 
+      PromptResult res = ed.Drag(jig);
+      if (res.Status == PromptStatus.OK) {
+        using (var tr = ed.Document.Database.TransactionManager.StartTransaction()) {
+          BlockTable bt = (BlockTable)tr.GetObject(ed.Document.Database.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+          btr.AppendEntity(jig.Entity);
+          tr.AddNewlyCreatedDBObject(jig.Entity, true);
+          tr.Commit();
+        }
+        DynamicLineJig lineJig = new DynamicLineJig(jig._endPoint, Scale, "", false);
+        PromptResult dynaLineJigRes = ed.Drag(lineJig);
+        if (dynaLineJigRes.Status == PromptStatus.OK) {
+          using (var tr = ed.Document.Database.TransactionManager.StartTransaction()) {
+            BlockTable bt = (BlockTable)tr.GetObject(ed.Document.Database.BlockTableId, OpenMode.ForRead);
+            BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+            btr.AppendEntity(lineJig.line);
+            tr.AddNewlyCreatedDBObject(lineJig.line, true);
+            tr.Commit();
+          }
+        }
+      }
+    }
     public static Tuple<Point3d, Point3d> CreateArrowJig(
       string layerName,
       Point3d center,

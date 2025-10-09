@@ -181,8 +181,8 @@ namespace GMEPPlumbing.Views
 
       if (sourceGroup != null && targetCollection != null && sourceCollection != null) {
         if (targetCollection.Count == 0 || targetCollection.First().RouteType == sourceGroup.RouteType) {
-          if (targetCollection.First().Type == sourceGroup.Type || (targetCollection.First().Type == "Cold Water" && sourceGroup.Type == "Hot Water") || (targetCollection.First().Type == "Hot Water" && sourceGroup.Type == "Cold Water")) {
-            if (targetCollection.First().LocationDescription == sourceGroup.LocationDescription && targetCollection.First().SourceDescription == sourceGroup.SourceDescription) {
+          if (targetCollection.Count == 0 || targetCollection.First().Type == sourceGroup.Type || (targetCollection.First().Type == "Cold Water" && sourceGroup.Type == "Hot Water") || (targetCollection.First().Type == "Hot Water" && sourceGroup.Type == "Cold Water")) {
+            if (targetCollection.Count == 0 || (targetCollection.First().LocationDescription == sourceGroup.LocationDescription && targetCollection.First().SourceDescription == sourceGroup.SourceDescription)) {
               sourceCollection.Remove(sourceGroup);
               targetCollection.Add(sourceGroup);
             }
@@ -316,17 +316,34 @@ namespace GMEPPlumbing.Views
         SourceLabelText = "";
       }
 
-      //Gas Stuffs
+      //Fixture Unit Labels
       string additionalLabels = "";
       bool endLineFlag = false;
-      foreach (var box in selectedBoxes.Where(b => b.Type == "Gas")) {
+      if (selectedBoxes.Count > 0) {
+        additionalLabels += "(";
+      }
+      foreach (var box in selectedBoxes) {
         if (endLineFlag) {
           additionalLabels += "&";
         }
         else {
           endLineFlag = true;
         }
-        additionalLabels += $"({box.CFH}CFH@~{box.LongestRunLength})";
+        if (box.Type == "Gas") {
+          additionalLabels += $"{box.Units}CFH@~{box.LongestRunLength}";
+        }
+        if (box.Type == "Vent") {
+          additionalLabels += $"{box.Units}DFU";
+        }
+        if (box.Type == "Cold Water") {
+          additionalLabels += $"{box.Units}CWFU";
+        }
+        if (box.Type == "Hot Water") {
+          additionalLabels += $"{box.Units}HWFU";
+        }
+      }
+      if (selectedBoxes.Count > 0) {
+        additionalLabels += ")";
       }
       AdditionalLabelText = additionalLabels.ToUpper();
 
@@ -421,6 +438,11 @@ namespace GMEPPlumbing.Views
             }
           }
         }
+        else {
+          if (RouteInfoBoxGroups.Count > 1) {
+            CADObjectCommands.CreateEllipseJig();
+          }
+        }
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
           TextHorizontalMode.TextLeft,
@@ -442,10 +464,15 @@ namespace GMEPPlumbing.Views
             }
           }
         }
+        else {
+          if (RouteInfoBoxGroups.Count > 1) {
+            CADObjectCommands.CreateEllipseJig();
+          }
+        }
         CADObjectCommands.CreateTextWithJig(
           CADObjectCommands.TextLayer,
           TextHorizontalMode.TextLeft,
-         SourceLabelText
+          SourceLabelText
         );
       }
       if (AdditionalLabelText != "") {

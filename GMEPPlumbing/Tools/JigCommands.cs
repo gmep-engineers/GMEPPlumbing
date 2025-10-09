@@ -14,6 +14,7 @@ using Microsoft.Extensions.FileSystemGlobbing.Internal.PathSegments;
 using MySqlX.XDevAPI.Common;
 using Line = Autodesk.AutoCAD.DatabaseServices.Line;
 using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
+using Ellipse = Autodesk.AutoCAD.DatabaseServices.Ellipse;
 
 namespace GMEPPlumbing
 {
@@ -23,8 +24,9 @@ namespace GMEPPlumbing
     private Point3d endPoint;
     private double scale;
     public Line line;
+    public bool Horizontal;
 
-    public DynamicLineJig(Point3d startPt, double scale, string equipId = "")
+    public DynamicLineJig(Point3d startPt, double scale, string equipId = "", bool horizontal = true)
     {
       this.scale = scale;
       startPoint = startPt;
@@ -35,6 +37,7 @@ namespace GMEPPlumbing
       Field isClone = new Field("false");
       line.SetField("gmep_equip_id", field);
       line.SetField("is_clone", isClone);
+      Horizontal = horizontal;
     }
 
     protected override bool WorldDraw(WorldDraw draw)
@@ -60,12 +63,67 @@ namespace GMEPPlumbing
       if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
         return SamplerStatus.NoChange;
 
-      endPoint = new Point3d(res.Value.X, startPoint.Y, startPoint.Z);
+      if (Horizontal) {
+        endPoint = new Point3d(res.Value.X, startPoint.Y, startPoint.Z);
+      }
+      else {
+        endPoint = new Point3d(res.Value.X, res.Value.Y, startPoint.Z);
+      }
       line.EndPoint = endPoint;
 
       return SamplerStatus.OK;
     }
   }
+  public class EllipseJig : DrawJig {
+    private Point3d _startPoint;
+    public Point3d _endPoint;
+    private Ellipse _ellipse;
+
+    public Ellipse Entity => _ellipse;
+
+    public EllipseJig(Point3d startPoint) {
+      _startPoint = startPoint;
+      _endPoint = startPoint;
+      // Initial ellipse, will be updated in Sampler
+      _ellipse = new Ellipse(_startPoint, Vector3d.ZAxis, Vector3d.XAxis, 0.1875, 0, 2 * Math.PI);
+      _ellipse.Layer = "D0";
+    }
+
+    protected override bool WorldDraw(WorldDraw draw) {
+      if (_ellipse != null)
+        draw.Geometry.Draw(_ellipse);
+      return true;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts) {
+      JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect second point for ellipse major axis:");
+      opts.BasePoint = _startPoint;
+      opts.UseBasePoint = true;
+      opts.Cursor = CursorType.RubberBand;
+
+      PromptPointResult res = prompts.AcquirePoint(opts);
+      if (res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
+      if (_endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+        return SamplerStatus.NoChange;
+
+      _endPoint = res.Value;
+      UpdateEllipse();
+      return SamplerStatus.OK;
+    }
+
+    private void UpdateEllipse() {
+      Vector3d majorAxis = _endPoint - _startPoint;
+      double majorRadius = majorAxis.Length / 2.0;
+      Point3d center = _startPoint + (majorAxis / 2.0);
+      Vector3d unitMajor = majorAxis.GetNormal();
+
+      _ellipse = new Ellipse(center, Vector3d.ZAxis, unitMajor * majorRadius, 0.1875, 0, 2 * Math.PI);
+      _ellipse.Layer = "D0";
+    }
+  }
+
   public class OffsetLineJig : DrawJig {
     private readonly Line _baseLine;
     private double _offsetDistance;
