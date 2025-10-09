@@ -3843,7 +3843,7 @@ namespace GMEPPlumbing
           basePointId = aboveBasePoint.Id;
         }
         else if (routeOption == "From-Below") {
-          chosenBasePoint = belowBasePoint;
+          chosenBasePoint = activeBasePointRef;
         }
         else if (routeOption == "To-Roof") {
           chosenBasePoint = activeBasePointRef;
