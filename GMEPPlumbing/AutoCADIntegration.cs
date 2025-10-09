@@ -3894,9 +3894,7 @@ namespace GMEPPlumbing
             if (blockName == "GMEP CW FIXTURE POINT") {
               if (flowTypeId == 1) {
                 PlumbingVerticalRoute route = null;
-                double? floorHeight = null;
                 if (routeOption == "To-Above") {
-                  floorHeight = aboveBasePoint.FloorHeight;
                   double aboveRouteHeight = aboveBasePoint.RouteHeight;
                   route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor + 1, "", null, aboveRouteHeight, "Vertical route", "Flush Tank").Last().Value;
                 }
@@ -3941,7 +3939,18 @@ namespace GMEPPlumbing
 
               }
               else if (flowTypeId == 2) {
-                PlumbingVerticalRoute route = VerticalRoute("ColdWater", 0, CADObjectCommands.ActiveFloor, "Up", routeHeight, null, "Vertical route back up to fixture height: ", "Flush Valve").First().Value;
+                PlumbingVerticalRoute route = null;
+                if (routeOption == "To-Above") {
+                  double aboveRouteHeight = aboveBasePoint.RouteHeight;
+                  route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor + 1, "", null, aboveRouteHeight, "Vertical route", "Flush Valve").Last().Value;
+                }
+                else if (routeOption == "From-Below") {
+                  double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
+                  route = VerticalRoute("ColdWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Valve", true).First().Value;
+                }
+                else if (routeOption == "To-Roof") {
+                  route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null, "Vertical route back up to fixture height: ", "Flush Valve").First().Value;
+                }
                 PromptKeywordOptions pko = new PromptKeywordOptions("Left or Right?");
                 pko.Keywords.Add("Left");
                 pko.Keywords.Add("Right");
@@ -3987,12 +3996,12 @@ namespace GMEPPlumbing
                 Vector3d direction2 = new Vector3d(anotherNewPoint.X - midPoint.X, anotherNewPoint.Y - midPoint.Y, 0);
                 Vector3d offset2 = direction2.GetNormal() * offsetDistance2;
 
-                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, anotherNewPoint, midPoint, route.Id);
-                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, newPoint, StartPos, route.Id);
+                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, anotherNewPoint, midPoint, route.Id, chosenBasePoint);
+                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, newPoint, StartPos, route.Id, chosenBasePoint);
 
-                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, StartPos, newPoint, route.Id);
+                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, StartPos, newPoint, route.Id, chosenBasePoint);
                 Point3d fixturePos = new Point3d(anotherNewPoint.X - offset2.X, anotherNewPoint.Y - offset2.Y, anotherNewPoint.Z);
-                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, midPoint, fixturePos, route.Id);
+                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, midPoint, fixturePos, route.Id, chosenBasePoint);
 
                 using (Transaction tr = db.TransactionManager.StartTransaction()) {
                   BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -4055,17 +4064,18 @@ namespace GMEPPlumbing
               }
             }
             else if (blockName == "GMEP HW FIXTURE POINT") {
-              PlumbingVerticalRoute route2 = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight, null, "Vertical route down to below floor: ").First().Value;
-              CircleStartPointPreviewJig circleJig = new CircleStartPointPreviewJig(route2.Position, 1.5);
-              PromptResult circlePromptResult = ed.Drag(circleJig);
-              if (circlePromptResult.Status != PromptStatus.OK) {
-                ed.WriteMessage("\nCommand cancelled.");
-                return;
+              PlumbingVerticalRoute route = null;
+              if (routeOption == "To-Above") {
+                double aboveRouteHeight = aboveBasePoint.RouteHeight;
+                route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor + 1, "", null, aboveRouteHeight, "Vertical route", "Flush Tank").Last().Value;
               }
-              Point3d firstPoint = circleJig.ProjectedPoint;
-              HorizontalRoute(0, route2.Type, false, "Forward", firstPoint);
-
-              PlumbingVerticalRoute route = VerticalRoute("HotWater", 0, CADObjectCommands.ActiveFloor, "Up", routeHeight, null, "Vertical route back up to fixture height: ", "Flush Tank").First().Value;
+              else if (routeOption == "From-Below") {
+                double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
+                route = VerticalRoute("HotWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Tank", true).First().Value;
+              }
+              else if (routeOption == "To-Roof") {
+                route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null, "Vertical route back up to fixture height: ", "Flush Tank").First().Value;
+              }
 
               double offsetDistance = 11.25;
               double offsetDistance2 = 2.125;
