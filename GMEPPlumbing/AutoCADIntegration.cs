@@ -4108,16 +4108,20 @@ namespace GMEPPlumbing
               }
             }
             else if (blockName == "GMEP PLUMBING GAS OUTPUT") {
-              PlumbingVerticalRoute route2 = VerticalRoute("Gas", startHeight, CADObjectCommands.ActiveFloor, "Down", startHeight).First().Value;
-              CircleStartPointPreviewJig circleJig = new CircleStartPointPreviewJig(route2.Position, 1.5);
-              PromptResult circlePromptResult = ed.Drag(circleJig);
-              if (circlePromptResult.Status != PromptStatus.OK) {
-                ed.WriteMessage("\nCommand cancelled.");
-                return;
+
+              PlumbingVerticalRoute route = null;
+              if (routeOption == "To-Above") {
+                double aboveRouteHeight = aboveBasePoint.RouteHeight;
+                route = VerticalRoute("Gas", startHeight, CADObjectCommands.ActiveFloor + 1, "", null, aboveRouteHeight).Last().Value;
               }
-              Point3d firstPoint = circleJig.ProjectedPoint;
-              HorizontalRoute(0, route2.Type, false, "Forward", firstPoint);
-              PlumbingVerticalRoute route = VerticalRoute("Gas", 0, CADObjectCommands.ActiveFloor, "Up", routeHeight).First().Value;
+              else if (routeOption == "From-Below") {
+                double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
+                route = VerticalRoute("Gas", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical Route", "", true).First().Value;
+              }
+              else if (routeOption == "To-Roof") {
+                route = VerticalRoute("Gas", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null).First().Value;
+              }
+
               double offsetDistance = 10.25;
               double offsetDistance2 = 3.5;
               double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
