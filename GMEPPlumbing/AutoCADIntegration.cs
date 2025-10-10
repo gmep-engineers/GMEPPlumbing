@@ -3897,10 +3897,6 @@ namespace GMEPPlumbing
                   double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                   route = VerticalRoute("ColdWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Tank", true).First().Value;
                 }
-                /*else if (routeOption == "To-Roof") {
-                  route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null, "Vertical route back up to fixture height: ", "Flush Tank").First().Value;
-                }*/
-
 
                 double offsetDistance = 11.25;
                 double offsetDistance2 = 2.125;
@@ -3931,7 +3927,6 @@ namespace GMEPPlumbing
                   rotation = br.Rotation;
                   tr.Commit();
                 }
-
               }
               else if (flowTypeId == 2) {
                 PlumbingVerticalRoute route = null;
@@ -3943,9 +3938,7 @@ namespace GMEPPlumbing
                   double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                   route = VerticalRoute("ColdWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Valve", true).First().Value;
                 }
-                /*else if (routeOption == "To-Roof") {
-                  route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null, "Vertical route back up to fixture height: ", "Flush Valve").First().Value;
-                }*/
+
                 PromptKeywordOptions pko = new PromptKeywordOptions("Left or Right?");
                 pko.Keywords.Add("Left");
                 pko.Keywords.Add("Right");
@@ -4068,9 +4061,6 @@ namespace GMEPPlumbing
                 double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                 route = VerticalRoute("HotWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Tank", true).First().Value;
               }
-              /*else if (routeOption == "To-Roof") {
-                route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null, "Vertical route back up to fixture height: ", "Flush Tank").First().Value;
-              }*/
 
               double offsetDistance = 11.25;
               double offsetDistance2 = 2.125;
@@ -4112,9 +4102,6 @@ namespace GMEPPlumbing
                 double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                 route = VerticalRoute("Gas", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical Route", "", true).First().Value;
               }
-              /*else if (routeOption == "To-Roof") {
-                route = VerticalRoute("Gas", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null).First().Value;
-              }*/
 
               double offsetDistance = 10.25;
               double offsetDistance2 = 3.5;
@@ -4268,34 +4255,6 @@ namespace GMEPPlumbing
             );
 
             if (blockName == "GMEP DRAIN") {
-              Dictionary<string, PlumbingVerticalRoute> ventRoutes = null;
-              ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "Up", CADObjectCommands.ActiveRouteHeight);
-
-              Point3d ventPoint = ventRoutes[CADObjectCommands.ActiveBasePointId].Position;
-              ventPoint = new Point3d(ventPoint.X, ventPoint.Y, point.Z);
-              double shortenBy = 1.5;
-              Vector3d direction = point - ventPoint;
-              double length = direction.Length;
-
-              Point3d newEndPoint = ventPoint;
-              Point3d newStartPoint = point;
-              if (length > 0) {
-                Vector3d offset = direction.GetNormal() * shortenBy;
-                newEndPoint = ventPoint + offset;
-                newStartPoint = point - offset;
-              }
-
-              SpecializedHorizontalRoute(
-                   "Waste", "", 0, newStartPoint, newEndPoint
-              );
-              Dictionary<string, PlumbingVerticalRoute> ventRoutes2 = null;
-              ventRoutes2 = VerticalRoute("Vent", CADObjectCommands.ActiveRouteHeight, CADObjectCommands.ActiveFloor, "Down", CADObjectCommands.ActiveRouteHeight);
-              Point3d ventPoint2 = ventRoutes2[CADObjectCommands.ActiveBasePointId].Position;
-              SpecializedHorizontalRoute(
-                   "Vent", "", CADObjectCommands.ActiveRouteHeight, ventPoint, ventPoint2
-              );
-              HorizontalRoute(0, "Vent");
-
               PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
               pko.Keywords.Add("Ceiling");
               pko.Keywords.Add("Roof");
@@ -4307,6 +4266,7 @@ namespace GMEPPlumbing
                 ed.WriteMessage("\nCommand cancelled.");
                 return;
               }
+              Dictionary<string, PlumbingVerticalRoute> ventRoutes = null;
               if (res.StringResult == "None") {
                 continue;
               }
@@ -4331,7 +4291,22 @@ namespace GMEPPlumbing
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
                 return;
               }
+              Point3d ventPoint = ventRoutes[CADObjectCommands.ActiveBasePointId].Position;
+              ventPoint = new Point3d(ventPoint.X, ventPoint.Y, point.Z);
+              double shortenBy = 1.5;
+              Vector3d direction = point - ventPoint;
+              double length = direction.Length;
 
+              Point3d newEndPoint = ventPoint;
+              Point3d newStartPoint = point;
+              if (length > 0) {
+                Vector3d offset = direction.GetNormal() * shortenBy;
+                newEndPoint = ventPoint + offset;
+                newStartPoint = point - offset;
+              }
+              SpecializedHorizontalRoute(
+                   "Waste", "", 0, newStartPoint, newEndPoint
+              );
             }
           }
           catch (System.Exception ex) {
