@@ -646,7 +646,7 @@ namespace GMEPPlumbing
       // Call the method with a null parameter to avoid ambiguity
       VerticalRoute();
     }
-    public Dictionary<string, PlumbingVerticalRoute> VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null, double? endFloorHeight = null, string message = "Vertical Route", string fixtureType = "", bool reverseDirection = false) {
+    public Dictionary<string, PlumbingVerticalRoute> VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null, double? endFloorHeight = null, string message = "Vertical Route", string fixtureType = "", bool reverseDirection = false, PlumbingPlanBasePoint chosenPoint = null) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return null;
 
@@ -654,7 +654,9 @@ namespace GMEPPlumbing
       var ed = doc.Editor;
 
       string basePointGUID = CADObjectCommands.GetActiveView();
-    
+      if (chosenPoint != null) {
+        basePointGUID = chosenPoint.Id;
+      }
       SettingObjects = true;
       string layer = "Defpoints";
       List<ObjectId> basePointIds = new List<ObjectId>();
@@ -764,6 +766,9 @@ namespace GMEPPlumbing
       if (routeHeight == null) {
         PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the vertical route from the floor (in feet): ");
         pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
+        if (chosenPoint != null) {
+          pdo.DefaultValue = chosenPoint.RouteHeight;
+        }
         routeHeight = 0;
         while (true) {
           try {
@@ -779,6 +784,9 @@ namespace GMEPPlumbing
             routeHeight = pdr.Value;
             // GetHeightLimits returns Tuple<double, double> (min, max)
             var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+            if (chosenPoint != null) {
+              heightLimits = CADObjectCommands.GetHeightLimits(chosenPoint.Id);
+            }
             double minHeight = heightLimits.Item1;
             double maxHeight = heightLimits.Item2;
             if (routeHeight < minHeight || routeHeight > maxHeight) {
@@ -795,6 +803,9 @@ namespace GMEPPlumbing
         }
       }
       double zIndex = ((double)routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
+      if (chosenPoint != null) {
+        zIndex = ((double)routeHeight + chosenPoint.FloorHeight)  * 12;
+      }
 
       //beginning display
       var routeHeightDisplay = new RouteHeightDisplay(ed);
