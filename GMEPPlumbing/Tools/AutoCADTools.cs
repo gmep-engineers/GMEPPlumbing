@@ -354,6 +354,30 @@ namespace GMEPPlumbing
       ActiveViewId = viewId;
       ActiveIsSite = isSite;
     }
+    public static void SetActiveViewSpecific(PlumbingPlanBasePoint chosenPoint) {
+      List<string> viewTypes = new List<string>();
+      if (chosenPoint.Type.Contains("Water")) {
+        viewTypes.Add("Water");
+      }
+      if (chosenPoint.Type.Contains("Gas")) {
+        viewTypes.Add("Gas");
+      }
+      if (chosenPoint.Type.Contains("Sewer-Vent")) {
+        viewTypes.Add("Sewer-Vent");
+      }
+      if (chosenPoint.Type.Contains("Storm")) {
+        viewTypes.Add("Storm");
+      }
+      ActiveBasePointId = chosenPoint.Id;
+      ActiveFloorHeight = chosenPoint.FloorHeight;
+      ActiveCeilingHeight = chosenPoint.CeilingHeight;
+      ActiveRouteHeight = chosenPoint.RouteHeight;
+      ActiveFloor = chosenPoint.Floor;
+      ActiveViewName = chosenPoint.Plan + chosenPoint.Type;
+      ActiveViewTypes = viewTypes;
+      ActiveViewId = chosenPoint.ViewportId;
+      ActiveIsSite = chosenPoint.IsSite;
+    }
     public static string GetActiveView() {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
