@@ -3890,8 +3890,8 @@ namespace GMEPPlumbing
               if (flowTypeId == 1) {
                 PlumbingVerticalRoute route = null;
                 if (routeOption == "To-Above") {
-                  double aboveRouteHeight = aboveBasePoint.RouteHeight;
-                  route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor + 1, "", null, aboveRouteHeight, "Vertical route", "Flush Tank").Last().Value;
+                  double startHeightBottom = activeBasePointRef.CeilingHeight - activeBasePointRef.FloorHeight;
+                  route = VerticalRoute("ColdWater", startHeightBottom, CADObjectCommands.ActiveFloor, "", null, routeHeight, "Vertical route", "Flush Tank", false, activeBasePointRef).Last().Value;
                 }
                 else if (routeOption == "From-Below") {
                   double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
@@ -4344,6 +4344,9 @@ namespace GMEPPlumbing
         MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
       }
       routeHeightDisplay.Disable();
+      if (routeOption == "To-Above") {
+        CADObjectCommands.SetActiveViewSpecific(activeBasePointRef);
+      }
     }
 
     [CommandMethod("PlumbingExtendedFixture")]
