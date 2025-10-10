@@ -3884,7 +3884,7 @@ namespace GMEPPlumbing
           double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
           double startHeight = CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight;
           double verticalRouteLength = startHeight - routeHeight;
-
+          ZoomToPoint(ed, activeBasePointRef.Point);
           try {
             if (blockName == "GMEP CW FIXTURE POINT") {
               if (flowTypeId == 1) {
@@ -3896,6 +3896,7 @@ namespace GMEPPlumbing
                 else if (routeOption == "From-Below") {
                   double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                   route = VerticalRoute("ColdWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Tank", true).First().Value;
+                  ZoomToPoint(ed, route.Position);
                 }
 
                 double offsetDistance = 11.25;
@@ -3937,6 +3938,7 @@ namespace GMEPPlumbing
                 else if (routeOption == "From-Below") {
                   double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                   route = VerticalRoute("ColdWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Valve", true).First().Value;
+                  ZoomToPoint(ed, route.Position);
                 }
 
                 PromptKeywordOptions pko = new PromptKeywordOptions("Left or Right?");
@@ -4060,6 +4062,7 @@ namespace GMEPPlumbing
               else if (routeOption == "From-Below") {
                 double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                 route = VerticalRoute("HotWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Tank", true).First().Value;
+                ZoomToPoint(ed, route.Position);
               }
 
               double offsetDistance = 11.25;
@@ -4101,6 +4104,7 @@ namespace GMEPPlumbing
               else if (routeOption == "From-Below") {
                 double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                 route = VerticalRoute("Gas", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical Route", "", true).First().Value;
+                ZoomToPoint(ed, route.Position);
               }
 
               double offsetDistance = 10.25;
@@ -4134,6 +4138,9 @@ namespace GMEPPlumbing
               }
             }
             else {
+              if (routeOption == "To-Above") {
+                ZoomToPoint(ed, aboveBasePoint.Point);
+              }
               routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
