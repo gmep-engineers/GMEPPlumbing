@@ -3781,6 +3781,9 @@ namespace GMEPPlumbing
       PromptKeywordOptions keywordOptions = new PromptKeywordOptions("");
       PromptResult keywordResult;
 
+      double routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
+
+
 
       if (fixtureString == null) {
         keywordOptions.Message = "\nSelect fixture type:";
@@ -3854,6 +3857,7 @@ namespace GMEPPlumbing
       if (routeOption != null) {
         if (routeOption == "To-Above") {
           chosenBasePoint = aboveBasePoint;
+          routeHeight = aboveBasePoint.RouteHeight;
           basePointId = aboveBasePoint.Id;
         }
         else if (routeOption == "From-Below") {
@@ -3884,8 +3888,7 @@ namespace GMEPPlumbing
       List<string> selectedBlockNames2 = new List<string>(selectedBlockNames);
 
 
-      double routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
-
+  
 
       PlumbingFixture plumbingFixture = null;
 
@@ -3900,7 +3903,7 @@ namespace GMEPPlumbing
           double rotation = 0;
           int number = 0;
           string GUID = Guid.NewGuid().ToString();
-          double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
+          double zIndex = (routeHeight + chosenBasePoint.FloorHeight) * 12;
           double startHeight = CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight;
           double verticalRouteLength = startHeight - routeHeight;
 
@@ -4170,7 +4173,7 @@ namespace GMEPPlumbing
               if (chosenBasePoint.Id != CADObjectCommands.ActiveBasePointId) {
                 ZoomToPoint(ed, chosenBasePoint.Point);
               }
-              routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+              routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, chosenBasePoint.Floor);
               if (blockName == "GMEP DRAIN") {
                 zIndex = chosenBasePoint.FloorHeight * 12;
               }
