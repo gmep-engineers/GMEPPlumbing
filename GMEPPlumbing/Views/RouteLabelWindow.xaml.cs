@@ -371,10 +371,9 @@ namespace GMEPPlumbing.Views
         var typeGroups = pipeSizeGroup.Where(b => !string.IsNullOrEmpty(b.Type))
             .GroupBy(b => b.Type);
         foreach (var typeGroup in typeGroups) {
-          var typeParts = new List<string>();
           var type = typeGroup.Key;
           if (type != typeGroups.First().Key) {
-            typeParts.Add("&");
+            sizeParts.Add("&");
           }
           switch (type) {
             case "Cold Water": type = "cw"; break;
@@ -384,40 +383,15 @@ namespace GMEPPlumbing.Views
             case "Gas": type = "g"; break;
             case "Grease Waste": type = "gw"; break;
           }
-          typeParts.Add(type);
-          var directionGroups = typeGroup.Where(b => !string.IsNullOrEmpty(b.DirectionDescription))
-              .GroupBy(b => b.DirectionDescription);
-          foreach (var directionGroup in directionGroups) {
-            var directionParts = new List<string>();
-            var direction = directionGroup.Key;
-            if (direction != directionGroups.First().Key) {
-              directionParts.Add("&");
-            }
-            else {
-              directionParts.Add(" ");
-            }
-            directionParts.Add(direction);
-            var locationGroups = directionGroup.Where(b => !string.IsNullOrEmpty(b.LocationDescription))
-                .GroupBy(b => b.LocationDescription);
-            if (isSource) {
-              locationGroups = directionGroup.Where(b => !string.IsNullOrEmpty(b.SourceDescription))
-                .GroupBy(b => b.SourceDescription);
-            }
-            foreach (var locationGroup in locationGroups) {
-              var location = locationGroup.Key;
-              if (location != locationGroups.First().Key) {
-                directionParts.Add("&");
-              }
-              else {
-                directionParts.Add(" ");
-              }
-              directionParts.Add(string.Join("", location));
-            }
-            typeParts.Add(string.Join("", directionParts));
-          }
-          sizeParts.Add(string.Join("", typeParts));
+          sizeParts.Add(type);
         }
         labelParts.Add(string.Join("", sizeParts));
+      }
+      labelParts.Add(" " + selectedBoxes.First().DirectionDescription);
+      if (isSource)
+        labelParts.Add(" " + selectedBoxes.First().SourceDescription);
+      else {
+        labelParts.Add(" " + selectedBoxes.First().LocationDescription);
       }
       return string.Join("", labelParts).ToUpper();
     }
