@@ -646,7 +646,6 @@ namespace GMEPPlumbing
 
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute() {
-      // Call the method with a null parameter to avoid ambiguity
       VerticalRoute();
     }
     public Dictionary<string, PlumbingVerticalRoute> VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null, double? endFloorHeight = null, string message = "Vertical Route", string fixtureType = "", bool reverseDirection = false) {
@@ -3845,9 +3844,9 @@ namespace GMEPPlumbing
         else if (routeOption == "From-Below") {
           chosenBasePoint = activeBasePointRef;
         }
-        else if (routeOption == "To-Roof") {
+       /*else if (routeOption == "To-Roof") {
           chosenBasePoint = activeBasePointRef;
-        }
+        }*/
       }
 
 
@@ -3902,9 +3901,9 @@ namespace GMEPPlumbing
                   double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                   route = VerticalRoute("ColdWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Tank", true).First().Value;
                 }
-                else if (routeOption == "To-Roof") {
+                /*else if (routeOption == "To-Roof") {
                   route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null, "Vertical route back up to fixture height: ", "Flush Tank").First().Value;
-                }
+                }*/
 
 
                 double offsetDistance = 11.25;
@@ -3948,9 +3947,9 @@ namespace GMEPPlumbing
                   double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                   route = VerticalRoute("ColdWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Valve", true).First().Value;
                 }
-                else if (routeOption == "To-Roof") {
+                /*else if (routeOption == "To-Roof") {
                   route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null, "Vertical route back up to fixture height: ", "Flush Valve").First().Value;
-                }
+                }*/
                 PromptKeywordOptions pko = new PromptKeywordOptions("Left or Right?");
                 pko.Keywords.Add("Left");
                 pko.Keywords.Add("Right");
@@ -4073,9 +4072,9 @@ namespace GMEPPlumbing
                 double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                 route = VerticalRoute("HotWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Tank", true).First().Value;
               }
-              else if (routeOption == "To-Roof") {
+              /*else if (routeOption == "To-Roof") {
                 route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null, "Vertical route back up to fixture height: ", "Flush Tank").First().Value;
-              }
+              }*/
 
               double offsetDistance = 11.25;
               double offsetDistance2 = 2.125;
@@ -4118,9 +4117,9 @@ namespace GMEPPlumbing
                 double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                 route = VerticalRoute("Gas", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical Route", "", true).First().Value;
               }
-              else if (routeOption == "To-Roof") {
+              /*else if (routeOption == "To-Roof") {
                 route = VerticalRoute("Gas", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null).First().Value;
-              }
+              }*/
 
               double offsetDistance = 10.25;
               double offsetDistance2 = 3.5;
@@ -4155,7 +4154,7 @@ namespace GMEPPlumbing
             else {
               routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
               if (blockName == "GMEP DRAIN") {
-                zIndex = CADObjectCommands.ActiveFloorHeight * 12;
+                zIndex = chosenBasePoint.FloorHeight * 12;
               }
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
