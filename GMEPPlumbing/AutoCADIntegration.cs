@@ -3901,6 +3901,7 @@ namespace GMEPPlumbing
                 else if (routeOption == "From-Below") {
                   double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                   route = VerticalRoute("ColdWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Tank", true).First().Value;
+                  ZoomToPoint(ed, route.Position);
                 }
                 /*else if (routeOption == "To-Roof") {
                   route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null, "Vertical route back up to fixture height: ", "Flush Tank").First().Value;
@@ -3947,6 +3948,7 @@ namespace GMEPPlumbing
                 else if (routeOption == "From-Below") {
                   double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                   route = VerticalRoute("ColdWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Valve", true).First().Value;
+                  ZoomToPoint(ed, route.Position);
                 }
                 /*else if (routeOption == "To-Roof") {
                   route = VerticalRoute("ColdWater", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null, "Vertical route back up to fixture height: ", "Flush Valve").First().Value;
@@ -4072,6 +4074,7 @@ namespace GMEPPlumbing
               else if (routeOption == "From-Below") {
                 double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                 route = VerticalRoute("HotWater", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical route", "Flush Tank", true).First().Value;
+                ZoomToPoint(ed, route.Position);
               }
               /*else if (routeOption == "To-Roof") {
                 route = VerticalRoute("HotWater", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null, "Vertical route back up to fixture height: ", "Flush Tank").First().Value;
@@ -4117,6 +4120,7 @@ namespace GMEPPlumbing
               else if (routeOption == "From-Below") {
                 double belowCeilingHeight = belowBasePoint.CeilingHeight - belowBasePoint.FloorHeight;
                 route = VerticalRoute("Gas", routeHeight, CADObjectCommands.ActiveFloor - 1, "", null, belowCeilingHeight, "Vertical Route", "", true).First().Value;
+                ZoomToPoint(ed, route.Position);
               }
               /*else if (routeOption == "To-Roof") {
                 route = VerticalRoute("Gas", startHeight, CADObjectCommands.ActiveFloor, "Up", 10, null).First().Value;
