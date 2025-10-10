@@ -653,10 +653,8 @@ namespace GMEPPlumbing
       var db = doc.Database;
       var ed = doc.Editor;
 
-
       string basePointGUID = CADObjectCommands.GetActiveView();
     
-
       SettingObjects = true;
       string layer = "Defpoints";
       List<ObjectId> basePointIds = new List<ObjectId>();
@@ -3859,15 +3857,11 @@ namespace GMEPPlumbing
       selectedBlockNames = selectedBlockNames.Distinct().ToList();
       List<string> selectedBlockNames2 = new List<string>(selectedBlockNames);
 
-
       double routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
-
 
       PlumbingFixture plumbingFixture = null;
 
-
       var routeHeightDisplay = new RouteHeightDisplay(ed);
-
 
       if (selectedBlockNames2.Count() != 0) {
         foreach (string blockName in selectedBlockNames2) {
