@@ -221,7 +221,7 @@ namespace GMEPPlumbing
           return horizontalRoutes;
       }
       string pipeType = "";
-      if (result == "ColdWater" || result == "HotWater") {
+      if (result == "ColdWater" || result == "HotWater" || result == "Cold Water" || result == "Hot Water") {
         if (CADObjectCommands.IsResidential) {
           if (CADObjectCommands.ActiveIsSite) {
             PromptKeywordOptions pko1 = new PromptKeywordOptions("\nSelect Pipe Type: ");
