@@ -52,12 +52,16 @@ namespace GMEPPlumbing
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
       JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
+      if (opts == null)
+        return SamplerStatus.Cancel;
       opts.BasePoint = startPoint;
       opts.UseBasePoint = true;
       opts.Cursor = CursorType.RubberBand;
 
       PromptPointResult res = prompts.AcquirePoint(opts);
-      if (res.Status != PromptStatus.OK)
+      if (res == null || res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+      if (res.Value == null)
         return SamplerStatus.Cancel;
 
       if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
@@ -97,12 +101,17 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
       JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect second point for ellipse major axis:");
+      if (opts == null)
+        return SamplerStatus.Cancel;
       opts.BasePoint = _startPoint;
       opts.UseBasePoint = true;
       opts.Cursor = CursorType.RubberBand;
 
       PromptPointResult res = prompts.AcquirePoint(opts);
-      if (res.Status != PromptStatus.OK)
+      if (res == null || res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
+      if (res.Value == null)
         return SamplerStatus.Cancel;
 
       if (_endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
@@ -150,10 +159,15 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
       JigPromptPointOptions opts = new JigPromptPointOptions("\nSpecify offset position:");
+      if (opts == null)
+        return SamplerStatus.Cancel;
       opts.UserInputControls = UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
       PromptPointResult res = prompts.AcquirePoint(opts);
 
-      if (res.Status != PromptStatus.OK)
+      if (res == null || res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
+      if (res.Value == null)
         return SamplerStatus.Cancel;
 
       if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
@@ -219,14 +233,18 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
       JigPromptPointOptions opts = new JigPromptPointOptions(message);
+      if (opts == null) {
+        return SamplerStatus.Cancel;
+      }
       opts.BasePoint = startPoint;
       opts.UseBasePoint = true;
       opts.Cursor = CursorType.RubberBand;
 
       PromptPointResult res = prompts.AcquirePoint(opts);
-      if (res.Status != PromptStatus.OK)
+      if (res == null || res.Status != PromptStatus.OK)
         return SamplerStatus.Cancel;
-
+      if (res.Value == null)
+        return SamplerStatus.Cancel;
       if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
         return SamplerStatus.NoChange;
 
@@ -282,11 +300,16 @@ namespace GMEPPlumbing
       JigPromptPointOptions opts = new JigPromptPointOptions(
         "\nMove cursor to preview start point, click to select:"
       );
+      if (opts == null)
+        return SamplerStatus.Cancel;
+
       opts.UserInputControls =
         UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
       PromptPointResult res = prompts.AcquirePoint(opts);
 
-      if (res.Status != PromptStatus.OK)
+      if (res == null || res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+      if (res.Value == null)
         return SamplerStatus.Cancel;
 
       if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
@@ -356,11 +379,16 @@ namespace GMEPPlumbing
         UseBasePoint = true,
         Cursor = CursorType.RubberBand,
       };
+      if (opts == null)
+        return SamplerStatus.Cancel;
+
       opts.UserInputControls =
           UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
       PromptPointResult res = prompts.AcquirePoint(opts);
 
-      if (res.Status != PromptStatus.OK)
+      if (res == null || res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+      if (res.Value == null)
         return SamplerStatus.Cancel;
 
       if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
