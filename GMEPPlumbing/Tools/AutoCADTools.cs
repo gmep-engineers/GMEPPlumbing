@@ -171,7 +171,7 @@ namespace GMEPPlumbing
       return ActiveRouteHeight;
     }
 
-    public static Tuple<double, double> GetHeightLimits(string GUID, bool endCaps = false) {
+    public static Tuple<double, double> GetHeightLimits(string GUID, bool endCaps = false, bool upToNextFloor = false) {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
@@ -184,26 +184,34 @@ namespace GMEPPlumbing
         ed.WriteMessage("\nNo base point found. Please set an active view.");
         return heightLimits;
       }
-      double ceilingHeight = selectedBasePoint.CeilingHeight;
-      double floorHeight = selectedBasePoint.FloorHeight;
-
       List<PlumbingPlanBasePoint> viewBasePoints = basePoints.FindAll(bp => bp.ViewportId == selectedBasePoint.ViewportId && bp.IsSite == selectedBasePoint.IsSite).OrderBy(i => i.Floor).ToList();
+
+
+      double ceilingHeight = selectedBasePoint.CeilingHeight;
+      if (upToNextFloor) {
+        PlumbingPlanBasePoint upperFloor = viewBasePoints.Find(bp => bp.Floor == selectedBasePoint.Floor + 1);
+        if (upperFloor != null) {
+          ceilingHeight = upperFloor.FloorHeight;
+        }
+      }
+      double floorHeight = selectedBasePoint.FloorHeight;
 
       double upperHeightLimit = ceilingHeight - floorHeight;
       double lowerHeightLimit = 0;
       if (!endCaps) {
-       if(viewBasePoints.Last() == selectedBasePoint) {
+        if (viewBasePoints.Last() == selectedBasePoint) {
           upperHeightLimit = 10000;
-        } 
-       if (viewBasePoints.First() == selectedBasePoint) {
+        }
+        if (viewBasePoints.First() == selectedBasePoint) {
           lowerHeightLimit = -10000;
-       }
+        }
       }
 
       heightLimits = new Tuple<double, double>(
         lowerHeightLimit,
         upperHeightLimit
       );
+      
       
 
       return heightLimits;
@@ -345,6 +353,30 @@ namespace GMEPPlumbing
       ActiveViewTypes = viewTypes;
       ActiveViewId = viewId;
       ActiveIsSite = isSite;
+    }
+    public static void SetActiveViewSpecific(PlumbingPlanBasePoint chosenPoint) {
+      List<string> viewTypes = new List<string>();
+      if (chosenPoint.Type.Contains("Water")) {
+        viewTypes.Add("Water");
+      }
+      if (chosenPoint.Type.Contains("Gas")) {
+        viewTypes.Add("Gas");
+      }
+      if (chosenPoint.Type.Contains("Sewer-Vent")) {
+        viewTypes.Add("Sewer-Vent");
+      }
+      if (chosenPoint.Type.Contains("Storm")) {
+        viewTypes.Add("Storm");
+      }
+      ActiveBasePointId = chosenPoint.Id;
+      ActiveFloorHeight = chosenPoint.FloorHeight;
+      ActiveCeilingHeight = chosenPoint.CeilingHeight;
+      ActiveRouteHeight = chosenPoint.RouteHeight;
+      ActiveFloor = chosenPoint.Floor;
+      ActiveViewName = chosenPoint.Plan + chosenPoint.Type;
+      ActiveViewTypes = viewTypes;
+      ActiveViewId = chosenPoint.ViewportId;
+      ActiveIsSite = chosenPoint.IsSite;
     }
     public static string GetActiveView() {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;

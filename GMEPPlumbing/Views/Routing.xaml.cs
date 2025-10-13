@@ -223,7 +223,7 @@ namespace GMEPPlumbing.Views
             horizontalRoute.BasePointId,
             cleanedSize,
             horizontalRoute.Type,
-            locationDescription,
+            locationDescription.Replace("\n", "").Replace("\r", ""),
             "",
             units,
             longestRun,
@@ -424,7 +424,7 @@ namespace GMEPPlumbing.Views
               }
               PlumbingVerticalRoute aboveRoute = verticalRoutes.FirstOrDefault(vr => vr.VerticalRouteId == verticalRoute.VerticalRouteId && BasePoints[vr.BasePointId].Floor == floor + 1);
               if (aboveRoute != null) {
-                locationDescription = $"to{floor + 1}{GetSuffix(floor + 1)} floor\n";
+                locationDescription = $"to {floor + 1}{GetSuffix(floor + 1)} floor\n";
                
               }
               else {
@@ -441,7 +441,7 @@ namespace GMEPPlumbing.Views
               }
               PlumbingVerticalRoute belowRoute = verticalRoutes.FirstOrDefault(vr => vr.VerticalRouteId == verticalRoute.VerticalRouteId && BasePoints[vr.BasePointId].Floor == floor - 1);
               if (belowRoute != null) {
-                locationDescription = $"to{floor - 1}{GetSuffix(floor - 1)} floor";
+                locationDescription = $"to {floor - 1}{GetSuffix(floor - 1)} floor";
               }
               else {
                 PlumbingPlanBasePoint point = BasePoints[verticalRoute.BasePointId];
@@ -465,8 +465,8 @@ namespace GMEPPlumbing.Views
             verticalRoute.BasePointId,
             cleanedSize,
             verticalRoutes.First().Type,
-            locationDescription,
-            sourceDescription,
+            locationDescription.Replace("\n", "").Replace("\r", ""),
+            sourceDescription.Replace("\n", "").Replace("\r", ""),
             units,
             longestRun,
             isUp ? "Up" : "Down",
