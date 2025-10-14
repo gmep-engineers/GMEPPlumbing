@@ -6732,9 +6732,9 @@ namespace GMEPPlumbing
           string projectNo = CADObjectCommands.GetProjectNoFromFileName();
           string ProjectId = await mariaDBService.GetProjectId(projectNo);
 
-          List<PlumbingHorizontalRoute> horizontalRoutes = GetHorizontalRoutesFromCAD(ProjectId);
-          List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId);
           List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
+          List<PlumbingHorizontalRoute> horizontalRoutes = GetHorizontalRoutesFromCAD(ProjectId, basePoints);
+          List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD(ProjectId, basePoints);
           List<PlumbingSource> sources = GetPlumbingSourcesFromCAD(ProjectId);
           List<PlumbingFixture> fixtures = GetPlumbingFixturesFromCAD(ProjectId);
 
@@ -6752,7 +6752,7 @@ namespace GMEPPlumbing
 
     }
 
-    public static List<PlumbingHorizontalRoute> GetHorizontalRoutesFromCAD(string ProjectId = "") {
+    public static List<PlumbingHorizontalRoute> GetHorizontalRoutesFromCAD(string ProjectId = "", List<PlumbingPlanBasePoint> basePoints = null) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return new List<PlumbingHorizontalRoute>();
 
@@ -6809,7 +6809,7 @@ namespace GMEPPlumbing
     }
 
 
-    public static List<PlumbingVerticalRoute> GetVerticalRoutesFromCAD(string ProjectId = "") {
+    public static List<PlumbingVerticalRoute> GetVerticalRoutesFromCAD(string ProjectId = "", List<PlumbingPlanBasePoint> basePoints = null) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return new List<PlumbingVerticalRoute>();
 
@@ -7072,6 +7072,213 @@ namespace GMEPPlumbing
       ed.WriteMessage(ProjectId + " - Found " + points.Count + " basepoints in the drawing.");
       return points;
     }
+    public List<PlumbingVerticalRoute> GetWaterHeaterVerticalRoutes(List<PlumbingPlanBasePoint> basePoints) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return new List<PlumbingVerticalRoute>();
+
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List<PlumbingVerticalRoute> routes = new List<PlumbingVerticalRoute>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        List<string> blockNames = new List<string>
+        {
+          "GMEP WH 80",
+          "GMEP WH 50",
+        };
+        foreach (string name in blockNames) {
+          BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
+          foreach (ObjectId id in sourceBlock.GetAnonymousBlockIds()) {
+            if (id.IsValid) {
+              using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+                if (anonymousBtr != null) {
+                  foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                    if (objId.IsValid) {
+                      var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                      var pc = entity.DynamicBlockReferencePropertyCollection;
+                      double hotWaterX = 0;
+                      double hotWaterY = 0;
+                      double hotWaterAngle = 0;
+                      double coldWaterX = 0;
+                      double coldWaterY = 0;
+                      double coldWaterAngle = 0;
+                      string basepointId = string.Empty;
+                      foreach (DynamicBlockReferenceProperty prop in pc) {
+                        if (prop.PropertyName == "Hot Water X") {
+                          hotWaterX = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Hot Water Y") {
+                          hotWaterY = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Cold Water X") {
+                          coldWaterX = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Cold Water Y") {
+                          coldWaterY = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Hot Water Angle") {
+                          hotWaterAngle = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Cold Water Angle") {
+                          coldWaterAngle = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "base_point_id") {
+                          basepointId = prop.Value?.ToString();
+                        }
+                      }
+                      if (basepointId != "") {
+                        PlumbingPlanBasePoint basepoint = basePoints.FirstOrDefault(bp => bp.Id == basepointId);
+                        double rotation = entity.Rotation;
+                        double hotRotatedX = hotWaterX * Math.Cos(rotation) - hotWaterY * Math.Sin(rotation);
+                        double hotRotatedY = hotWaterX * Math.Sin(rotation) + hotWaterY * Math.Cos(rotation);
+                        double coldRotatedX = coldWaterX * Math.Cos(rotation) - coldWaterY * Math.Sin(rotation);
+                        double coldRotatedY = coldWaterX * Math.Sin(rotation) + coldWaterY * Math.Cos(rotation);
+                        Point3d hotWaterPosition = new Point3d(entity.Position.X + hotRotatedX, entity.Position.Y + hotRotatedY, basepoint.CeilingHeight);
+                        Point3d coldWaterPosition = new Point3d(entity.Position.X + coldRotatedX, entity.Position.Y + coldRotatedY, basepoint.CeilingHeight);
+
+                        PlumbingVerticalRoute hotWaterRoute = new PlumbingVerticalRoute(
+                          Guid.NewGuid().ToString(),
+                          ProjectId,
+                          "Hot Water",
+                          hotWaterPosition,
+                          Guid.NewGuid().ToString(),
+                          basepointId,
+                          0,
+                          0,
+                          2,
+                          "PEX",
+                          true
+                        );
+                        PlumbingVerticalRoute coldWaterRoute = new PlumbingVerticalRoute(
+                         Guid.NewGuid().ToString(),
+                         ProjectId,
+                         "Cold Water",
+                         coldWaterPosition,
+                         "",
+                         basepointId,
+                         0,
+                         0,
+                         2,
+                         "PEX",
+                         true
+                        );
+                        routes.Add(hotWaterRoute);
+                        routes.Add(coldWaterRoute);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return routes;
+    }
+
+    public List<PlumbingHorizontalRoute> GetWaterHeaterHorizontalRoutes() {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return new List<PlumbingHorizontalRoute>();
+
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List <PlumbingHorizontalRoute> routes = new List<PlumbingHorizontalRoute>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        List<string> blockNames = new List<string>
+        {
+          "GMEP WH 80",
+          "GMEP WH 50",
+        };
+        foreach (string name in blockNames) {
+          BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
+          foreach (ObjectId id in sourceBlock.GetAnonymousBlockIds()) {
+            if (id.IsValid) {
+              using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+                if (anonymousBtr != null) {
+                  foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                    if (objId.IsValid) {
+                      var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                      var pc = entity.DynamicBlockReferencePropertyCollection;
+                      double hotWaterX = 0;
+                      double hotWaterY = 0;
+                      double hotWaterAngle = 0;
+                      double coldWaterX = 0;
+                      double coldWaterY = 0;
+                      double coldWaterAngle = 0;
+                      string basepointId = string.Empty;
+                      foreach (DynamicBlockReferenceProperty prop in pc) {
+                        if (prop.PropertyName == "Hot Water X") {
+                          hotWaterX = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Hot Water Y") {
+                          hotWaterY = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Cold Water X") {
+                          coldWaterX = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Cold Water Y") {
+                          coldWaterY = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Hot Water Angle") {
+                          hotWaterAngle = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "Cold Water Angle") {
+                          coldWaterAngle = Convert.ToDouble(prop.Value);
+                        }
+                        if (prop.PropertyName == "base_point_id") {
+                          basepointId = prop.Value?.ToString();
+                        }
+                      }
+                      if (basepointId != "") {
+                        double rotation = entity.Rotation;
+                        double hotRotatedX = hotWaterX * Math.Cos(rotation) - hotWaterY * Math.Sin(rotation);
+                        double hotRotatedY = hotWaterX * Math.Sin(rotation) + hotWaterY * Math.Cos(rotation);
+                        double coldRotatedX = coldWaterX * Math.Cos(rotation) - coldWaterY * Math.Sin(rotation);
+                        double coldRotatedY = coldWaterX * Math.Sin(rotation) + coldWaterY * Math.Cos(rotation);
+                        Point3d hotWaterPosition = new Point3d(entity.Position.X + hotRotatedX, entity.Position.Y + hotRotatedY, entity.Position.Z);
+                        Point3d coldWaterPosition = new Point3d(entity.Position.X + coldRotatedX, entity.Position.Y + coldRotatedY, entity.Position.Z);
+
+                        PlumbingHorizontalRoute hotWaterRoute = new PlumbingHorizontalRoute(
+                          Guid.NewGuid().ToString(),
+                          ProjectId,
+                          "Hot Water",
+                          hotWaterPosition,
+                          hotWaterPosition,
+                          basepointId,
+                          "PEX",
+                          0
+                        );
+                        PlumbingHorizontalRoute coldWaterRoute = new PlumbingHorizontalRoute(
+                         Guid.NewGuid().ToString(),
+                         ProjectId,
+                         "Cold Water",
+                         coldWaterPosition,
+                         coldWaterPosition,
+                         basepointId,
+                         "PEX",
+                         0
+                        );
+                        routes.Add(hotWaterRoute);
+                        routes.Add(coldWaterRoute);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return routes;
+    }
+
 
     public static List<PlumbingSource> GetPlumbingSourcesFromCAD(string ProjectId = "") {
       var doc = Application.DocumentManager.MdiActiveDocument;
