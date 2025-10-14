@@ -319,8 +319,8 @@ namespace GMEPPlumbing
       double zIndex = ((double)routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
 
       //Beginning display
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable((double)routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+      //var routeHeightDisplay = new RouteHeightDisplay(ed);
+      //routeHeightDisplay.Enable((double)routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       double slope = 0;
       if (result == "Waste" || result == "Vent" || result == "GreaseWaste") {
@@ -330,7 +330,7 @@ namespace GMEPPlumbing
         PromptResult pr3 = ed.GetKeywords(pko3);
         if (pr3.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
-          routeHeightDisplay.Disable();
+          //routeHeightDisplay.Disable();
           return horizontalRoutes;
         }
         if (pr3.StringResult == "1%") {
@@ -347,7 +347,7 @@ namespace GMEPPlumbing
           PromptPointResult ppr2 = ed.GetPoint(ppo2);
           if (ppr2.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
-            routeHeightDisplay.Disable();
+            //routeHeightDisplay.Disable();
             return horizontalRoutes;
           }
 
@@ -363,7 +363,7 @@ namespace GMEPPlumbing
         PromptResult routeResult = ed.Drag(routeJig);
         if (routeResult.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
-          routeHeightDisplay.Disable();
+          //routeHeightDisplay.Disable();
           return horizontalRoutes;
         }
 
@@ -420,7 +420,7 @@ namespace GMEPPlumbing
           PromptResult pr3 = ed.GetKeywords(pko3);
           if (pr3.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
-            routeHeightDisplay.Disable();
+            //routeHeightDisplay.Disable();
             break;
           }
           if (pr3.StringResult == "1%") {
@@ -439,7 +439,7 @@ namespace GMEPPlumbing
 
         if (per.Status != PromptStatus.OK || per.Status == PromptStatus.Cancel || per.ObjectId == ObjectId.Null) {
           ed.WriteMessage("\nCommand cancelled.");
-          routeHeightDisplay.Disable();
+          //routeHeightDisplay.Disable();
           break;
         }
 
@@ -484,7 +484,7 @@ namespace GMEPPlumbing
             PromptResult routeResult2 = ed.Drag(routeJig2);
             if (routeResult2.Status != PromptStatus.OK) {
               ed.WriteMessage("\nCommand cancelled.");
-              routeHeightDisplay.Disable();
+              //routeHeightDisplay.Disable();
               return horizontalRoutes;
             }
             Point3d endPoint = routeJig2.line.EndPoint;
@@ -544,7 +544,7 @@ namespace GMEPPlumbing
           AddArrowsToLine(addedLineId, LineGUID);
         }  
       }
-      routeHeightDisplay.Disable();
+      //routeHeightDisplay.Disable();
       return horizontalRoutes;
     }
     public async void SpecializedHorizontalRoute(string type, string pipeType, double height, Point3d startPoint, Point3d? endPoint = null, string fixtureDropId = "") {
@@ -808,8 +808,8 @@ namespace GMEPPlumbing
       }
 
       //beginning display
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable((double)routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+      //var routeHeightDisplay = new RouteHeightDisplay(ed);
+      //routeHeightDisplay.Enable((double)routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         //retrieving the view of the basepoint
@@ -957,7 +957,7 @@ namespace GMEPPlumbing
           }
           else {
             ed.WriteMessage("\nFailed to create vertical route block reference.");
-            routeHeightDisplay.Disable();
+            //routeHeightDisplay.Disable();
             return null;
           }
         }
@@ -976,7 +976,7 @@ namespace GMEPPlumbing
         PromptResult endFloorResult = ed.GetKeywords(endFloorOptions);
         if (endFloorResult.Status != PromptStatus.OK) {
           ed.WriteMessage("\nCommand cancelled.");
-          routeHeightDisplay.Disable();
+          //routeHeightDisplay.Disable();
           return null;
         }
         endFloor = int.Parse(endFloorResult.StringResult);
@@ -1008,7 +1008,7 @@ namespace GMEPPlumbing
         }
         tr.Commit();
       }
-      routeHeightDisplay.Disable();
+      //routeHeightDisplay.Disable();
 
       if (endFloor > startFloor) {
         isUp = !reverseDirection;
@@ -1479,7 +1479,7 @@ namespace GMEPPlumbing
           PromptResult pr3 = ed.GetKeywords(pko3);
           if (pr3.Status != PromptStatus.OK) {
             ed.WriteMessage("\nCommand cancelled.");
-            routeHeightDisplay.Disable();
+            //routeHeightDisplay.Disable();
             return null;
           }
           direction = pr3.StringResult;
@@ -2757,7 +2757,7 @@ namespace GMEPPlumbing
       PlumbingFixture plumbingFixture = null;
       
 
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      //var routeHeightDisplay = new RouteHeightDisplay(ed);
   
       if (selectedBlockNames2.Count() != 0) {
         foreach (string blockName in selectedBlockNames2) {
@@ -2991,7 +2991,7 @@ namespace GMEPPlumbing
               }
             }
             else {
-              routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+              //routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
@@ -3024,7 +3024,7 @@ namespace GMEPPlumbing
                     PromptResult rotatePromptResult = ed.Drag(rotateJig);
                     if (rotatePromptResult.Status != PromptStatus.OK) {
                       ed.WriteMessage("\nRotation cancelled.");
-                      routeHeightDisplay.Disable();
+                      //routeHeightDisplay.Disable();
                       return;
                     }
                   }
@@ -3039,10 +3039,10 @@ namespace GMEPPlumbing
                 }
                 else {
                   ed.WriteMessage("\nBlock reference could not be created.");
-                  routeHeightDisplay.Disable();
+                  //routeHeightDisplay.Disable();
                   return;
                 }
-                routeHeightDisplay.Disable();
+                //routeHeightDisplay.Disable();
                 blockId = br.Id;
                 tr.Commit();
               }
@@ -3169,13 +3169,13 @@ namespace GMEPPlumbing
           }
           catch (System.Exception ex) {
             ed.WriteMessage("FIxture Error - "+ ex.ToString());
-            routeHeightDisplay.Disable();
+            //routeHeightDisplay.Disable();
             Console.WriteLine(ex.ToString());
           }
         }
         MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
       }
-      routeHeightDisplay.Disable();
+      //routeHeightDisplay.Disable();
     }
 
     [CommandMethod("PLUMBINGISLANDFIXTURE")]
@@ -3280,7 +3280,7 @@ namespace GMEPPlumbing
       PlumbingFixture plumbingFixture = null;
 
 
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
+     // var routeHeightDisplay = new RouteHeightDisplay(ed);
     
 
       if (selectedBlockNames2.Count() != 0) {
@@ -3539,7 +3539,7 @@ namespace GMEPPlumbing
               }
             }
             else {
-              routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+              //routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
@@ -3572,7 +3572,7 @@ namespace GMEPPlumbing
                     PromptResult rotatePromptResult = ed.Drag(rotateJig);
                     if (rotatePromptResult.Status != PromptStatus.OK) {
                       ed.WriteMessage("\nRotation cancelled.");
-                      routeHeightDisplay.Disable();
+                      //routeHeightDisplay.Disable();
                       return;
                     }
                   }
@@ -3587,10 +3587,10 @@ namespace GMEPPlumbing
                 }
                 else {
                   ed.WriteMessage("\nBlock reference could not be created.");
-                  routeHeightDisplay.Disable();
+                  //routeHeightDisplay.Disable();
                   return;
                 }
-                routeHeightDisplay.Disable();
+                //routeHeightDisplay.Disable();
                 blockId = br.Id;
                 tr.Commit();
               }
@@ -3728,13 +3728,13 @@ namespace GMEPPlumbing
           }
           catch (System.Exception ex) {
             ed.WriteMessage("Fixture Error - " + ex.ToString());
-            routeHeightDisplay.Disable();
+            //routeHeightDisplay.Disable();
             Console.WriteLine(ex.ToString());
           }
         }
         MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
       }
-      routeHeightDisplay.Disable();
+      //routeHeightDisplay.Disable();
     }
     [CommandMethod("PLUMBINGRISEFIXTURE")]
     public void PlumbingRiseFixture() {
@@ -3872,7 +3872,7 @@ namespace GMEPPlumbing
 
       PlumbingFixture plumbingFixture = null;
 
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      //var routeHeightDisplay = new RouteHeightDisplay(ed);
 
       if (selectedBlockNames2.Count() != 0) {
         foreach (string blockName in selectedBlockNames2) {
@@ -4141,7 +4141,7 @@ namespace GMEPPlumbing
               if (routeOption == "To-Above") {
                 ZoomToPoint(ed, aboveBasePoint.Point);
               }
-              routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+              //routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
@@ -4174,7 +4174,7 @@ namespace GMEPPlumbing
                     PromptResult rotatePromptResult = ed.Drag(rotateJig);
                     if (rotatePromptResult.Status != PromptStatus.OK) {
                       ed.WriteMessage("\nRotation cancelled.");
-                      routeHeightDisplay.Disable();
+                      //routeHeightDisplay.Disable();
                       return;
                     }
                   }
@@ -4189,10 +4189,10 @@ namespace GMEPPlumbing
                 }
                 else {
                   ed.WriteMessage("\nBlock reference could not be created.");
-                  routeHeightDisplay.Disable();
+                  //routeHeightDisplay.Disable();
                   return;
                 }
-                routeHeightDisplay.Disable();
+                //routeHeightDisplay.Disable();
                 blockId = br.Id;
                 tr.Commit();
               }
@@ -4318,13 +4318,13 @@ namespace GMEPPlumbing
           }
           catch (System.Exception ex) {
             ed.WriteMessage("Fixture Error - " + ex.ToString());
-            routeHeightDisplay.Disable();
+            //routeHeightDisplay.Disable();
             Console.WriteLine(ex.ToString());
           }
         }
         MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
       }
-      routeHeightDisplay.Disable();
+      //routeHeightDisplay.Disable();
       if (routeOption == "To-Above") {
         CADObjectCommands.SetActiveViewSpecific(activeBasePointRef);
       }
@@ -4486,7 +4486,7 @@ namespace GMEPPlumbing
 
       PlumbingFixture plumbingFixture = null;
 
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      //var routeHeightDisplay = new RouteHeightDisplay(ed);
 
       if (selectedBlockNames2.Count() != 0) {
         foreach (string blockName in selectedBlockNames2) {
@@ -4711,7 +4711,7 @@ namespace GMEPPlumbing
               }
             }
             else {
-              routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+              //routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
@@ -4744,7 +4744,7 @@ namespace GMEPPlumbing
                     PromptResult rotatePromptResult = ed.Drag(rotateJig);
                     if (rotatePromptResult.Status != PromptStatus.OK) {
                       ed.WriteMessage("\nRotation cancelled.");
-                      routeHeightDisplay.Disable();
+                      //routeHeightDisplay.Disable();
                       return;
                     }
                   }
@@ -4759,10 +4759,10 @@ namespace GMEPPlumbing
                 }
                 else {
                   ed.WriteMessage("\nBlock reference could not be created.");
-                  routeHeightDisplay.Disable();
+                  //routeHeightDisplay.Disable();
                   return;
                 }
-                routeHeightDisplay.Disable();
+                //routeHeightDisplay.Disable();
                 blockId = br.Id;
                 tr.Commit();
               }
@@ -4889,7 +4889,7 @@ namespace GMEPPlumbing
           }
           catch (System.Exception ex) {
             ed.WriteMessage("Fixture Error - " + ex.ToString());
-            routeHeightDisplay.Disable();
+            //routeHeightDisplay.Disable();
             Console.WriteLine(ex.ToString());
           }
         }
@@ -5055,7 +5055,7 @@ namespace GMEPPlumbing
 
       PlumbingFixture plumbingFixture = null;
 
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
+      //var routeHeightDisplay = new RouteHeightDisplay(ed);
 
       if (selectedBlockNames2.Count() != 0) {
         foreach (string blockName in selectedBlockNames2) {
@@ -5411,7 +5411,7 @@ namespace GMEPPlumbing
 
             }
             else {
-              routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+              //routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
@@ -5444,7 +5444,7 @@ namespace GMEPPlumbing
                     PromptResult rotatePromptResult = ed.Drag(rotateJig);
                     if (rotatePromptResult.Status != PromptStatus.OK) {
                       ed.WriteMessage("\nRotation cancelled.");
-                      routeHeightDisplay.Disable();
+                      //routeHeightDisplay.Disable();
                       return;
                     }
                   }
@@ -5459,10 +5459,10 @@ namespace GMEPPlumbing
                 }
                 else {
                   ed.WriteMessage("\nBlock reference could not be created.");
-                  routeHeightDisplay.Disable();
+                  //routeHeightDisplay.Disable();
                   return;
                 }
-                routeHeightDisplay.Disable();
+                //routeHeightDisplay.Disable();
                 blockId = br.Id;
                 tr.Commit();
               }
@@ -5637,13 +5637,13 @@ namespace GMEPPlumbing
           }
           catch (System.Exception ex) {
             ed.WriteMessage("FIxture Error - " + ex.ToString());
-            routeHeightDisplay.Disable();
+            //routeHeightDisplay.Disable();
             Console.WriteLine(ex.ToString());
           }
         }
         MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
       }
-      routeHeightDisplay.Disable();
+      //routeHeightDisplay.Disable();
     }
     public void CreateCenterLineRoute(Point3d addPoint, double rotation, string type, string pipeType, double height) {
       var doc = Application.DocumentManager.MdiActiveDocument;
@@ -5889,8 +5889,8 @@ namespace GMEPPlumbing
       }
       double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
 
-      var routeHeightDisplay = new RouteHeightDisplay(ed);
-      routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
+      //var routeHeightDisplay = new RouteHeightDisplay(ed);
+      //routeHeightDisplay.Enable(routeHeight, CADObjectCommands.ActiveViewName, CADObjectCommands.ActiveFloor);
 
       ed.WriteMessage("\nSelect base point for plumbing source");
       ObjectId blockId;
@@ -5918,7 +5918,7 @@ namespace GMEPPlumbing
 
             if (rotatePromptResult.Status != PromptStatus.OK) {
               ed.WriteMessage("\nOperation cancelled.");
-              routeHeightDisplay.Disable();
+              //routeHeightDisplay.Disable();
               return;
             }
             rotation = br.Rotation;
@@ -5931,7 +5931,7 @@ namespace GMEPPlumbing
           }
           else {
             ed.WriteMessage("\nFailed to create block reference.");
-            routeHeightDisplay.Disable();
+            //routeHeightDisplay.Disable();
             return;
           }
 
@@ -5973,10 +5973,10 @@ namespace GMEPPlumbing
       }
       catch (System.Exception ex) {
         ed.WriteMessage(ex.ToString());
-        routeHeightDisplay.Disable();
+        //routeHeightDisplay.Disable();
         Console.WriteLine(ex.ToString());
       }
-      routeHeightDisplay.Disable();
+      //routeHeightDisplay.Disable();
     }
 
     /*public Point3d CreateVentBlock(
@@ -7698,7 +7698,7 @@ namespace GMEPPlumbing
   }
 
 
-  public class RouteHeightDisplay {
+  /*public class RouteHeightDisplay {
     private readonly Editor _ed;
     private double _routeHeight;
     private string _viewName = string.Empty;
@@ -7835,5 +7835,5 @@ namespace GMEPPlumbing
         _ed.WriteMessage($"\nError in PointMonitor: {ex.Message}");
       }
     }
-  }
+  }*/
 }
