@@ -5825,8 +5825,8 @@ namespace GMEPPlumbing
         return;
       }
 
-      double pressure = 0;
-      if (selectedSourceType.Type == "Water Meter" || selectedSourceType.Type == "Water Meter") {
+      double pressure = 60;
+      /*if (selectedSourceType.Type == "Water Meter" || selectedSourceType.Type == "Water Meter") {
         PromptDoubleOptions pdo2 = new PromptDoubleOptions("\nEnter the PSI of the source");
         pdo2.DefaultValue = 60;
         pdo2.AllowNone = false;
@@ -5851,7 +5851,7 @@ namespace GMEPPlumbing
             continue;
           }
         }
-      }
+      }*/
 
       PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the source from the floor (in feet): ");
       pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
@@ -7111,7 +7111,7 @@ namespace GMEPPlumbing
                       int Floor = 0;
                       double hotWaterX = 0;
                       double hotWaterY = 0;
-                      double pressure = 0;
+                      //double pressure = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
                         if (prop.PropertyName == "id") {
@@ -7129,9 +7129,9 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "Hot Water Y") {
                           hotWaterY = Convert.ToDouble(prop.Value);
                         }
-                        if (prop.PropertyName == "pressure") {
-                          pressure = Convert.ToDouble(prop.Value);
-                        }
+                        //if (prop.PropertyName == "pressure") {
+                          //pressure = Convert.ToDouble(prop.Value);
+                        //}
                       }
                       if (name == "GMEP WH 50" || name == "GMEP WH 80" || name == "GMEP IWH") {
                         typeId = 2;
@@ -7153,7 +7153,7 @@ namespace GMEPPlumbing
                           position,
                           typeId,
                           basePointId,
-                          pressure
+                          60
                         );
                         sources.Add(source);
                       }
