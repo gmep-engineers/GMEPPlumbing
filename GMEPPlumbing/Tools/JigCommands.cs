@@ -56,9 +56,17 @@ namespace GMEPPlumbing
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
       try {
-        JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
-        if (opts == null)
+        // Validate prompts parameter
+        if (prompts == null) {
           return SamplerStatus.Cancel;
+        }
+
+        // Validate line object is in a valid state
+        if (line == null || line.IsDisposed) {
+          return SamplerStatus.Cancel;
+        }
+
+        JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
         opts.BasePoint = startPoint;
         opts.UseBasePoint = true;
         opts.Cursor = CursorType.RubberBand;
@@ -115,9 +123,17 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
       try {
-        JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect second point for ellipse major axis:");
-        if (opts == null)
+        // Validate prompts parameter
+        if (prompts == null) {
           return SamplerStatus.Cancel;
+        }
+
+        // Validate ellipse object is in a valid state
+        if (_ellipse == null || _ellipse.IsDisposed) {
+          return SamplerStatus.Cancel;
+        }
+
+        JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect second point for ellipse major axis:");
         opts.BasePoint = _startPoint;
         opts.UseBasePoint = true;
         opts.Cursor = CursorType.RubberBand;
@@ -183,9 +199,17 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
       try {
-        JigPromptPointOptions opts = new JigPromptPointOptions("\nSpecify offset position:");
-        if (opts == null)
+        // Validate prompts parameter
+        if (prompts == null) {
           return SamplerStatus.Cancel;
+        }
+
+        // Validate line objects are in a valid state
+        if (_baseLine == null || _baseLine.IsDisposed || _previewLine == null || _previewLine.IsDisposed) {
+          return SamplerStatus.Cancel;
+        }
+
+        JigPromptPointOptions opts = new JigPromptPointOptions("\nSpecify offset position:");
         opts.UserInputControls = UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
         PromptPointResult res = prompts.AcquirePoint(opts);
 
@@ -267,10 +291,17 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
       try {
-        JigPromptPointOptions opts = new JigPromptPointOptions(message);
-        if (opts == null) {
+        // Validate prompts parameter
+        if (prompts == null) {
           return SamplerStatus.Cancel;
         }
+
+        // Validate line object is in a valid state
+        if (line == null || line.IsDisposed) {
+          return SamplerStatus.Cancel;
+        }
+
+        JigPromptPointOptions opts = new JigPromptPointOptions(message);
         opts.BasePoint = startPoint;
         opts.UseBasePoint = true;
         opts.Cursor = CursorType.RubberBand;
@@ -342,11 +373,19 @@ namespace GMEPPlumbing
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
       try {
+        // Validate prompts parameter
+        if (prompts == null) {
+          return SamplerStatus.Cancel;
+        }
+
+        // Validate base line object is in a valid state
+        if (_baseLine == null || _baseLine.IsDisposed) {
+          return SamplerStatus.Cancel;
+        }
+
         JigPromptPointOptions opts = new JigPromptPointOptions(
           "\nMove cursor to preview start point, click to select:"
         );
-        if (opts == null)
-          return SamplerStatus.Cancel;
 
         opts.UserInputControls =
           UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
@@ -427,6 +466,11 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
       try {
+        // Validate prompts parameter
+        if (prompts == null) {
+          return SamplerStatus.Cancel;
+        }
+
         JigPromptPointOptions opts = new JigPromptPointOptions(
             "\nMove cursor to preview point on circle, click to select:"
         ) {
@@ -434,8 +478,6 @@ namespace GMEPPlumbing
           UseBasePoint = true,
           Cursor = CursorType.RubberBand,
         };
-        if (opts == null)
-          return SamplerStatus.Cancel;
 
         opts.UserInputControls =
             UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
@@ -497,6 +539,16 @@ namespace GMEPPlumbing
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
       try {
+        // Validate prompts parameter
+        if (prompts == null) {
+          return SamplerStatus.Cancel;
+        }
+
+        // Validate polyline object is in a valid state
+        if (polyline == null || polyline.IsDisposed) {
+          return SamplerStatus.Cancel;
+        }
+
         JigPromptPointOptions options = new JigPromptPointOptions("\nSelect next point or [Close]:");
         options.UserInputControls =
           UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
@@ -602,6 +654,16 @@ namespace GMEPPlumbing
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
       try {
+        // Validate prompts parameter
+        if (prompts == null) {
+          return SamplerStatus.Cancel;
+        }
+
+        // Validate line and arc objects are in a valid state
+        if (line == null || line.IsDisposed || arc == null || arc.IsDisposed) {
+          return SamplerStatus.Cancel;
+        }
+
         JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
         opts.BasePoint = rotationPoint;
         opts.UseBasePoint = true;
@@ -675,6 +737,16 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
+      // Validate prompts parameter
+      if (prompts == null) {
+        return SamplerStatus.Cancel;
+      }
+
+      // Validate Entity is in a valid state
+      if (Entity == null || Entity.IsDisposed) {
+        return SamplerStatus.Cancel;
+      }
+
       JigPromptPointOptions pointOptions = new JigPromptPointOptions("\nSpecify insertion point: ");
       PromptPointResult pointResult = prompts.AcquirePoint(pointOptions);
 
@@ -755,6 +827,16 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
+      // Validate prompts parameter
+      if (prompts == null) {
+        return SamplerStatus.Cancel;
+      }
+
+      // Validate Entity is in a valid state
+      if (Entity == null || Entity.IsDisposed) {
+        return SamplerStatus.Cancel;
+      }
+
       JigPromptPointOptions jigOpts = new JigPromptPointOptions("\nSpecify insertion point: ");
       PromptPointResult ppr = prompts.AcquirePoint(jigOpts);
 
@@ -800,6 +882,16 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
+      // Validate prompts parameter
+      if (prompts == null) {
+        return SamplerStatus.Cancel;
+      }
+
+      // Validate line object is in a valid state
+      if (line == null || line.IsDisposed) {
+        return SamplerStatus.Cancel;
+      }
+
       JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
       opts.BasePoint = startPoint;
       opts.UseBasePoint = true;
@@ -847,6 +939,11 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
+      // Validate prompts parameter
+      if (prompts == null) {
+        return SamplerStatus.Cancel;
+      }
+
       if (_blockId == ObjectId.Null || !_blockId.IsValid)
         return SamplerStatus.Cancel;
 
@@ -925,6 +1022,16 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
+      // Validate prompts parameter
+      if (prompts == null) {
+        return SamplerStatus.Cancel;
+      }
+
+      // Validate base line and block definition are in a valid state
+      if (_baseLine == null || _baseLine.IsDisposed || _blockDefId == ObjectId.Null || !_blockDefId.IsValid) {
+        return SamplerStatus.Cancel;
+      }
+
       JigPromptPointOptions opts = new JigPromptPointOptions("\nPlace Line Arrow:");
       opts.UserInputControls =
         UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
@@ -963,6 +1070,16 @@ namespace GMEPPlumbing
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
+      // Validate prompts parameter
+      if (prompts == null) {
+        return SamplerStatus.Cancel;
+      }
+
+      // Validate Entity and block reference are in a valid state
+      if (Entity == null || Entity.IsDisposed || _blockRef == null || _blockRef.IsDisposed) {
+        return SamplerStatus.Cancel;
+      }
+
       var prompt = "\nSpecify rotation reference point: ";
       var pointOptions = new JigPromptPointOptions(prompt)
       {
