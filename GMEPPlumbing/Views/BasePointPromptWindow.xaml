@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:GMEPPlumbing.Views"
         mc:Ignorable="d"
         Title="Base Points"
-        Height="310" Width="417">
+        Height="310" Width="417" Background="Blue">
     <Grid>
         <Border BorderThickness="2" BorderBrush="Black">
             <StackPanel Orientation="Vertical">
