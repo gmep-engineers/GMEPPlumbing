@@ -483,53 +483,58 @@ namespace GMEPPlumbing
 
     protected override bool WorldDraw(WorldDraw draw)
     {
-      if (polyline != null)
-      {
-        draw.Geometry.Draw(polyline);
+      try {
+        if (polyline != null) {
+          draw.Geometry.Draw(polyline);
+        }
+        return true;
       }
-      return true;
+      catch {
+        return false;
+      }
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
-      JigPromptPointOptions options = new JigPromptPointOptions("\nSelect next point or [Close]:");
-      options.UserInputControls =
-        UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
-      options.Keywords.Add("Close");
-      PromptPointResult result = prompts.AcquirePoint(options);
+      try {
+        JigPromptPointOptions options = new JigPromptPointOptions("\nSelect next point or [Close]:");
+        options.UserInputControls =
+          UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+        options.Keywords.Add("Close");
+        PromptPointResult result = prompts.AcquirePoint(options);
 
-      if (result.Status == PromptStatus.Keyword && result.StringResult == "Close")
-      {
-        if (vertices.Count > 2)
-        {
-          polyline.Closed = true;
+        if (result.Status == PromptStatus.Keyword && result.StringResult == "Close") {
+          if (vertices.Count > 2) {
+            polyline.Closed = true;
+            return SamplerStatus.Cancel;
+          }
+          else {
+            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
+              "\nA polyline must have at least 3 vertices to be closed."
+            );
+            return SamplerStatus.NoChange;
+          }
+        }
+        if (result.Status == PromptStatus.Cancel || result.Status == PromptStatus.Error) {
           return SamplerStatus.Cancel;
         }
-        else
-        {
-          Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
-            "\nA polyline must have at least 3 vertices to be closed."
-          );
+        options.BasePoint = CurrentPoint;
+        options.UseBasePoint = true;
+        options.Cursor = CursorType.RubberBand;
+
+        if (result.Status != PromptStatus.OK)
+          return SamplerStatus.Cancel;
+
+        if (CurrentPoint.DistanceTo(result.Value) < Tolerance.Global.EqualPoint)
           return SamplerStatus.NoChange;
-        }
+
+        CurrentPoint = result.Value;
+
+        return SamplerStatus.OK;
       }
-      if (result.Status == PromptStatus.Cancel || result.Status == PromptStatus.Error)
-      {
+      catch {
         return SamplerStatus.Cancel;
       }
-      options.BasePoint = CurrentPoint;
-      options.UseBasePoint = true;
-      options.Cursor = CursorType.RubberBand;
-
-      if (result.Status != PromptStatus.OK)
-        return SamplerStatus.Cancel;
-
-      if (CurrentPoint.DistanceTo(result.Value) < Tolerance.Global.EqualPoint)
-        return SamplerStatus.NoChange;
-
-      CurrentPoint = result.Value;
-
-      return SamplerStatus.OK;
     }
 
     public void AddVertex(Point3d point)
@@ -580,38 +585,46 @@ namespace GMEPPlumbing
 
     protected override bool WorldDraw(WorldDraw draw)
     {
-      if (line != null)
-      {
-        draw.Geometry.Draw(line);
+      try {
+        if (line != null) {
+          draw.Geometry.Draw(line);
+        }
+        if (arc != null && arc.StartAngle != arc.EndAngle) {
+          draw.Geometry.Draw(arc);
+        }
+        return true;
       }
-      if (arc != null && arc.StartAngle != arc.EndAngle)
-      {
-        draw.Geometry.Draw(arc);
+      catch {
+        return false;
       }
-      return true;
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
-      JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
-      opts.BasePoint = rotationPoint;
-      opts.UseBasePoint = true;
-      opts.Cursor = CursorType.RubberBand;
+      try {
+        JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
+        opts.BasePoint = rotationPoint;
+        opts.UseBasePoint = true;
+        opts.Cursor = CursorType.RubberBand;
 
-      PromptPointResult res = prompts.AcquirePoint(opts);
-      if (res.Status != PromptStatus.OK)
+        PromptPointResult res = prompts.AcquirePoint(opts);
+        if (res.Status != PromptStatus.OK)
+          return SamplerStatus.Cancel;
+
+        if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+          return SamplerStatus.NoChange;
+
+        endPoint = res.Value;
+
+        Vector3d direction = (endPoint - rotationPoint).GetNormal();
+        startPoint = rotationPoint + direction * -3 * (0.25 / scale);
+
+        UpdateGeometry();
+        return SamplerStatus.OK;
+      }
+      catch {
         return SamplerStatus.Cancel;
-
-      if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
-        return SamplerStatus.NoChange;
-
-      endPoint = res.Value;
-
-      Vector3d direction = (endPoint - rotationPoint).GetNormal();
-      startPoint = rotationPoint + direction * -3 * (0.25 / scale);
-
-      UpdateGeometry();
-      return SamplerStatus.OK;
+      }
     }
 
     private void UpdateGeometry()
