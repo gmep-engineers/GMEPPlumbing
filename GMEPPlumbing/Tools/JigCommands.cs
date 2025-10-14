@@ -42,40 +42,49 @@ namespace GMEPPlumbing
 
     protected override bool WorldDraw(WorldDraw draw)
     {
-      if (line != null)
-      {
-        draw.Geometry.Draw(line);
+      try {
+        if (line != null) {
+          draw.Geometry.Draw(line);
+        }
+        return true;
       }
-      return true;
+      catch {
+        return false;
+      }
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
-      JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
-      if (opts == null)
-        return SamplerStatus.Cancel;
-      opts.BasePoint = startPoint;
-      opts.UseBasePoint = true;
-      opts.Cursor = CursorType.RubberBand;
+      try {
+        JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
+        if (opts == null)
+          return SamplerStatus.Cancel;
+        opts.BasePoint = startPoint;
+        opts.UseBasePoint = true;
+        opts.Cursor = CursorType.RubberBand;
 
-      PromptPointResult res = prompts.AcquirePoint(opts);
-      if (res == null || res.Status != PromptStatus.OK)
-        return SamplerStatus.Cancel;
-      if (res.Value == null)
-        return SamplerStatus.Cancel;
+        PromptPointResult res = prompts.AcquirePoint(opts);
+        if (res == null || res.Status != PromptStatus.OK)
+          return SamplerStatus.Cancel;
+        if (res.Value == null)
+          return SamplerStatus.Cancel;
 
-      if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
-        return SamplerStatus.NoChange;
+        if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+          return SamplerStatus.NoChange;
 
-      if (Horizontal) {
-        endPoint = new Point3d(res.Value.X, startPoint.Y, startPoint.Z);
+        if (Horizontal) {
+          endPoint = new Point3d(res.Value.X, startPoint.Y, startPoint.Z);
+        }
+        else {
+          endPoint = new Point3d(res.Value.X, res.Value.Y, startPoint.Z);
+        }
+        line.EndPoint = endPoint;
+
+        return SamplerStatus.OK;
       }
-      else {
-        endPoint = new Point3d(res.Value.X, res.Value.Y, startPoint.Z);
+      catch {
+        return SamplerStatus.Cancel;
       }
-      line.EndPoint = endPoint;
-
-      return SamplerStatus.OK;
     }
   }
   public class EllipseJig : DrawJig {
@@ -94,32 +103,42 @@ namespace GMEPPlumbing
     }
 
     protected override bool WorldDraw(WorldDraw draw) {
-      if (_ellipse != null)
-        draw.Geometry.Draw(_ellipse);
-      return true;
+      try {
+        if (_ellipse != null)
+          draw.Geometry.Draw(_ellipse);
+        return true;
+      }
+      catch {
+        return false;
+      }
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
-      JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect second point for ellipse major axis:");
-      if (opts == null)
+      try {
+        JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect second point for ellipse major axis:");
+        if (opts == null)
+          return SamplerStatus.Cancel;
+        opts.BasePoint = _startPoint;
+        opts.UseBasePoint = true;
+        opts.Cursor = CursorType.RubberBand;
+
+        PromptPointResult res = prompts.AcquirePoint(opts);
+        if (res == null || res.Status != PromptStatus.OK)
+          return SamplerStatus.Cancel;
+
+        if (res.Value == null)
+          return SamplerStatus.Cancel;
+
+        if (_endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+          return SamplerStatus.NoChange;
+
+        _endPoint = res.Value;
+        UpdateEllipse();
+        return SamplerStatus.OK;
+      }
+      catch {
         return SamplerStatus.Cancel;
-      opts.BasePoint = _startPoint;
-      opts.UseBasePoint = true;
-      opts.Cursor = CursorType.RubberBand;
-
-      PromptPointResult res = prompts.AcquirePoint(opts);
-      if (res == null || res.Status != PromptStatus.OK)
-        return SamplerStatus.Cancel;
-
-      if (res.Value == null)
-        return SamplerStatus.Cancel;
-
-      if (_endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
-        return SamplerStatus.NoChange;
-
-      _endPoint = res.Value;
-      UpdateEllipse();
-      return SamplerStatus.OK;
+      }
     }
 
     private void UpdateEllipse() {
@@ -152,31 +171,41 @@ namespace GMEPPlumbing
     }
 
     protected override bool WorldDraw(WorldDraw draw) {
-      if (_previewLine != null)
-        draw.Geometry.Draw(_previewLine);
-      return true;
+      try {
+        if (_previewLine != null)
+          draw.Geometry.Draw(_previewLine);
+        return true;
+      }
+      catch {
+        return false;
+      }
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
-      JigPromptPointOptions opts = new JigPromptPointOptions("\nSpecify offset position:");
-      if (opts == null)
+      try {
+        JigPromptPointOptions opts = new JigPromptPointOptions("\nSpecify offset position:");
+        if (opts == null)
+          return SamplerStatus.Cancel;
+        opts.UserInputControls = UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+        PromptPointResult res = prompts.AcquirePoint(opts);
+
+        if (res == null || res.Status != PromptStatus.OK)
+          return SamplerStatus.Cancel;
+
+        if (res.Value == null)
+          return SamplerStatus.Cancel;
+
+        if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+          return SamplerStatus.NoChange;
+
+        _mousePoint = res.Value;
+
+        UpdatePreviewLine();
+        return SamplerStatus.OK;
+      }
+      catch {
         return SamplerStatus.Cancel;
-      opts.UserInputControls = UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
-      PromptPointResult res = prompts.AcquirePoint(opts);
-
-      if (res == null || res.Status != PromptStatus.OK)
-        return SamplerStatus.Cancel;
-
-      if (res.Value == null)
-        return SamplerStatus.Cancel;
-
-      if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
-        return SamplerStatus.NoChange;
-
-      _mousePoint = res.Value;
-
-      UpdatePreviewLine();
-      return SamplerStatus.OK;
+      }
     }
 
     private void UpdatePreviewLine() {
@@ -225,33 +254,43 @@ namespace GMEPPlumbing
     }
 
     protected override bool WorldDraw(WorldDraw draw) {
-      if (line != null) {
-        draw.Geometry.Draw(line);
+      try {
+        if (line != null) {
+          draw.Geometry.Draw(line);
+        }
+        return true;
       }
-      return true;
+      catch {
+        return false;
+      }
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
-      JigPromptPointOptions opts = new JigPromptPointOptions(message);
-      if (opts == null) {
+      try {
+        JigPromptPointOptions opts = new JigPromptPointOptions(message);
+        if (opts == null) {
+          return SamplerStatus.Cancel;
+        }
+        opts.BasePoint = startPoint;
+        opts.UseBasePoint = true;
+        opts.Cursor = CursorType.RubberBand;
+
+        PromptPointResult res = prompts.AcquirePoint(opts);
+        if (res == null || res.Status != PromptStatus.OK)
+          return SamplerStatus.Cancel;
+        if (res.Value == null)
+          return SamplerStatus.Cancel;
+        if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+          return SamplerStatus.NoChange;
+
+        endPoint = new Point3d(res.Value.X, res.Value.Y, startPoint.Z);
+        line.EndPoint = endPoint;
+
+        return SamplerStatus.OK;
+      }
+      catch {
         return SamplerStatus.Cancel;
       }
-      opts.BasePoint = startPoint;
-      opts.UseBasePoint = true;
-      opts.Cursor = CursorType.RubberBand;
-
-      PromptPointResult res = prompts.AcquirePoint(opts);
-      if (res == null || res.Status != PromptStatus.OK)
-        return SamplerStatus.Cancel;
-      if (res.Value == null)
-        return SamplerStatus.Cancel;
-      if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
-        return SamplerStatus.NoChange;
-
-      endPoint = new Point3d(res.Value.X, res.Value.Y, startPoint.Z);
-      line.EndPoint = endPoint;
-
-      return SamplerStatus.OK;
     }
   }
 
@@ -271,57 +310,67 @@ namespace GMEPPlumbing
 
     protected override bool WorldDraw(WorldDraw draw)
     {
-      Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
-      ViewTableRecord view = ed.GetCurrentView();
+      try {
+        Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+        ViewTableRecord view = ed.GetCurrentView();
 
-      double unitsPerPixel = view.Width / 6000;
-      double markerRadius = unitsPerPixel * 10;
+        double unitsPerPixel = view.Width / 6000;
+        double markerRadius = unitsPerPixel * 10;
 
-      // Draw an "X" at the projected point
-      Point3d p1 = ProjectedPoint + new Vector3d(-markerRadius, -markerRadius, 0);
-      Point3d p2 = ProjectedPoint + new Vector3d(markerRadius, markerRadius, 0);
-      Point3d p3 = ProjectedPoint + new Vector3d(-markerRadius, markerRadius, 0);
-      Point3d p4 = ProjectedPoint + new Vector3d(markerRadius, -markerRadius, 0);
+        // Draw an "X" at the projected point
+        Point3d p1 = ProjectedPoint + new Vector3d(-markerRadius, -markerRadius, 0);
+        Point3d p2 = ProjectedPoint + new Vector3d(markerRadius, markerRadius, 0);
+        Point3d p3 = ProjectedPoint + new Vector3d(-markerRadius, markerRadius, 0);
+        Point3d p4 = ProjectedPoint + new Vector3d(markerRadius, -markerRadius, 0);
 
-      Line line1 = new Line(p1, p2);
-      Line line2 = new Line(p3, p4);
+        Line line1 = new Line(p1, p2);
+        Line line2 = new Line(p3, p4);
 
-      draw.Geometry.Draw(line1);
-      draw.Geometry.Draw(line2);
+        draw.Geometry.Draw(line1);
+        draw.Geometry.Draw(line2);
 
-      line1.Dispose();
-      line2.Dispose();
+        line1.Dispose();
+        line2.Dispose();
 
-      return true;
+        return true;
+      }
+      catch {
+        return false;
+      }
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
-      JigPromptPointOptions opts = new JigPromptPointOptions(
-        "\nMove cursor to preview start point, click to select:"
-      );
-      if (opts == null)
+      try {
+        JigPromptPointOptions opts = new JigPromptPointOptions(
+          "\nMove cursor to preview start point, click to select:"
+        );
+        if (opts == null)
+          return SamplerStatus.Cancel;
+
+        opts.UserInputControls =
+          UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+        PromptPointResult res = prompts.AcquirePoint(opts);
+
+        if (res == null || res.Status != PromptStatus.OK)
+          return SamplerStatus.Cancel;
+        if (res.Value == null)
+          return SamplerStatus.Cancel;
+
+        if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+          return SamplerStatus.NoChange;
+
+        _mousePoint = res.Value;
+        ProjectedPoint = ProjectPointToLineSegment(
+          _baseLine.StartPoint,
+          _baseLine.EndPoint,
+          _mousePoint
+        );
+        return SamplerStatus.OK;
+      }
+      catch {
         return SamplerStatus.Cancel;
-
-      opts.UserInputControls =
-        UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
-      PromptPointResult res = prompts.AcquirePoint(opts);
-
-      if (res == null || res.Status != PromptStatus.OK)
-        return SamplerStatus.Cancel;
-      if (res.Value == null)
-        return SamplerStatus.Cancel;
-
-      if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
-        return SamplerStatus.NoChange;
-
-      _mousePoint = res.Value;
-      ProjectedPoint = ProjectPointToLineSegment(
-        _baseLine.StartPoint,
-        _baseLine.EndPoint,
-        _mousePoint
-      );
-      return SamplerStatus.OK;
+      }
     }
 
     public static Point3d ProjectPointToLineSegment(Point3d a, Point3d b, Point3d p)
@@ -347,56 +396,66 @@ namespace GMEPPlumbing
     }
 
     protected override bool WorldDraw(WorldDraw draw) {
-      Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
-      ViewTableRecord view = ed.GetCurrentView();
+      try {
+        Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+        ViewTableRecord view = ed.GetCurrentView();
 
-      double unitsPerPixel = view.Width / 6000;
-      double markerRadius = unitsPerPixel * 10;
+        double unitsPerPixel = view.Width / 6000;
+        double markerRadius = unitsPerPixel * 10;
 
-      // Draw an "X" at the projected point
-      Point3d p1 = ProjectedPoint + new Vector3d(-markerRadius, -markerRadius, 0);
-      Point3d p2 = ProjectedPoint + new Vector3d(markerRadius, markerRadius, 0);
-      Point3d p3 = ProjectedPoint + new Vector3d(-markerRadius, markerRadius, 0);
-      Point3d p4 = ProjectedPoint + new Vector3d(markerRadius, -markerRadius, 0);
+        // Draw an "X" at the projected point
+        Point3d p1 = ProjectedPoint + new Vector3d(-markerRadius, -markerRadius, 0);
+        Point3d p2 = ProjectedPoint + new Vector3d(markerRadius, markerRadius, 0);
+        Point3d p3 = ProjectedPoint + new Vector3d(-markerRadius, markerRadius, 0);
+        Point3d p4 = ProjectedPoint + new Vector3d(markerRadius, -markerRadius, 0);
 
-      Line line1 = new Line(p1, p2);
-      Line line2 = new Line(p3, p4);
+        Line line1 = new Line(p1, p2);
+        Line line2 = new Line(p3, p4);
 
-      draw.Geometry.Draw(line1);
-      draw.Geometry.Draw(line2);
+        draw.Geometry.Draw(line1);
+        draw.Geometry.Draw(line2);
 
-      line1.Dispose();
-      line2.Dispose();
+        line1.Dispose();
+        line2.Dispose();
 
-      return true;
+        return true;
+      }
+      catch {
+        return false;
+      }
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts) {
-      JigPromptPointOptions opts = new JigPromptPointOptions(
-          "\nMove cursor to preview point on circle, click to select:"
-      ) {
-        BasePoint = _center,
-        UseBasePoint = true,
-        Cursor = CursorType.RubberBand,
-      };
-      if (opts == null)
+      try {
+        JigPromptPointOptions opts = new JigPromptPointOptions(
+            "\nMove cursor to preview point on circle, click to select:"
+        ) {
+          BasePoint = _center,
+          UseBasePoint = true,
+          Cursor = CursorType.RubberBand,
+        };
+        if (opts == null)
+          return SamplerStatus.Cancel;
+
+        opts.UserInputControls =
+            UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+        PromptPointResult res = prompts.AcquirePoint(opts);
+
+        if (res == null || res.Status != PromptStatus.OK)
+          return SamplerStatus.Cancel;
+        if (res.Value == null)
+          return SamplerStatus.Cancel;
+
+        if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+          return SamplerStatus.NoChange;
+
+        _mousePoint = new Point3d(res.Value.X, res.Value.Y, _center.Z);
+        ProjectedPoint = ProjectPointToCircle(_center, _radius, _mousePoint);
+        return SamplerStatus.OK;
+      }
+      catch {
         return SamplerStatus.Cancel;
-
-      opts.UserInputControls =
-          UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
-      PromptPointResult res = prompts.AcquirePoint(opts);
-
-      if (res == null || res.Status != PromptStatus.OK)
-        return SamplerStatus.Cancel;
-      if (res.Value == null)
-        return SamplerStatus.Cancel;
-
-      if (_mousePoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
-        return SamplerStatus.NoChange;
-
-      _mousePoint = new Point3d(res.Value.X, res.Value.Y, _center.Z);
-      ProjectedPoint = ProjectPointToCircle(_center, _radius, _mousePoint);
-      return SamplerStatus.OK;
+      }
     }
 
     public static Point3d ProjectPointToCircle(Point3d center, double radius, Point3d p) {
