@@ -7698,7 +7698,7 @@ namespace GMEPPlumbing
   }
 
 
-  public class RouteHeightDisplay {
+  /*public class RouteHeightDisplay {
     private readonly Editor _ed;
     private double _routeHeight;
     private string _viewName = string.Empty;
@@ -7835,5 +7835,5 @@ namespace GMEPPlumbing
         _ed.WriteMessage($"\nError in PointMonitor: {ex.Message}");
       }
     }
-  }
+  }*/
 }
