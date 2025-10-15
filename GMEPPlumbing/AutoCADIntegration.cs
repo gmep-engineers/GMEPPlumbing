@@ -7160,7 +7160,7 @@ namespace GMEPPlumbing
                           basepointId,
                           startHeight,
                           length,
-                          0,
+                          3,
                           "PEX",
                           true
                         );
@@ -7173,7 +7173,7 @@ namespace GMEPPlumbing
                          basepointId,
                          startHeight,
                          length,
-                         0,
+                         3,
                          "PEX",
                          false
                         );
