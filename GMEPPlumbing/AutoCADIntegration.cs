@@ -5824,6 +5824,19 @@ namespace GMEPPlumbing
         ed.Command("PlumbingFixture", "VE");
         return;
       }
+      string layer = "";
+      switch (selectedSourceType.Type) {
+        case "Water Meter":
+          layer = "P-DOMW-CWTR";
+          break;
+        case "Gas Meter":
+          layer = "P-GAS";
+          break;
+        case "Waste Source":
+          layer = "P-WV-W-BELOW";
+          break;
+      }
+
 
       double pressure = 60;
       /*if (selectedSourceType.Type == "Water Meter" || selectedSourceType.Type == "Water Meter") {
@@ -5923,6 +5936,7 @@ namespace GMEPPlumbing
             }
             rotation = br.Rotation;
             br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
+            br.Layer = layer;
 
 
             curSpace.AppendEntity(br);
