@@ -185,6 +185,15 @@ namespace GMEPPlumbing.Views
             if (targetCollection.Count == 0 || (targetCollection.First().LocationDescription == sourceGroup.LocationDescription && targetCollection.First().SourceDescription == sourceGroup.SourceDescription)) {
               sourceCollection.Remove(sourceGroup);
               targetCollection.Add(sourceGroup);
+              var sorted = targetCollection.OrderBy(g =>
+                       g.Type == "Cold Water" ? 0 :
+                       g.Type == "Hot Water" ? 1 : 2
+                   ).ToList();
+
+              targetCollection.Clear();
+              foreach (var group in sorted) {
+                targetCollection.Add(group);
+              }
             }
             else {
               MessageBox.Show("You can only group vertical routes from the same location and to the same location.", "Invalid Grouping", MessageBoxButton.OK, MessageBoxImage.Warning);
