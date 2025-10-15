@@ -7138,15 +7138,15 @@ namespace GMEPPlumbing
                           basepointId = prop.Value?.ToString();
                         }
                       }
-                      if (basepointId != "") {
+                      if (basepointId != "" && basepointId != "0") {
                         PlumbingPlanBasePoint basepoint = basePoints.FirstOrDefault(bp => bp.Id == basepointId);
                         double rotation = entity.Rotation;
                         double hotRotatedX = hotWaterX * Math.Cos(rotation) - hotWaterY * Math.Sin(rotation);
                         double hotRotatedY = hotWaterX * Math.Sin(rotation) + hotWaterY * Math.Cos(rotation);
                         double coldRotatedX = coldWaterX * Math.Cos(rotation) - coldWaterY * Math.Sin(rotation);
                         double coldRotatedY = coldWaterX * Math.Sin(rotation) + coldWaterY * Math.Cos(rotation);
-                        Point3d hotWaterPosition = new Point3d(entity.Position.X + hotRotatedX, entity.Position.Y + hotRotatedY, basepoint.CeilingHeight);
-                        Point3d coldWaterPosition = new Point3d(entity.Position.X + coldRotatedX, entity.Position.Y + coldRotatedY, basepoint.CeilingHeight);
+                        Point3d hotWaterPosition = new Point3d(entity.Position.X + hotRotatedX, entity.Position.Y + hotRotatedY, basepoint.CeilingHeight*12);
+                        Point3d coldWaterPosition = new Point3d(entity.Position.X + coldRotatedX, entity.Position.Y + coldRotatedY, basepoint.CeilingHeight*12);
 
                         double startHeight = basepoint.CeilingHeight - basepoint.FloorHeight;
                         double length = startHeight - basepoint.RouteHeight;
@@ -7248,7 +7248,7 @@ namespace GMEPPlumbing
                           basepointId = prop.Value?.ToString();
                         }
                       }
-                      if (basepointId != "") {
+                      if (basepointId != "" && basepointId != "0") {
                         double rotation = entity.Rotation;
                         double hotRotatedX = hotWaterX * Math.Cos(rotation) - hotWaterY * Math.Sin(rotation);
                         double hotRotatedY = hotWaterX * Math.Sin(rotation) + hotWaterY * Math.Cos(rotation);
