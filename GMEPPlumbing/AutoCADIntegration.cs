@@ -6804,6 +6804,11 @@ namespace GMEPPlumbing
         }
         tr.Commit();
       }
+      if (basePoints != null) {
+        List<PlumbingHorizontalRoute> waterHeaterRoutes = GetWaterHeaterHorizontalRoutes(ProjectId);
+        routes.AddRange(waterHeaterRoutes);
+      }
+
       ed.WriteMessage(ProjectId + " - Found " + routes.Count + " horizontal routes in the drawing.");
       return routes;
     }
@@ -6944,6 +6949,10 @@ namespace GMEPPlumbing
         }
         tr.Commit();
       }
+      if (basePoints != null) {
+        List<PlumbingVerticalRoute> waterHeaterRoutes = GetWaterHeaterVerticalRoutes(ProjectId, basePoints);
+        routes.AddRange(waterHeaterRoutes);
+      }
       ed.WriteMessage(ProjectId + " - Found " + routes.Count + " plumbing vertical routes in the drawing.");
       return routes;
     }
@@ -7072,7 +7081,7 @@ namespace GMEPPlumbing
       ed.WriteMessage(ProjectId + " - Found " + points.Count + " basepoints in the drawing.");
       return points;
     }
-    public List<PlumbingVerticalRoute> GetWaterHeaterVerticalRoutes(List<PlumbingPlanBasePoint> basePoints) {
+    public static List<PlumbingVerticalRoute> GetWaterHeaterVerticalRoutes(string ProjectId, List<PlumbingPlanBasePoint> basePoints) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return new List<PlumbingVerticalRoute>();
 
@@ -7139,6 +7148,9 @@ namespace GMEPPlumbing
                         Point3d hotWaterPosition = new Point3d(entity.Position.X + hotRotatedX, entity.Position.Y + hotRotatedY, basepoint.CeilingHeight);
                         Point3d coldWaterPosition = new Point3d(entity.Position.X + coldRotatedX, entity.Position.Y + coldRotatedY, basepoint.CeilingHeight);
 
+                        double startHeight = basepoint.CeilingHeight - basepoint.FloorHeight;
+                        double length = startHeight - basepoint.RouteHeight;
+
                         PlumbingVerticalRoute hotWaterRoute = new PlumbingVerticalRoute(
                           Guid.NewGuid().ToString(),
                           ProjectId,
@@ -7146,9 +7158,9 @@ namespace GMEPPlumbing
                           hotWaterPosition,
                           Guid.NewGuid().ToString(),
                           basepointId,
+                          startHeight,
+                          length,
                           0,
-                          0,
-                          2,
                           "PEX",
                           true
                         );
@@ -7157,13 +7169,13 @@ namespace GMEPPlumbing
                          ProjectId,
                          "Cold Water",
                          coldWaterPosition,
-                         "",
+                         Guid.NewGuid().ToString(),
                          basepointId,
+                         startHeight,
+                         length,
                          0,
-                         0,
-                         2,
                          "PEX",
-                         true
+                         false
                         );
                         routes.Add(hotWaterRoute);
                         routes.Add(coldWaterRoute);
@@ -7179,7 +7191,7 @@ namespace GMEPPlumbing
       return routes;
     }
 
-    public List<PlumbingHorizontalRoute> GetWaterHeaterHorizontalRoutes() {
+    public static List<PlumbingHorizontalRoute> GetWaterHeaterHorizontalRoutes(string ProjectId) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return new List<PlumbingHorizontalRoute>();
 
