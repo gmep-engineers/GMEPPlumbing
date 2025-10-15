@@ -110,13 +110,13 @@ namespace GMEPPlumbing {
         PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(fixture.CatalogId);
         ed.WriteMessage($"\nFixture {fixture.Id} has a demand of {catalogItem.FixtureDemand} fixture units.");
         double units = (double)catalogItem.FixtureDemand;
-        if (GetFixtureInputTypes(fixture).Contains("Hot Water")) {
+        if (route.Type == "Hot Water") {
           units = (double)catalogItem.HotDemand;
         }
-        if (GetFixtureInputTypes(fixture).Contains("Gas")) {
+        if (route.Type == "Gas") {
           units = catalogItem.Cfh;
         }
-        if (GetFixtureInputTypes(fixture).Contains("Waste")) {
+        if (route.Type == "Waste" || route.Type == "Vent") {
           units = catalogItem.Dfu;
         }
         fixtureUnits += units;
