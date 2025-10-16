@@ -42,6 +42,7 @@ using GMEPPlumbing.Properties;
 using System.Windows.Shapes;
 using static Google.Protobuf.Compiler.CodeGeneratorResponse.Types;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Windows.Controls;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
@@ -2131,8 +2132,6 @@ namespace GMEPPlumbing
 
           Vector3d dir = (line.EndPoint - line.StartPoint).GetNormal();
           double angle = dir.AngleOnPlane(new Plane(Point3d.Origin, Vector3d.ZAxis));
-          if (line.Layer == "meow")
-            angle += Math.PI;
 
           // Get the BlockTable and BlockTableRecord
           BlockTable bt = (BlockTable)tr.GetObject(line.Database.BlockTableId, OpenMode.ForRead);
@@ -2995,6 +2994,9 @@ namespace GMEPPlumbing
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
+              if (blockName == "GMEP PLUMBING VENT EXIT") {
+                zIndex = CADObjectCommands.ActiveCeilingHeight * 12;
+              }
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr;
@@ -3143,6 +3145,7 @@ namespace GMEPPlumbing
                   PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
                   ZoomToPoint(ed, startRoute.Position);
                 }
+                MakeVentExit(ventRoutes.Values.Last());
               }
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -3168,7 +3171,7 @@ namespace GMEPPlumbing
             }
           }
           catch (System.Exception ex) {
-            ed.WriteMessage("FIxture Error - "+ ex.ToString());
+            ed.WriteMessage("Fixture Error - "+ ex.ToString());
             //routeHeightDisplay.Disable();
             Console.WriteLine(ex.ToString());
           }
@@ -3176,6 +3179,52 @@ namespace GMEPPlumbing
         MakePlumbingFixtureLabel(plumbingFixture, selectedFixtureType);
       }
       //routeHeightDisplay.Disable();
+    }
+    public void MakeVentExit(PlumbingVerticalRoute route) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      ObjectId blockId = ObjectId.Null;
+      try {
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt["GMEP PLUMBING VENT EXIT"], OpenMode.ForRead);
+          BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+          BlockReference br = new BlockReference(route.Position, btr.ObjectId);
+          br.Rotation = route.Rotation;
+
+          modelSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+
+          blockId = br.Id;
+
+          tr.Commit();
+        }
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+          var modelSpace = (BlockTableRecord)
+            tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+          BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+          DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in pc) {
+            if (prop.PropertyName == "id") {
+              prop.Value = Guid.NewGuid().ToString();
+            }
+            if (prop.PropertyName == "base_point_id") {
+              prop.Value = route.BasePointId;
+            }
+            if (prop.PropertyName == "type_abbreviation") {
+              prop.Value = "VE";
+            }
+          }
+          tr.Commit();
+        }
+      }
+      catch (System.Exception ex) {
+        ed.WriteMessage("Vent Exit Error - " + ex.ToString());
+        Console.WriteLine(ex.ToString());
+      }
     }
 
     [CommandMethod("PLUMBINGISLANDFIXTURE")]
@@ -3543,6 +3592,9 @@ namespace GMEPPlumbing
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
+              if (blockName == "GMEP PLUMBING VENT EXIT") {
+                zIndex = CADObjectCommands.ActiveCeilingHeight * 12;
+              }
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr;
@@ -3718,6 +3770,7 @@ namespace GMEPPlumbing
                  PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
                  ZoomToPoint(ed, startRoute.Position);
                }
+               MakeVentExit(ventRoutes.Values.Last());
              }
              if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -4293,6 +4346,7 @@ namespace GMEPPlumbing
                   PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
                   ZoomToPoint(ed, startRoute.Position);
                 }
+                MakeVentExit(ventRoutes.Values.Last());
               }
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -4715,6 +4769,9 @@ namespace GMEPPlumbing
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
+              if (blockName == "GMEP GAS VENT") {
+                zIndex = CADObjectCommands.ActiveCeilingHeight * 12;
+              }
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr;
@@ -4863,6 +4920,7 @@ namespace GMEPPlumbing
                   PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
                   ZoomToPoint(ed, startRoute.Position);
                 }
+                MakeVentExit(ventRoutes.Values.Last());
               }
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -5415,6 +5473,9 @@ namespace GMEPPlumbing
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
+              if (blockName == "GMEP PLUMBING VENT EXIT") {
+                zIndex = CADObjectCommands.ActiveCeilingHeight * 12;
+              }
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr;
@@ -5573,6 +5634,7 @@ namespace GMEPPlumbing
                     PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
                     ZoomToPoint(ed, startRoute.Position);
                   }
+                  MakeVentExit(ventRoutes.Last().Value);
                 }
                 if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                   ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -6820,7 +6882,9 @@ namespace GMEPPlumbing
       }
       if (basePoints != null) {
         List<PlumbingHorizontalRoute> waterHeaterRoutes = GetWaterHeaterHorizontalRoutes(ProjectId);
+        List<PlumbingHorizontalRoute> ventExitRoutes = GetVentExitHorizontalRoutes(ProjectId);
         routes.AddRange(waterHeaterRoutes);
+        routes.AddRange(ventExitRoutes);
       }
 
       ed.WriteMessage(ProjectId + " - Found " + routes.Count + " horizontal routes in the drawing.");
@@ -7294,6 +7358,60 @@ namespace GMEPPlumbing
                         routes.Add(hotWaterRoute);
                         routes.Add(coldWaterRoute);
                       }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return routes;
+    }
+    public static List<PlumbingHorizontalRoute> GetVentExitHorizontalRoutes(string ProjectId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return new List<PlumbingHorizontalRoute>();
+
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List<PlumbingHorizontalRoute> routes = new List<PlumbingHorizontalRoute>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+        BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt["GMEP PLUMBING VENT EXIT"], OpenMode.ForRead);
+        foreach (ObjectId id in sourceBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  if (objId.IsValid) {
+                    var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                    var pc = entity.DynamicBlockReferencePropertyCollection;
+                   
+                    string basepointId = string.Empty;
+                    foreach (DynamicBlockReferenceProperty prop in pc) {
+                      if (prop.PropertyName == "base_point_id") {
+                        basepointId = prop.Value?.ToString();
+                      }
+                    }
+                    if (basepointId != "" && basepointId != "0") {
+                      double rotation = entity.Rotation;
+                      Point3d position = entity.Position;
+
+                      PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(
+                        Guid.NewGuid().ToString(),
+                        ProjectId,
+                        "Vent",
+                        position,
+                        position,
+                        basepointId,
+                        "",
+                        0
+                      );
+                      routes.Add(route);
                     }
                   }
                 }

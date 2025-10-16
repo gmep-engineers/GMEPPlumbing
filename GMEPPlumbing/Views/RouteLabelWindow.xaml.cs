@@ -185,6 +185,15 @@ namespace GMEPPlumbing.Views
             if (targetCollection.Count == 0 || (targetCollection.First().LocationDescription == sourceGroup.LocationDescription && targetCollection.First().SourceDescription == sourceGroup.SourceDescription)) {
               sourceCollection.Remove(sourceGroup);
               targetCollection.Add(sourceGroup);
+              var sorted = targetCollection.OrderBy(g =>
+                       g.Type == "Cold Water" ? 0 :
+                       g.Type == "Hot Water" ? 1 : 2
+                   ).ToList();
+
+              targetCollection.Clear();
+              foreach (var group in sorted) {
+                targetCollection.Add(group);
+              }
             }
             else {
               MessageBox.Show("You can only group vertical routes from the same location and to the same location.", "Invalid Grouping", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -318,35 +327,59 @@ namespace GMEPPlumbing.Views
 
       //Fixture Unit Labels
       string additionalLabels = "";
-      bool endLineFlag = false;
-      if (selectedBoxes.Count > 0) {
-        additionalLabels += "(";
+      if (CADObjectCommands.IsResidential) {
+        bool endLineFlag = false;
+        if (selectedBoxes.Count > 0) {
+          additionalLabels += "(";
+        }
+        foreach (var box in selectedBoxes) {
+          if (endLineFlag) {
+            additionalLabels += "&";
+          }
+          else {
+            endLineFlag = true;
+          }
+          if (box.Type == "Gas") {
+            additionalLabels += $"{box.Units}CFH@~{box.LongestRunLength}";
+          }
+          if (box.Type == "Vent") {
+            additionalLabels += $"{box.Units}DFU";
+          }
+          if (box.Type == "Cold Water") {
+            additionalLabels += $"{box.Units}CWFU";
+          }
+          if (box.Type == "Hot Water") {
+            additionalLabels += $"{box.Units}HWFU";
+          }
+        }
+        if (selectedBoxes.Count > 0) {
+          additionalLabels += ")";
+        }
       }
-      foreach (var box in selectedBoxes) {
-        if (endLineFlag) {
-          additionalLabels += "&";
+      else {
+        bool endLineFlag = false;
+        foreach (var box in selectedBoxes) {
+          if (endLineFlag) {
+            additionalLabels += " ";
+          }
+          else {
+            endLineFlag = true;
+          }
+          if (box.Type == "Gas") {
+            additionalLabels += $"{box.Units}";
+          }
+          if (box.Type == "Vent") {
+            additionalLabels += $"{box.Units}";
+          }
+          if (box.Type == "Cold Water") {
+            additionalLabels += $"{box.Units}";
+          }
+          if (box.Type == "Hot Water") {
+            additionalLabels += $"{box.Units}";
+          }
         }
-        else {
-          endLineFlag = true;
-        }
-        if (box.Type == "Gas") {
-          additionalLabels += $"{box.Units}CFH@~{box.LongestRunLength}";
-        }
-        if (box.Type == "Vent") {
-          additionalLabels += $"{box.Units}DFU";
-        }
-        if (box.Type == "Cold Water") {
-          additionalLabels += $"{box.Units}CWFU";
-        }
-        if (box.Type == "Hot Water") {
-          additionalLabels += $"{box.Units}HWFU";
-        }
-      }
-      if (selectedBoxes.Count > 0) {
-        additionalLabels += ")";
       }
       AdditionalLabelText = additionalLabels.ToUpper();
-
 
       // Final label
       OnPropertyChanged(nameof(LocationLabelText));
@@ -450,11 +483,20 @@ namespace GMEPPlumbing.Views
         );
       }
       if (AdditionalLabelText != "") {
-        CADObjectCommands.CreateTextWithJig(
-          CADObjectCommands.TextLayer,
-          TextHorizontalMode.TextLeft,
-          AdditionalLabelText
-        );
+        if (CADObjectCommands.IsResidential) {
+          CADObjectCommands.CreateTextWithJig(
+            CADObjectCommands.TextLayer,
+            TextHorizontalMode.TextLeft,
+            AdditionalLabelText
+          );
+        }
+        else {
+          CADObjectCommands.CreateTextWithJig(
+            "TEXT2",
+            TextHorizontalMode.TextLeft,
+            AdditionalLabelText
+          );
+        }
       }
     }
 
