@@ -2132,8 +2132,6 @@ namespace GMEPPlumbing
 
           Vector3d dir = (line.EndPoint - line.StartPoint).GetNormal();
           double angle = dir.AngleOnPlane(new Plane(Point3d.Origin, Vector3d.ZAxis));
-          if (line.Layer == "meow")
-            angle += Math.PI;
 
           // Get the BlockTable and BlockTableRecord
           BlockTable bt = (BlockTable)tr.GetObject(line.Database.BlockTableId, OpenMode.ForRead);
