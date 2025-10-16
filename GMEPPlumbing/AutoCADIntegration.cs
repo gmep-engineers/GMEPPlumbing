@@ -6871,7 +6871,9 @@ namespace GMEPPlumbing
       }
       if (basePoints != null) {
         List<PlumbingHorizontalRoute> waterHeaterRoutes = GetWaterHeaterHorizontalRoutes(ProjectId);
+        List<PlumbingHorizontalRoute> ventExitRoutes = GetVentExitHorizontalRoutes(ProjectId);
         routes.AddRange(waterHeaterRoutes);
+        routes.AddRange(ventExitRoutes);
       }
 
       ed.WriteMessage(ProjectId + " - Found " + routes.Count + " horizontal routes in the drawing.");
@@ -7345,6 +7347,60 @@ namespace GMEPPlumbing
                         routes.Add(hotWaterRoute);
                         routes.Add(coldWaterRoute);
                       }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return routes;
+    }
+    public static List<PlumbingHorizontalRoute> GetVentExitHorizontalRoutes(string ProjectId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return new List<PlumbingHorizontalRoute>();
+
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List<PlumbingHorizontalRoute> routes = new List<PlumbingHorizontalRoute>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+        BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt["GMEP PLUMBING VENT EXIT"], OpenMode.ForRead);
+        foreach (ObjectId id in sourceBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  if (objId.IsValid) {
+                    var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                    var pc = entity.DynamicBlockReferencePropertyCollection;
+                   
+                    string basepointId = string.Empty;
+                    foreach (DynamicBlockReferenceProperty prop in pc) {
+                      if (prop.PropertyName == "base_point_id") {
+                        basepointId = prop.Value?.ToString();
+                      }
+                    }
+                    if (basepointId != "" && basepointId != "0") {
+                      double rotation = entity.Rotation;
+                      Point3d position = entity.Position;
+
+                      PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(
+                        Guid.NewGuid().ToString(),
+                        ProjectId,
+                        "Vent",
+                        position,
+                        position,
+                        basepointId,
+                        "",
+                        0
+                      );
+                      routes.Add(route);
                     }
                   }
                 }
