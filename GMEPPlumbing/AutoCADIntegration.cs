@@ -3594,6 +3594,9 @@ namespace GMEPPlumbing
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
+              if (blockName == "GMEP PLUMBING VENT EXIT") {
+                zIndex = CADObjectCommands.ActiveCeilingHeight * 12;
+              }
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr;
@@ -3769,6 +3772,7 @@ namespace GMEPPlumbing
                  PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
                  ZoomToPoint(ed, startRoute.Position);
                }
+               MakeVentExit(ventRoutes.Values.Last());
              }
              if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -4344,6 +4348,7 @@ namespace GMEPPlumbing
                   PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
                   ZoomToPoint(ed, startRoute.Position);
                 }
+                MakeVentExit(ventRoutes.Values.Last());
               }
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -4766,6 +4771,9 @@ namespace GMEPPlumbing
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
+              if (blockName == "GMEP GAS VENT") {
+                zIndex = CADObjectCommands.ActiveCeilingHeight * 12;
+              }
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr;
@@ -4914,6 +4922,7 @@ namespace GMEPPlumbing
                   PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
                   ZoomToPoint(ed, startRoute.Position);
                 }
+                MakeVentExit(ventRoutes.Values.Last());
               }
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -5466,6 +5475,9 @@ namespace GMEPPlumbing
               if (blockName == "GMEP DRAIN") {
                 zIndex = CADObjectCommands.ActiveFloorHeight * 12;
               }
+              if (blockName == "GMEP PLUMBING VENT EXIT") {
+                zIndex = CADObjectCommands.ActiveCeilingHeight * 12;
+              }
               using (Transaction tr = db.TransactionManager.StartTransaction()) {
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr;
@@ -5624,6 +5636,7 @@ namespace GMEPPlumbing
                     PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
                     ZoomToPoint(ed, startRoute.Position);
                   }
+                  MakeVentExit(ventRoutes.Last().Value);
                 }
                 if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                   ed.WriteMessage("\nError: Could not find vent route for base point.");
