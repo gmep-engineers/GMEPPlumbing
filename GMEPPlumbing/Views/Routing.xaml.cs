@@ -390,8 +390,8 @@ namespace GMEPPlumbing.Views
         }
         else if (verticalRoutes.First().Type == "Vent") {
           VentSizingChart chart = new VentSizingChart();
-          string recommendedSize = chart.FindSize(pipeFixtureUnits, longestLength);
-          textString = $" {feet}' {inches}\"\n ---------------------- \n {recommendedSize}\n";
+          pipeSize = chart.FindSize(pipeFixtureUnits, longestLength);
+          textString = $" {feet}' {inches}\"\n ---------------------- \n {pipeSize}\n";
 
         }
         int textHeight = 8;
