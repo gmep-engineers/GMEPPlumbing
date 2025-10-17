@@ -876,6 +876,7 @@ namespace GMEPPlumbing
                   string key = "";
                   bool isSite = false;
                   bool isSiteRef = false;
+                  bool isRoof = false;
                   foreach (DynamicBlockReferenceProperty prop in pc) {
                     if (prop.PropertyName == "view_id") {
                       key = prop.Value.ToString();
@@ -886,8 +887,11 @@ namespace GMEPPlumbing
                     if (prop.PropertyName == "is_site_ref") {
                       isSiteRef = Convert.ToDouble(prop.Value) == 1;
                     }
+                    if (prop.PropertyName == "is_roof") {
+                      isRoof = Convert.ToDouble(prop.Value) == 1;
+                    }
                   }
-                  if (key != "0" && !isSiteRef) {
+                  if (key != "0" && !isSiteRef && !isRoof) {
                     if (CADObjectCommands.ActiveIsSite == isSite) {
                       if (!basePoints.ContainsKey(key)) {
                         basePoints[key] = new List<ObjectId>();
@@ -3822,7 +3826,7 @@ namespace GMEPPlumbing
       Dictionary<int, List<PlumbingFixtureCatalogItem>> allPlumbingFixtureCatalogItems =
         MariaDBService.GetAllPlumbingFixtureCatalogItems();
 
-      List<PlumbingPlanBasePoint> basePointsRef = GetPlumbingBasePointsFromCAD();
+      List<PlumbingPlanBasePoint> basePointsRef = GetPlumbingBasePointsFromCAD().Where(bp => bp.IsRoof == false).ToList();
       PlumbingPlanBasePoint activeBasePointRef = basePointsRef.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
       basePointsRef = basePointsRef.Where(bp => bp.ViewportId == activeBasePointRef.ViewportId && bp.IsSite == activeBasePointRef.IsSite).ToList();
       PlumbingPlanBasePoint aboveBasePoint = basePointsRef
