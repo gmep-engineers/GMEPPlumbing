@@ -647,7 +647,7 @@ namespace GMEPPlumbing
       // Call the method with a null parameter to avoid ambiguity
       VerticalRoute();
     }
-    public Dictionary<string, PlumbingVerticalRoute> VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null, double? endFloorHeight = null, string message = "Vertical Route", string fixtureType = "", bool reverseDirection = false, PlumbingPlanBasePoint chosenPoint = null) {
+    public Dictionary<string, PlumbingVerticalRoute> VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null, double? endFloorHeight = null, string message = "Vertical Route", string fixtureType = "", bool reverseDirection = false, PlumbingPlanBasePoint chosenPoint = null, bool ToRoof = false) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return null;
 
@@ -891,7 +891,7 @@ namespace GMEPPlumbing
                       isRoof = Convert.ToDouble(prop.Value) == 1;
                     }
                   }
-                  if (key != "0" && !isSiteRef && !isRoof) {
+                  if (key != "0" && !isSiteRef && (ToRoof || !isRoof)) {
                     if (CADObjectCommands.ActiveIsSite == isSite) {
                       if (!basePoints.ContainsKey(key)) {
                         basePoints[key] = new List<ObjectId>();
@@ -3157,7 +3157,7 @@ namespace GMEPPlumbing
                 .OrderByDescending(bp => bp.Floor)
                 .FirstOrDefault();
 
-                ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, "UpToCeiling", null, highestFloorBasePoint.CeilingHeight - highestFloorBasePoint.FloorHeight);
+                ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, null, null, 0, "Vertical Route", "", false, null, true);
                 if (highestFloorBasePoint.Floor > CADObjectCommands.ActiveFloor) {
                   PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
                   ZoomToPoint(ed, startRoute.Position);
