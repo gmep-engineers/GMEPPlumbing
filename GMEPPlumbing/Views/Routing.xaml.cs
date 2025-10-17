@@ -329,11 +329,11 @@ namespace GMEPPlumbing.Views
         List<PlumbingVerticalRoute> verticalRoutes = kvp.Value
         .OrderBy(vr => BasePoints.TryGetValue(vr.BasePointId, out var bp) ? bp.Floor : 0)
         .ToList();
-        foreach (var vr in verticalRoutes) {
+        /*foreach (var vr in verticalRoutes) {
           if (vr.Type == "Waste" || vr.Type == "Grease Waste" || vr.Type == "Vent") {
             vr.IsUp = !vr.IsUp;
           }
-        }
+        }*/
 
         Point3D pos = new Point3D(0, 0, 0);
         if (verticalRoutes.First().IsUp) {
@@ -398,11 +398,14 @@ namespace GMEPPlumbing.Views
         double textWidth = textHeight * textString.Length * 0.03;
 
         double offset = textWidth / 2;
-        if (verticalRoutes[0].IsUp)
+        if (isUp)
           pos = new Point3D(pos.X + 6, pos.Y, pos.Z - offset);
         else
           pos = new Point3D(pos.X + 6, pos.Y, pos.Z + offset);
 
+        if (verticalRoutes.First().Type == "Waste" || verticalRoutes.First().Type == "Grease Waste" || verticalRoutes.First().Type == "Vent") {
+          isUp = !isUp;
+        }
         //upload the route data
         string cleanedSize = pipeSize;
         int idx = cleanedSize.IndexOf("Nominal Pipe Size: ");
@@ -422,7 +425,7 @@ namespace GMEPPlumbing.Views
           string sourceDescription = "";
           if (BasePoints.ContainsKey(verticalRoute.BasePointId)) {
             int floor = BasePoints[verticalRoute.BasePointId].Floor;
-            if (verticalRoute.IsUp) {
+            if (isUp) {
               PlumbingVerticalRoute belowRoute = verticalRoutes.FirstOrDefault(vr => vr.VerticalRouteId == verticalRoute.VerticalRouteId && BasePoints[vr.BasePointId].Floor == floor - 1);
               if (belowRoute != null) {
                 sourceDescription = $"from {floor - 1}{GetSuffix(floor - 1)} floor";
