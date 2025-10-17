@@ -855,13 +855,10 @@ namespace GMEPPlumbing.Views
       Scenes.Clear();
       Scene fullScene = new Scene();
       foreach (var fullRoute in FullRoutes) {
-        PlumbingFullRoute routeCopy = DeepCopyFullRoute(fullRoute);
-
         var scene = new Scene(ViewportId, fullRoute, BasePointLookup);
         allInfoBoxes.AddRange(scene.RouteInfoBoxes);
         Scenes.Add(scene);
-
-        var scene2 = new Scene("", routeCopy, BasePointLookup);
+        var scene2 = new Scene("", fullRoute, BasePointLookup);
         foreach (var visual in scene2.RouteVisuals) {
           fullScene.RouteVisuals.Add(visual);
         }
@@ -881,12 +878,10 @@ namespace GMEPPlumbing.Views
       Scene fullScene = new Scene();
       int index = 0;
       foreach (var fullRoute in FullRoutes) {
-        PlumbingFullRoute routeCopy = DeepCopyFullRoute(fullRoute);
-
         Scenes[index].RebuildScene(fullRoute);
         allInfoBoxes.AddRange(Scenes[index].RouteInfoBoxes);
 
-        var scene2 = new Scene("", routeCopy, BasePointLookup);
+        var scene2 = new Scene("", fullRoute, BasePointLookup);
         foreach (var visual in scene2.RouteVisuals) {
           fullScene.RouteVisuals.Add(visual);
         }
