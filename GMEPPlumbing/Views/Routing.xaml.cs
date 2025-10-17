@@ -517,10 +517,13 @@ namespace GMEPPlumbing.Views
           Fill = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255))
         };
         RouteVisuals.Add(basePointModel2);
-
+        string floor = $"Floor {BasePoints[basePoint].Floor}";
+        if (BasePoints[basePoint].IsRoof) {
+          floor = "Roof";
+        }
         var textModel = new TextVisual3D {
           Position = new Point3D(0, 0, BasePoints[basePoint].FloorHeight * 12 + 12), // Slightly above the rectangle
-          Text = $"Floor {BasePoints[basePoint].Floor}",
+          Text = floor,
           Height = 20, // Size of the text
           Foreground = Brushes.White,
           //UpDirection = new Vector3D(0, 1, 0), // Text facing up
