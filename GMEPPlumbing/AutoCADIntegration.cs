@@ -1697,7 +1697,9 @@ namespace GMEPPlumbing
       }
 
       for (int i = 0; i <= floorQty; i++) {
-
+        if (i == floorQty && !sewerVent) {
+          continue;
+        }
         PromptDoubleOptions heightOptions = new PromptDoubleOptions(
              $"\nEnter the height from ground level for floor {i + 1} on plan {planName}:"
          );
@@ -1900,6 +1902,9 @@ namespace GMEPPlumbing
       List<int> floors = basePoints.Select(i => i.Floor).OrderBy(i => i).Distinct().ToList();
 
       for (int i = floors.First(); i <= floors.Last(); i++) {
+        if (i == floors.Last() && !basePoints.First(bp => bp.Floor == i).Type.Contains("Sewer-Vent")) {
+          continue;
+        }
         PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
         string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}, Floor {i}.";
         if (i == floors.Last()) {
@@ -1977,6 +1982,9 @@ namespace GMEPPlumbing
         }
       }
       for (int i = floors.First(); i <= floors.Last(); i++) {
+        if (i == floors.Last() && !basePoints.First(bp => bp.Floor == i).Type.Contains("Sewer-Vent")) {
+          continue;
+        }
         PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
         string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}(relative to floor {basePoint.Floor}).";
         if (i == floors.Last()) {
