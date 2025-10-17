@@ -7110,6 +7110,7 @@ namespace GMEPPlumbing
                     double RouteHeight = 0;
                     bool isSite = false;
                     bool isSiteRef = false;
+                    bool isRoof = false;
 
                     foreach (DynamicBlockReferenceProperty prop in pc) {
                       if (prop.PropertyName == "floor") {
@@ -7142,6 +7143,9 @@ namespace GMEPPlumbing
                       if (prop.PropertyName == "is_site_ref") {
                         isSiteRef = Convert.ToDouble(prop.Value) == 1.0;
                       }
+                      if (prop.PropertyName == "is_roof") {
+                        isRoof = Convert.ToDouble(prop.Value) == 1.0;
+                      }
 
                     }
                     if (Id != "0") {
@@ -7156,7 +7160,8 @@ namespace GMEPPlumbing
                         FloorHeight,
                         CeilingHeight,
                         isSite,
-                        isSiteRef
+                        isSiteRef,
+                        isRoof
                       );
                       BasePoint.RouteHeight = RouteHeight;
                       points.Add(BasePoint);
