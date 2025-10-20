@@ -419,10 +419,10 @@ namespace GMEPPlumbing.Views
         cleanedSize = cleanedSize.Replace("\n", "").Replace("\r", "");
 
         string pipeLengthString = ToFeetInchesString(pipeLength);
-        bool isRoofVent = verticalRoutes.Any(verticalRoute=> {
+        bool isRoof = verticalRoutes.Any(verticalRoute=> {
           if (BasePoints.ContainsKey(verticalRoute.BasePointId)) {
             var point = BasePoints[verticalRoute.BasePointId];
-            return point.IsRoof && verticalRoute.Type == "Vent";
+            return point.IsRoof;
           }
           return false;
         });
@@ -473,8 +473,8 @@ namespace GMEPPlumbing.Views
               }
             }
           }
-          if (isRoofVent) {
-            locationDescription = "VTR";
+          if (isRoof) {
+            locationDescription = "To Roof";
             sourceDescription = "";
           }
 

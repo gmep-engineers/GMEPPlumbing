@@ -392,6 +392,7 @@ namespace GMEPPlumbing.Views
           .GroupBy(b => b.PipeSize);
 
       var labelParts = new List<string>();
+      bool addEndInfo = true;
 
       foreach (var pipeSizeGroup in pipeSizeGroups) {
         var sizeParts = new List<string>();
@@ -412,7 +413,15 @@ namespace GMEPPlumbing.Views
             case "Cold Water": type = "cw"; break;
             case "Hot Water": type = "hw"; break;
             case "Waste": type = "w"; break;
-            case "Vent": type = "v"; break;
+            case "Vent":
+              if (selectedBoxes.First().LocationDescription == "To Roof") {
+                type = "vtr";
+                addEndInfo = false;
+              }
+              else {
+                type = "v";
+              }
+              break;
             case "Gas": type = "g"; break;
             case "Grease Waste": type = "gw"; break;
           }
@@ -420,11 +429,13 @@ namespace GMEPPlumbing.Views
         }
         labelParts.Add(string.Join("", sizeParts));
       }
-      labelParts.Add(" " + selectedBoxes.First().DirectionDescription);
-      if (isSource)
-        labelParts.Add(" " + selectedBoxes.First().SourceDescription);
-      else {
-        labelParts.Add(" " + selectedBoxes.First().LocationDescription);
+      if (addEndInfo) {
+        labelParts.Add(" " + selectedBoxes.First().DirectionDescription);
+        if (isSource)
+          labelParts.Add(" " + selectedBoxes.First().SourceDescription);
+        else {
+          labelParts.Add(" " + selectedBoxes.First().LocationDescription);
+        }
       }
       return string.Join("", labelParts).ToUpper();
     }
