@@ -34,6 +34,7 @@ namespace GMEPPlumbing {
       var ed = doc.Editor;
 
       try {
+        await AutoCADIntegration.SaveInfo();
         string projectNo = CADObjectCommands.GetProjectNoFromFileName();
         ProjectId = await MariaDBService.GetProjectId(projectNo);
         Sources = await MariaDBService.GetPlumbingSources(ProjectId);
