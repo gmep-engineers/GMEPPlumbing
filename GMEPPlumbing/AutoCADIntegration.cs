@@ -6818,6 +6818,9 @@ namespace GMEPPlumbing
     }
 
     public static async void Db_DocumentSaved(object sender, DatabaseIOEventArgs e) {
+      await SaveInfo();
+    }
+    public static async Task SaveInfo() {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return;
 
@@ -6850,7 +6853,6 @@ namespace GMEPPlumbing
           return;
         }
       }
-
     }
 
     public static List<PlumbingHorizontalRoute> GetHorizontalRoutesFromCAD(string ProjectId = "", List<PlumbingPlanBasePoint> basePoints = null) {
