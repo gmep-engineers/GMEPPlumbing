@@ -311,6 +311,15 @@ namespace GMEPPlumbing.Views
       }
     }
 
+    public bool _textRed = false;
+    public bool TextRed {
+      get => _textRed;
+      set {
+        _textRed = value;
+        OnPropertyChanged(nameof(TextRed));
+      }
+    }
+
     public void GenerateLabel(object sender, RoutedEventArgs e) {
       var selectedBoxes = RouteInfoBoxGroups
           .Where(g => g.SelectedRouteInfoBox != null)
@@ -328,6 +337,7 @@ namespace GMEPPlumbing.Views
       //Fixture Unit Labels
       string additionalLabels = "";
       if (CADObjectCommands.IsResidential) {
+        TextRed = false;
         bool endLineFlag = false;
         if (selectedBoxes.Count > 0) {
           additionalLabels += "(";
@@ -357,6 +367,7 @@ namespace GMEPPlumbing.Views
         }
       }
       else {
+        TextRed = true;
         bool endLineFlag = false;
         foreach (var box in selectedBoxes) {
           if (endLineFlag) {

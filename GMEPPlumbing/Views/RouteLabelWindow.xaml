@@ -265,7 +265,17 @@
                                             <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" Text="Additional Labels" TextAlignment="Center" FontWeight="DemiBold" HorizontalAlignment="Stretch" Background="LightGray"/>
-                                        <TextBox Grid.Row="1" AcceptsReturn="True" Text="{Binding AdditionalLabelText}" FontWeight="DemiBold"/>
+                                        <TextBox Grid.Row="1" AcceptsReturn="True" Text="{Binding AdditionalLabelText}" FontWeight="DemiBold">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding TextRed}" Value="True">
+                                                            <Setter Property="Foreground" Value="Red"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
                                     </Grid>
                                 </Grid>
                                 <Button Grid.Column="2" Content="Place" Click="Place_Click" CommandParameter="{Binding}" Background="LightGray" FontWeight="DemiBold" Width="60"  HorizontalAlignment="Stretch">
