@@ -647,7 +647,7 @@ namespace GMEPPlumbing
       // Call the method with a null parameter to avoid ambiguity
       VerticalRoute();
     }
-    public Dictionary<string, PlumbingVerticalRoute> VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null, double? endFloorHeight = null, string message = "Vertical Route", string fixtureType = "", bool reverseDirection = false, PlumbingPlanBasePoint chosenPoint = null) {
+    public Dictionary<string, PlumbingVerticalRoute> VerticalRoute(string type = null, double? routeHeight = null, int? endFloor = null, string direction = null, double? length = null, double? endFloorHeight = null, string message = "Vertical Route", string fixtureType = "", bool reverseDirection = false, PlumbingPlanBasePoint chosenPoint = null, bool ToRoof = false) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null) return null;
 
@@ -876,6 +876,7 @@ namespace GMEPPlumbing
                   string key = "";
                   bool isSite = false;
                   bool isSiteRef = false;
+                  bool isRoof = false;
                   foreach (DynamicBlockReferenceProperty prop in pc) {
                     if (prop.PropertyName == "view_id") {
                       key = prop.Value.ToString();
@@ -886,8 +887,11 @@ namespace GMEPPlumbing
                     if (prop.PropertyName == "is_site_ref") {
                       isSiteRef = Convert.ToDouble(prop.Value) == 1;
                     }
+                    if (prop.PropertyName == "is_roof") {
+                      isRoof = Convert.ToDouble(prop.Value) == 1;
+                    }
                   }
-                  if (key != "0" && !isSiteRef) {
+                  if (key != "0" && !isSiteRef && (ToRoof || !isRoof)) {
                     if (CADObjectCommands.ActiveIsSite == isSite) {
                       if (!basePoints.ContainsKey(key)) {
                         basePoints[key] = new List<ObjectId>();
@@ -1692,11 +1696,16 @@ namespace GMEPPlumbing
         return;
       }
 
-      for (int i = 0; i < floorQty; i++) {
-
+      for (int i = 0; i <= floorQty; i++) {
+        if (i == floorQty && !sewerVent) {
+          continue;
+        }
         PromptDoubleOptions heightOptions = new PromptDoubleOptions(
              $"\nEnter the height from ground level for floor {i + 1} on plan {planName}:"
          );
+        if (i == floorQty) {
+          heightOptions.Message = $"\nEnter the height of the roof from ground level for plan {planName}:";
+        }
         heightOptions.AllowNegative = false;
         heightOptions.AllowZero = false;
         heightOptions.DefaultValue = currentCeilingHeight + 1;
@@ -1722,63 +1731,68 @@ namespace GMEPPlumbing
           }
 
         }
+        if (i != floorQty) {
+          PromptDoubleOptions ceilingHeightOptions = new PromptDoubleOptions(
+             $"\nEnter the height of the ceiling from ground level for floor {i + 1} on plan {planName}:"
+          );
+          ceilingHeightOptions.AllowNegative = false;
+          ceilingHeightOptions.AllowZero = false;
+          ceilingHeightOptions.DefaultValue = currentFloorHeight + 10;
+          if (!CADObjectCommands.IsResidential) {
+            ceilingHeightOptions.DefaultValue = currentFloorHeight + 15;
+          }
 
-        PromptDoubleOptions ceilingHeightOptions = new PromptDoubleOptions(
-           $"\nEnter the height of the ceiling from ground level for floor {i + 1} on plan {planName}:"
-        );
-        ceilingHeightOptions.AllowNegative = false;
-        ceilingHeightOptions.AllowZero = false;
-        ceilingHeightOptions.DefaultValue = currentFloorHeight + 10;
-        if (!CADObjectCommands.IsResidential) {
-          ceilingHeightOptions.DefaultValue = currentFloorHeight + 15;
-        }
-
-        while (true) {
-          PromptDoubleResult ceilingHeightResult = ed.GetDouble(ceilingHeightOptions);
-          if (ceilingHeightResult.Status == PromptStatus.OK) {
-            double tempCeilingHeight = ceilingHeightResult.Value;
-            if (tempCeilingHeight <= currentFloorHeight) {
-              ceilingHeightOptions.Message = $"\nCeiling height must be greater than the floor height ({currentFloorHeight}). Please enter a valid height.";
-              continue;
+          while (true) {
+            PromptDoubleResult ceilingHeightResult = ed.GetDouble(ceilingHeightOptions);
+            if (ceilingHeightResult.Status == PromptStatus.OK) {
+              double tempCeilingHeight = ceilingHeightResult.Value;
+              if (tempCeilingHeight <= currentFloorHeight) {
+                ceilingHeightOptions.Message = $"\nCeiling height must be greater than the floor height ({currentFloorHeight}). Please enter a valid height.";
+                continue;
+              }
+              currentCeilingHeight = ceilingHeightResult.Value;
+              break;
             }
-            currentCeilingHeight = ceilingHeightResult.Value;
-            break;
+            else if (ceilingHeightResult.Status == PromptStatus.Cancel) {
+              ed.WriteMessage("\nOperation cancelled.");
+              return;
+            }
+            else {
+              ed.WriteMessage("\nInvalid input. Please enter a positive, non-zero number.");
+            }
           }
-          else if (ceilingHeightResult.Status == PromptStatus.Cancel) {
-            ed.WriteMessage("\nOperation cancelled.");
-            return;
-          }
-          else {
-            ed.WriteMessage("\nInvalid input. Please enter a positive, non-zero number.");
+
+          PromptDoubleOptions routeHeightOptions = new PromptDoubleOptions(
+               $"\nEnter the route height from floor {i + 1} on plan {planName}:"
+           );
+          routeHeightOptions.AllowNegative = false;
+          routeHeightOptions.AllowZero = false;
+          routeHeightOptions.DefaultValue = 3;
+
+          while (true) {
+            PromptDoubleResult routeHeightResult = ed.GetDouble(routeHeightOptions);
+
+            if (routeHeightResult.Status == PromptStatus.OK) {
+              double tempRouteHeight = routeHeightResult.Value;
+              if (tempRouteHeight < 0) {
+                heightOptions.Message = $"\nRoute Height must be greater than zero.";
+                continue;
+              }
+              currentRouteHeight = routeHeightResult.Value;
+              break;
+            }
+            else if (routeHeightResult.Status == PromptStatus.Cancel) {
+              ed.WriteMessage("\nOperation cancelled.");
+              return;
+            }
+            else {
+              ed.WriteMessage("\nInvalid input. Please enter a positive, non-zero number.");
+            }
           }
         }
-
-        PromptDoubleOptions routeHeightOptions = new PromptDoubleOptions(
-             $"\nEnter the route height from floor {i + 1} on plan {planName}:"
-         );
-        routeHeightOptions.AllowNegative = false;
-        routeHeightOptions.AllowZero = false;
-        routeHeightOptions.DefaultValue = 3;
-
-        while (true) {
-          PromptDoubleResult routeHeightResult = ed.GetDouble(routeHeightOptions);
-
-          if (routeHeightResult.Status == PromptStatus.OK) {
-            double tempRouteHeight = routeHeightResult.Value;
-            if (tempRouteHeight < 0) {
-              heightOptions.Message = $"\nRoute Height must be greater than zero.";
-              continue;
-            }
-            currentRouteHeight = routeHeightResult.Value;
-            break;
-          }
-          else if (routeHeightResult.Status == PromptStatus.Cancel) {
-            ed.WriteMessage("\nOperation cancelled.");
-            return;
-          }
-          else {
-            ed.WriteMessage("\nInvalid input. Please enter a positive, non-zero number.");
-          }
+        else {
+          currentCeilingHeight = currentFloorHeight;
+          currentRouteHeight = 0;
         }
 
         Point3d point;
@@ -1841,6 +1855,14 @@ namespace GMEPPlumbing
             else if (prop.PropertyName == "ceiling_height") {
               prop.Value = currentCeilingHeight;
             }
+            else if (prop.PropertyName == "is_roof") {
+              if (i == floorQty) {
+                prop.Value = 1;
+              }
+              else {
+                prop.Value = 0;
+              }
+            }
           }
           
           tr.Commit();
@@ -1877,36 +1899,17 @@ namespace GMEPPlumbing
       var db = doc.Database;
       var ed = doc.Editor;
       List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD().Where(i => i.ViewportId == viewId).OrderBy(i => i.Floor).ToList();
-      List<int> floors = basePoints.Select(i => i.Floor).Distinct().ToList();
+      List<int> floors = basePoints.Select(i => i.Floor).OrderBy(i => i).Distinct().ToList();
 
-      PromptKeywordOptions pko = new PromptKeywordOptions("\nSelect bottom floor of site plan: " );
-      foreach (int floor in floors) {
-        pko.Keywords.Add(floor.ToString());
-      }
-      PromptResult pr = ed.GetKeywords(pko);
-      if (pr.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nOperation cancelled.");
-        SettingObjects = false;
-        return;
-      }
-      int bottomPointFloor = int.Parse(pr.StringResult);
-
-      floors.RemoveAll(i => i < bottomPointFloor);
-      PromptKeywordOptions pko2 = new PromptKeywordOptions("\nSelect top floor of site plan: ");
-      foreach (int floor in floors) {
-        pko2.Keywords.Add(floor.ToString());
-      }
-      PromptResult pr2 = ed.GetKeywords(pko2);
-      if (pr2.Status != PromptStatus.OK) {
-        ed.WriteMessage("\nOperation cancelled.");
-        SettingObjects = false;
-        return;
-      }
-      int topPointFloor = int.Parse(pr2.StringResult);
-
-      for (int i = bottomPointFloor; i <= topPointFloor; i++) {
+      for (int i = floors.First(); i <= floors.Last(); i++) {
+        if (i == floors.Last() && !basePoints.First(bp => bp.Floor == i).Type.Contains("Sewer-Vent")) {
+          continue;
+        }
         PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
-        string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}, Floor {i}";
+        string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}, Floor {i}.";
+        if (i == floors.Last()) {
+          message += $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}, Roof.";
+        }
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
           BlockTableRecord curSpace = (BlockTableRecord)
@@ -1966,13 +1969,27 @@ namespace GMEPPlumbing
             else if (prop.PropertyName == "is_site") {
               prop.Value = 1;
             }
+            else if (prop.PropertyName == "is_roof") {
+              if (i == floors.Last()) {
+                prop.Value = 1;
+              }
+              else {
+                prop.Value = 0;
+              }
+            }
           }
           tr.Commit();
         }
       }
-      for (int i = bottomPointFloor; i <= topPointFloor; i++) {
+      for (int i = floors.First(); i <= floors.Last(); i++) {
+        if (i == floors.Last() && !basePoints.First(bp => bp.Floor == i).Type.Contains("Sewer-Vent")) {
+          continue;
+        }
         PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
         string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}(relative to floor {basePoint.Floor}).";
+        if (i == floors.Last()) {
+          message += $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}(relative to the roof).";
+        }
         ZoomToPoint(ed, new Point3d(basePoint.Point.X, basePoint.Point.Y, 0));
         
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -2033,6 +2050,14 @@ namespace GMEPPlumbing
             }
             else if (prop.PropertyName == "is_site_ref") {
               prop.Value = 1;
+            }
+            else if (prop.PropertyName == "is_roof") {
+              if (i == floors.Last()) {
+                prop.Value = 1;
+              }
+              else {
+                prop.Value = 0;
+              }
             }
           }
           tr.Commit();
@@ -3140,7 +3165,7 @@ namespace GMEPPlumbing
                 .OrderByDescending(bp => bp.Floor)
                 .FirstOrDefault();
 
-                ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, "UpToCeiling", null, highestFloorBasePoint.CeilingHeight - highestFloorBasePoint.FloorHeight);
+                ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, null, null, 0, "Vertical Route", "", false, null, true);
                 if (highestFloorBasePoint.Floor > CADObjectCommands.ActiveFloor) {
                   PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
                   ZoomToPoint(ed, startRoute.Position);
@@ -3809,7 +3834,7 @@ namespace GMEPPlumbing
       Dictionary<int, List<PlumbingFixtureCatalogItem>> allPlumbingFixtureCatalogItems =
         MariaDBService.GetAllPlumbingFixtureCatalogItems();
 
-      List<PlumbingPlanBasePoint> basePointsRef = GetPlumbingBasePointsFromCAD();
+      List<PlumbingPlanBasePoint> basePointsRef = GetPlumbingBasePointsFromCAD().Where(bp => bp.IsRoof == false).ToList();
       PlumbingPlanBasePoint activeBasePointRef = basePointsRef.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
       basePointsRef = basePointsRef.Where(bp => bp.ViewportId == activeBasePointRef.ViewportId && bp.IsSite == activeBasePointRef.IsSite).ToList();
       PlumbingPlanBasePoint aboveBasePoint = basePointsRef
@@ -7097,6 +7122,7 @@ namespace GMEPPlumbing
                     double RouteHeight = 0;
                     bool isSite = false;
                     bool isSiteRef = false;
+                    bool isRoof = false;
 
                     foreach (DynamicBlockReferenceProperty prop in pc) {
                       if (prop.PropertyName == "floor") {
@@ -7129,6 +7155,9 @@ namespace GMEPPlumbing
                       if (prop.PropertyName == "is_site_ref") {
                         isSiteRef = Convert.ToDouble(prop.Value) == 1.0;
                       }
+                      if (prop.PropertyName == "is_roof") {
+                        isRoof = Convert.ToDouble(prop.Value) == 1.0;
+                      }
 
                     }
                     if (Id != "0") {
@@ -7143,7 +7172,8 @@ namespace GMEPPlumbing
                         FloorHeight,
                         CeilingHeight,
                         isSite,
-                        isSiteRef
+                        isSiteRef,
+                        isRoof
                       );
                       BasePoint.RouteHeight = RouteHeight;
                       points.Add(BasePoint);

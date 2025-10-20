@@ -232,8 +232,10 @@ namespace GMEPPlumbing {
     public double RouteHeight { get; set; } = 0;
     public bool IsSite { get; set; } = false;
     public bool IsSiteRef { get; set; } = false;
+    public bool IsRoof { get; set; } = false;
 
-    public PlumbingPlanBasePoint(string id, string projectId, Point3d point, string plan, string type, string viewportId, int floor, double floorHeight, double ceilingHeight, bool isSite, bool isSiteRef) {
+
+    public PlumbingPlanBasePoint(string id, string projectId, Point3d point, string plan, string type, string viewportId, int floor, double floorHeight, double ceilingHeight, bool isSite, bool isSiteRef, bool isRoof) {
       Id = id;
       ProjectId = projectId;
       ViewportId = viewportId;
@@ -245,6 +247,7 @@ namespace GMEPPlumbing {
       CeilingHeight = ceilingHeight;
       IsSite = isSite;
       IsSiteRef = isSiteRef;
+      IsRoof = isRoof;
     }
   }
   public class PlumbingHorizontalRoute {

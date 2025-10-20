@@ -259,7 +259,7 @@ namespace GMEPPlumbing
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
-      List<PlumbingPlanBasePoint> basePoints =  AutoCADIntegration.GetPlumbingBasePointsFromCAD().OrderBy(i => i.Floor).ToList();
+      List<PlumbingPlanBasePoint> basePoints =  AutoCADIntegration.GetPlumbingBasePointsFromCAD().Where(i => i.IsRoof == false).OrderBy(i => i.Floor).ToList();
       Dictionary<string, List<PlumbingPlanBasePoint>> basePointDict = new Dictionary<string, List<PlumbingPlanBasePoint>>();
       foreach (var bp in basePoints) {
         if (!bp.IsSiteRef && bp.Id != "0") {
