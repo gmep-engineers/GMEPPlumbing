@@ -258,6 +258,7 @@ namespace GMEPPlumbing {
     public Point3d EndPoint;
     public string BasePointId;
     public string PipeType;
+    public string BlockName;
     public double FixtureUnits { get; set; } = 0;
     public int FlowTypeId { get; set; } = 1;
     public int GPM { get; set; } = 0;
@@ -272,7 +273,8 @@ namespace GMEPPlumbing {
       Point3d endPoint,
       string basePointId,
       string pipeType,
-      double slope
+      double slope,
+      string blockName
     ) {
       Id = id;
       Type = type;
@@ -282,6 +284,7 @@ namespace GMEPPlumbing {
       BasePointId = basePointId;
       PipeType = pipeType;
       Slope = slope;
+      BlockName = blockName.ToString();
     }
     public void GenerateGallonsPerMinute() {
       // Key: fixture units, Value: gpm

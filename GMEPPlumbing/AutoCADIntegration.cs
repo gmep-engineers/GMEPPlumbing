@@ -393,7 +393,8 @@ namespace GMEPPlumbing
             line.EndPoint,
             BasePointId,
             pipeType,
-            slope
+            slope,
+            ""
           );
           horizontalRoutes.Add(firstRoute);
 
@@ -527,7 +528,8 @@ namespace GMEPPlumbing
             line.EndPoint,
             BasePointId,
             pipeType,
-            slope
+            slope,
+            ""
           );
           horizontalRoutes.Add(nextRoute);
 
@@ -6924,9 +6926,9 @@ namespace GMEPPlumbing
               if (xdata != null && xdata.AsArray().Length >= 5) {
                 TypedValue[] values = xdata.AsArray();
 
-                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), values[3].Value.ToString(), (double)values[4].Value);
+                PlumbingHorizontalRoute route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.StartPoint, line.EndPoint, values[2].Value.ToString(), values[3].Value.ToString(), (double)values[4].Value, "");
                 if (route.Type == "Waste" || route.Type == "Vent" || route.Type == "Grease Waste") {
-                  route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.EndPoint, line.StartPoint, values[2].Value.ToString(), values[3].Value.ToString(), (double)values[4].Value);
+                  route = new PlumbingHorizontalRoute(values[1].Value.ToString(), ProjectId, type, line.EndPoint, line.StartPoint, values[2].Value.ToString(), values[3].Value.ToString(), (double)values[4].Value, "");
                 }
                 routes.Add(route);
               }
@@ -7405,7 +7407,8 @@ namespace GMEPPlumbing
                           hotWaterPosition,
                           basepointId,
                           "PEX",
-                          0
+                          0,
+                          ""
                         );
                         PlumbingHorizontalRoute coldWaterRoute = new PlumbingHorizontalRoute(
                          Guid.NewGuid().ToString(),
@@ -7415,7 +7418,8 @@ namespace GMEPPlumbing
                          coldWaterPosition,
                          basepointId,
                          "PEX",
-                         0
+                         0,
+                         ""
                         );
                         routes.Add(hotWaterRoute);
                         routes.Add(coldWaterRoute);
@@ -7489,7 +7493,8 @@ namespace GMEPPlumbing
                          endPos,
                          basepointId,
                          "PEX",
-                         0
+                         0,
+                         name
                         );
                         PlumbingHorizontalRoute backwardRoute = new PlumbingHorizontalRoute(
                           Guid.NewGuid().ToString(),
@@ -7499,7 +7504,8 @@ namespace GMEPPlumbing
                           startPos,
                           basepointId,
                           "PEX",
-                          0
+                          0,
+                          name
                          );
                         routes.Add(forwardRoute);
                         routes.Add(backwardRoute);
@@ -7555,7 +7561,8 @@ namespace GMEPPlumbing
                         position,
                         basepointId,
                         "",
-                        0
+                        0,
+                        ""
                       );
                       routes.Add(route);
                     }

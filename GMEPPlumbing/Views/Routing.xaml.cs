@@ -119,137 +119,151 @@ namespace GMEPPlumbing.Views
       foreach (var item in RouteItems) {
         Visual3D model = null;
          if (item is PlumbingHorizontalRoute horizontalRoute) {
-          ModelVisual3D fullModel = new ModelVisual3D();
-          var ballModel2 = new SphereVisual3D {
-            Center = new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
-            Radius = 1,
-            Fill = TypeToBrushColor(horizontalRoute.Type)
-          };
-          var lineModel = new TubeVisual3D {
-            Path = new Point3DCollection {
+          if (horizontalRoute.BlockName == "GMEP VALVE MIXING") {
+            TruncatedConeVisual3D coneModel = new TruncatedConeVisual3D {
+              
+              BaseRadius = 1,
+              TopRadius = 0.5,
+              Fill = TypeToBrushColor(horizontalRoute.Type)
+            };
+          }
+          else if (horizontalRoute.BlockName == "GMEP VALVE SHUTOFF") {
+          }
+          else if (horizontalRoute.BlockName == "GMEP VALVE MIXING") {
+          }
+          else {
+            ModelVisual3D fullModel = new ModelVisual3D();
+            var ballModel2 = new SphereVisual3D {
+              Center = new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
+              Radius = 1,
+              Fill = TypeToBrushColor(horizontalRoute.Type)
+            };
+            var lineModel = new TubeVisual3D {
+              Path = new Point3DCollection {
               new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
               new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z)
             },
-            Diameter = 2,
-            Fill = TypeToBrushColor(horizontalRoute.Type)
-          };
-          var ballModel = new SphereVisual3D {
-            Center = new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z),
-            Radius = 1,
-            Fill = TypeToBrushColor(horizontalRoute.Type)
-          };
+              Diameter = 2,
+              Fill = TypeToBrushColor(horizontalRoute.Type)
+            };
+            var ballModel = new SphereVisual3D {
+              Center = new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z),
+              Radius = 1,
+              Fill = TypeToBrushColor(horizontalRoute.Type)
+            };
 
-          var dirX = horizontalRoute.EndPoint.X - horizontalRoute.StartPoint.X;
-          var dirY = horizontalRoute.EndPoint.Y - horizontalRoute.StartPoint.Y;
-          var dirZ = horizontalRoute.EndPoint.Z - horizontalRoute.StartPoint.Z;
-          var direction = new Vector3D(dirX, dirY, dirZ);
-          direction.Normalize();
+            var dirX = horizontalRoute.EndPoint.X - horizontalRoute.StartPoint.X;
+            var dirY = horizontalRoute.EndPoint.Y - horizontalRoute.StartPoint.Y;
+            var dirZ = horizontalRoute.EndPoint.Z - horizontalRoute.StartPoint.Z;
+            var direction = new Vector3D(dirX, dirY, dirZ);
+            direction.Normalize();
 
-          // Calculate length in feet/inches
-          double length = horizontalRoute.StartPoint.DistanceTo(horizontalRoute.EndPoint);
-          int feet = (int)(length / 12);
-          int inches = (int)Math.Round(length % 12);
-          horizontalRoute.GenerateGallonsPerMinute();
-          string flow = (horizontalRoute.FlowTypeId == 1) ? "Flush Tank" : "Flush Valve";
-          double longestRunLength = horizontalRoute.LongestRunLength;
-          int longestRunFeet = (int)Math.Ceiling(longestRunLength / 12); // Convert to feet
-          //int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
-          string recommendedSize = horizontalRoute.PipeSize;
-          string units = horizontalRoute.FixtureUnits.ToString();
-          string longestRun = "";
+            // Calculate length in feet/inches
+            double length = horizontalRoute.StartPoint.DistanceTo(horizontalRoute.EndPoint);
+            int feet = (int)(length / 12);
+            int inches = (int)Math.Round(length % 12);
+            horizontalRoute.GenerateGallonsPerMinute();
+            string flow = (horizontalRoute.FlowTypeId == 1) ? "Flush Tank" : "Flush Valve";
+            double longestRunLength = horizontalRoute.LongestRunLength;
+            int longestRunFeet = (int)Math.Ceiling(longestRunLength / 12); // Convert to feet
+                                                                           //int longestRunInches = (int)Math.Round(longestRunLength % 12); // Remaining inches
+            string recommendedSize = horizontalRoute.PipeSize;
+            string units = horizontalRoute.FixtureUnits.ToString();
+            string longestRun = "";
 
-          double textHeight = 8;
-          string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n ---------------------- \n {recommendedSize}\n";
-          if (horizontalRoute.Type == "Gas") {
-            longestRun = $"{longestRunFeet}'";
-            textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRun}\n ---------------------- \n {recommendedSize}\n";
-          }
-          else if (horizontalRoute.Type == "Waste" || horizontalRoute.Type == "Grease Waste") {
-            WasteSizingChart chart = new WasteSizingChart();
-            string slope = "1%";
-            if (horizontalRoute.Slope == 0.02) {
-              slope = "2%";
+            double textHeight = 8;
+            string textString = $" {feet}' {inches}\"\n {flow} \n FU: {horizontalRoute.FixtureUnits} \n GPM: {horizontalRoute.GPM} \n ---------------------- \n {recommendedSize}\n";
+            if (horizontalRoute.Type == "Gas") {
+              longestRun = $"{longestRunFeet}'";
+              textString = $" {feet}' {inches}\"\n CFH: {horizontalRoute.FixtureUnits} \n Longest Run: {longestRun}\n ---------------------- \n {recommendedSize}\n";
             }
-            recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, slope);
-            textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits}\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
-          }
-          else if (horizontalRoute.Type == "Vent") {
-            VentSizingChart chart = new VentSizingChart();
-            string slope = "1%";
-            if (horizontalRoute.Slope == 0.02) {
-              slope = "2%";
+            else if (horizontalRoute.Type == "Waste" || horizontalRoute.Type == "Grease Waste") {
+              WasteSizingChart chart = new WasteSizingChart();
+              string slope = "1%";
+              if (horizontalRoute.Slope == 0.02) {
+                slope = "2%";
+              }
+              recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, slope);
+              textString = $" {feet}' {inches}\"\n DFU: {horizontalRoute.FixtureUnits}\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
             }
-            recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, horizontalRoute.LongestRunLength);
-            textString = $" {feet}' {inches}\"\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
-          }
-          double textWidth = textHeight * textString.Length * 0.03;
+            else if (horizontalRoute.Type == "Vent") {
+              VentSizingChart chart = new VentSizingChart();
+              string slope = "1%";
+              if (horizontalRoute.Slope == 0.02) {
+                slope = "2%";
+              }
+              recommendedSize = chart.FindSize(horizontalRoute.FixtureUnits, horizontalRoute.LongestRunLength);
+              textString = $" {feet}' {inches}\"\n Slope: {slope}\n ---------------------- \n {recommendedSize}\n";
+            }
+            double textWidth = textHeight * textString.Length * 0.03;
 
-          // Offset so the back of the text aligns with the end point 
-          var textPos = new Point3D(
-              horizontalRoute.EndPoint.X - (direction.X * (textWidth / 2)),
-              horizontalRoute.EndPoint.Y - (direction.Y * (textWidth / 2)),
-              horizontalRoute.EndPoint.Z + 6 // +5 for vertical offset
-          );
+            // Offset so the back of the text aligns with the end point 
+            var textPos = new Point3D(
+                horizontalRoute.EndPoint.X - (direction.X * (textWidth / 2)),
+                horizontalRoute.EndPoint.Y - (direction.Y * (textWidth / 2)),
+                horizontalRoute.EndPoint.Z + 6 // +5 for vertical offset
+            );
 
-          //upload the route data
-          string cleanedSize = recommendedSize;
-          int idx = cleanedSize.IndexOf("Nominal Pipe Size: ");
-          if (idx >= 0)
-            cleanedSize = cleanedSize.Substring(idx + "Nominal Pipe Size: ".Length);
-          else {
-            idx = cleanedSize.IndexOf("Pipe Size: ");
+            //upload the route data
+            string cleanedSize = recommendedSize;
+            int idx = cleanedSize.IndexOf("Nominal Pipe Size: ");
             if (idx >= 0)
-              cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
-          }
-          cleanedSize = cleanedSize.Replace("\n", "").Replace("\r", "");
-
-          //Uploading Route Info
-          double segmentLength = horizontalRoute.EndPoint.DistanceTo(horizontalRoute.StartPoint);
-          string segmentLengthString = ToFeetInchesString(segmentLength);
-          string locationDescription = "";
-          if (BasePoints.ContainsKey(horizontalRoute.BasePointId)) {
-            PlumbingPlanBasePoint point = BasePoints[horizontalRoute.BasePointId];
-            if (horizontalRoute.StartPoint.Z == point.CeilingHeight * 12) {
-              locationDescription = "ABV. CLG";
+              cleanedSize = cleanedSize.Substring(idx + "Nominal Pipe Size: ".Length);
+            else {
+              idx = cleanedSize.IndexOf("Pipe Size: ");
+              if (idx >= 0)
+                cleanedSize = cleanedSize.Substring(idx + "Pipe Size: ".Length);
             }
-            else if (horizontalRoute.StartPoint.Z == point.FloorHeight * 12) {
-              locationDescription = "BLW. FLR";
+            cleanedSize = cleanedSize.Replace("\n", "").Replace("\r", "");
+
+            //Uploading Route Info
+            double segmentLength = horizontalRoute.EndPoint.DistanceTo(horizontalRoute.StartPoint);
+            string segmentLengthString = ToFeetInchesString(segmentLength);
+            string locationDescription = "";
+            if (BasePoints.ContainsKey(horizontalRoute.BasePointId)) {
+              PlumbingPlanBasePoint point = BasePoints[horizontalRoute.BasePointId];
+              if (horizontalRoute.StartPoint.Z == point.CeilingHeight * 12) {
+                locationDescription = "ABV. CLG";
+              }
+              else if (horizontalRoute.StartPoint.Z == point.FloorHeight * 12) {
+                locationDescription = "BLW. FLR";
+              }
             }
+            RouteInfoBoxes.Add(new RouteInfoBox(
+              horizontalRoute.ProjectId,
+              ViewportId,
+              horizontalRoute.Id,
+              horizontalRoute.BasePointId,
+              cleanedSize,
+              horizontalRoute.Type,
+              locationDescription.Replace("\n", "").Replace("\r", ""),
+              "",
+              units,
+              longestRun,
+              "",
+              false,
+              segmentLengthString
+            ));
+            // Create and configure the TextVisual3D
+            var textModel = new TextVisual3D {
+              Position = textPos,
+              Text = textString,
+              Height = textHeight,
+              Foreground = Brushes.Black,
+              Background = Brushes.White,
+              UpDirection = new Vector3D(0, 0, 1),
+              TextDirection = direction
+            };
+            TextVisual3DExtensions.SetBasePointId(textModel, horizontalRoute.BasePointId);
+            TextVisual3DExtensions.SetType(textModel, horizontalRoute.Type);
+            textVisuals.Add(textModel);
+
+            fullModel.Children.Add(ballModel2);
+            fullModel.Children.Add(lineModel);
+            fullModel.Children.Add(ballModel);
+
+            model = fullModel;
           }
-          RouteInfoBoxes.Add(new RouteInfoBox(
-            horizontalRoute.ProjectId,
-            ViewportId,
-            horizontalRoute.Id,
-            horizontalRoute.BasePointId,
-            cleanedSize,
-            horizontalRoute.Type,
-            locationDescription.Replace("\n", "").Replace("\r", ""),
-            "",
-            units,
-            longestRun,
-            "",
-            false,
-            segmentLengthString
-          ));
-          // Create and configure the TextVisual3D
-          var textModel = new TextVisual3D {
-            Position = textPos,
-            Text = textString,
-            Height = textHeight,
-            Foreground = Brushes.Black,
-            Background = Brushes.White,
-            UpDirection = new Vector3D(0, 0, 1),
-            TextDirection = direction
-          };
-          TextVisual3DExtensions.SetBasePointId(textModel, horizontalRoute.BasePointId);
-          TextVisual3DExtensions.SetType(textModel, horizontalRoute.Type);
-          textVisuals.Add(textModel);
-
-          fullModel.Children.Add(ballModel2);
-          fullModel.Children.Add(lineModel);
-          fullModel.Children.Add(ballModel);
-
-          model = fullModel;
           BasePointIds.Add(horizontalRoute.BasePointId);
         }
         else if (item is PlumbingVerticalRoute verticalRoute) {
@@ -991,7 +1005,8 @@ namespace GMEPPlumbing.Views
               new Point3d(hr.EndPoint.X, hr.EndPoint.Y, hr.EndPoint.Z),
               hr.BasePointId,
               hr.PipeType,
-              hr.Slope
+              hr.Slope,
+              hr.BlockName
           );
           copy.FixtureUnits = hr.FixtureUnits;
           copy.FlowTypeId = hr.FlowTypeId;
