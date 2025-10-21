@@ -2740,6 +2740,34 @@ namespace GMEPPlumbing
             );
           }
         }
+        if (blockName.Contains("%VALVESTYLE%")) {
+          if (selectedFixtureType.Abbreviation == "VALVE") {
+            // Prompt for WCO style
+            keywordOptions = new PromptKeywordOptions("");
+            keywordOptions.Message = "\nSelect VALVE style";
+            if (CADObjectCommands.ActiveViewTypes.Contains("Water")) {
+              keywordOptions.Keywords.Add("MIXING");
+              keywordOptions.Keywords.Add("SHUTOFF");
+            }
+            if (CADObjectCommands.ActiveViewTypes.Contains("Gas")) {
+              keywordOptions.Keywords.Add("SHUTOFFAUTO");
+            }
+            keywordOptions.AllowNone = false;
+            keywordResult = ed.GetKeywords(keywordOptions);
+            if (keywordResult.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            string valveStyle = keywordResult.StringResult.Replace("\"", "");
+            if (valveStyle.Contains(' ')) {
+              valveStyle = valveStyle.Split(' ')[0];
+            }
+            selectedBlockNames2[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+              "%VALVESTYLE%",
+              valveStyle
+            );
+          }
+        }
       }
       double routeHeight = 0;
       if (selectedFixtureType.Abbreviation != "FD" && selectedFixtureType.Abbreviation != "FS") {
@@ -8036,9 +8064,6 @@ namespace GMEPPlumbing
       }
     }
   }
-
-
-
 
 
 
