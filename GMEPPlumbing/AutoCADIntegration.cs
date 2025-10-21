@@ -2772,7 +2772,7 @@ namespace GMEPPlumbing
       double routeHeight = 0;
       if (selectedFixtureType.Abbreviation != "FD" && selectedFixtureType.Abbreviation != "FS") {
         routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
-        if (selectedFixtureType.Abbreviation == "WH" || selectedFixtureType.Abbreviation == "IWH") {
+        if (selectedFixtureType.Abbreviation == "WH" || selectedFixtureType.Abbreviation == "IWH" || selectedFixtureType.Abbreviation == "VALVE" || selectedFixtureType.Abbreviation == "CO") {
           PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the fixture from the floor (in feet): ");
           pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
           while (true) {
@@ -6938,8 +6938,10 @@ namespace GMEPPlumbing
       if (basePoints != null) {
         List<PlumbingHorizontalRoute> waterHeaterRoutes = GetWaterHeaterHorizontalRoutes(ProjectId);
         List<PlumbingHorizontalRoute> ventExitRoutes = GetVentExitHorizontalRoutes(ProjectId);
+        List<PlumbingHorizontalRoute> valveRoutes = GetValveHorizontalRoutes(ProjectId);
         routes.AddRange(waterHeaterRoutes);
         routes.AddRange(ventExitRoutes);
+        routes.AddRange(valveRoutes);
       }
 
       ed.WriteMessage(ProjectId + " - Found " + routes.Count + " horizontal routes in the drawing.");
@@ -7417,6 +7419,90 @@ namespace GMEPPlumbing
                         );
                         routes.Add(hotWaterRoute);
                         routes.Add(coldWaterRoute);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return routes;
+    }
+    public static List<PlumbingHorizontalRoute> GetValveHorizontalRoutes(string ProjectId) {
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return new List<PlumbingHorizontalRoute>();
+
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      List<PlumbingHorizontalRoute> routes = new List<PlumbingHorizontalRoute>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord modelSpace = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        List<string> blockNames = new List<string>
+        {
+          "GMEP VALVE MIXING",
+          "GMEP VALVE SHUTOFF",
+          "GMEP VALVE SHUTOFFAUTO"
+        };
+        foreach (string name in blockNames) {
+          BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
+          foreach (ObjectId id in sourceBlock.GetAnonymousBlockIds()) {
+            if (id.IsValid) {
+              using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+                if (anonymousBtr != null) {
+                  foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                    if (objId.IsValid) {
+                      var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                      var pc = entity.DynamicBlockReferencePropertyCollection;
+                      string basepointId = string.Empty;
+                      foreach (DynamicBlockReferenceProperty prop in pc) {
+                        if (prop.PropertyName == "base_point_id") {
+                          basepointId = prop.Value?.ToString();
+                        }
+                      }
+                      if (basepointId != "" && basepointId != "0") {
+                        double valveRotation = entity.Rotation;
+                        Point3d valveStart = entity.Position;
+
+                        double valveLength = 7.75;
+                        string type = "Cold Water";
+
+                        if (name == "GMEP VALVE MIXING") {
+                          type = "Hot Water";
+                          valveLength =  4.375;
+                        }
+                        if (name == "GMEP VALVE SHUTOFFAUTO") {
+                          type = "Gas";
+                        }
+                        Point3d startPos = new Point3d(valveStart.X - valveLength * Math.Cos(valveRotation), valveStart.Y - valveLength * Math.Sin(valveRotation), valveStart.Z);
+                        Point3d endPos = new Point3d(valveStart.X + valveLength * Math.Cos(valveRotation), valveStart.Y + valveLength * Math.Sin(valveRotation), valveStart.Z);
+
+                        PlumbingHorizontalRoute forwardRoute = new PlumbingHorizontalRoute(
+                         Guid.NewGuid().ToString(),
+                         ProjectId,
+                         type,
+                         startPos,
+                         endPos,
+                         basepointId,
+                         "PEX",
+                         0
+                        );
+                        PlumbingHorizontalRoute backwardRoute = new PlumbingHorizontalRoute(
+                          Guid.NewGuid().ToString(),
+                          ProjectId,
+                          type,
+                          endPos,
+                          startPos,
+                          basepointId,
+                          "PEX",
+                          0
+                         );
+                        routes.Add(forwardRoute);
+                        routes.Add(backwardRoute);
                       }
                     }
                   }
