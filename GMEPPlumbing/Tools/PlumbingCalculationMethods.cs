@@ -108,51 +108,66 @@ namespace GMEPPlumbing {
 
       //Fixtures
       foreach (var fixture in fixtures) {
-        PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(fixture.CatalogId);
-        ed.WriteMessage($"\nFixture {fixture.Id} has a demand of {catalogItem.FixtureDemand} fixture units.");
-        double units = (double)catalogItem.FixtureDemand;
-        if (route.Type == "Hot Water") {
-          units = (double)catalogItem.HotDemand;
+        if (fixture.BlockName == "GMEP VALVE MIXING" || fixture.BlockName == "GMEP VALVE SHUTOFF" || fixture.BlockName == "GMEP VALVE SHUTOFFAUTO") {
+          ed.WriteMessage($"\nTraversing valve fixture {fixture.Id} at position {fixture.Position}");
+          List<string> types = GetFixtureInputTypes(fixture);
+          List<PlumbingHorizontalRoute> childRoutes2 = HorizontalRoutes
+            .Where(r => types.Contains(r.Type) && r.BasePointId == route.BasePointId && fixture.Position.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0)
+            .ToList();
+          foreach (var childRoute2 in childRoutes2) {
+            List<Object> routeObjectsTemp2 = new List<Object>(routeObjects);
+            routeObjectsTemp2.Add(route);
+            routeObjectsTemp2.Add(fixture);
+            TraverseHorizontalRoute(childRoute2, visited, fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint), routeObjectsTemp2);
+          }
         }
-        if (route.Type == "Gas") {
-          units = catalogItem.Cfh;
+        else {
+          PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(fixture.CatalogId);
+          ed.WriteMessage($"\nFixture {fixture.Id} has a demand of {catalogItem.FixtureDemand} fixture units.");
+          double units = (double)catalogItem.FixtureDemand;
+          if (route.Type == "Hot Water") {
+            units = (double)catalogItem.HotDemand;
+          }
+          if (route.Type == "Gas") {
+            units = catalogItem.Cfh;
+          }
+          if (route.Type == "Waste" || route.Type == "Vent") {
+            units = catalogItem.Dfu;
+          }
+          fixtureUnits += units;
+          flowTypeId = (flowTypeId == 2) ? 2 : fixture.FlowTypeId;
+
+          List<Object> routeObjectsTemp = new List<Object>(routeObjects);
+          //will change later to include all fixture units for fixtures on the horizontal route(although is that possible?). For now, just single fixture.
+          route.FixtureUnits = units;
+          route.FlowTypeId = flowTypeId;
+          routeObjectsTemp.Add(route);
+          routeObjectsTemp.Add(fixture);
+
+          int typeId = 0;
+          if (routeObjectsTemp[0] is PlumbingSource source) {
+            typeId = source.TypeId;
+          }
+
+          double lengthInInches = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+          longestRunLength = Math.Max(longestRunLength, lengthInInches);
+          route.LongestRunLength = longestRunLength;
+
+          PlumbingFullRoute fullRoute = new PlumbingFullRoute();
+          fullRoute.Length = lengthInInches;
+          fullRoute.RouteItems = routeObjectsTemp;
+          fullRoute.TypeId = typeId;
+
+          if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
+            FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
+          }
+
+          FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
+
+          int feet = (int)(lengthInInches / 12);
+          int inches = (int)Math.Round(lengthInInches % 12);
+          ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
         }
-        if (route.Type == "Waste" || route.Type == "Vent") {
-          units = catalogItem.Dfu;
-        }
-        fixtureUnits += units;
-        flowTypeId = (flowTypeId == 2) ? 2 : fixture.FlowTypeId;
-
-        List<Object> routeObjectsTemp = new List<Object>(routeObjects);
-        //will change later to include all fixture units for fixtures on the horizontal route(although is that possible?). For now, just single fixture.
-        route.FixtureUnits = units;
-        route.FlowTypeId = flowTypeId;
-        routeObjectsTemp.Add(route);
-        routeObjectsTemp.Add(fixture);
-
-        int typeId = 0;
-        if (routeObjectsTemp[0] is PlumbingSource source) {
-          typeId = source.TypeId;
-        }
-
-        double lengthInInches = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
-        longestRunLength = Math.Max(longestRunLength, lengthInInches);
-        route.LongestRunLength = longestRunLength;
-
-        PlumbingFullRoute fullRoute = new PlumbingFullRoute();
-        fullRoute.Length = lengthInInches;
-        fullRoute.RouteItems = routeObjectsTemp;
-        fullRoute.TypeId = typeId;
-
-        if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
-          FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
-        }
-
-        FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
-
-        int feet = (int)(lengthInInches / 12);
-        int inches = (int)Math.Round(lengthInInches % 12);
-        ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
 
 
@@ -435,6 +450,17 @@ namespace GMEPPlumbing {
           types.Add("Hot Water");
           types.Add("Waste");
           types.Add("Grease Waste");
+          break;
+        case "VALVE":
+          if (fixture.BlockName == "GMEP VALVE SHUTOFF" || fixture.BlockName == "GMEP VALVE MIXING") {
+            types.Add("Cold Water");
+          }
+          if (fixture.BlockName == "GMEP VALVE MIXING") {
+            types.Add("Hot Water");
+          }
+          if (fixture.BlockName == "GMEP VALVE SHUTOFFAUTO") {
+            types.Add("Gas");
+          }
           break;
       }
       return types;
