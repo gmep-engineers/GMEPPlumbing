@@ -2740,11 +2740,38 @@ namespace GMEPPlumbing
             );
           }
         }
+        if (blockName.Contains("%VALVESTYLE%")) {
+          if (selectedFixtureType.Abbreviation == "VALVE") {
+            keywordOptions = new PromptKeywordOptions("");
+            keywordOptions.Message = "\nSelect VALVE style";
+            if (CADObjectCommands.ActiveViewTypes.Contains("Water")) {
+              keywordOptions.Keywords.Add("MIXING");
+              keywordOptions.Keywords.Add("SHUTOFF");
+            }
+            if (CADObjectCommands.ActiveViewTypes.Contains("Gas")) {
+              keywordOptions.Keywords.Add("SHUTOFFAUTO");
+            }
+            keywordOptions.AllowNone = false;
+            keywordResult = ed.GetKeywords(keywordOptions);
+            if (keywordResult.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            string valveStyle = keywordResult.StringResult.Replace("\"", "");
+            if (valveStyle.Contains(' ')) {
+              valveStyle = valveStyle.Split(' ')[0];
+            }
+            selectedBlockNames2[selectedBlockNames.IndexOf(blockName)] = blockName.Replace(
+              "%VALVESTYLE%",
+              valveStyle
+            );
+          }
+        }
       }
       double routeHeight = 0;
       if (selectedFixtureType.Abbreviation != "FD" && selectedFixtureType.Abbreviation != "FS") {
         routeHeight = CADObjectCommands.GetPlumbingRouteHeight();
-        if (selectedFixtureType.Abbreviation == "WH" || selectedFixtureType.Abbreviation == "IWH") {
+        if (selectedFixtureType.Abbreviation == "WH" || selectedFixtureType.Abbreviation == "IWH" || selectedFixtureType.Abbreviation == "VALVE") {
           PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the fixture from the floor (in feet): ");
           pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
           while (true) {
@@ -7579,7 +7606,10 @@ namespace GMEPPlumbing
           "GMEP PLUMBING GAS OUTPUT",
           "GMEP PLUMBING VENT START",
           "GMEP CW FIXTURE POINT",
-          "GMEP HW FIXTURE POINT"
+          "GMEP HW FIXTURE POINT",
+          "GMEP VALVE MIXING",
+          "GMEP VALVE SHUTOFF",
+          "GMEP VALVE SHUTOFFAUTO"
         };
         foreach (string name in blockNames) {
           BlockTableRecord fixtureBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
