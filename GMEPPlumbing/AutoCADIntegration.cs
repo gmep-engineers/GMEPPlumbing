@@ -7871,6 +7871,7 @@ namespace GMEPPlumbing
       if (doc == null) return;
       var db = doc.Database;
       var ed = doc.Editor;
+
       ed.WriteMessage("\nStaging full vertical route duplication...");
 
       List<PlumbingVerticalRoute> verticalRoutes = GetVerticalRoutesFromCAD();
@@ -7888,6 +7889,10 @@ namespace GMEPPlumbing
         tr.Commit();
       }
       PlumbingVerticalRoute route = verticalRoutes.FirstOrDefault(r => r.Id == Id);
+      if (route == null) {
+        ed.WriteMessage("\nOriginal vertical route not found, aborting duplication.");
+        return;
+      }
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockReference blockRef2 = (BlockReference)tr.GetObject(objid, OpenMode.ForWrite);
