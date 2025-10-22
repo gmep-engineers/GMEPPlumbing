@@ -7580,7 +7580,6 @@ namespace GMEPPlumbing
           "GMEP RPBFP",
           "GMEP IWH",
           "GMEP PLUMBING GAS OUTPUT",
-          "GMEP PLUMBING VENT START",
           "GMEP CW FIXTURE POINT",
           "GMEP HW FIXTURE POINT"
         };
