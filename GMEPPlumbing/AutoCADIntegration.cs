@@ -2519,6 +2519,9 @@ namespace GMEPPlumbing
 
 
     private void MakePlumbingFixtureLabel(PlumbingFixture fixture, PlumbingFixtureType type) {
+      if (fixture == null || type == null) {
+        return;
+      }
       double distance = 3;
       double x = fixture.Position.X + (distance * Math.Sin(fixture.Rotation));
       double y = fixture.Position.Y - (distance * Math.Cos(fixture.Rotation));
