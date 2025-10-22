@@ -1001,14 +1001,14 @@ namespace GMEPPlumbing
           foreach (DynamicBlockReferenceProperty prop in pc2) {
             if (prop.PropertyName == "floor") {
               floor = Convert.ToInt32(prop.Value);
-              BasePointRefs.Add(floor, entity2);
+              BasePointRefs[floor] = entity2;
             }
             if (prop.PropertyName == "id") {
               guid = prop.Value.ToString();
             }
           }
           if (floor != 0 && guid != "") {
-            BasePointGUIDs.Add(floor, guid);
+            BasePointGUIDs[floor] = guid;
           }
         }
         tr.Commit();
