@@ -1803,12 +1803,15 @@ namespace GMEPPlumbing
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
           BlockTableRecord block;
-          //string message = "\nCreating Plumbing Base Point for " + planName + " on floor " + (i + 1);
+          string message = "Plumbing Base Point for " + planName + " on floor " + (i + 1);
+          if (i == floorQty) {
+            message = "Plumbing Base Point for " + planName + " on roof";
+          }
           BlockReference br = CADObjectCommands.CreateBlockReference(
             tr,
             bt,
             "GMEP_PLUMBING_BASEPOINT",
-            "Plumbing Base Point for " + planName + " on floor " + (i + 1),
+            message,
             out block,
             out point
           );
@@ -1904,8 +1907,9 @@ namespace GMEPPlumbing
       for (int i = floors.First(); i <= floors.Last(); i++) {
         PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
         string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}, Floor {i}.";
-        if (basePoints.First(bp => bp.Floor == i).IsRoof) {
-          message += $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}, Roof.";
+        bool isRoof = basePoints.First(bp => bp.Floor == i).IsRoof;
+        if (isRoof) {
+          message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}, Roof.";
         }
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -1967,7 +1971,7 @@ namespace GMEPPlumbing
               prop.Value = 1;
             }
             else if (prop.PropertyName == "is_roof") {
-              if (i == floors.Last()) {
+              if (isRoof) {
                 prop.Value = 1;
               }
               else {
@@ -1981,8 +1985,9 @@ namespace GMEPPlumbing
       for (int i = floors.First(); i <= floors.Last(); i++) {
         PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
         string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}(relative to floor {basePoint.Floor}).";
-        if (basePoints.First(bp => bp.Floor == i).IsRoof) {
-          message += $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}(relative to the roof).";
+        bool isRoof = basePoints.First(bp => bp.Floor == i).IsRoof;
+        if (isRoof) {
+          message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}(relative to the roof).";
         }
         ZoomToPoint(ed, new Point3d(basePoint.Point.X, basePoint.Point.Y, 0));
         
@@ -2046,7 +2051,7 @@ namespace GMEPPlumbing
               prop.Value = 1;
             }
             else if (prop.PropertyName == "is_roof") {
-              if (i == floors.Last()) {
+              if (isRoof) {
                 prop.Value = 1;
               }
               else {
