@@ -1902,12 +1902,9 @@ namespace GMEPPlumbing
       List<int> floors = basePoints.Select(i => i.Floor).OrderBy(i => i).Distinct().ToList();
 
       for (int i = floors.First(); i <= floors.Last(); i++) {
-        if (i == floors.Last() && !basePoints.First(bp => bp.Floor == i).Type.Contains("Sewer-Vent")) {
-          continue;
-        }
         PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
         string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}, Floor {i}.";
-        if (i == floors.Last()) {
+        if (basePoints.First(bp => bp.Floor == i).IsRoof) {
           message += $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}, Roof.";
         }
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -1982,12 +1979,9 @@ namespace GMEPPlumbing
         }
       }
       for (int i = floors.First(); i <= floors.Last(); i++) {
-        if (i == floors.Last() && !basePoints.First(bp => bp.Floor == i).Type.Contains("Sewer-Vent")) {
-          continue;
-        }
         PlumbingPlanBasePoint basePoint = basePoints.First(bp => bp.Floor == i);
         string message = $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}(relative to floor {basePoint.Floor}).";
-        if (i == floors.Last()) {
+        if (basePoints.First(bp => bp.Floor == i).IsRoof) {
           message += $"Site Base Point for plan {basePoint.Plan}:{basePoint.Type}(relative to the roof).";
         }
         ZoomToPoint(ed, new Point3d(basePoint.Point.X, basePoint.Point.Y, 0));
