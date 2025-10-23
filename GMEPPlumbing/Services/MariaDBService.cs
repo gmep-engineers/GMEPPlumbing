@@ -603,6 +603,25 @@ namespace GMEPPlumbing.Services
       return fixtureTypes;
     }
 
+    public List<PlumbingAccessoryType> GetPlumbingAccessoryTypes() {
+      List<PlumbingAccessoryType> accessoryTypes = new List<PlumbingAccessoryType>();
+      OpenConnectionSync();
+      string query = "SELECT * FROM plumbing_accessory_types ORDER BY abbreviation";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read()) {
+        accessoryTypes.Add(
+          new PlumbingAccessoryType(
+            GetSafeInt(reader, "id"),
+            GetSafeString(reader, "name"),
+            GetSafeString(reader, "abbreviation")
+          )
+        );
+      }
+      reader.Close();
+      CloseConnectionSync();
+      return accessoryTypes;
+    }
     public Dictionary<int,  List<PlumbingFixtureCatalogItem>> GetAllPlumbingFixtureCatalogItems() {
       Dictionary<int, List<PlumbingFixtureCatalogItem>> items = new Dictionary<int, List<PlumbingFixtureCatalogItem>>();
       OpenConnectionSync();
@@ -1401,7 +1420,61 @@ namespace GMEPPlumbing.Services
       }
       await conn.CloseAsync();
     }
-
+    public async Task UpdatePlumbingAccessories(List<PlumbingAccessory> accessories, string ProjectId) {
+      if (accessories == null) {
+        return;
+      }
+      var idsToKeep = accessories.Select(list => list).Select(f => f.Id).ToList();
+      MySqlConnection conn = await OpenNewConnectionAsync();
+      if (idsToKeep.Count > 0) {
+        var paramNames = idsToKeep.Select((id, i) => $"@id{i}").ToList();
+        string deleteQuery = $@"
+              DELETE FROM plumbing_accessories
+              WHERE project_id = @projectId
+              AND id NOT IN ({string.Join(",", paramNames)})
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        for (int i = 0; i < idsToKeep.Count; i++) {
+          deleteCommand.Parameters.AddWithValue(paramNames[i], idsToKeep[i]);
+        }
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      else {
+        string deleteQuery = @"
+              DELETE FROM plumbing_accessories
+              WHERE project_id = @projectId
+          ";
+        MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, conn);
+        deleteCommand.Parameters.AddWithValue("@projectId", ProjectId);
+        await deleteCommand.ExecuteNonQueryAsync();
+      }
+      if (accessories.Count > 0) {
+        string upsertQuery = @"
+              INSERT INTO plumbing_fixtures
+              (id, project_id, base_point_id, rotation, block_name, pos_x, pos_y, pos_z)
+              VALUES (@id, @projectId, @basePointId, @rotation, @blockName, @posX, @posY, @posZ)
+              ON DUPLICATE KEY UPDATE
+                  pos_x = @posX,
+                  pos_y = @posY,
+                  pos_z = @posZ,
+                  rotation = @rotation
+          ";
+        foreach (var component in accessories.Select(list => list)) {
+          MySqlCommand command = new MySqlCommand(upsertQuery, conn);
+          command.Parameters.AddWithValue("@id", component.Id);
+          command.Parameters.AddWithValue("@projectId", ProjectId);
+          command.Parameters.AddWithValue("@basePointId", component.BasePointId);
+          command.Parameters.AddWithValue("@rotation", component.Rotation);
+          command.Parameters.AddWithValue("@blockName", component.BlockName);
+          command.Parameters.AddWithValue("@posX", component.Position.X);
+          command.Parameters.AddWithValue("@posY", component.Position.Y);
+          command.Parameters.AddWithValue("@posZ", component.Position.Z);
+          await command.ExecuteNonQueryAsync();
+        }
+      }
+      await conn.CloseAsync();
+    }
     public async Task<List<PlumbingHorizontalRoute>> GetPlumbingHorizontalRoutes(string ProjectId) {
       var routes = new List<PlumbingHorizontalRoute>();
       await OpenConnectionAsync();
@@ -1566,6 +1639,35 @@ namespace GMEPPlumbing.Services
       reader.Close();
       await CloseConnectionAsync();
       return fixtures;
+    }
+    public async Task<List<PlumbingAccessory>> GetPlumbingAccessories(string ProjectId) {
+      var accessories = new List<PlumbingAccessory>();
+
+      await OpenConnectionAsync();
+      string query = @"
+            SELECT * FROM plumbing_accessories
+            WHERE project_id = @projectId";
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", ProjectId);
+      MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+      while (reader.Read()) {
+        double posx = reader.GetDouble("pos_x");
+        double posy = reader.GetDouble("pos_y");
+        double posz = reader.GetDouble("pos_z");
+
+        var accessory = new PlumbingAccessory(
+          reader.GetString("id"),
+          ProjectId,
+          reader.GetString("base_point_id"),
+          new Point3d(posx, posy, posz),
+          reader.GetDouble("rotation"),
+          reader.GetString("block_name")
+        );
+        accessories.Add(accessory);
+      }
+      reader.Close();
+      await CloseConnectionAsync();
+      return accessories;
     }
     public async Task<List<PlumbingPlanBasePoint>> GetPlumbingPlanBasePoints(string ProjectId) {
       var points = new List<PlumbingPlanBasePoint>();
