@@ -1455,9 +1455,9 @@ namespace GMEPPlumbing.Services
       }
       if (accessories.Count > 0) {
         string upsertQuery = @"
-              INSERT INTO plumbing_fixtures
-              (id, project_id, base_point_id, rotation, type_id, pos_x, pos_y, pos_z)
-              VALUES (@id, @projectId, @basePointId, @rotation, @typeId, @posX, @posY, @posZ)
+              INSERT INTO plumbing_accessories
+              (id, project_id, base_point_id, rotation, type_id, pos_x, pos_y, pos_z, type)
+              VALUES (@id, @projectId, @basePointId, @rotation, @typeId, @posX, @posY, @posZ, @type)
               ON DUPLICATE KEY UPDATE
                   pos_x = @posX,
                   pos_y = @posY,
@@ -1474,6 +1474,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@posX", component.Position.X);
           command.Parameters.AddWithValue("@posY", component.Position.Y);
           command.Parameters.AddWithValue("@posZ", component.Position.Z);
+          command.Parameters.AddWithValue("@type", component.Type);
           await command.ExecuteNonQueryAsync();
         }
       }
@@ -1665,7 +1666,8 @@ namespace GMEPPlumbing.Services
           reader.GetString("base_point_id"),
           new Point3d(posx, posy, posz),
           reader.GetDouble("rotation"),
-          reader.GetInt32("type_id")
+          reader.GetInt32("type_id"),
+          reader.GetString("type")
         );
         accessories.Add(accessory);
       }

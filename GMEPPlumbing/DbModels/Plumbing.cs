@@ -21,13 +21,15 @@ namespace GMEPPlumbing {
     public Point3d Position;
     public double Rotation;
     public int TypeId;
+    public string Type;
     public PlumbingAccessory(
       string id,
       string projectId,
       string basePointId,
       Point3d position,
       double rotation,
-      int typeId
+      int typeId,
+      string type
     ) {
       Id = id;
       ProjectId = projectId;
@@ -35,6 +37,7 @@ namespace GMEPPlumbing {
       Position = position;
       Rotation = rotation;
       TypeId = typeId;
+      Type = type;
     }
   }
   public class PlumbingAccessoryType {
