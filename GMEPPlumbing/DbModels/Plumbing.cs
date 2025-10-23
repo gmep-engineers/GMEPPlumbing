@@ -14,43 +14,48 @@ using GMEPPlumbing.Tools;
 using System.Windows.Media;
 
 namespace GMEPPlumbing {
-
   public class PlumbingAccessory {
     public string Id;
     public string ProjectId;
     public string BasePointId;
     public Point3d Position;
     public double Rotation;
-    public string BlockName;
+    public int TypeId;
     public PlumbingAccessory(
       string id,
       string projectId,
       string basePointId,
       Point3d position,
       double rotation,
-      string blockName
+      int typeId
     ) {
       Id = id;
       ProjectId = projectId;
       BasePointId = basePointId;
       Position = position;
       Rotation = rotation;
-      BlockName = blockName;
+      TypeId = typeId;
     }
   }
   public class PlumbingAccessoryType {
     public int Id;
     public string Name;
-    public string Abbreviation;
- 
+    public string Label;
+    public string BlockName;
+    public string Category;
+
     public PlumbingAccessoryType(
       int id,
       string name,
-      string abbreviation
+      string label,
+      string category,
+      string blockName
     ) {
       Id = id;
       Name = name;
-      Abbreviation = abbreviation;
+      BlockName = blockName;
+      Category = category;
+      Label = label;
     }
   }
   public class PlumbingFixture {
