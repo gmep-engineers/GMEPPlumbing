@@ -7802,7 +7802,7 @@ namespace GMEPPlumbing
           "GMEP FS 12",
           "GMEP FS 6",
           "GMEP FD",
-          //"GMEP RPBFP",
+          "GMEP RPBFP",
           "GMEP IWH",
           "GMEP PLUMBING GAS OUTPUT",
           "GMEP CW FIXTURE POINT",
