@@ -2573,6 +2573,209 @@ namespace GMEPPlumbing
         type.Type.ToUpper()
       );
     }
+    [CommandMethod("PA")]
+    [CommandMethod("PlumbingAccessory")]
+    public void PlumbingAccessory() {
+      Accessory();
+    }
+    public void Accessory() {
+      string projectNo = CADObjectCommands.GetProjectNoFromFileName();
+      string projectId = MariaDBService.GetProjectIdSync(projectNo);
+
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      if (doc == null) return;
+
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      string basePointId = CADObjectCommands.GetActiveView();
+
+      List<PlumbingAccessoryType> plumbingFixtureTypes = MariaDBService.GetPlumbingAccessoryTypes();
+      List<string> categories = plumbingFixtureTypes.Select(t => t.Category).Distinct().ToList();
+
+      PromptKeywordOptions categoryOptions = new PromptKeywordOptions("Choose a type: ");
+      foreach (string category in categories) {
+        categoryOptions.Keywords.Add(category);
+      }
+      PromptResult categoryResult = ed.GetKeywords(categoryOptions);
+      if (categoryResult.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        return;
+      }
+      string selectedCategory = categoryResult.StringResult;
+      List<PlumbingAccessoryType> filteredAccessoryTypes = plumbingFixtureTypes.Where(t => t.Category == selectedCategory).ToList();
+
+      PromptKeywordOptions accessoryOptions = new PromptKeywordOptions($"Choose a {selectedCategory}: ");
+      foreach (PlumbingAccessoryType type in filteredAccessoryTypes) {
+        accessoryOptions.Keywords.Add(type.Name);
+      }
+      PromptResult accessoryResult = ed.GetKeywords(accessoryOptions);
+      if (accessoryResult.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nCommand cancelled.");
+        return;
+      }
+      string selectedAccessoryName = accessoryResult.StringResult;
+      PlumbingAccessoryType selectedAccessoryType = filteredAccessoryTypes.FirstOrDefault(t =>
+        t.Name == selectedAccessoryName
+      );
+
+      string layer = "0";
+      List<string> allowedTypes = selectedAccessoryType.Types;
+      if (allowedTypes.Count > 1) {
+        PromptKeywordOptions typeOptions = new PromptKeywordOptions("Select type:");
+        foreach (string type in allowedTypes) {
+          typeOptions.Keywords.Add(type);
+        }
+        PromptResult typeResult = ed.GetKeywords(typeOptions);
+        if (typeResult.Status != PromptStatus.OK) {
+          ed.WriteMessage("\nCommand cancelled.");
+          return;
+        }
+        layer = TypeToLayer(typeResult.StringResult);
+      }
+      else if (allowedTypes.Count == 1) {
+        layer = TypeToLayer(allowedTypes[0]);
+      }
+
+      double routeHeight = 0;
+      PromptDoubleOptions pdo = new PromptDoubleOptions("\nEnter the height of the fixture from the floor (in feet): ");
+      pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
+      while (true) {
+        try {
+          PromptDoubleResult pdr = ed.GetDouble(pdo);
+          if (pdr.Status == PromptStatus.Cancel) {
+            ed.WriteMessage("\nCommand cancelled.");
+            return;
+          }
+          if (pdr.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+            continue;
+          }
+          routeHeight = pdr.Value;
+          // GetHeightLimits returns Tuple<double, double> (min, max)
+          var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+          double minHeight = heightLimits.Item1;
+          double maxHeight = heightLimits.Item2;
+          if (routeHeight < minHeight || routeHeight > maxHeight) {
+            ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
+            pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
+            continue;
+          }
+          break; // Valid input
+        }
+        catch (System.Exception ex) {
+          ed.WriteMessage($"\nError: {ex.Message}");
+          continue;
+        }
+      }
+      double zIndex = (CADObjectCommands.ActiveFloorHeight + routeHeight) * 12;
+      ObjectId blockId = ObjectId.Null;
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord btr;
+        Point3d point;
+        double rotation;
+
+        BlockReference br = CADObjectCommands.CreateBlockReference(
+          tr,
+          bt,
+          selectedAccessoryType.BlockName,
+          "Plumbing Accessory " + selectedCategory + "-" + selectedAccessoryName,
+          out btr,
+          out point
+        );
+     
+        if (br != null) {
+          BlockTableRecord curSpace = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+          RotateJig rotateJig = new RotateJig(br);
+          PromptResult rotatePromptResult = ed.Drag(rotateJig);
+          if (rotatePromptResult.Status != PromptStatus.OK) {
+            ed.WriteMessage("\nRotation cancelled.");
+            return;
+          }
+
+          br.Position = new Point3d(br.Position.X, br.Position.Y, zIndex);
+          rotation = br.Rotation;
+
+          curSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+        }
+        else {
+          ed.WriteMessage("\nBlock reference could not be created.");
+          return;
+        }
+        blockId = br.Id;
+        br.Layer = layer;
+        tr.Commit();
+      }
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+        DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+        foreach (DynamicBlockReferenceProperty prop in pc) {
+          if (prop.PropertyName == "id") {
+            prop.Value = Guid.NewGuid().ToString();
+          }
+          if (prop.PropertyName == "base_point_id") {
+            prop.Value = basePointId;
+          }
+          if (prop.PropertyName == "category") {
+            prop.Value = selectedAccessoryType.Category;
+          }
+          if (prop.PropertyName == "name") {
+              prop.Value = selectedAccessoryType.Name;
+          }
+        }
+        /*int catalogId = selectedCatalogItem != null ? selectedCatalogItem.Id : 0;
+        PlumbingFixture fixture = new PlumbingFixture(
+          GUID,
+          projectId,
+          point,
+          rotation,
+          catalogId,
+          selectedFixtureType.Abbreviation,
+          0,
+          basePointId,
+          blockName,
+          flowTypeId
+        );
+        foreach (DynamicBlockReferenceProperty prop in pc) {
+          if (prop.PropertyName == "number") {
+            number = DetermineFixtureNumber(fixture);
+            prop.Value = number;
+          }
+        }*/
+        tr.Commit();
+      }
+    }
+    public string TypeToLayer(string type) {
+      string layer = "";
+      switch (type) {
+        case "Hot-Water":
+          layer = "P-DOMW-HOTW";
+          break;
+        case "Cold-Water":
+          layer = "P-DOMW-CWTR";
+          break;
+        case "Gas":
+          layer = "P-GAS";
+          break;
+        case "Waste":
+          layer = "P-WV-W-BELOW";
+          break;
+        case "Grease-Waste":
+          layer = "P-GREASE-WASTE";
+          break;
+        case "Vent":
+          layer = "P-WV-VENT";
+          break;
+      }
+      return layer;
+    }
 
     [CommandMethod("PF")]
     [CommandMethod("PlumbingFixture")]

@@ -606,17 +606,19 @@ namespace GMEPPlumbing.Services
     public List<PlumbingAccessoryType> GetPlumbingAccessoryTypes() {
       List<PlumbingAccessoryType> accessoryTypes = new List<PlumbingAccessoryType>();
       OpenConnectionSync();
-      string query = "SELECT * FROM plumbing_accessory_types ORDER BY abbreviation";
+      string query = "SELECT * FROM plumbing_accessory_types ORDER BY label";
       MySqlCommand command = new MySqlCommand(query, Connection);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read()) {
+        List<string> types = GetSafeString(reader, "types").Split(',').ToList();
         accessoryTypes.Add(
           new PlumbingAccessoryType(
             GetSafeInt(reader, "id"),
             GetSafeString(reader, "name"),
             GetSafeString(reader, "label"),
+            GetSafeString(reader, "category"),
             GetSafeString(reader, "block_name"),
-            GetSafeString(reader, "category")
+            types
           )
         );
       }

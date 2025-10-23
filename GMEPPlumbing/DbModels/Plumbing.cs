@@ -43,19 +43,23 @@ namespace GMEPPlumbing {
     public string Label;
     public string BlockName;
     public string Category;
+    public List<string> Types;
 
     public PlumbingAccessoryType(
       int id,
       string name,
       string label,
       string category,
-      string blockName
+      string blockName,
+      List<string> types
+
     ) {
       Id = id;
       Name = name;
       BlockName = blockName;
       Category = category;
       Label = label;
+      Types = types;
     }
   }
   public class PlumbingFixture {
