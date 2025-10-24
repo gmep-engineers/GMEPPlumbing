@@ -22,6 +22,7 @@ namespace GMEPPlumbing {
     public List<PlumbingHorizontalRoute> HorizontalRoutes { get; private set; } = new List<PlumbingHorizontalRoute>();
     public List<PlumbingVerticalRoute> VerticalRoutes { get; private set; } = new List<PlumbingVerticalRoute>();
     public List<PlumbingFixture> PlumbingFixtures { get; set; } = new List<PlumbingFixture>();
+    public List<PlumbingAccessory> PlumbingAccessories { get; set; } = new List<PlumbingAccessory>();
     public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
     public Routing RoutingControl { get; set; } = null;
     private PaletteSet pw;
@@ -42,6 +43,7 @@ namespace GMEPPlumbing {
         VerticalRoutes = await MariaDBService.GetPlumbingVerticalRoutes(ProjectId);
         PlumbingFixtures = await MariaDBService.GetPlumbingFixtures(ProjectId);
         BasePoints = await MariaDBService.GetPlumbingPlanBasePoints(ProjectId);
+        PlumbingAccessories = await MariaDBService.GetPlumbingAccessories(ProjectId);
         BasePointLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp);
         ConvertSiteComponents();
         FullRoutes.Clear();
@@ -100,6 +102,7 @@ namespace GMEPPlumbing {
       Dictionary<PlumbingHorizontalRoute, double> childRoutes = FindNearbyHorizontalRoutes(route);
       List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
       List<PlumbingFixture> fixtures = FindNearbyFixtures(route);
+      List<PlumbingAccessory> accessories = FindNearbyAccessories(route);
 
       double fixtureUnits = 0;
       int flowTypeId = 1;
@@ -155,6 +158,19 @@ namespace GMEPPlumbing {
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
 
+      //accessories
+      foreach(var accessory in accessories) {
+        double length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+        List<Object> routeObjectsTemp = new List<Object>(routeObjects);
+        routeObjectsTemp.Add(route);
+        Tuple<double, int, double> accessoryResult = TraverseAccessory(accessory, flowTypeId, longestRunLength, visited, length, routeObjectsTemp);
+        fixtureUnits += accessoryResult.Item1;
+        flowTypeId = (flowTypeId == 2) ? 2 : accessoryResult.Item2;
+        longestRunLength = Math.Max(longestRunLength, accessoryResult.Item3);
+        route.FixtureUnits = fixtureUnits;
+        route.FlowTypeId = flowTypeId;
+        route.LongestRunLength = longestRunLength;
+      }
 
       //Vertical Routes
       foreach (var verticalRoute in verticalRoutes) {
@@ -353,6 +369,39 @@ namespace GMEPPlumbing {
       }
       return new Tuple<double, int, double>(fixtureUnitsSoFar, flowTypeIdTemp, longestRunLength);
     }
+    public Tuple<double, int, double> TraverseAccessory(PlumbingAccessory accessory, int flowTypeId, double longestRunLength, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+      if (visited == null)
+        visited = new HashSet<string>();
+
+      if (!visited.Add(accessory.Id))
+        return new Tuple<double, int, double>(0, 1, 0);
+
+      if (routeObjects == null)
+        routeObjects = new List<Object>();
+
+      double fixtureUnitsSoFar = 0;
+      int flowTypeIdTemp = flowTypeId;
+
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      ed.WriteMessage($"\nTraversing vertical route: {accessory.Id} at position {accessory.Position}");
+
+      List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
+        .Where(r => GetAccessoryInputTypes(accessory).Contains(r.Type) && r.StartPoint.DistanceTo(accessory.Position) <= 8.0)
+        .ToList();
+
+      foreach (var childRoute in childRoutes) {
+        List<object> routeObjectsTemp = new List<object>(routeObjects);
+        routeObjectsTemp.Add(accessory);
+        Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(childRoute, visited, fullRouteLength, routeObjectsTemp);
+        fixtureUnitsSoFar += childRouteResult.Item1;
+        flowTypeIdTemp = (flowTypeIdTemp == 2) ? 2 : childRouteResult.Item2;
+        longestRunLength = Math.Max(longestRunLength, childRouteResult.Item3);
+      }
+      return new Tuple<double, int, double>(fixtureUnitsSoFar, flowTypeIdTemp, longestRunLength);
+    }
     private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
       var direction = end - start;
       var totalLength = direction.Length;
@@ -435,6 +484,25 @@ namespace GMEPPlumbing {
           types.Add("Hot Water");
           types.Add("Waste");
           types.Add("Grease Waste");
+          break;
+      }
+      return types;
+    }
+    private List<string> GetAccessoryInputTypes(PlumbingAccessory accessory) {
+      var types = new List<string>();
+      switch (accessory.TypeId) {
+        case 1:
+        case 2:
+        case 3:
+          types.Add("Waste");
+          types.Add("Grease Waste");
+          break;
+        case 4:
+          types.Add("Cold Water");
+          types.Add("Hot Water");
+          break;
+        case 5:
+          types.Add(accessory.Type);
           break;
       }
       return types;
@@ -611,6 +679,13 @@ namespace GMEPPlumbing {
       return PlumbingFixtures.Select(list => list)
        .Where(fixture => targetRoute.EndPoint.DistanceTo(fixture.Position) <= 8.0 && fixture.BasePointId == targetRoute.BasePointId && GetFixtureInputTypes(fixture).Contains(targetRoute.Type))
        .GroupBy(fixture => fixture.Id)
+       .Select(g => g.First())
+       .ToList();
+    }
+    public List<PlumbingAccessory> FindNearbyAccessories(PlumbingHorizontalRoute targetRoute) {
+      return PlumbingAccessories.Select(list => list)
+       .Where(accessory => targetRoute.EndPoint.DistanceTo(accessory.Position) <= 8.0 && accessory.BasePointId == targetRoute.BasePointId && GetAccessoryInputTypes(accessory).Contains(targetRoute.Type))
+       .GroupBy(accessory => accessory.Id)
        .Select(g => g.First())
        .ToList();
     }
