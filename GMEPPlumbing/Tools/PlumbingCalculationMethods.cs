@@ -167,6 +167,9 @@ namespace GMEPPlumbing {
         fixtureUnits += accessoryResult.Item1;
         flowTypeId = (flowTypeId == 2) ? 2 : accessoryResult.Item2;
         longestRunLength = Math.Max(longestRunLength, accessoryResult.Item3);
+        route.FixtureUnits = fixtureUnits;
+        route.FlowTypeId = flowTypeId;
+        route.LongestRunLength = longestRunLength;
       }
 
       //Vertical Routes
