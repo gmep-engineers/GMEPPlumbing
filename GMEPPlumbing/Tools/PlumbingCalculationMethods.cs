@@ -163,7 +163,10 @@ namespace GMEPPlumbing {
         double length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
         routeObjectsTemp.Add(route);
-
+        Tuple<double, int, double> accessoryResult = TraverseAccessory(accessory, flowTypeId, longestRunLength, visited, length, routeObjectsTemp);
+        fixtureUnits += accessoryResult.Item1;
+        flowTypeId = (flowTypeId == 2) ? 2 : accessoryResult.Item2;
+        longestRunLength = Math.Max(longestRunLength, accessoryResult.Item3);
       }
 
       //Vertical Routes
@@ -360,6 +363,39 @@ namespace GMEPPlumbing {
         adjustedRoute.FixtureUnits = fixtureUnits + fixtureUnitsSoFar;
         adjustedRoute.FlowTypeId = flowTypeIdTemp;
         adjustedRoute.LongestRunLength = longestRunLength;
+      }
+      return new Tuple<double, int, double>(fixtureUnitsSoFar, flowTypeIdTemp, longestRunLength);
+    }
+    public Tuple<double, int, double> TraverseAccessory(PlumbingAccessory accessory, int flowTypeId, double longestRunLength, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+      if (visited == null)
+        visited = new HashSet<string>();
+
+      if (!visited.Add(accessory.Id))
+        return new Tuple<double, int, double>(0, 1, 0);
+
+      if (routeObjects == null)
+        routeObjects = new List<Object>();
+
+      double fixtureUnitsSoFar = 0;
+      int flowTypeIdTemp = flowTypeId;
+
+      var doc = Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+
+      ed.WriteMessage($"\nTraversing vertical route: {accessory.Id} at position {accessory.Position}");
+
+      List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
+        .Where(r => GetAccessoryInputTypes(accessory).Contains(r.Type) && r.StartPoint.DistanceTo(accessory.Position) <= 8.0)
+        .ToList();
+
+      foreach (var childRoute in childRoutes) {
+        List<object> routeObjectsTemp = new List<object>(routeObjects);
+        routeObjectsTemp.Add(accessory);
+        Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(childRoute, visited, fullRouteLength, routeObjectsTemp);
+        fixtureUnitsSoFar += childRouteResult.Item1;
+        flowTypeIdTemp = (flowTypeIdTemp == 2) ? 2 : childRouteResult.Item2;
+        longestRunLength = Math.Max(longestRunLength, childRouteResult.Item3);
       }
       return new Tuple<double, int, double>(fixtureUnitsSoFar, flowTypeIdTemp, longestRunLength);
     }
