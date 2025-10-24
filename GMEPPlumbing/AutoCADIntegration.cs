@@ -2590,7 +2590,9 @@ namespace GMEPPlumbing
 
       string basePointId = CADObjectCommands.GetActiveView();
 
-      List<PlumbingAccessoryType> plumbingFixtureTypes = MariaDBService.GetPlumbingAccessoryTypes();
+      List<PlumbingAccessoryType> plumbingFixtureTypes = MariaDBService.GetPlumbingAccessoryTypes().Where(r =>
+        (r.Types.Contains("Waste") && CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) || ((r.Types.Contains("Cold-Water") || r.Types.Contains("Hot-Water")) && CADObjectCommands.ActiveViewTypes.Contains("Water")) || (r.Types.Contains("Gas") && CADObjectCommands.ActiveViewTypes.Contains("Gas"))
+      ).ToList();
       List<string> categories = plumbingFixtureTypes.Select(t => t.Category).Distinct().ToList();
 
       PromptKeywordOptions categoryOptions = new PromptKeywordOptions("Choose a type: ");
@@ -2603,7 +2605,10 @@ namespace GMEPPlumbing
         return;
       }
       string selectedCategory = categoryResult.StringResult;
-      List<PlumbingAccessoryType> filteredAccessoryTypes = plumbingFixtureTypes.Where(t => t.Category == selectedCategory).ToList();
+      List<PlumbingAccessoryType> filteredAccessoryTypes = plumbingFixtureTypes.Where(r => 
+      r.Category == selectedCategory
+      && ((r.Types.Contains("Waste") && CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent")) || ((r.Types.Contains("Cold-Water") || r.Types.Contains("Hot-Water")) && CADObjectCommands.ActiveViewTypes.Contains("Water")) || (r.Types.Contains("Gas") && CADObjectCommands.ActiveViewTypes.Contains("Gas")))
+      ).ToList();
 
       PromptKeywordOptions accessoryOptions = new PromptKeywordOptions($"Choose a {selectedCategory}: ");
       foreach (PlumbingAccessoryType type in filteredAccessoryTypes) {
@@ -2624,7 +2629,15 @@ namespace GMEPPlumbing
       if (allowedTypes.Count > 1) {
         PromptKeywordOptions typeOptions = new PromptKeywordOptions("Select type:");
         foreach (string type in allowedTypes) {
-          typeOptions.Keywords.Add(type);
+          if (CADObjectCommands.ActiveViewTypes.Contains("Water") && (type == "Hot-Water" || type == "Cold-Water")) {
+            typeOptions.Keywords.Add(type);
+          }
+          else if (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && type == "Waste") {
+            typeOptions.Keywords.Add(type);
+          }
+          else if (CADObjectCommands.ActiveViewTypes.Contains("Gas") && type == "Gas") {
+            typeOptions.Keywords.Add(type);
+          }
         }
         PromptResult typeResult = ed.GetKeywords(typeOptions);
         if (typeResult.Status != PromptStatus.OK) {
