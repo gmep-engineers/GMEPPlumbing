@@ -22,6 +22,7 @@ namespace GMEPPlumbing {
     public List<PlumbingHorizontalRoute> HorizontalRoutes { get; private set; } = new List<PlumbingHorizontalRoute>();
     public List<PlumbingVerticalRoute> VerticalRoutes { get; private set; } = new List<PlumbingVerticalRoute>();
     public List<PlumbingFixture> PlumbingFixtures { get; set; } = new List<PlumbingFixture>();
+    public List<PlumbingAccessory> PlumbingAccessories { get; set; } = new List<PlumbingAccessory>();
     public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
     public Routing RoutingControl { get; set; } = null;
     private PaletteSet pw;
@@ -42,6 +43,7 @@ namespace GMEPPlumbing {
         VerticalRoutes = await MariaDBService.GetPlumbingVerticalRoutes(ProjectId);
         PlumbingFixtures = await MariaDBService.GetPlumbingFixtures(ProjectId);
         BasePoints = await MariaDBService.GetPlumbingPlanBasePoints(ProjectId);
+        PlumbingAccessories = await MariaDBService.GetPlumbingAccessories(ProjectId);
         BasePointLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp);
         ConvertSiteComponents();
         FullRoutes.Clear();
@@ -100,6 +102,7 @@ namespace GMEPPlumbing {
       Dictionary<PlumbingHorizontalRoute, double> childRoutes = FindNearbyHorizontalRoutes(route);
       List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
       List<PlumbingFixture> fixtures = FindNearbyFixtures(route);
+      List<PlumbingAccessory> accessories = FindNearbyAccessories(route);
 
       double fixtureUnits = 0;
       int flowTypeId = 1;
@@ -155,6 +158,13 @@ namespace GMEPPlumbing {
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
       }
 
+      //accessories
+      foreach(var accessory in accessories) {
+        double length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
+        List<Object> routeObjectsTemp = new List<Object>(routeObjects);
+        routeObjectsTemp.Add(route);
+
+      }
 
       //Vertical Routes
       foreach (var verticalRoute in verticalRoutes) {
@@ -439,6 +449,27 @@ namespace GMEPPlumbing {
       }
       return types;
     }
+    private List<string> GetAccessoryInputTypes(PlumbingAccessory accessory) {
+      var types = new List<string>();
+      switch (accessory.TypeId) {
+        case 1:
+        case 2:
+        case 3:
+          types.Add("Waste");
+          types.Add("Grease Waste");
+          types.Add("Hot Water");
+          types.Add("Cold Water");
+          break;
+        case 4:
+          types.Add("Cold Water");
+          types.Add("Hot Water");
+          break;
+        case 5:
+          types.Add(accessory.Type);
+          break;
+      }
+      return types;
+    }
     private double GetPointToSegmentDistance(Point3d pt, Point3d segStart, Point3d segEnd, out double segmentLength) {
       var v = segEnd - segStart;
       var w = pt - segStart;
@@ -611,6 +642,13 @@ namespace GMEPPlumbing {
       return PlumbingFixtures.Select(list => list)
        .Where(fixture => targetRoute.EndPoint.DistanceTo(fixture.Position) <= 8.0 && fixture.BasePointId == targetRoute.BasePointId && GetFixtureInputTypes(fixture).Contains(targetRoute.Type))
        .GroupBy(fixture => fixture.Id)
+       .Select(g => g.First())
+       .ToList();
+    }
+    public List<PlumbingAccessory> FindNearbyAccessories(PlumbingHorizontalRoute targetRoute) {
+      return PlumbingAccessories.Select(list => list)
+       .Where(accessory => targetRoute.EndPoint.DistanceTo(accessory.Position) <= 8.0 && accessory.BasePointId == targetRoute.BasePointId && GetAccessoryInputTypes(accessory).Contains(targetRoute.Type))
+       .GroupBy(accessory => accessory.Id)
        .Select(g => g.First())
        .ToList();
     }
