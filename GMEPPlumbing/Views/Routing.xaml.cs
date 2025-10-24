@@ -324,6 +324,8 @@ namespace GMEPPlumbing.Views
         else if (item is PlumbingAccessory plumbingAccessory) {
           var fullModel = new ModelVisual3D();
           if (plumbingAccessory.TypeId == 1) {
+            var cleanoutMesh = CreateGroundCleanoutMesh(new Point3D(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z), 4, 1, TypeToBrushColor(plumbingAccessory.Type));
+            fullModel.Content = cleanoutMesh;
           }
           else if (plumbingAccessory.TypeId == 2) {
           }
@@ -684,7 +686,23 @@ namespace GMEPPlumbing.Views
 
       return group;
     }
+    public static Model3DGroup CreateGroundCleanoutMesh(Point3D center, double diameter = 4, double height = 1, Brush color = null) {
+      var meshBuilder = new MeshBuilder(false, false);
+
+      meshBuilder.AddCylinder(center, new Point3D(center.X, center.Y, center.Z + height), diameter / 2, 32, true, true);
+
+      meshBuilder.AddCylinder(new Point3D(center.X, center.Y, center.Z + height), new Point3D(center.X, center.Y, center.Z + height + 0.2), diameter / 3, 32, true, true);
+
+      var mesh = meshBuilder.ToMesh();
+      var mat = MaterialHelper.CreateMaterial(color ?? Brushes.Silver);
+
+      var group = new Model3DGroup();
+      group.Children.Add(new GeometryModel3D { Geometry = mesh, Material = mat });
+
+      return group;
+    }
   }
+
   public class View : INotifyPropertyChanged {
     public List<PlumbingFullRoute> FullRoutes { get; set; } = new List<PlumbingFullRoute>();
 
