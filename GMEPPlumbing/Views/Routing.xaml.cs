@@ -322,11 +322,29 @@ namespace GMEPPlumbing.Views
           BasePointIds.Add(plumbingFixture.BasePointId);
         }
         else if (item is PlumbingAccessory plumbingAccessory) {
-          model = new SphereVisual3D {
-            Center = new Point3D(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z),
-            Radius = 2,
-            Fill = Brushes.Orange
-          };
+          var fullModel = new ModelVisual3D();
+          if (plumbingAccessory.TypeId == 1) {
+          }
+          else if (plumbingAccessory.TypeId == 2) {
+          }
+          else if (plumbingAccessory.TypeId == 3) {
+          }
+          else if (plumbingAccessory.TypeId == 4) {
+            double pyramidHeight = 1.5;
+            double pyramidBaseSize = 2;
+            var valveMesh = CreateValveMesh(new Point3D(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z), pyramidBaseSize, pyramidHeight, TypeToBrushColor(plumbingAccessory.Type), plumbingAccessory.Rotation);
+            
+            fullModel.Content = valveMesh;
+          }
+          else if (plumbingAccessory.TypeId == 5) {
+            double pyramidHeight = 2.5;
+            double pyramidBaseSize = 2;
+            var valveMesh = CreateValveMesh(new Point3D(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z), pyramidBaseSize, pyramidHeight, TypeToBrushColor(plumbingAccessory.Type), plumbingAccessory.Rotation);
+            fullModel.Content = valveMesh;
+          }
+
+
+          model = fullModel;
           BasePointIds.Add(plumbingAccessory.BasePointId);
         }
         if (model != null) {
@@ -617,6 +635,54 @@ namespace GMEPPlumbing.Views
         default:
           return "th";
       }
+    }
+    public static Model3DGroup CreateValveMesh(Point3D center, double baseSize, double height, Brush color, double rotation) {
+    
+
+      var direction = new Vector3D(Math.Cos(rotation), Math.Sin(rotation), 0);
+      // Helper to create a pyramid mesh
+      MeshGeometry3D CreatePyramid(Point3D apex, Vector3D dir, double baseSz, double h) {
+        var baseCenter = apex + dir * h;
+
+        // Find two perpendicular vectors for the base
+        Vector3D up = new Vector3D(0, 0, 1);
+        if (Vector3D.CrossProduct(dir, up).Length == 0)
+          up = new Vector3D(0, 1, 0);
+
+        var right = Vector3D.CrossProduct(dir, up);
+        right.Normalize();
+        up = Vector3D.CrossProduct(right, dir);
+        up.Normalize();
+
+        double half = baseSz / 2;
+        var p1 = baseCenter + right * half + up * half;
+        var p2 = baseCenter - right * half + up * half;
+        var p3 = baseCenter - right * half - up * half;
+        var p4 = baseCenter + right * half - up * half;
+
+        var meshBuilder = new MeshBuilder(false, false);
+        meshBuilder.AddPolygon(new[] { p1, p2, p3, p4 });
+        meshBuilder.AddPolygon(new[] { p4, p3, p2, p1 });
+        meshBuilder.AddTriangle(apex, p1, p2);
+        meshBuilder.AddTriangle(apex, p2, p3);
+        meshBuilder.AddTriangle(apex, p3, p4);
+        meshBuilder.AddTriangle(apex, p4, p1);
+
+        return meshBuilder.ToMesh();
+      }
+
+      // Two pyramids, apexes at center, bases offset in +X and -X
+      var mesh1 = CreatePyramid(center, direction, baseSize, height);
+      var mesh2 = CreatePyramid(center, -direction, baseSize, height);
+
+      var mat = MaterialHelper.CreateMaterial(color);
+
+      var group = new Model3DGroup();
+      group.Children.Add(new GeometryModel3D { Geometry = mesh1, Material = mat });
+      group.Children.Add(new GeometryModel3D { Geometry = mesh2, Material = mat });
+
+
+      return group;
     }
   }
   public class View : INotifyPropertyChanged {
