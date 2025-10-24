@@ -321,6 +321,14 @@ namespace GMEPPlumbing.Views
           };
           BasePointIds.Add(plumbingFixture.BasePointId);
         }
+        else if (item is PlumbingAccessory plumbingAccessory) {
+          model = new SphereVisual3D {
+            Center = new Point3D(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z),
+            Radius = 2,
+            Fill = Brushes.Orange
+          };
+          BasePointIds.Add(plumbingAccessory.BasePointId);
+        }
         if (model != null) {
           RouteVisuals.Add(model);
         }
@@ -972,6 +980,15 @@ namespace GMEPPlumbing.Views
               );
             }
           }
+          else if (item is PlumbingAccessory plumbingAccessory) {
+            if (BasePointLookup.TryGetValue(plumbingAccessory.BasePointId, out var basePoint)) {
+              plumbingAccessory.Position = new Point3d(
+                plumbingAccessory.Position.X - basePoint.Point.X,
+                plumbingAccessory.Position.Y - basePoint.Point.Y,
+                plumbingAccessory.Position.Z
+              );
+            }
+          }
         }
       }
     }
@@ -1040,6 +1057,18 @@ namespace GMEPPlumbing.Views
               plumbingFixture.BasePointId,
               plumbingFixture.BlockName,
               plumbingFixture.FlowTypeId
+          );
+          newFullRoute.RouteItems.Add(copy);
+        }
+        else if (item is PlumbingAccessory plumbingAccessory) {
+          var copy = new PlumbingAccessory(
+              plumbingAccessory.Id,
+              plumbingAccessory.ProjectId,
+              plumbingAccessory.BasePointId,
+              new Point3d(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z),
+              plumbingAccessory.Rotation,
+              plumbingAccessory.TypeId,
+              plumbingAccessory.Type
           );
           newFullRoute.RouteItems.Add(copy);
         }
