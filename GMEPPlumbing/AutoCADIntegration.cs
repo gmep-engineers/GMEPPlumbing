@@ -6234,6 +6234,20 @@ namespace GMEPPlumbing
       ed.WriteMessage("\nSelect base point for plumbing source");
       ObjectId blockId;
       string blockName = "GMEP SOURCE";
+
+      PromptKeywordOptions sourceAppearance = new PromptKeywordOptions("\nSource or Point of Connection?:");
+      sourceAppearance.Keywords.Add("Source");
+      sourceAppearance.Keywords.Add("Point-Of-Connection");
+      sourceAppearance.AllowNone = false;
+      PromptResult sourceAppearanceResult = ed.GetKeywords(sourceAppearance);
+      if (sourceAppearanceResult.Status != PromptStatus.OK) {
+        ed.WriteMessage("\nOperation cancelled.");
+        return;
+      }
+      if (sourceAppearanceResult.StringResult == "Point-Of-Connection") {
+        blockName = "GMEP PLUMBING POINT OF CONNECTION";
+      }
+
       Point3d point;
       double rotation = 0;
       string sourceId = Guid.NewGuid().ToString();
@@ -7715,7 +7729,8 @@ namespace GMEPPlumbing
           "GMEP WH 80",
           "GMEP WH 50",
           "GMEP IWH",
-          "GMEP PLUMBING VENT EXIT"
+          "GMEP PLUMBING VENT EXIT",
+          "GMEP PLUMBING POINT OF CONNECTION"
         };
         foreach (string name in blockNames) {
           BlockTableRecord sourceBlock = (BlockTableRecord)tr.GetObject(bt[name], OpenMode.ForRead);
