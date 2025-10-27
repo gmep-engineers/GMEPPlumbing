@@ -652,6 +652,20 @@ namespace GMEPPlumbing {
       }
       // Use Z from the first segment's start point (or set to 0 if you want 2D)
       intersectionPoint = new Point3d(x, y, p1.Z);
+      double tolerance = 1.0; // adjust as needed for your drawing units
+
+      // Check if intersection is close to any endpoint
+      bool closeToEndpoint =
+          intersectionPoint.DistanceTo(p1) < tolerance ||
+          intersectionPoint.DistanceTo(p2) < tolerance ||
+          intersectionPoint.DistanceTo(q1) < tolerance ||
+          intersectionPoint.DistanceTo(q2) < tolerance;
+
+      if (!closeToEndpoint) {
+        intersectionPoint = default(Point3d);
+        return false;
+      }
+
       return true;
     }
     public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
