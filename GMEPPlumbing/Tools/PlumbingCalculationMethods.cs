@@ -331,7 +331,7 @@ namespace GMEPPlumbing {
       ed.WriteMessage($"\nTraversing vertical route: {route.Id} at position {route.Position}");
 
       List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
-        .Where(r => (r.Type == route.Type || ((r.Type == "Waste" || r.Type == "Grease Waste") && route.Type == "Vent")) && r.BasePointId == route.BasePointId && routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= Math.Min(startZ, endZ) && r.StartPoint.Z <= Math.Max(startZ, endZ))
+        .Where(r => (r.Type == route.Type || ((r.Type == "Vent" || r.Type == "Waste" || r.Type == "Grease Waste") && (route.Type == "Vent" || route.Type == "Waste" || route.Type == "Grease Waste"))) && r.BasePointId == route.BasePointId && routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= Math.Min(startZ, endZ) && r.StartPoint.Z <= Math.Max(startZ, endZ))
         .OrderByDescending(r => Math.Abs(r.StartPoint.Z - startZ))
         .ToList();
 
@@ -532,8 +532,11 @@ namespace GMEPPlumbing {
     public Dictionary<PlumbingHorizontalRoute, double> FindNearbyHorizontalRoutes(PlumbingHorizontalRoute targetRoute) {
       var result = new Dictionary<PlumbingHorizontalRoute, double>();
       foreach (var route in HorizontalRoutes) {
-        if (route.Id == targetRoute.Id || route.BasePointId != targetRoute.BasePointId || route.Type != targetRoute.Type)
-          continue;
+        if (route.Id == targetRoute.Id || route.BasePointId != targetRoute.BasePointId || route.Type != targetRoute.Type) {
+          if (!((route.Type == "Waste" || route.Type == "Grease Waste" || route.Type == "Vent") && (targetRoute.Type == "Waste" || targetRoute.Type == "Grease Waste" || targetRoute.Type == "Vent"))) {
+            continue;
+          }
+        }
 
         // 1. Target route's trajectory: endpoint extended in its direction
         Vector3d targetDir = targetRoute.EndPoint - targetRoute.StartPoint;
@@ -542,7 +545,7 @@ namespace GMEPPlumbing {
           Point3d targetTrajectoryPoint = targetRoute.EndPoint + targetDir * 3.0;
           double segLen;
           double distToRoute = GetPointToSegmentDistance(targetTrajectoryPoint, route.StartPoint, route.EndPoint, out segLen);
-          if (distToRoute <= 3.0) {
+          if (distToRoute <= 1.0) {
             Point3d closestPoint = GetClosestPointOnSegment(targetTrajectoryPoint, route.StartPoint, route.EndPoint);
             var adjustedRoute = new PlumbingHorizontalRoute(
                 route.Id,
@@ -566,7 +569,7 @@ namespace GMEPPlumbing {
           Point3d routeReverseTrajectoryPoint = route.StartPoint - routeDir * 3.0;
           double segLen;
           double distToTarget = GetPointToSegmentDistance(routeReverseTrajectoryPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segLen);
-          if (distToTarget <= 3.0) {
+          if (distToTarget <= 1.0) {
             Point3d closestPoint = GetClosestPointOnSegment(routeReverseTrajectoryPoint, route.StartPoint, route.EndPoint);
             var adjustedRoute = new PlumbingHorizontalRoute(
                 route.Id,
@@ -677,10 +680,23 @@ namespace GMEPPlumbing {
     }
     public List<PlumbingFixture> FindNearbyFixtures(PlumbingHorizontalRoute targetRoute) {
       return PlumbingFixtures.Select(list => list)
-       .Where(fixture => targetRoute.EndPoint.DistanceTo(fixture.Position) <= 8.0 && fixture.BasePointId == targetRoute.BasePointId && GetFixtureInputTypes(fixture).Contains(targetRoute.Type))
+       .Where(fixture => targetRoute.EndPoint.DistanceTo(fixture.Position) <= GetFixtureSearchDistance(fixture.BlockName) && fixture.BasePointId == targetRoute.BasePointId && GetFixtureInputTypes(fixture).Contains(targetRoute.Type))
        .GroupBy(fixture => fixture.Id)
        .Select(g => g.First())
        .ToList();
+    }
+    private double GetFixtureSearchDistance(string blockName) {
+      switch(blockName) {
+        case "GMEP DRAIN":
+        case "GMEP WH 50":
+        case "GMEP WH 85":
+          return 2;
+        case "GMEP FD":
+        case "GMEP CP":
+          return 3;
+        default:
+          return 8.0;
+      }
     }
     public List<PlumbingAccessory> FindNearbyAccessories(PlumbingHorizontalRoute targetRoute) {
       return PlumbingAccessories.Select(list => list)
