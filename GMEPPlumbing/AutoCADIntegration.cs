@@ -3051,6 +3051,7 @@ namespace GMEPPlumbing
                 Vector3d offset2 = direction.GetNormal() * offsetDistance2;
          
                 SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, newPoint, route.Position, route.Id);
+                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, route.Position, newPoint,  route.Id);
                 Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
                 SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, route.Position, fixturePos, route.Id);
 
@@ -3120,6 +3121,9 @@ namespace GMEPPlumbing
                
                 SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight, anotherNewPoint, midPoint, route.Id);
                 SpecializedHorizontalRoute( "ColdWater", route.PipeType, route.StartHeight, newPoint, StartPos, route.Id);
+
+                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight,midPoint, anotherNewPoint, route.Id);
+                SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight,  StartPos, newPoint, route.Id);
 
                 SpecializedHorizontalRoute("ColdWater", route.PipeType, route.StartHeight - route.Length, StartPos, newPoint, route.Id);
                 Point3d fixturePos = new Point3d(anotherNewPoint.X - offset2.X, anotherNewPoint.Y - offset2.Y, anotherNewPoint.Z - (route.Length * 12));
@@ -3203,6 +3207,7 @@ namespace GMEPPlumbing
               Vector3d offset2 = direction.GetNormal() * offsetDistance2;
           
               SpecializedHorizontalRoute( "HotWater", route.PipeType, route.StartHeight, newPoint, route.Position, route.Id);
+              SpecializedHorizontalRoute("HotWater", route.PipeType, route.StartHeight, route.Position, newPoint, route.Id);
               Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
               SpecializedHorizontalRoute("HotWater", route.PipeType, route.StartHeight - route.Length, route.Position, fixturePos, route.Id);
       
@@ -3236,6 +3241,7 @@ namespace GMEPPlumbing
               Vector3d offset2 = direction.GetNormal() * offsetDistance2;
 
               SpecializedHorizontalRoute("Gas", route.PipeType, route.StartHeight, newPoint, route.Position, route.Id);
+              SpecializedHorizontalRoute("Gas", route.PipeType, route.StartHeight,  route.Position, newPoint, route.Id);
               Point3d fixturePos = new Point3d(newPoint.X - offset2.X, newPoint.Y - offset2.Y, newPoint.Z - (route.Length * 12));
               SpecializedHorizontalRoute("Gas", route.PipeType, route.StartHeight - route.Length, route.Position, fixturePos, route.Id);
 
