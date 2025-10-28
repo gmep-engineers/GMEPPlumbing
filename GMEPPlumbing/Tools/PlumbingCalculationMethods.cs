@@ -26,6 +26,7 @@ namespace GMEPPlumbing {
     public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
     public Routing RoutingControl { get; set; } = null;
     private PaletteSet pw;
+    public  Dictionary<string, HashSet<string>> SourceFixturePaths { get; set; } = new Dictionary<string, HashSet<string>>(); 
 
 
     [CommandMethod("PlumbingFixtureCalc")]
@@ -50,7 +51,7 @@ namespace GMEPPlumbing {
 
         foreach (var source in Sources) {
           List<string> types = GetSourceOutputTypes(source);
-          var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= 13.0 && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
+          var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= GetSourceSearchDistance(source.blo)  && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
           foreach (var matchingRoute in matchingRoutes) {
             TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
           }
@@ -150,9 +151,14 @@ namespace GMEPPlumbing {
         if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
           FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
         }
-
-        FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
-
+        if (routeObjects.Count > 0 && routeObjects[0] is PlumbingSource source2) {
+          if (!SourceFixturePaths.ContainsKey(source2.Id)) {
+            SourceFixturePaths[source2.Id] = new HashSet<string>();
+          }
+          if (SourceFixturePaths[source2.Id].Add(fixture.Id)) {
+            FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
+          }
+        }
         int feet = (int)(lengthInInches / 12);
         int inches = (int)Math.Round(lengthInInches % 12);
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
@@ -688,6 +694,18 @@ namespace GMEPPlumbing {
           return 8.0;
       }
     }
+    private double GetSourceSearchDistance(string blockName) {
+      switch (blockName) {
+        case "GMEP WH 50":
+        case "GMEP WH 85":
+          return 2;
+        case "GMEP PLUMBING POINT OF CONNECTION":
+          return 4;
+        default:
+          return 13;
+      }
+    }
+
     public List<PlumbingAccessory> FindNearbyAccessories(PlumbingHorizontalRoute targetRoute) {
       return PlumbingAccessories.Select(list => list)
        .Where(accessory => targetRoute.EndPoint.DistanceTo(accessory.Position) <= 8.0 && accessory.BasePointId == targetRoute.BasePointId && GetAccessoryInputTypes(accessory).Contains(targetRoute.Type))

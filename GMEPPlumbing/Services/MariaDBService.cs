@@ -1603,7 +1603,8 @@ namespace GMEPPlumbing.Services
           ),
           reader.GetInt32("type_id"),
           reader.GetString("base_point_id"),
-          reader.GetDouble("pressure")
+          reader.GetDouble("pressure"),
+          reader.GetString("block_name")
         );
         sources.Add(source);
       }

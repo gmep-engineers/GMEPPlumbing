@@ -197,6 +197,7 @@ namespace GMEPPlumbing {
     public int TypeId;
     public string BasePointId;
     public double Pressure;
+    public string BlockName;
 
     public PlumbingSource(
       string id,
@@ -204,7 +205,8 @@ namespace GMEPPlumbing {
       Point3d position,
       int typeId,
       string basePointId,
-      double pressure
+      double pressure,
+      string blockName
     ) {
       Id = id;
       ProjectId = projectId;
@@ -212,6 +214,7 @@ namespace GMEPPlumbing {
       TypeId = typeId;
       BasePointId = basePointId;
       Pressure = pressure;
+      BlockName = blockName;
     }
   }
 
