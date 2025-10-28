@@ -22,6 +22,8 @@ using HelixToolkit.Wpf;
 using GMEPPlumbing.Tools;
 using System.Windows.Input;
 using System.ComponentModel;
+using Autodesk.AutoCAD.GraphicsSystem;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace GMEPPlumbing.Views
 {
@@ -949,9 +951,19 @@ namespace GMEPPlumbing.Views
         var scene = new Scene(ViewportId, fullRoute, BasePointLookup);
         allInfoBoxes.AddRange(scene.RouteInfoBoxes);
         Scenes.Add(scene);
-        var scene2 = new Scene("", fullRoute, BasePointLookup);
-        foreach (var visual in scene2.RouteVisuals) {
-          fullScene.RouteVisuals.Add(visual);
+        foreach (var visual in scene.RouteVisuals) {
+          if (visual is RectangleVisual3D rect) {
+            ModelVisual3D rect2 = DeepCopyRectangleVisual3D(rect);
+            fullScene.RouteVisuals.Add(rect2);
+          }
+          else if (visual is TextVisual3D text) {
+            ModelVisual3D text2 = DeepCopyTextVisual3D(text);
+            fullScene.RouteVisuals.Add(text2);
+          }
+          else if (visual is ModelVisual3D model) {
+            ModelVisual3D model2 = DeepCopyModelVisual3D(model);
+            fullScene.RouteVisuals.Add(model2);
+          }
         }
       }
       //fullScene.RemoveDuplicateRouteVisuals();
@@ -972,9 +984,19 @@ namespace GMEPPlumbing.Views
         Scenes[index].RebuildScene(fullRoute);
         allInfoBoxes.AddRange(Scenes[index].RouteInfoBoxes);
 
-        var scene2 = new Scene("", fullRoute, BasePointLookup);
-        foreach (var visual in scene2.RouteVisuals) {
-          fullScene.RouteVisuals.Add(visual);
+        foreach (var visual in Scenes[index].RouteVisuals) {
+          if (visual is RectangleVisual3D rect) {
+            ModelVisual3D rect2 = DeepCopyRectangleVisual3D(rect);
+            fullScene.RouteVisuals.Add(rect2);
+          }
+          else if (visual is TextVisual3D text) {
+            ModelVisual3D text2 = DeepCopyTextVisual3D(text);
+            fullScene.RouteVisuals.Add(text2);
+          }
+          else if (visual is ModelVisual3D model) {
+            ModelVisual3D model2 = DeepCopyModelVisual3D(model);
+            fullScene.RouteVisuals.Add(model2);
+          }
         }
         index++;
       }
@@ -1153,6 +1175,70 @@ namespace GMEPPlumbing.Views
       }
       result = newList;
       return result;
+    }
+
+    public ModelVisual3D DeepCopyModelVisual3D(ModelVisual3D original) {
+      var copy = new ModelVisual3D();
+
+      if (original.Content is Model3D model) {
+        copy.Content = model.Clone();
+      }
+
+      if (original.Transform != null) {
+        copy.Transform = original.Transform.Clone();
+      }
+
+      foreach (var child in original.Children) {
+        if (child is ModelVisual3D childVisual) {
+          copy.Children.Add(DeepCopyModelVisual3D(childVisual));
+        }
+      }
+
+      return copy;
+    }
+    public  TextVisual3D DeepCopyTextVisual3D(TextVisual3D original) {
+      var copy = new TextVisual3D {
+        Position = original.Position,
+        Text = original.Text,
+        Height = original.Height,
+        Foreground = original.Foreground,
+        Background = original.Background,
+        UpDirection = original.UpDirection,
+        TextDirection = original.TextDirection,
+        FontFamily = original.FontFamily,
+        FontSize = original.FontSize,
+        FontWeight = original.FontWeight,
+        IsDoubleSided = original.IsDoubleSided,
+      };
+
+      // Copy attached properties if used
+      var basePointId = TextVisual3DExtensions.GetBasePointId(original);
+      if (basePointId != null)
+        TextVisual3DExtensions.SetBasePointId(copy, basePointId);
+
+      var isUp = TextVisual3DExtensions.GetIsUp(original);
+      if (isUp != null)
+        TextVisual3DExtensions.SetIsUp(copy, isUp);
+
+      var type = TextVisual3DExtensions.GetType(original);
+      if (type != null)
+        TextVisual3DExtensions.SetType(copy, type);
+
+      return copy;
+    }
+    public  RectangleVisual3D DeepCopyRectangleVisual3D(RectangleVisual3D original) {
+      var copy = new RectangleVisual3D {
+        Origin = original.Origin,
+        Width = original.Width,
+        Length = original.Length,
+        Normal = original.Normal,
+        Fill = original.Fill,
+        Material = original.Material,
+        BackMaterial = original.BackMaterial,
+        Transform = original.Transform != null ? original.Transform.Clone() : null,
+      };
+
+      return copy;
     }
 
     public void GetWaterSizingChart(string pipeType, double psi) {
