@@ -6320,7 +6320,8 @@ namespace GMEPPlumbing
           point,
           selectedSourceType.Id,
           basePointGUID,
-          pressure
+          pressure,
+          blockName
         );
         //MariaDBService.CreatePlumbingSource(plumbingSource);
         MakePlumbingSourceLabel(plumbingSource, selectedSourceType);
@@ -7792,7 +7793,8 @@ namespace GMEPPlumbing
                           position,
                           typeId,
                           basePointId,
-                          60
+                          60,
+                          name
                         );
                         sources.Add(source);
                       }

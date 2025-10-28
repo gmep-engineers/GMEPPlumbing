@@ -50,7 +50,7 @@ namespace GMEPPlumbing {
 
         foreach (var source in Sources) {
           List<string> types = GetSourceOutputTypes(source);
-          var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= 13.0 && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
+          var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= GetSourceSearchDistance(source.BlockName) && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
           foreach (var matchingRoute in matchingRoutes) {
             TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
           }
@@ -152,7 +152,6 @@ namespace GMEPPlumbing {
         }
 
         FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
-
         int feet = (int)(lengthInInches / 12);
         int inches = (int)Math.Round(lengthInInches % 12);
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
@@ -434,56 +433,32 @@ namespace GMEPPlumbing {
 
     private List<string> GetFixtureInputTypes(PlumbingFixture fixture) {
       var types = new List<string>();
-      switch (fixture.TypeAbbreviation) {
-        case "CP":
+      switch (fixture.BlockName) {
+        case "GMEP FD":
+          types.Add("Waste");
+          types.Add("Grease Waste");
+          types.Add("Cold Water");
           types.Add("Hot Water");
           break;
-        case "IWH":
-        case "WH":
-          if (fixture.BlockName == "GMEP PLUMBING GAS OUTPUT") {
-            types.Add("Gas");
-          }
-          else {
-            types.Add("Cold Water");
-          }
-          break;
-        case "L":
-        case "U":
-        case "DF":
-        case "WC":
-        case "IMB":
-          types.Add("Cold Water");
+        case "GMEP DRAIN":
+        case "GMEP FS 12":
+        case "GMEP FS 6":
           types.Add("Waste");
           types.Add("Grease Waste");
           break;
-        case "S":
-        case "HS":
-        case "MS":
-        case "FS":
-        case "FD":
-        case "TUB":
-        case "SH":
-        case "WD":
+        case "GMEP WH 50":
+        case "GMEP WH 80":
+        case "GMEP IWH":
+        case "GMEP CP":
+        case "GMEP CW FIXTURE POINT":
+        case "GMEP RPBFP":
           types.Add("Cold Water");
+          break;
+        case "GMEP HW FIXTURE POINT":
           types.Add("Hot Water");
-          types.Add("Waste");
-          types.Add("Grease Waste");
           break;
-        case "VS":
-        case "VE":
-          types.Add("Vent");
-          break;
-        case "FRY":
-        case "GRD":
-        case "GSLM":
-        case "CHR":
-        case "6BRN":
+        case "GMEP PLUMBING GAS OUTPUT":
           types.Add("Gas");
-          break;
-        case "DW":
-          types.Add("Hot Water");
-          types.Add("Waste");
-          types.Add("Grease Waste");
           break;
       }
       return types;
@@ -712,6 +687,19 @@ namespace GMEPPlumbing {
           return 8.0;
       }
     }
+    private double GetSourceSearchDistance(string blockName) {
+      switch (blockName) {
+        case "GMEP WH 50":
+        case "GMEP WH 85":
+        case "GMEP PLUMBING VENT EXIT":
+          return 2;
+        case "GMEP PLUMBING POINT OF CONNECTION":
+          return 4;
+        default:
+          return 13;
+      }
+    }
+
     public List<PlumbingAccessory> FindNearbyAccessories(PlumbingHorizontalRoute targetRoute) {
       return PlumbingAccessories.Select(list => list)
        .Where(accessory => targetRoute.EndPoint.DistanceTo(accessory.Position) <= 8.0 && accessory.BasePointId == targetRoute.BasePointId && GetAccessoryInputTypes(accessory).Contains(targetRoute.Type))

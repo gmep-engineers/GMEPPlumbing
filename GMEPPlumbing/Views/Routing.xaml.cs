@@ -22,6 +22,8 @@ using HelixToolkit.Wpf;
 using GMEPPlumbing.Tools;
 using System.Windows.Input;
 using System.ComponentModel;
+using Autodesk.AutoCAD.GraphicsSystem;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace GMEPPlumbing.Views
 {
@@ -62,7 +64,9 @@ namespace GMEPPlumbing.Views
 
       public List<RouteInfoBox> RouteInfoBoxes { get; set; } = new List<RouteInfoBox>();
 
-      public string ViewportId { get; set; } = "";
+      public Dictionary<Brush, MeshBuilder> meshBuilders = new Dictionary<Brush, MeshBuilder>();
+
+    public string ViewportId { get; set; } = "";
 
       public bool _changeFlag = true;
       public bool ChangeFlag {
@@ -114,30 +118,25 @@ namespace GMEPPlumbing.Views
     public async void BuildScene() {
       RouteInfoBoxes.Clear();
       RouteVisuals.Clear();
+      meshBuilders.Clear();
       List<TextVisual3D> textVisuals = new List<TextVisual3D>();
       Dictionary<string, List<PlumbingVerticalRoute>> fullVerticalRoutes = new Dictionary<string, List<PlumbingVerticalRoute>>();
+
       foreach (var item in RouteItems) {
-        Visual3D model = null;
+        //Visual3D model = null;
          if (item is PlumbingHorizontalRoute horizontalRoute) {
-          ModelVisual3D fullModel = new ModelVisual3D();
-          var ballModel2 = new SphereVisual3D {
-            Center = new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
-            Radius = 1,
-            Fill = TypeToBrushColor(horizontalRoute.Type)
-          };
-          var lineModel = new TubeVisual3D {
-            Path = new Point3DCollection {
-              new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
-              new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z)
-            },
-            Diameter = 2,
-            Fill = TypeToBrushColor(horizontalRoute.Type)
-          };
-          var ballModel = new SphereVisual3D {
-            Center = new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z),
-            Radius = 1,
-            Fill = TypeToBrushColor(horizontalRoute.Type)
-          };
+          var color = TypeToBrushColor(horizontalRoute.Type);
+          if (!meshBuilders.ContainsKey(color)) {
+            meshBuilders[color] = new MeshBuilder(false, false);
+          }
+
+          meshBuilders[color].AddTube(
+            new[] {new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
+                    new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z)
+                  }, 2, 8, false);
+
+          meshBuilders[color].AddSphere(new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z), 1, 8, 8);
+          meshBuilders[color].AddSphere(new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z), 1, 8, 8);
 
           var dirX = horizontalRoute.EndPoint.X - horizontalRoute.StartPoint.X;
           var dirY = horizontalRoute.EndPoint.Y - horizontalRoute.StartPoint.Y;
@@ -245,11 +244,6 @@ namespace GMEPPlumbing.Views
           TextVisual3DExtensions.SetType(textModel, horizontalRoute.Type);
           textVisuals.Add(textModel);
 
-          fullModel.Children.Add(ballModel2);
-          fullModel.Children.Add(lineModel);
-          fullModel.Children.Add(ballModel);
-
-          model = fullModel;
           BasePointIds.Add(horizontalRoute.BasePointId);
         }
         else if (item is PlumbingVerticalRoute verticalRoute) {
@@ -259,33 +253,27 @@ namespace GMEPPlumbing.Views
           verticalRoute.GenerateGallonsPerMinute();
           fullVerticalRoutes[verticalRoute.VerticalRouteId].Add(verticalRoute);
 
-          ModelVisual3D fullModel = new ModelVisual3D();
-          var ballModel = new SphereVisual3D {
-            Center = new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
-            Radius = 1,
-            Fill = TypeToBrushColor(verticalRoute.Type)
-          };
-
           double length = verticalRoute.Length * 12;
 
           if (verticalRoute.NodeTypeId == 3) {
-            length = -length;//
+            length = -length;
           }
-          var tubeModel = new TubeVisual3D {
-            Path = new Point3DCollection {
+          Brush color = TypeToBrushColor(verticalRoute.Type);
+          if (!meshBuilders.ContainsKey(color)) {
+            meshBuilders[color] = new MeshBuilder(false, false);
+          }
+          meshBuilders[color].AddTube(
+            new[] {
               new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
               new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length)
-            },
-            Diameter = 2,
-            Fill = TypeToBrushColor(verticalRoute.Type)
-          };
+            }, 2, 8, false);
 
-          fullModel.Children.Add(tubeModel);
-          if (verticalRoute.NodeTypeId != 2) {
-            fullModel.Children.Add(ballModel);
-          }
+          meshBuilders[color].AddSphere(
+            new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length), 1, 8, 8);
+          meshBuilders[color].AddSphere(
+            new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z), 1, 8, 8);
 
-          model = fullModel;
+
           BasePointIds.Add(verticalRoute.BasePointId);
         }
         else if (item is PlumbingSource plumbingSource) {
@@ -304,28 +292,25 @@ namespace GMEPPlumbing.Views
               SourceColor = System.Windows.Media.Brushes.Magenta;
               break;
           }
-          model = new SphereVisual3D {
-            Center = new Point3D(plumbingSource.Position.X, plumbingSource.Position.Y, plumbingSource.Position.Z),
-            Radius = 2,
-            Fill = SourceColor
-          };
+          if (!meshBuilders.ContainsKey(SourceColor)) {
+            meshBuilders[SourceColor] = new MeshBuilder(false, false);
+          }
+
+          meshBuilders[SourceColor].AddSphere(new Point3D(plumbingSource.Position.X, plumbingSource.Position.Y, plumbingSource.Position.Z), 2, 8, 8);
 
           BasePointIds.Add(plumbingSource.BasePointId);
 
         }
         else if (item is PlumbingFixture plumbingFixture) {
-          model = new SphereVisual3D {
-            Center = new Point3D(plumbingFixture.Position.X, plumbingFixture.Position.Y, plumbingFixture.Position.Z),
-            Radius = 2,
-            Fill = Brushes.Green
-          };
+          if (!meshBuilders.ContainsKey(Brushes.Green)) {
+            meshBuilders[Brushes.Green] = new MeshBuilder(false, false);
+          }
+          meshBuilders[Brushes.Green].AddSphere(new Point3D(plumbingFixture.Position.X, plumbingFixture.Position.Y, plumbingFixture.Position.Z), 2, 8, 8);
           BasePointIds.Add(plumbingFixture.BasePointId);
         }
         else if (item is PlumbingAccessory plumbingAccessory) {
-          var fullModel = new ModelVisual3D();
           if (plumbingAccessory.TypeId == 1) {
-            var cleanoutMesh = CreateGroundCleanoutMesh(new Point3D(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z), 4, 1, TypeToBrushColor(plumbingAccessory.Type));
-            fullModel.Content = cleanoutMesh;
+            CreateGroundCleanoutMesh(new Point3D(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z), 4, 1, TypeToBrushColor(plumbingAccessory.Type));
           }
           else if (plumbingAccessory.TypeId == 2) {
           }
@@ -334,23 +319,31 @@ namespace GMEPPlumbing.Views
           else if (plumbingAccessory.TypeId == 4) {
             double pyramidHeight = 1.5;
             double pyramidBaseSize = 2;
-            var valveMesh = CreateValveMesh(new Point3D(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z), pyramidBaseSize, pyramidHeight, TypeToBrushColor(plumbingAccessory.Type), plumbingAccessory.Rotation);
-            
-            fullModel.Content = valveMesh;
+            CreateValveMesh(new Point3D(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z), pyramidBaseSize, pyramidHeight, TypeToBrushColor(plumbingAccessory.Type), plumbingAccessory.Rotation);
           }
           else if (plumbingAccessory.TypeId == 5) {
             double pyramidHeight = 2.5;
             double pyramidBaseSize = 2;
-            var valveMesh = CreateValveMesh(new Point3D(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z), pyramidBaseSize, pyramidHeight, TypeToBrushColor(plumbingAccessory.Type), plumbingAccessory.Rotation);
-            fullModel.Content = valveMesh;
+            CreateValveMesh(new Point3D(plumbingAccessory.Position.X, plumbingAccessory.Position.Y, plumbingAccessory.Position.Z), pyramidBaseSize, pyramidHeight, TypeToBrushColor(plumbingAccessory.Type), plumbingAccessory.Rotation);
           }
-
-
-          model = fullModel;
           BasePointIds.Add(plumbingAccessory.BasePointId);
         }
-        if (model != null) {
-          RouteVisuals.Add(model);
+        foreach (var kvp in meshBuilders) {
+          var color = kvp.Key;
+          var meshBuilder = kvp.Value;
+          var mesh = meshBuilder.ToMesh();
+          var material = MaterialHelper.CreateMaterial(color);
+
+          var model = new GeometryModel3D {
+            Geometry = mesh,
+            Material = material
+          };
+
+          var visual = new ModelVisual3D {
+            Content = model
+          };
+
+          RouteVisuals.Add(visual);
         }
       }
       foreach (var kvp in fullVerticalRoutes) {
@@ -595,26 +588,29 @@ namespace GMEPPlumbing.Views
       }
     }
     public void RemoveDuplicateRouteVisuals() {
-      var unique = new HashSet<string>();
+      var seen = new HashSet<string>();
       var toRemove = new List<Visual3D>();
 
-      foreach (var visual in RouteVisuals) {
+      // Traverse from end to start to keep the last occurrence
+      for (int i = RouteVisuals.Count - 1; i >= 0; i--) {
+        var visual = RouteVisuals[i];
         string key = null;
-        if (visual is SphereVisual3D sphere)
-          key = $"Sphere:{sphere.Center.X},{sphere.Center.Y},{sphere.Center.Z}";
-        else if (visual is TubeVisual3D tube && tube.Path.Count > 1)
-          key = $"Tube:{tube.Path[0].X},{tube.Path[0].Y},{tube.Path[0].Z}-{tube.Path[1].X},{tube.Path[1].Y},{tube.Path[1].Z}";
-        else if (visual is RectangleVisual3D rect)
+        if (visual is RectangleVisual3D rect)
           key = $"Rect:{rect.Origin.X},{rect.Origin.Y},{rect.Origin.Z}";
         else if (visual is TextVisual3D text)
           key = $"Text:{text.Position.X},{text.Position.Y},{text.Position.Z}:{text.Text}";
         else
           key = visual.GetType().Name + visual.GetHashCode();
 
-        if (!unique.Add(key))
+        if (seen.Contains(key)) {
           toRemove.Add(visual);
+        }
+        else {
+          seen.Add(key);
+        }
       }
 
+      // Remove all earlier duplicates
       foreach (var visual in toRemove)
         RouteVisuals.Remove(visual);
     }
@@ -638,9 +634,7 @@ namespace GMEPPlumbing.Views
           return "th";
       }
     }
-    public static Model3DGroup CreateValveMesh(Point3D center, double baseSize, double height, Brush color, double rotation) {
-    
-
+    public void CreateValveMesh(Point3D center, double baseSize, double height, Brush color, double rotation) {
       var direction = new Vector3D(Math.Cos(rotation), Math.Sin(rotation), 0);
       // Helper to create a pyramid mesh
       MeshGeometry3D CreatePyramid(Point3D apex, Vector3D dir, double baseSz, double h) {
@@ -672,21 +666,21 @@ namespace GMEPPlumbing.Views
 
         return meshBuilder.ToMesh();
       }
-
-      // Two pyramids, apexes at center, bases offset in +X and -X
       var mesh1 = CreatePyramid(center, direction, baseSize, height);
       var mesh2 = CreatePyramid(center, -direction, baseSize, height);
 
-      var mat = MaterialHelper.CreateMaterial(color);
+      // Two pyramids, apexes at center, bases offset in +X and -X
+      if (!meshBuilders.ContainsKey(color))
+        meshBuilders[color] = new MeshBuilder(false, false);
 
-      var group = new Model3DGroup();
-      group.Children.Add(new GeometryModel3D { Geometry = mesh1, Material = mat });
-      group.Children.Add(new GeometryModel3D { Geometry = mesh2, Material = mat });
-
-
-      return group;
+      meshBuilders[color].Append(mesh1);
+      meshBuilders[color].Append(mesh2);
     }
-    public static Model3DGroup CreateGroundCleanoutMesh(Point3D center, double diameter = 4, double height = 1, Brush color = null) {
+    public void CreateGroundCleanoutMesh(Point3D center, double diameter = 4, double height = 1, Brush color = null) {
+      Brush actualColor = color ?? Brushes.Silver;
+      if (!meshBuilders.ContainsKey(actualColor))
+        meshBuilders[actualColor] = new MeshBuilder(false, false);
+
       var meshBuilder = new MeshBuilder(false, false);
 
       meshBuilder.AddCylinder(center, new Point3D(center.X, center.Y, center.Z + height), diameter / 2, 32, true, true);
@@ -694,12 +688,7 @@ namespace GMEPPlumbing.Views
       meshBuilder.AddCylinder(new Point3D(center.X, center.Y, center.Z + height), new Point3D(center.X, center.Y, center.Z + height + 0.2), diameter / 3, 32, true, true);
 
       var mesh = meshBuilder.ToMesh();
-      var mat = MaterialHelper.CreateMaterial(color ?? Brushes.Silver);
-
-      var group = new Model3DGroup();
-      group.Children.Add(new GeometryModel3D { Geometry = mesh, Material = mat });
-
-      return group;
+      meshBuilders[actualColor].Append(mesh);
     }
   }
 
@@ -965,9 +954,19 @@ namespace GMEPPlumbing.Views
         var scene = new Scene(ViewportId, fullRoute, BasePointLookup);
         allInfoBoxes.AddRange(scene.RouteInfoBoxes);
         Scenes.Add(scene);
-        var scene2 = new Scene("", fullRoute, BasePointLookup);
-        foreach (var visual in scene2.RouteVisuals) {
-          fullScene.RouteVisuals.Add(visual);
+        foreach (var visual in scene.RouteVisuals.OrderBy(v => v is ModelVisual3D ? 0 : v is RectangleVisual3D ? 1 : v is TextVisual3D ? 2 : 3)) {
+          if (visual is RectangleVisual3D rect) {
+            ModelVisual3D rect2 = DeepCopyRectangleVisual3D(rect);
+            fullScene.RouteVisuals.Add(rect2);
+          }
+          else if (visual is TextVisual3D text) {
+            ModelVisual3D text2 = DeepCopyTextVisual3D(text);
+            fullScene.RouteVisuals.Add(text2);
+          }
+          else if (visual is ModelVisual3D model) {
+            ModelVisual3D model2 = DeepCopyModelVisual3D(model);
+            fullScene.RouteVisuals.Add(model2);
+          }
         }
       }
       fullScene.RemoveDuplicateRouteVisuals();
@@ -988,9 +987,19 @@ namespace GMEPPlumbing.Views
         Scenes[index].RebuildScene(fullRoute);
         allInfoBoxes.AddRange(Scenes[index].RouteInfoBoxes);
 
-        var scene2 = new Scene("", fullRoute, BasePointLookup);
-        foreach (var visual in scene2.RouteVisuals) {
-          fullScene.RouteVisuals.Add(visual);
+        foreach (var visual in Scenes[index].RouteVisuals.OrderBy(v => v is ModelVisual3D ? 0 : v is RectangleVisual3D ? 1 : v is TextVisual3D ? 2 : 3)) {
+          if (visual is RectangleVisual3D rect) {
+            ModelVisual3D rect2 = DeepCopyRectangleVisual3D(rect);
+            fullScene.RouteVisuals.Add(rect2);
+          }
+          else if (visual is TextVisual3D text) {
+            ModelVisual3D text2 = DeepCopyTextVisual3D(text);
+            fullScene.RouteVisuals.Add(text2);
+          }
+          else if (visual is ModelVisual3D model) {
+            ModelVisual3D model2 = DeepCopyModelVisual3D(model);
+            fullScene.RouteVisuals.Add(model2);
+          }
         }
         index++;
       }
@@ -1125,7 +1134,8 @@ namespace GMEPPlumbing.Views
               new Point3d(plumbingSource.Position.X, plumbingSource.Position.Y, plumbingSource.Position.Z),
               plumbingSource.TypeId,
               plumbingSource.BasePointId,
-              plumbingSource.Pressure
+              plumbingSource.Pressure,
+              plumbingSource.BlockName
           );
           newFullRoute.RouteItems.Add(copy);
         }
@@ -1168,6 +1178,70 @@ namespace GMEPPlumbing.Views
       }
       result = newList;
       return result;
+    }
+
+    public ModelVisual3D DeepCopyModelVisual3D(ModelVisual3D original) {
+      var copy = new ModelVisual3D();
+
+      if (original.Content is Model3D model) {
+        copy.Content = model.Clone();
+      }
+
+      if (original.Transform != null) {
+        copy.Transform = original.Transform.Clone();
+      }
+
+      foreach (var child in original.Children) {
+        if (child is ModelVisual3D childVisual) {
+          copy.Children.Add(DeepCopyModelVisual3D(childVisual));
+        }
+      }
+
+      return copy;
+    }
+    public  TextVisual3D DeepCopyTextVisual3D(TextVisual3D original) {
+      var copy = new TextVisual3D {
+        Position = original.Position,
+        Text = original.Text,
+        Height = original.Height,
+        Foreground = original.Foreground,
+        Background = original.Background,
+        UpDirection = original.UpDirection,
+        TextDirection = original.TextDirection,
+        FontFamily = original.FontFamily,
+        FontSize = original.FontSize,
+        FontWeight = original.FontWeight,
+        IsDoubleSided = original.IsDoubleSided,
+      };
+
+      // Copy attached properties if used
+      var basePointId = TextVisual3DExtensions.GetBasePointId(original);
+      if (basePointId != null)
+        TextVisual3DExtensions.SetBasePointId(copy, basePointId);
+
+      var isUp = TextVisual3DExtensions.GetIsUp(original);
+      if (isUp != null)
+        TextVisual3DExtensions.SetIsUp(copy, isUp);
+
+      var type = TextVisual3DExtensions.GetType(original);
+      if (type != null)
+        TextVisual3DExtensions.SetType(copy, type);
+
+      return copy;
+    }
+    public  RectangleVisual3D DeepCopyRectangleVisual3D(RectangleVisual3D original) {
+      var copy = new RectangleVisual3D {
+        Origin = original.Origin,
+        Width = original.Width,
+        Length = original.Length,
+        Normal = original.Normal,
+        Fill = original.Fill,
+        Material = original.Material,
+        BackMaterial = original.BackMaterial,
+        Transform = original.Transform != null ? original.Transform.Clone() : null,
+      };
+
+      return copy;
     }
 
     public void GetWaterSizingChart(string pipeType, double psi) {
