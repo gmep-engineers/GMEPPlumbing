@@ -585,7 +585,7 @@ namespace GMEPPlumbing.Views
           return System.Windows.Media.Brushes.Gray; // Default color for unknown layers
       }
     }
-    public void RemoveDuplicateRouteVisuals() {
+    /*public void RemoveDuplicateRouteVisuals() {
       var unique = new HashSet<string>();
       var toRemove = new List<Visual3D>();
 
@@ -608,7 +608,7 @@ namespace GMEPPlumbing.Views
 
       foreach (var visual in toRemove)
         RouteVisuals.Remove(visual);
-    }
+    }*/
     public static string ToFeetInchesString(double lengthInInches) {
       int feet = (int)(lengthInInches / 12);
       int inches = (int)Math.Round(lengthInInches % 12);
