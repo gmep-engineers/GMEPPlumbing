@@ -691,6 +691,7 @@ namespace GMEPPlumbing {
       switch (blockName) {
         case "GMEP WH 50":
         case "GMEP WH 85":
+        case "GMEP PLUMBING VENT EXIT":
           return 2;
         case "GMEP PLUMBING POINT OF CONNECTION":
           return 4;
