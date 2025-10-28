@@ -588,10 +588,12 @@ namespace GMEPPlumbing.Views
       }
     }
     public void RemoveDuplicateRouteVisuals() {
-      var unique = new HashSet<string>();
+      var seen = new HashSet<string>();
       var toRemove = new List<Visual3D>();
 
-      foreach (var visual in RouteVisuals) {
+      // Traverse from end to start to keep the last occurrence
+      for (int i = RouteVisuals.Count - 1; i >= 0; i--) {
+        var visual = RouteVisuals[i];
         string key = null;
         if (visual is RectangleVisual3D rect)
           key = $"Rect:{rect.Origin.X},{rect.Origin.Y},{rect.Origin.Z}";
@@ -600,10 +602,15 @@ namespace GMEPPlumbing.Views
         else
           key = visual.GetType().Name + visual.GetHashCode();
 
-        if (!unique.Add(key))
+        if (seen.Contains(key)) {
           toRemove.Add(visual);
+        }
+        else {
+          seen.Add(key);
+        }
       }
 
+      // Remove all earlier duplicates
       foreach (var visual in toRemove)
         RouteVisuals.Remove(visual);
     }
