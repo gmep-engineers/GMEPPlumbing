@@ -26,7 +26,6 @@ namespace GMEPPlumbing {
     public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
     public Routing RoutingControl { get; set; } = null;
     private PaletteSet pw;
-    public Dictionary<string, HashSet<string>> SourceFixturePaths { get; set; } = new Dictionary<string, HashSet<string>>(); 
 
 
     [CommandMethod("PlumbingFixtureCalc")]
@@ -151,14 +150,8 @@ namespace GMEPPlumbing {
         if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
           FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
         }
-        if (routeObjects.Count > 0 && routeObjects[0] is PlumbingSource source2) {
-          if (!SourceFixturePaths.ContainsKey(source2.Id)) {
-            SourceFixturePaths[source2.Id] = new HashSet<string>();
-          }
-          if (SourceFixturePaths[source2.Id].Add(fixture.Id)) {
-            FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
-          }
-        }
+
+        FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
         int feet = (int)(lengthInInches / 12);
         int inches = (int)Math.Round(lengthInInches % 12);
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
