@@ -1338,15 +1338,16 @@ namespace GMEPPlumbing.Services
       if (sources.Count > 0) {
         string upsertQuery = @"
               INSERT INTO plumbing_sources
-              (id, project_id, pos_x, pos_y, pos_z, type_id, base_point_id, pressure)
-              VALUES (@id, @projectId, @posX, @posY, @posZ, @typeId, @basePointId, @pressure)
+              (id, project_id, pos_x, pos_y, pos_z, type_id, base_point_id, pressure, block_name)
+              VALUES (@id, @projectId, @posX, @posY, @posZ, @typeId, @basePointId, @pressure, @blockName)
               ON DUPLICATE KEY UPDATE
                   pos_x = @posX,
                   pos_y = @posY,
                   pos_z = @posZ,
                   type_id = @typeId,
                   base_point_id = @basePointId,
-                  pressure = @pressure
+                  pressure = @pressure,
+                  block_name = @blockName
           ";
         foreach (var source in sources) {
           MySqlCommand command = new MySqlCommand(upsertQuery, conn);
@@ -1358,6 +1359,7 @@ namespace GMEPPlumbing.Services
           command.Parameters.AddWithValue("@typeId", source.TypeId);
           command.Parameters.AddWithValue("@basePointId", source.BasePointId);
           command.Parameters.AddWithValue("@pressure", source.Pressure);
+          command.Parameters.AddWithValue("@blockName", source.BlockName);
           await command.ExecuteNonQueryAsync();
         }
       }

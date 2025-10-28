@@ -26,7 +26,7 @@ namespace GMEPPlumbing {
     public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
     public Routing RoutingControl { get; set; } = null;
     private PaletteSet pw;
-    public  Dictionary<string, HashSet<string>> SourceFixturePaths { get; set; } = new Dictionary<string, HashSet<string>>(); 
+    public Dictionary<string, HashSet<string>> SourceFixturePaths { get; set; } = new Dictionary<string, HashSet<string>>(); 
 
 
     [CommandMethod("PlumbingFixtureCalc")]
@@ -51,7 +51,7 @@ namespace GMEPPlumbing {
 
         foreach (var source in Sources) {
           List<string> types = GetSourceOutputTypes(source);
-          var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= GetSourceSearchDistance(source.blo)  && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
+          var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= GetSourceSearchDistance(source.BlockName) && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
           foreach (var matchingRoute in matchingRoutes) {
             TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
           }

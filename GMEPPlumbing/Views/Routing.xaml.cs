@@ -1125,7 +1125,8 @@ namespace GMEPPlumbing.Views
               new Point3d(plumbingSource.Position.X, plumbingSource.Position.Y, plumbingSource.Position.Z),
               plumbingSource.TypeId,
               plumbingSource.BasePointId,
-              plumbingSource.Pressure
+              plumbingSource.Pressure,
+              plumbingSource.BlockName
           );
           newFullRoute.RouteItems.Add(copy);
         }
