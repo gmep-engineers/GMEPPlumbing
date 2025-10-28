@@ -587,17 +587,13 @@ namespace GMEPPlumbing.Views
           return System.Windows.Media.Brushes.Gray; // Default color for unknown layers
       }
     }
-    /*public void RemoveDuplicateRouteVisuals() {
+    public void RemoveDuplicateRouteVisuals() {
       var unique = new HashSet<string>();
       var toRemove = new List<Visual3D>();
 
       foreach (var visual in RouteVisuals) {
         string key = null;
-        if (visual is SphereVisual3D sphere)
-          key = $"Sphere:{sphere.Center.X},{sphere.Center.Y},{sphere.Center.Z}";
-        else if (visual is TubeVisual3D tube && tube.Path.Count > 1)
-          key = $"Tube:{tube.Path[0].X},{tube.Path[0].Y},{tube.Path[0].Z}-{tube.Path[1].X},{tube.Path[1].Y},{tube.Path[1].Z}";
-        else if (visual is RectangleVisual3D rect)
+        if (visual is RectangleVisual3D rect)
           key = $"Rect:{rect.Origin.X},{rect.Origin.Y},{rect.Origin.Z}";
         else if (visual is TextVisual3D text)
           key = $"Text:{text.Position.X},{text.Position.Y},{text.Position.Z}:{text.Text}";
@@ -610,7 +606,7 @@ namespace GMEPPlumbing.Views
 
       foreach (var visual in toRemove)
         RouteVisuals.Remove(visual);
-    }*/
+    }
     public static string ToFeetInchesString(double lengthInInches) {
       int feet = (int)(lengthInInches / 12);
       int inches = (int)Math.Round(lengthInInches % 12);
@@ -966,7 +962,7 @@ namespace GMEPPlumbing.Views
           }
         }
       }
-      //fullScene.RemoveDuplicateRouteVisuals();
+      fullScene.RemoveDuplicateRouteVisuals();
       MainScene = fullScene;
       if (ViewportId != "") {
         allInfoBoxes = RemoveDuplicateInfoBoxes(allInfoBoxes);
@@ -1000,7 +996,7 @@ namespace GMEPPlumbing.Views
         }
         index++;
       }
-      //fullScene.RemoveDuplicateRouteVisuals();
+      fullScene.RemoveDuplicateRouteVisuals();
       fullScene.InitialBuild = false;
       MainScene = fullScene;
       if (ViewportId != "") {
