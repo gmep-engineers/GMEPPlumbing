@@ -947,7 +947,7 @@ namespace GMEPPlumbing.Views
         var scene = new Scene(ViewportId, fullRoute, BasePointLookup);
         allInfoBoxes.AddRange(scene.RouteInfoBoxes);
         Scenes.Add(scene);
-        foreach (var visual in scene.RouteVisuals) {
+        foreach (var visual in scene.RouteVisuals.OrderBy(v => v is ModelVisual3D ? 0 : v is RectangleVisual3D ? 1 : v is TextVisual3D ? 2 : 3)) {
           if (visual is RectangleVisual3D rect) {
             ModelVisual3D rect2 = DeepCopyRectangleVisual3D(rect);
             fullScene.RouteVisuals.Add(rect2);
@@ -980,7 +980,7 @@ namespace GMEPPlumbing.Views
         Scenes[index].RebuildScene(fullRoute);
         allInfoBoxes.AddRange(Scenes[index].RouteInfoBoxes);
 
-        foreach (var visual in Scenes[index].RouteVisuals) {
+        foreach (var visual in Scenes[index].RouteVisuals.OrderBy(v => v is ModelVisual3D ? 0 : v is RectangleVisual3D ? 1 : v is TextVisual3D ? 2 : 3)) {
           if (visual is RectangleVisual3D rect) {
             ModelVisual3D rect2 = DeepCopyRectangleVisual3D(rect);
             fullScene.RouteVisuals.Add(rect2);
