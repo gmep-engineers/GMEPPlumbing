@@ -6092,7 +6092,7 @@ namespace GMEPPlumbing
       keywordOptions.Message = "\nSelect source type:";
 
       plumbingSourceTypes.ForEach(t => {
-        if ((CADObjectCommands.ActiveViewTypes.Contains("Water") && t.Type == "Water Meter") || (CADObjectCommands.ActiveViewTypes.Contains("Water") && t.Type == "Water Heater") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.Type == "Water Heater") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.Type == "Gas Meter") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.Type == "Waste Source") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.Type == "Vent Exit")) {
+        if ((CADObjectCommands.ActiveViewTypes.Contains("Water") && t.Type == "Water Meter") || (CADObjectCommands.ActiveViewTypes.Contains("Water") && t.Type == "Water Heater") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.Type == "Water Heater") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.Type == "Gas Meter") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.Type == "Waste Source") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.Type == "Vent Stack")) {
           keywordOptions.Keywords.Add(t.Id.ToString() + " " + t.Type);
         }
       });
@@ -6130,6 +6130,9 @@ namespace GMEPPlumbing
         case "Waste Source":
           layer = "P-WV-W-BELOW";
           break;
+        case "Vent Stack":
+          layer = "P-WV-VENT";
+          break;
       }
 
 
@@ -6165,34 +6168,36 @@ namespace GMEPPlumbing
       pdo.DefaultValue = CADObjectCommands.GetPlumbingRouteHeight();
 
       double routeHeight = 0;
-      while (true) {
-        try {
-          PromptDoubleResult pdr = ed.GetDouble(pdo);
-          if (pdr.Status == PromptStatus.Cancel) {
-            ed.WriteMessage("\nCommand cancelled.");
-            return;
+      if (selectedSourceType.Type != "Vent Stack") {
+        while (true) {
+          try {
+            PromptDoubleResult pdr = ed.GetDouble(pdo);
+            if (pdr.Status == PromptStatus.Cancel) {
+              ed.WriteMessage("\nCommand cancelled.");
+              return;
+            }
+            if (pdr.Status != PromptStatus.OK) {
+              ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+              continue;
+            }
+
+            routeHeight = pdr.Value;
+            // GetHeightLimits returns Tuple<double, double> (min, max)
+            var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
+            double minHeight = heightLimits.Item1;
+            double maxHeight = heightLimits.Item2;
+
+            if (routeHeight < minHeight || routeHeight > maxHeight) {
+              ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
+              pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
+              continue;
+            }
+            break; // Valid input
           }
-          if (pdr.Status != PromptStatus.OK) {
-            ed.WriteMessage("\nInvalid input. Please enter a valid number.");
+          catch (System.Exception ex) {
+            ed.WriteMessage($"\nError: {ex.Message}");
             continue;
           }
-
-          routeHeight = pdr.Value;
-          // GetHeightLimits returns Tuple<double, double> (min, max)
-          var heightLimits = CADObjectCommands.GetHeightLimits(CADObjectCommands.GetActiveView());
-          double minHeight = heightLimits.Item1;
-          double maxHeight = heightLimits.Item2;
-
-          if (routeHeight < minHeight || routeHeight > maxHeight) {
-            ed.WriteMessage($"\nHeight must be between {minHeight} and {maxHeight} feet. Please enter a valid height.");
-            pdo.Message = $"\nHeight must be between {minHeight} and {maxHeight} feet:";
-            continue;
-          }
-          break; // Valid input
-        }
-        catch (System.Exception ex) {
-          ed.WriteMessage($"\nError: {ex.Message}");
-          continue;
         }
       }
       double zIndex = (routeHeight + CADObjectCommands.ActiveFloorHeight) * 12;
@@ -6296,6 +6301,52 @@ namespace GMEPPlumbing
           pressure,
           blockName
         );
+        if (selectedSourceType.Type == "Vent Stack") {
+          ed.WriteMessage("\nCreating vent stacks at all other site base points in the viewport...");
+          List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD();
+          PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == CADObjectCommands.ActiveBasePointId);
+          List<PlumbingPlanBasePoint> chosenBasePoints = basePoints.Where(bp => bp.ViewportId == basePoint.ViewportId && bp.Id != basePoint.Id && bp.IsSite == basePoint.IsSite && !bp.IsSiteRef).ToList();
+          Vector3d direction = point - basePoint.Point;
+          try {
+            using (Transaction tr = db.TransactionManager.StartTransaction()) {
+              BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+              BlockTableRecord blockDef = tr.GetObject(bt["GMEP VENT STACK"], OpenMode.ForRead) as BlockTableRecord;
+              BlockTableRecord curSpace = (BlockTableRecord)
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+              foreach (PlumbingPlanBasePoint bp in chosenBasePoints) {
+                Point3d pos = bp.Point + direction;
+                Point3d pos2 = new Point3d(pos.X, pos.Y, bp.FloorHeight*12);
+                BlockReference upBlockRef = new BlockReference(pos2, blockDef.ObjectId);
+                upBlockRef.Rotation = rotation;
+                curSpace.AppendEntity(upBlockRef);
+                tr.AddNewlyCreatedDBObject(upBlockRef, true);
+                DynamicBlockReferencePropertyCollection pc = upBlockRef.DynamicBlockReferencePropertyCollection;
+                foreach (DynamicBlockReferenceProperty prop in pc) {
+                  if (prop.PropertyName == "id") {
+                    prop.Value = Guid.NewGuid().ToString();
+                  }
+                  if (prop.PropertyName == "type_id") {
+                    prop.Value = selectedSourceType.Id;
+                  }
+                  if (prop.PropertyName == "base_point_id") {
+                    prop.Value = bp.Id;
+                  }
+                  if (prop.PropertyName == "pressure") {
+                    prop.Value = pressure;
+                  }
+
+                }
+              }
+              tr.Commit();
+            }
+          }
+          catch (System.Exception ex) {
+            ed.WriteMessage(ex.ToString());
+            Console.WriteLine(ex.ToString());
+          }
+
+        }
+
         //MariaDBService.CreatePlumbingSource(plumbingSource);
         MakePlumbingSourceLabel(plumbingSource, selectedSourceType);
       }
