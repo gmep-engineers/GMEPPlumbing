@@ -4840,6 +4840,7 @@ namespace GMEPPlumbing
 
                 List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint, true, "\nSelect Start Point For Route: ", "\nSelect a Line: ", "\nSelect End Point: ", route.Id);
                 foreach (PlumbingHorizontalRoute r in routes) {
+                  SpecializedHorizontalRoute(route.Type, route.PipeType, routeHeight, r.EndPoint, r.StartPoint, route.Id);
                   Point3d endPoint = r.EndPoint;
                   if (r == routes.Last()) {
                     Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
@@ -4878,6 +4879,7 @@ namespace GMEPPlumbing
 
                 List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint, true, "\nSelect start point for route: ", "\nSelect next line in route toward WHA: ", route.Id);
                 foreach (PlumbingHorizontalRoute r in routes) {
+                  SpecializedHorizontalRoute(route.Type, route.PipeType, routeHeight, r.EndPoint, r.StartPoint, route.Id);
                   SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.EndPoint, r.StartPoint, route.Id);
                 }
          
@@ -4931,6 +4933,7 @@ namespace GMEPPlumbing
 
                 List<PlumbingHorizontalRoute> fixtureRoutes = HorizontalRoute(routeHeight, route.Type, false, "Forward", null, false, "", "\nSelect line to route to fixture: ", route.Id);
                 foreach (PlumbingHorizontalRoute r in fixtureRoutes) {
+                  SpecializedHorizontalRoute(route.Type, route.PipeType, routeHeight, r.EndPoint, r.StartPoint, route.Id);
                   Point3d endPoint = r.EndPoint;
                   if (r == fixtureRoutes.Last()) {
                     Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
@@ -4970,6 +4973,7 @@ namespace GMEPPlumbing
 
               List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint, true, "\nSpecify start point for route: ", "\nSelect a Line: ", "\nSelect End Point: ", route.Id);
               foreach (PlumbingHorizontalRoute r in routes) {
+                SpecializedHorizontalRoute(route.Type, route.PipeType, routeHeight, r.EndPoint, r.StartPoint, route.Id);
                 Point3d endPoint = r.EndPoint;
                 if (r == routes.Last()) {
                   Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
@@ -5010,6 +5014,7 @@ namespace GMEPPlumbing
 
               List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint, true, "\nSpecify start point for route: ", "\nSelect a Line: ", "\nSelect End Point: ", route.Id);
               foreach (PlumbingHorizontalRoute r in routes) {
+                SpecializedHorizontalRoute(route.Type, route.PipeType, routeHeight, r.EndPoint, r.StartPoint, route.Id);
                 Point3d endPoint = r.EndPoint;
                 if (r == routes.Last()) {
                   Vector3d direction = new Vector3d(r.StartPoint.X - r.EndPoint.X, r.StartPoint.Y - r.EndPoint.Y, 0);
