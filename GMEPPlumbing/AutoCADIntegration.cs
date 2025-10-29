@@ -7793,6 +7793,7 @@ namespace GMEPPlumbing
                       int Floor = 0;
                       double hotWaterX = 0;
                       double hotWaterY = 0;
+                      bool MainBlock = false;
                       //double pressure = 0;
 
                       foreach (DynamicBlockReferenceProperty prop in pc) {
@@ -7811,6 +7812,9 @@ namespace GMEPPlumbing
                         if (prop.PropertyName == "Hot Water Y") {
                           hotWaterY = Convert.ToDouble(prop.Value);
                         }
+                        if (prop.PropertyName == "main_block") {
+                          MainBlock = Convert.ToDouble(prop.Value) == 1.0;
+                        }
                         //if (prop.PropertyName == "pressure") {
                           //pressure = Convert.ToDouble(prop.Value);
                         //}
@@ -7818,10 +7822,15 @@ namespace GMEPPlumbing
                       if (name == "GMEP WH 50" || name == "GMEP WH 80" || name == "GMEP IWH") {
                         typeId = 2;
                       }
-                      if (name == "GMEP PLUMBING VENT EXIT") {
+                      bool valid = true;
+                      if (name == "GMEP VENT STACK") {
+                        if (!MainBlock) {
+                          valid = false;
+                        }
                         typeId = 5;
                       }
-                      if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
+
+                      if (!string.IsNullOrEmpty(GUID) && GUID != "0" && valid) {
                         Point3d position = entity.Position;
                         if (hotWaterX != 0 && hotWaterY != 0) {
                           double rotation = entity.Rotation;
