@@ -6229,6 +6229,12 @@ namespace GMEPPlumbing
       Point3d point;
       double rotation = 0;
       string sourceId = Guid.NewGuid().ToString();
+
+      List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD();
+      PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == CADObjectCommands.ActiveBasePointId);
+      PlumbingPlanBasePoint bottomBasePoint = basePoints.Where(bp => bp.ViewportId == basePoint.ViewportId && basePoint.IsSite == bp.IsSite && !bp.IsSiteRef).OrderBy(bp => bp.FloorHeight).FirstOrDefault();
+      List<PlumbingPlanBasePoint> chosenBasePoints = basePoints.Where(bp => bp.ViewportId == basePoint.ViewportId && bp.Id != basePoint.Id && bp.IsSite == basePoint.IsSite && !bp.IsSiteRef).ToList();
+      
       try {
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -6289,6 +6295,14 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "pressure") {
               prop.Value = pressure;
             }
+            if (prop.PropertyName == "main_block") {
+              if (bottomBasePoint.Id == basePoint.Id) {
+                prop.Value = 1;
+              }
+              else {
+                prop.Value = 0;
+              }
+            }
           }
           tr.Commit();
         }
@@ -6303,9 +6317,6 @@ namespace GMEPPlumbing
         );
         if (selectedSourceType.Type == "Vent Stack") {
           ed.WriteMessage("\nCreating vent stacks at all other site base points in the viewport...");
-          List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD();
-          PlumbingPlanBasePoint basePoint = basePoints.FirstOrDefault(bp => bp.Id == CADObjectCommands.ActiveBasePointId);
-          List<PlumbingPlanBasePoint> chosenBasePoints = basePoints.Where(bp => bp.ViewportId == basePoint.ViewportId && bp.Id != basePoint.Id && bp.IsSite == basePoint.IsSite && !bp.IsSiteRef).ToList();
           Vector3d direction = point - basePoint.Point;
           try {
             using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -6323,7 +6334,7 @@ namespace GMEPPlumbing
                 DynamicBlockReferencePropertyCollection pc = upBlockRef.DynamicBlockReferencePropertyCollection;
                 foreach (DynamicBlockReferenceProperty prop in pc) {
                   if (prop.PropertyName == "id") {
-                    prop.Value = Guid.NewGuid().ToString();
+                    prop.Value = sourceId;
                   }
                   if (prop.PropertyName == "type_id") {
                     prop.Value = selectedSourceType.Id;
@@ -6334,7 +6345,14 @@ namespace GMEPPlumbing
                   if (prop.PropertyName == "pressure") {
                     prop.Value = pressure;
                   }
-
+                  if (prop.PropertyName == "main_block") {
+                    if (bottomBasePoint.Id == bp.Id) {
+                      prop.Value = 1;
+                    }
+                    else {
+                      prop.Value = 0;
+                    }
+                  }
                 }
               }
               tr.Commit();
@@ -7754,7 +7772,7 @@ namespace GMEPPlumbing
           "GMEP WH 80",
           "GMEP WH 50",
           "GMEP IWH",
-          "GMEP PLUMBING VENT EXIT",
+          "GMEP VENT STACK",
           "GMEP PLUMBING POINT OF CONNECTION"
         };
         foreach (string name in blockNames) {
