@@ -4847,6 +4847,7 @@ namespace GMEPPlumbing
                     endPoint -= offset;
                   }
                   SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, endPoint, r.StartPoint, route.Id);
+                  SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight,r.StartPoint, endPoint, route.Id);
                 }
                 Vector3d direction2 = new Vector3d(routes.Last().StartPoint.X - routes.Last().EndPoint.X, routes.Last().StartPoint.Y - routes.Last().EndPoint.Y, 0);
 
@@ -4879,8 +4880,9 @@ namespace GMEPPlumbing
                 List<PlumbingHorizontalRoute> routes = HorizontalRoute(routeHeight, route.Type, false, "Forward", firstPoint, true, "\nSelect start point for route: ", "\nSelect next line in route toward WHA: ", route.Id);
                 foreach (PlumbingHorizontalRoute r in routes) {
                   SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.EndPoint, r.StartPoint, route.Id);
+                  SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.StartPoint, r.EndPoint, route.Id);
                 }
-         
+
 
                 using (Transaction tr = db.TransactionManager.StartTransaction()) {
                   BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -4938,6 +4940,8 @@ namespace GMEPPlumbing
                     endPoint -= offset;
                   }
                   SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, endPoint, r.StartPoint, route.Id);
+                  SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.StartPoint, endPoint, route.Id);
+
                 }
                 Vector3d direction2 = new Vector3d(fixtureRoutes.Last().StartPoint.X - fixtureRoutes.Last().EndPoint.X, fixtureRoutes.Last().StartPoint.Y - fixtureRoutes.Last().EndPoint.Y, 0);
 
@@ -4977,6 +4981,8 @@ namespace GMEPPlumbing
                   endPoint -= offset;
                 }
                 SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, endPoint, r.StartPoint, route.Id);
+                SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.StartPoint, endPoint, route.Id);
+
               }
               Vector3d direction2 = new Vector3d(routes.Last().StartPoint.X - routes.Last().EndPoint.X, routes.Last().StartPoint.Y - routes.Last().EndPoint.Y, 0);
 
@@ -5017,6 +5023,8 @@ namespace GMEPPlumbing
                   endPoint -= offset;
                 }
                 SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, endPoint, r.StartPoint, route.Id);
+                SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.StartPoint, endPoint, route.Id);
+
               }
               Vector3d direction2 = new Vector3d(routes.Last().StartPoint.X - routes.Last().EndPoint.X, routes.Last().StartPoint.Y - routes.Last().EndPoint.Y, 0);
 
@@ -5466,6 +5474,8 @@ namespace GMEPPlumbing
                     endPoint -= offset;
                   }
                   SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, endPoint, r.StartPoint, route.Id);
+                  SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.StartPoint, endPoint, route.Id);
+
                 }
                 Vector3d direction2 = new Vector3d(routes.Last().StartPoint.X - routes.Last().EndPoint.X, routes.Last().StartPoint.Y - routes.Last().EndPoint.Y, 0);
 
@@ -5551,6 +5561,8 @@ namespace GMEPPlumbing
                     endPoint -= offset;
                   }
                   SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, endPoint, r.StartPoint, route.Id);
+                  SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.StartPoint, endPoint, route.Id);
+
                 }
                 Vector3d direction2 = new Vector3d(fixtureRoutes.Last().StartPoint.X - fixtureRoutes.Last().EndPoint.X, fixtureRoutes.Last().StartPoint.Y - fixtureRoutes.Last().EndPoint.Y, 0);
 
@@ -5636,6 +5648,7 @@ namespace GMEPPlumbing
                   endPoint -= offset;
                 }
                 SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, endPoint, r.StartPoint, route.Id);
+                SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.StartPoint, endPoint, route.Id);
               }
               Vector3d direction2 = new Vector3d(routes.Last().StartPoint.X - routes.Last().EndPoint.X, routes.Last().StartPoint.Y - routes.Last().EndPoint.Y, 0);
 
@@ -5720,6 +5733,7 @@ namespace GMEPPlumbing
                   endPoint -= offset;
                 }
                 SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, endPoint, r.StartPoint, route.Id);
+                SpecializedHorizontalRoute(route.Type, route.PipeType, CADObjectCommands.ActiveCeilingHeight - CADObjectCommands.ActiveFloorHeight, r.StartPoint, endPoint, route.Id);
               }
               Vector3d direction2 = new Vector3d(routes.Last().StartPoint.X - routes.Last().EndPoint.X, routes.Last().StartPoint.Y - routes.Last().EndPoint.Y, 0);
 
