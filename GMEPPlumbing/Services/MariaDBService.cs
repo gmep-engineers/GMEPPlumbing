@@ -127,13 +127,22 @@ namespace GMEPPlumbing.Services
       command.Parameters.AddWithValue("@projectNo", projectNo);
       MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
 
-      Dictionary<int, string> projectIds = new Dictionary<int, string>();
       string id = "";
       if (reader.Read()) {
         id = reader.GetString("id");
+        reader.Close();
+        await CloseConnectionAsync();
+        ProjectId = id;
+        return id;
       }
+      id = Guid.NewGuid().ToString();
+      string insertquery = "INSERT INTO projects (id, gmep_project_no) VALUES (@id, @projectNo)";
+      command = new MySqlCommand(insertquery, Connection);
+      command.Parameters.AddWithValue("@id", id);
+      command.Parameters.AddWithValue("@projectNo", projectNo);
+      await command.ExecuteNonQueryAsync();
+      reader = (MySqlDataReader)await command.ExecuteReaderAsync();
       reader.Close();
-
       await CloseConnectionAsync();
       ProjectId = id;
       return id;
