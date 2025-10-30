@@ -956,11 +956,11 @@ namespace GMEPPlumbing.Views
         Scenes.Add(scene);
         foreach (var visual in scene.RouteVisuals.OrderBy(v => v is ModelVisual3D ? 0 : v is RectangleVisual3D ? 1 : v is TextVisual3D ? 2 : 3)) {
           if (visual is RectangleVisual3D rect) {
-            ModelVisual3D rect2 = DeepCopyRectangleVisual3D(rect);
+            RectangleVisual3D rect2 = DeepCopyRectangleVisual3D(rect);
             fullScene.RouteVisuals.Add(rect2);
           }
           else if (visual is TextVisual3D text) {
-            ModelVisual3D text2 = DeepCopyTextVisual3D(text);
+            TextVisual3D text2 = DeepCopyTextVisual3D(text);
             fullScene.RouteVisuals.Add(text2);
           }
           else if (visual is ModelVisual3D model) {
@@ -989,11 +989,11 @@ namespace GMEPPlumbing.Views
 
         foreach (var visual in Scenes[index].RouteVisuals.OrderBy(v => v is ModelVisual3D ? 0 : v is RectangleVisual3D ? 1 : v is TextVisual3D ? 2 : 3)) {
           if (visual is RectangleVisual3D rect) {
-            ModelVisual3D rect2 = DeepCopyRectangleVisual3D(rect);
+            RectangleVisual3D rect2 = DeepCopyRectangleVisual3D(rect);
             fullScene.RouteVisuals.Add(rect2);
           }
           else if (visual is TextVisual3D text) {
-            ModelVisual3D text2 = DeepCopyTextVisual3D(text);
+            TextVisual3D text2 = DeepCopyTextVisual3D(text);
             fullScene.RouteVisuals.Add(text2);
           }
           else if (visual is ModelVisual3D model) {

@@ -47,20 +47,34 @@ namespace GMEPPlumbing.Views
       if (_lastScene != null)
         _lastScene.PropertyChanged -= Scene_PropertyChanged;
 
+      Model3DGroup modelGroup = new Model3DGroup();
       Viewport.Children.Clear();
       if (DataContext is Scene scene) {
         Viewport.Children.Add(new HelixToolkit.Wpf.SunLight());
         foreach (var visual in scene.RouteVisuals) {
           Viewport.Children.Add(visual);
+          if (visual is ModelVisual3D model) {
+            modelGroup.Children.Add(model.Content);
+          }
         }
+        var bounds = modelGroup.Bounds;
         // Subscribe to property changes
         scene.PropertyChanged += Scene_PropertyChanged;
         _lastScene = scene;
 
         if (scene.InitialBuild) {
-          Dispatcher.BeginInvoke(new Action(() => Viewport.ZoomExtents()), System.Windows.Threading.DispatcherPriority.Loaded);
+          Dispatcher.BeginInvoke(new Action(() => {
+            if (modelGroup.Children.Count > 0 && isValidBounds(bounds)) {
+              Viewport.ZoomExtents(bounds, 500);
+            }
+          }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
       }
+    }
+    private bool isValidBounds(Rect3D bounds) {
+      return !(bounds.IsEmpty || double.IsNaN(bounds.X) || double.IsNaN(bounds.Y) || double.IsNaN(bounds.Z) ||
+               double.IsNaN(bounds.SizeX) || double.IsNaN(bounds.SizeY) || double.IsNaN(bounds.SizeZ) || double.IsInfinity(bounds.X) || double.IsInfinity(bounds.Y) || double.IsInfinity(bounds.Z) ||
+               double.IsInfinity(bounds.SizeX) || double.IsInfinity(bounds.SizeY) || double.IsInfinity(bounds.SizeZ));
     }
     private void Scene_PropertyChanged(object sender, PropertyChangedEventArgs e) {
       if (e.PropertyName == nameof(Scene.ChangeFlag)) {
