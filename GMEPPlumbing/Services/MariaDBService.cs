@@ -156,8 +156,20 @@ namespace GMEPPlumbing.Services
       string id = "";
       if (reader.Read()) {
         id = reader.GetString("id");
+        reader.Close();
+        CloseConnectionSync();
+        ProjectId = id;
+        return id;
       }
       reader.Close();
+
+      // Not found, so create a new project
+      id = Guid.NewGuid().ToString();
+      string insertQuery = "INSERT INTO projects (id, gmep_project_no) VALUES (@id, @projectNo)";
+      MySqlCommand insertCommand = new MySqlCommand(insertQuery, Connection);
+      insertCommand.Parameters.AddWithValue("@id", id);
+      insertCommand.Parameters.AddWithValue("@projectNo", projectNo);
+      insertCommand.ExecuteNonQuery();
 
       CloseConnectionSync();
       ProjectId = id;

@@ -694,7 +694,7 @@ namespace GMEPPlumbing {
         case "GMEP PLUMBING VENT EXIT":
           return 2;
         case "GMEP PLUMBING POINT OF CONNECTION":
-          return 4;
+          return 5;
         default:
           return 13;
       }
