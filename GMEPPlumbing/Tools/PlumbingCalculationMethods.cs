@@ -523,10 +523,10 @@ namespace GMEPPlumbing {
         Vector3d targetDir = targetRoute.EndPoint - targetRoute.StartPoint;
         if (targetDir.Length > 0) {
           targetDir = targetDir.GetNormal();
-          Point3d targetTrajectoryPoint = targetRoute.EndPoint + targetDir * 3.0;
+          Point3d targetTrajectoryPoint = targetRoute.EndPoint + targetDir * 2;
           double segLen;
           double distToRoute = GetPointToSegmentDistance(targetTrajectoryPoint, route.StartPoint, route.EndPoint, out segLen);
-          if (distToRoute <= 1.0) {
+          if (distToRoute <= 2) {
             Point3d closestPoint = GetClosestPointOnSegment(targetTrajectoryPoint, route.StartPoint, route.EndPoint);
             var adjustedRoute = new PlumbingHorizontalRoute(
                 route.Id,
@@ -547,10 +547,10 @@ namespace GMEPPlumbing {
         Vector3d routeDir = route.EndPoint - route.StartPoint;
         if (routeDir.Length > 0) {
           routeDir = routeDir.GetNormal();
-          Point3d routeReverseTrajectoryPoint = route.StartPoint - routeDir * 3.0;
+          Point3d routeReverseTrajectoryPoint = route.StartPoint - routeDir * 2;
           double segLen;
           double distToTarget = GetPointToSegmentDistance(routeReverseTrajectoryPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segLen);
-          if (distToTarget <= 1.0) {
+          if (distToTarget <= 2) {
             Point3d closestPoint = GetClosestPointOnSegment(routeReverseTrajectoryPoint, route.StartPoint, route.EndPoint);
             var adjustedRoute = new PlumbingHorizontalRoute(
                 route.Id,
