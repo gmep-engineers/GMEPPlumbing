@@ -43,6 +43,9 @@ using System.Windows.Shapes;
 using static Google.Protobuf.Compiler.CodeGeneratorResponse.Types;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Windows.Controls;
+using Org.BouncyCastle.Ocsp;
+using System.Windows;
+using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
 [assembly: CommandClass(typeof(GMEPPlumbing.AutoCADIntegration))]
 [assembly: CommandClass(typeof(GMEPPlumbing.CADObjectCommands))]
@@ -6083,7 +6086,7 @@ namespace GMEPPlumbing
       keywordOptions.Message = "\nSelect source type:";
 
       plumbingSourceTypes.ForEach(t => {
-        if ((CADObjectCommands.ActiveViewTypes.Contains("Water") && t.Type == "Water Meter") || (CADObjectCommands.ActiveViewTypes.Contains("Water") && t.Type == "Water Heater") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.Type == "Water Heater") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.Type == "Gas Meter") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.Type == "Waste Source") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.Type == "Vent Exit")) {
+        if ((CADObjectCommands.ActiveViewTypes.Contains("Water") && t.Type == "Water Meter") || (CADObjectCommands.ActiveViewTypes.Contains("Water") && t.Type == "Water Heater") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.Type == "Water Heater") || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && t.Type == "Gas Meter") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.Type == "Waste Source") || (CADObjectCommands.ActiveViewTypes.Contains("Sewer-Vent") && t.Type == "Vent Stack")) {
           keywordOptions.Keywords.Add(t.Id.ToString() + " " + t.Type);
         }
       });
@@ -6110,10 +6113,7 @@ namespace GMEPPlumbing
         ed.Command("PlumbingFixture", "IWH");
         return;
       }
-      if (selectedSourceType.Type == "Vent Exit") {
-        ed.Command("PlumbingFixture", "VE");
-        return;
-      }
+
       string layer = "";
       switch (selectedSourceType.Type) {
         case "Water Meter":
@@ -6125,8 +6125,10 @@ namespace GMEPPlumbing
         case "Waste Source":
           layer = "P-WV-W-BELOW";
           break;
+        case "Vent Stack":
+          layer = "P-WV-VENT";
+          break;
       }
-
 
       double pressure = 60;
       /*if (selectedSourceType.Type == "Water Meter" || selectedSourceType.Type == "Water Meter") {
@@ -6198,6 +6200,9 @@ namespace GMEPPlumbing
       ed.WriteMessage("\nSelect base point for plumbing source");
       ObjectId blockId;
       string blockName = "GMEP SOURCE";
+      if (selectedSourceType.Type == "Vent Stack") {
+        blockName = "GMEP PLUMBING VENT EXIT";
+      }
 
       PromptKeywordOptions sourceAppearance = new PromptKeywordOptions("\nSource or Point of Connection?:");
       sourceAppearance.Keywords.Add("Source");
@@ -6210,6 +6215,23 @@ namespace GMEPPlumbing
       }
       if (sourceAppearanceResult.StringResult == "Point-Of-Connection") {
         blockName = "GMEP PLUMBING POINT OF CONNECTION";
+      }
+      if (blockName == "GMEP PLUMBING VENT EXIT") {
+        List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
+        PlumbingPlanBasePoint activeBasePoint = basePoints.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
+        List<PlumbingPlanBasePoint> aboveBasePoints = basePoints.Where(bp => bp.Floor >= activeBasePoint.Floor && bp.ViewportId == activeBasePoint.ViewportId).ToList();
+        PlumbingPlanBasePoint highestFloorBasePoint = aboveBasePoints
+        .OrderByDescending(bp => bp.Floor)
+        .FirstOrDefault();
+        double endHeight = highestFloorBasePoint.CeilingHeight - highestFloorBasePoint.FloorHeight;
+
+        var ventRoutes = VerticalRoute("Vent", routeHeight, highestFloorBasePoint.Floor, null, null, endHeight, "Vertical Route", "", false, null, true);
+        if (highestFloorBasePoint.Floor > CADObjectCommands.ActiveFloor) {
+          PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
+          ZoomToPoint(ed, startRoute.Position);
+        }
+        MakeVentExit(ventRoutes.Values.Last());
+        return;
       }
 
       Point3d point;
