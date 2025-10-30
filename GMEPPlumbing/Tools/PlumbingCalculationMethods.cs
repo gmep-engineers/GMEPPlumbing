@@ -11,6 +11,7 @@ using Autodesk.AutoCAD.Geometry;
 using GMEPPlumbing.Views;
 using System.Windows.Forms.Integration;
 using Autodesk.AutoCAD.Windows;
+using System.Windows.Input;
 
 namespace GMEPPlumbing {
   class PlumbingCalculationMethods {
@@ -35,6 +36,8 @@ namespace GMEPPlumbing {
       var ed = doc.Editor;
 
       try {
+        System.Windows.Input.Mouse.OverrideCursor = Cursors.Wait;
+
         await AutoCADIntegration.SaveInfo();
         string projectNo = CADObjectCommands.GetProjectNoFromFileName();
         ProjectId = await MariaDBService.GetProjectId(projectNo);
@@ -80,6 +83,9 @@ namespace GMEPPlumbing {
           ed.WriteMessage($"\nInner Exception: {ex.InnerException.Message}");
           ed.WriteMessage($"\nInner Stack Trace: {ex.InnerException.StackTrace}");
         }
+      }
+      finally {
+        System.Windows.Input.Mouse.OverrideCursor = null;
       }
     }
     public Tuple<double, int, double> TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
