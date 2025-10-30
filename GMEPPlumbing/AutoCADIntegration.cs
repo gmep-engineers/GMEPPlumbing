@@ -3384,9 +3384,8 @@ namespace GMEPPlumbing
             );
 
             if (blockName == "GMEP DRAIN") {
-              PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
-              pko.Keywords.Add("Ceiling");
-              pko.Keywords.Add("Roof");
+              PromptKeywordOptions pko = new PromptKeywordOptions("Place-Vent?");
+              pko.Keywords.Add("Place");
               pko.Keywords.Add("None", "No Vent Needed", "No Vent Needed");
               pko.AllowNone = false;
               PromptResult res = ed.GetKeywords(pko);
@@ -3399,23 +3398,8 @@ namespace GMEPPlumbing
               if (res.StringResult == "None") {
                 continue;
               }
-              if (res.StringResult == "Ceiling") {
+              if (res.StringResult == "Place") {
                 ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "UpToCeiling");
-              }
-              else if (res.StringResult == "Roof") {
-                List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
-                PlumbingPlanBasePoint activeBasePoint = basePoints.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
-                List<PlumbingPlanBasePoint> aboveBasePoints = basePoints.Where(bp => bp.Floor >= activeBasePoint.Floor && bp.ViewportId == activeBasePoint.ViewportId).ToList();
-                PlumbingPlanBasePoint highestFloorBasePoint = aboveBasePoints
-                .OrderByDescending(bp => bp.Floor)
-                .FirstOrDefault();
-
-                ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, null, null, 0, "Vertical Route", "", false, null, true);
-                if (highestFloorBasePoint.Floor > CADObjectCommands.ActiveFloor) {
-                  PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
-                  ZoomToPoint(ed, startRoute.Position);
-                }
-                MakeVentExit(ventRoutes.Values.Last());
               }
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -4016,9 +4000,8 @@ namespace GMEPPlumbing
               );
               HorizontalRoute(0, "Vent");
 
-              PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
-              pko.Keywords.Add("Ceiling");
-              pko.Keywords.Add("Roof");
+              PromptKeywordOptions pko = new PromptKeywordOptions("Place Veny?");
+              pko.Keywords.Add("Place");
               pko.Keywords.Add("None", "No Vent Needed", "No Vent Needed");
               pko.AllowNone = false;
               PromptResult res = ed.GetKeywords(pko);
@@ -4030,23 +4013,8 @@ namespace GMEPPlumbing
               if (res.StringResult == "None") {
                continue;
              }
-             if (res.StringResult == "Ceiling") {
+             if (res.StringResult == "Place") {
                ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "UpToCeiling");
-             }
-             else if (res.StringResult == "Roof") {
-               List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
-               PlumbingPlanBasePoint activeBasePoint = basePoints.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
-               List<PlumbingPlanBasePoint> aboveBasePoints = basePoints.Where(bp => bp.Floor >= activeBasePoint.Floor && bp.ViewportId == activeBasePoint.ViewportId).ToList();
-               PlumbingPlanBasePoint highestFloorBasePoint = aboveBasePoints
-               .OrderByDescending(bp => bp.Floor)
-               .FirstOrDefault();
-
-               ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, "UpToCeiling", null, highestFloorBasePoint.CeilingHeight - highestFloorBasePoint.FloorHeight);
-               if (highestFloorBasePoint.Floor > CADObjectCommands.ActiveFloor) {
-                 PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
-                 ZoomToPoint(ed, startRoute.Position);
-               }
-               MakeVentExit(ventRoutes.Values.Last());
              }
              if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -4597,9 +4565,8 @@ namespace GMEPPlumbing
             );
 
             if (blockName == "GMEP DRAIN") {
-              PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
-              pko.Keywords.Add("Ceiling");
-              pko.Keywords.Add("Roof");
+              PromptKeywordOptions pko = new PromptKeywordOptions("Place Vent?");
+              pko.Keywords.Add("Place");
               pko.Keywords.Add("None", "No Vent Needed", "No Vent Needed");
               pko.AllowNone = false;
               PromptResult res = ed.GetKeywords(pko);
@@ -4612,23 +4579,8 @@ namespace GMEPPlumbing
               if (res.StringResult == "None") {
                 continue;
               }
-              if (res.StringResult == "Ceiling") {
+              if (res.StringResult == "Place") {
                 ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "UpToCeiling");
-              }
-              else if (res.StringResult == "Roof") {
-                List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
-                PlumbingPlanBasePoint activeBasePoint = basePoints.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
-                List<PlumbingPlanBasePoint> aboveBasePoints = basePoints.Where(bp => bp.Floor >= activeBasePoint.Floor && bp.ViewportId == activeBasePoint.ViewportId).ToList();
-                PlumbingPlanBasePoint highestFloorBasePoint = aboveBasePoints
-                .OrderByDescending(bp => bp.Floor)
-                .FirstOrDefault();
-
-                ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, "UpToCeiling", null, highestFloorBasePoint.CeilingHeight - highestFloorBasePoint.FloorHeight);
-                if (highestFloorBasePoint.Floor > CADObjectCommands.ActiveFloor) {
-                  PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
-                  ZoomToPoint(ed, startRoute.Position);
-                }
-                MakeVentExit(ventRoutes.Values.Last());
               }
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -5179,9 +5131,8 @@ namespace GMEPPlumbing
             );
 
             if (blockName == "GMEP DRAIN") {
-              PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
-              pko.Keywords.Add("Ceiling");
-              pko.Keywords.Add("Roof");
+              PromptKeywordOptions pko = new PromptKeywordOptions("Place Vent?");
+              pko.Keywords.Add("Place");
               pko.Keywords.Add("None", "No Vent Needed", "No Vent Needed");
               pko.AllowNone = false;
               PromptResult res = ed.GetKeywords(pko);
@@ -5194,23 +5145,8 @@ namespace GMEPPlumbing
               if (res.StringResult == "None") {
                 continue;
               }
-              if (res.StringResult == "Ceiling") {
+              if (res.StringResult == "Place") {
                 ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "UpToCeiling");
-              }
-              else if (res.StringResult == "Roof") {
-                List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
-                PlumbingPlanBasePoint activeBasePoint = basePoints.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
-                List<PlumbingPlanBasePoint> aboveBasePoints = basePoints.Where(bp => bp.Floor >= activeBasePoint.Floor && bp.ViewportId == activeBasePoint.ViewportId).ToList();
-                PlumbingPlanBasePoint highestFloorBasePoint = aboveBasePoints
-                .OrderByDescending(bp => bp.Floor)
-                .FirstOrDefault();
-
-                ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, "UpToCeiling", null, highestFloorBasePoint.CeilingHeight - highestFloorBasePoint.FloorHeight);
-                if (highestFloorBasePoint.Floor > CADObjectCommands.ActiveFloor) {
-                  PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
-                  ZoomToPoint(ed, startRoute.Position);
-                }
-                MakeVentExit(ventRoutes.Values.Last());
               }
               if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                 ed.WriteMessage("\nError: Could not find vent route for base point.");
@@ -5909,6 +5845,7 @@ namespace GMEPPlumbing
               PromptKeywordOptions pko2 = new PromptKeywordOptions("Select Vent Option: ");
               pko2.Keywords.Add("Add", "AddVent", "Add Vent");
               pko2.Keywords.Add("Connect", "ConnectToExistingVent", "Connect To Existing Vent");
+              pko2.Keywords.Add("None", "NoVent", "No Vent");
               pko2.Keywords.Default = "Add";
               pko2.AllowNone = false;
               PromptResult res2 = ed.GetKeywords(pko2);
@@ -5919,36 +5856,14 @@ namespace GMEPPlumbing
               }
               Point3d newEndPoint = Point3d.Origin;
               Point3d newStartPoint = Point3d.Origin;
-              if (res2.StringResult == "Add") {
-                PromptKeywordOptions pko = new PromptKeywordOptions("How far up?");
-                pko.Keywords.Add("Ceiling");
-                pko.Keywords.Add("Roof");
-                pko.AllowNone = false;
-                PromptResult res = ed.GetKeywords(pko);
-                ed.WriteMessage("\nYou selected: " + res.StringResult);
-                if (res.Status != PromptStatus.OK) {
-                  ed.WriteMessage("\nCommand cancelled.");
-                  return;
-                }
+              if (res2.StringResult == "None") {
+                continue;
+              }
+              else if (res2.StringResult == "Add") {
                 Dictionary<string, PlumbingVerticalRoute> ventRoutes = null;
-                if (res.StringResult == "Ceiling") {
-                  ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "UpToCeiling");
-                }
-                else if (res.StringResult == "Roof") {
-                  List<PlumbingPlanBasePoint> basePoints = GetPlumbingBasePointsFromCAD(ProjectId);
-                  PlumbingPlanBasePoint activeBasePoint = basePoints.Where(bp => bp.Id == CADObjectCommands.ActiveBasePointId).First();
-                  List<PlumbingPlanBasePoint> aboveBasePoints = basePoints.Where(bp => bp.Floor >= activeBasePoint.Floor && bp.ViewportId == activeBasePoint.ViewportId).ToList();
-                  PlumbingPlanBasePoint highestFloorBasePoint = aboveBasePoints
-                  .OrderByDescending(bp => bp.Floor)
-                  .FirstOrDefault();
 
-                  ventRoutes = VerticalRoute("Vent", 0, highestFloorBasePoint.Floor, "UpToCeiling", null, highestFloorBasePoint.CeilingHeight - highestFloorBasePoint.FloorHeight);
-                  if (highestFloorBasePoint.Floor > CADObjectCommands.ActiveFloor) {
-                    PlumbingVerticalRoute startRoute = ventRoutes.First().Value;
-                    ZoomToPoint(ed, startRoute.Position);
-                  }
-                  MakeVentExit(ventRoutes.Last().Value);
-                }
+                ventRoutes = VerticalRoute("Vent", 0, CADObjectCommands.ActiveFloor, "UpToCeiling");
+       
                 if (ventRoutes == null || !ventRoutes.ContainsKey(CADObjectCommands.ActiveBasePointId)) {
                   ed.WriteMessage("\nError: Could not find vent route for base point.");
                   return;
@@ -5967,7 +5882,7 @@ namespace GMEPPlumbing
                   newStartPoint = point - offset;
                 }
               }
-              if (res2.StringResult == "Connect") {
+              else if (res2.StringResult == "Connect") {
                 while (true) {
                   PromptEntityOptions peo = new PromptEntityOptions("\nSelect existing vent drop or vertical route to attach to: ");
                   peo.SetRejectMessage("\nMust select a vent drop or vertical route.");
