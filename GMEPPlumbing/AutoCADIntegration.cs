@@ -1698,9 +1698,27 @@ namespace GMEPPlumbing
         ed.WriteMessage("\nInvalid floor quantity. Please enter a valid integer.");
         return;
       }
+      bool hasRoof = false;
+      if (sewerVent) {
+        PromptKeywordOptions pko = new PromptKeywordOptions(
+           $"\nInclude roof plan for {planName}?"
+        );
+        pko.Keywords.Add("Yes");
+        pko.Keywords.Add("No");
+        PromptResult pkr = ed.GetKeywords(pko);
+        if (pkr.Status == PromptStatus.OK) {
+          if (pkr.StringResult == "Yes") {
+            hasRoof = true;
+          }
+        }
+        else {
+          ed.WriteMessage("\nOperation cancelled.");
+          return;
+        }
+      }
 
       for (int i = 0; i <= floorQty; i++) {
-        if (i == floorQty && !sewerVent) {
+        if (i == floorQty && !hasRoof) {
           continue;
         }
         PromptDoubleOptions heightOptions = new PromptDoubleOptions(
@@ -3471,8 +3489,8 @@ namespace GMEPPlumbing
             if (prop.PropertyName == "base_point_id") {
               prop.Value = route.BasePointId;
             }
-            if (prop.PropertyName == "type_abbreviation") {
-              prop.Value = "VE";
+            if (prop.PropertyName == "type_id") {
+              prop.Value = "5";
             }
           }
           tr.Commit();
@@ -7761,9 +7779,6 @@ namespace GMEPPlumbing
                       }
                       if (name == "GMEP WH 50" || name == "GMEP WH 80" || name == "GMEP IWH") {
                         typeId = 2;
-                      }
-                      if (name == "GMEP PLUMBING VENT EXIT") {
-                        typeId = 5;
                       }
                       if (!string.IsNullOrEmpty(GUID) && GUID != "0") {
                         Point3d position = entity.Position;
