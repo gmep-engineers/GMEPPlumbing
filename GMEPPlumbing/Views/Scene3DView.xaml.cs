@@ -54,6 +54,8 @@ namespace GMEPPlumbing.Views
         foreach (var visual in scene.RouteVisuals) {
           Viewport.Children.Add(visual);
           if (visual is ModelVisual3D model) {
+            if (model.GetType().Name == "RectangleVisual3D" || model.GetType().Name == "TextVisual3D")
+              continue;
             modelGroup.Children.Add(model.Content);
           }
         }
