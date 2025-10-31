@@ -11,6 +11,7 @@ using Autodesk.AutoCAD.Geometry;
 using GMEPPlumbing.Views;
 using System.Windows.Forms.Integration;
 using Autodesk.AutoCAD.Windows;
+using System.Windows.Input;
 
 namespace GMEPPlumbing {
   class PlumbingCalculationMethods {
@@ -35,6 +36,8 @@ namespace GMEPPlumbing {
       var ed = doc.Editor;
 
       try {
+        System.Windows.Input.Mouse.OverrideCursor = Cursors.Wait;
+
         await AutoCADIntegration.SaveInfo();
         string projectNo = CADObjectCommands.GetProjectNoFromFileName();
         ProjectId = await MariaDBService.GetProjectId(projectNo);
@@ -80,6 +83,9 @@ namespace GMEPPlumbing {
           ed.WriteMessage($"\nInner Exception: {ex.InnerException.Message}");
           ed.WriteMessage($"\nInner Stack Trace: {ex.InnerException.StackTrace}");
         }
+      }
+      finally {
+        System.Windows.Input.Mouse.OverrideCursor = null;
       }
     }
     public Tuple<double, int, double> TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
@@ -517,10 +523,10 @@ namespace GMEPPlumbing {
         Vector3d targetDir = targetRoute.EndPoint - targetRoute.StartPoint;
         if (targetDir.Length > 0) {
           targetDir = targetDir.GetNormal();
-          Point3d targetTrajectoryPoint = targetRoute.EndPoint + targetDir * 3.0;
+          Point3d targetTrajectoryPoint = targetRoute.EndPoint + targetDir * 2;
           double segLen;
           double distToRoute = GetPointToSegmentDistance(targetTrajectoryPoint, route.StartPoint, route.EndPoint, out segLen);
-          if (distToRoute <= 1.0) {
+          if (distToRoute <= 2) {
             Point3d closestPoint = GetClosestPointOnSegment(targetTrajectoryPoint, route.StartPoint, route.EndPoint);
             var adjustedRoute = new PlumbingHorizontalRoute(
                 route.Id,
@@ -541,10 +547,10 @@ namespace GMEPPlumbing {
         Vector3d routeDir = route.EndPoint - route.StartPoint;
         if (routeDir.Length > 0) {
           routeDir = routeDir.GetNormal();
-          Point3d routeReverseTrajectoryPoint = route.StartPoint - routeDir * 3.0;
+          Point3d routeReverseTrajectoryPoint = route.StartPoint - routeDir * 2;
           double segLen;
           double distToTarget = GetPointToSegmentDistance(routeReverseTrajectoryPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segLen);
-          if (distToTarget <= 1.0) {
+          if (distToTarget <= 2) {
             Point3d closestPoint = GetClosestPointOnSegment(routeReverseTrajectoryPoint, route.StartPoint, route.EndPoint);
             var adjustedRoute = new PlumbingHorizontalRoute(
                 route.Id,
