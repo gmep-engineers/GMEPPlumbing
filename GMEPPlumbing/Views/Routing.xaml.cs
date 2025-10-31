@@ -24,6 +24,7 @@ using System.Windows.Input;
 using System.ComponentModel;
 using Autodesk.AutoCAD.GraphicsSystem;
 using static System.Net.Mime.MediaTypeNames;
+using static Autodesk.AutoCAD.Internal.Utils;
 
 namespace GMEPPlumbing.Views
 {
@@ -59,15 +60,10 @@ namespace GMEPPlumbing.Views
       public double Length { get; set; } = 0;
       public ObservableCollection<Visual3D> RouteVisuals { get; set; } = new ObservableCollection<Visual3D>();
       public Dictionary<string, PlumbingPlanBasePoint> BasePoints { get; set; } = new Dictionary<string, PlumbingPlanBasePoint>();
-
       public HashSet<string> BasePointIds = new HashSet<string>();
-
       public List<RouteInfoBox> RouteInfoBoxes { get; set; } = new List<RouteInfoBox>();
-
-      public Dictionary<Brush, MeshBuilder> meshBuilders = new Dictionary<Brush, MeshBuilder>();
-
-    public string ViewportId { get; set; } = "";
-
+      public Dictionary<Brush, Model3DGroup> materialGroups = new Dictionary<Brush, Model3DGroup>();
+      public string ViewportId { get; set; } = "";
       public bool _changeFlag = true;
       public bool ChangeFlag {
         get { return _changeFlag; }
@@ -118,7 +114,7 @@ namespace GMEPPlumbing.Views
     public async void BuildScene() {
       RouteInfoBoxes.Clear();
       RouteVisuals.Clear();
-      meshBuilders.Clear();
+      materialGroups.Clear();
       List<TextVisual3D> textVisuals = new List<TextVisual3D>();
       Dictionary<string, List<PlumbingVerticalRoute>> fullVerticalRoutes = new Dictionary<string, List<PlumbingVerticalRoute>>();
 
@@ -126,17 +122,28 @@ namespace GMEPPlumbing.Views
         //Visual3D model = null;
          if (item is PlumbingHorizontalRoute horizontalRoute) {
           var color = TypeToBrushColor(horizontalRoute.Type);
-          if (!meshBuilders.ContainsKey(color)) {
-            meshBuilders[color] = new MeshBuilder(false, false);
+          if (!materialGroups.ContainsKey(color)) {
+            materialGroups[color] = new Model3DGroup();
           }
+          MeshBuilder builder = new MeshBuilder();
 
-          meshBuilders[color].AddTube(
+          builder.AddTube(
             new[] {new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z),
                     new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z)
                   }, 2, 8, false);
 
-          meshBuilders[color].AddSphere(new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z), 1, 8, 8);
-          meshBuilders[color].AddSphere(new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z), 1, 8, 8);
+          builder.AddSphere(new Point3D(horizontalRoute.StartPoint.X, horizontalRoute.StartPoint.Y, horizontalRoute.StartPoint.Z), 1, 8, 8);
+          builder.AddSphere(new Point3D(horizontalRoute.EndPoint.X, horizontalRoute.EndPoint.Y, horizontalRoute.EndPoint.Z), 1, 8, 8);
+          var mesh = builder.ToMesh();
+          var material = MaterialHelper.CreateMaterial(color);
+          mesh.Freeze();
+          material.Freeze();
+          var model = new GeometryModel3D {
+            Geometry = mesh,
+            Material = material
+          };
+          model.Freeze();
+          materialGroups[color].Children.Add(model);
 
           var dirX = horizontalRoute.EndPoint.X - horizontalRoute.StartPoint.X;
           var dirY = horizontalRoute.EndPoint.Y - horizontalRoute.StartPoint.Y;
@@ -259,20 +266,30 @@ namespace GMEPPlumbing.Views
             length = -length;
           }
           Brush color = TypeToBrushColor(verticalRoute.Type);
-          if (!meshBuilders.ContainsKey(color)) {
-            meshBuilders[color] = new MeshBuilder(false, false);
+          if (!materialGroups.ContainsKey(color)) {
+            materialGroups[color] = new Model3DGroup();
           }
-          meshBuilders[color].AddTube(
+          MeshBuilder builder = new MeshBuilder();
+          builder.AddTube(
             new[] {
               new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z),
               new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length)
             }, 2, 8, false);
 
-          meshBuilders[color].AddSphere(
+          builder.AddSphere(
             new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z + length), 1, 8, 8);
-          meshBuilders[color].AddSphere(
+          builder.AddSphere(
             new Point3D(verticalRoute.Position.X, verticalRoute.Position.Y, verticalRoute.Position.Z), 1, 8, 8);
-
+          var mesh = builder.ToMesh();
+          var material = MaterialHelper.CreateMaterial(color);
+          mesh.Freeze();
+          material.Freeze();
+          var model = new GeometryModel3D {
+            Geometry = mesh,
+            Material = material
+          };
+          model.Freeze();
+          materialGroups[color].Children.Add(model);
 
           BasePointIds.Add(verticalRoute.BasePointId);
         }
@@ -292,20 +309,41 @@ namespace GMEPPlumbing.Views
               SourceColor = System.Windows.Media.Brushes.Magenta;
               break;
           }
-          if (!meshBuilders.ContainsKey(SourceColor)) {
-            meshBuilders[SourceColor] = new MeshBuilder(false, false);
+          if (!materialGroups.ContainsKey(SourceColor)) {
+            materialGroups[SourceColor] = new Model3DGroup();
           }
-
-          meshBuilders[SourceColor].AddSphere(new Point3D(plumbingSource.Position.X, plumbingSource.Position.Y, plumbingSource.Position.Z), 2, 8, 8);
+          MeshBuilder builder = new MeshBuilder(false, false);
+          builder.AddSphere(new Point3D(plumbingSource.Position.X, plumbingSource.Position.Y, plumbingSource.Position.Z), 2, 8, 8);
+          var mesh = builder.ToMesh();
+          var material = MaterialHelper.CreateMaterial(SourceColor);
+          mesh.Freeze();
+          material.Freeze();
+          var model = new GeometryModel3D {
+            Geometry = mesh,
+            Material = material
+          };
+          model.Freeze();
+          materialGroups[SourceColor].Children.Add(model);
 
           BasePointIds.Add(plumbingSource.BasePointId);
 
         }
         else if (item is PlumbingFixture plumbingFixture) {
-          if (!meshBuilders.ContainsKey(Brushes.Green)) {
-            meshBuilders[Brushes.Green] = new MeshBuilder(false, false);
+          if (!materialGroups.ContainsKey(Brushes.Green)) {
+            materialGroups[Brushes.Green] = new Model3DGroup();
           }
-          meshBuilders[Brushes.Green].AddSphere(new Point3D(plumbingFixture.Position.X, plumbingFixture.Position.Y, plumbingFixture.Position.Z), 2, 8, 8);
+          MeshBuilder builder = new MeshBuilder(false, false);
+          builder.AddSphere(new Point3D(plumbingFixture.Position.X, plumbingFixture.Position.Y, plumbingFixture.Position.Z), 2, 8, 8);
+          var mesh = builder.ToMesh();
+          var material = MaterialHelper.CreateMaterial(Brushes.Green);
+          mesh.Freeze();
+          material.Freeze();
+          var model = new GeometryModel3D {
+            Geometry = mesh,
+            Material = material
+          };
+          model.Freeze();
+          materialGroups[Brushes.Green].Children.Add(model);
           BasePointIds.Add(plumbingFixture.BasePointId);
         }
         else if (item is PlumbingAccessory plumbingAccessory) {
@@ -328,19 +366,10 @@ namespace GMEPPlumbing.Views
           }
           BasePointIds.Add(plumbingAccessory.BasePointId);
         }
-        foreach (var kvp in meshBuilders) {
-          var color = kvp.Key;
+        foreach (var kvp in materialGroups) {
           var meshBuilder = kvp.Value;
-          var mesh = meshBuilder.ToMesh();
-          var material = MaterialHelper.CreateMaterial(color);
-
-          var model = new GeometryModel3D {
-            Geometry = mesh,
-            Material = material
-          };
-
-          var visual = new ModelVisual3D {
-            Content = model
+          ModelVisual3D visual = new ModelVisual3D {
+            Content = meshBuilder,
           };
 
           RouteVisuals.Add(visual);
@@ -670,25 +699,42 @@ namespace GMEPPlumbing.Views
       var mesh2 = CreatePyramid(center, -direction, baseSize, height);
 
       // Two pyramids, apexes at center, bases offset in +X and -X
-      if (!meshBuilders.ContainsKey(color))
-        meshBuilders[color] = new MeshBuilder(false, false);
+      if (!materialGroups.ContainsKey(color))
+        materialGroups[color] = new Model3DGroup();
 
-      meshBuilders[color].Append(mesh1);
-      meshBuilders[color].Append(mesh2);
+      MeshBuilder builder = new MeshBuilder(false, false);
+      builder.Append(mesh1);
+      builder.Append(mesh2);
+      var mesh = builder.ToMesh();
+      var material = MaterialHelper.CreateMaterial(color);
+      mesh.Freeze();
+      material.Freeze();
+      var model = new GeometryModel3D {
+        Geometry = mesh,
+        Material = material
+      };
+      model.Freeze();
+      materialGroups[color].Children.Add(model);
     }
     public void CreateGroundCleanoutMesh(Point3D center, double diameter = 4, double height = 1, Brush color = null) {
       Brush actualColor = color ?? Brushes.Silver;
-      if (!meshBuilders.ContainsKey(actualColor))
-        meshBuilders[actualColor] = new MeshBuilder(false, false);
+      if (!materialGroups.ContainsKey(actualColor))
+        materialGroups[actualColor] = new Model3DGroup();
 
       var meshBuilder = new MeshBuilder(false, false);
 
       meshBuilder.AddCylinder(center, new Point3D(center.X, center.Y, center.Z + height), diameter / 2, 32, true, true);
-
       meshBuilder.AddCylinder(new Point3D(center.X, center.Y, center.Z + height), new Point3D(center.X, center.Y, center.Z + height + 0.2), diameter / 3, 32, true, true);
-
       var mesh = meshBuilder.ToMesh();
-      meshBuilders[actualColor].Append(mesh);
+      var material = MaterialHelper.CreateMaterial(actualColor);
+      mesh.Freeze();
+      material.Freeze();
+      var model = new GeometryModel3D {
+        Geometry = mesh,
+        Material = material
+      };
+      model.Freeze();
+      materialGroups[actualColor].Children.Add(model);
     }
   }
 
@@ -1336,4 +1382,21 @@ namespace GMEPPlumbing.Views
   public class ServiceLocator {
     public static MariaDBService MariaDBService { get; } = new MariaDBService();
   }
+  public static class GeometryModel3DExtensions {
+    public static readonly DependencyProperty RouteIdProperty =
+        DependencyProperty.RegisterAttached(
+            "RouteId",
+            typeof(string),
+            typeof(GeometryModel3DExtensions),
+            new PropertyMetadata(null));
+
+    public static void SetRouteId(DependencyObject element, string value) {
+      element.SetValue(RouteIdProperty, value);
+    }
+
+    public static string GetRouteId(DependencyObject element) {
+      return (string)element.GetValue(RouteIdProperty);
+    }
+  }
+
 }
