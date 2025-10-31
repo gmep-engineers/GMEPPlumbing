@@ -333,11 +333,14 @@ namespace GMEPPlumbing.Views
           var meshBuilder = kvp.Value;
           var mesh = meshBuilder.ToMesh();
           var material = MaterialHelper.CreateMaterial(color);
+          mesh.Freeze();
+          material.Freeze();
 
           var model = new GeometryModel3D {
             Geometry = mesh,
             Material = material
           };
+          model.Freeze();
 
           var visual = new ModelVisual3D {
             Content = model
