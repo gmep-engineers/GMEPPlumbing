@@ -32,6 +32,7 @@ namespace GMEPPlumbing.Views
     private TextVisual3D _highlightedText;
     private Brush _originalBrush;
     private Scene _lastScene;
+    private bool _cameraFlipped = false;
     public Scene3DView() {
       InitializeComponent();
       this.DataContextChanged += Scene3DView_DataContextChanged;
@@ -39,7 +40,21 @@ namespace GMEPPlumbing.Views
       this.Viewport.MouseMove += Viewport_MouseMove;
       //this.Viewport.CameraChanged += Viewport_CameraChanged;
     }
+    private void FlipCameraAroundZ() {
+      var camera = Viewport.Camera as ProjectionCamera;
+      if (camera == null) return;
 
+      // Flip LookDirection and UpDirection around Z axis
+      camera.LookDirection = new Vector3D(
+          -camera.LookDirection.X,
+          -camera.LookDirection.Y,
+           camera.LookDirection.Z);
+
+      camera.UpDirection = new Vector3D(
+          -camera.UpDirection.X,
+          -camera.UpDirection.Y,
+           camera.UpDirection.Z);
+    }
     private void Scene3DView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e) {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
@@ -67,7 +82,12 @@ namespace GMEPPlumbing.Views
         if (scene.InitialBuild) {
           Dispatcher.BeginInvoke(new Action(() => {
             if (modelGroup.Children.Count > 0 && isValidBounds(bounds)) {
+              if (!_cameraFlipped) {
+                FlipCameraAroundZ();
+                _cameraFlipped = true;
+              }
               Viewport.ZoomExtents(bounds, 500);
+
             }
           }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
@@ -75,7 +95,8 @@ namespace GMEPPlumbing.Views
     }
     private bool isValidBounds(Rect3D bounds) {
       return !(bounds.IsEmpty || double.IsNaN(bounds.X) || double.IsNaN(bounds.Y) || double.IsNaN(bounds.Z) ||
-               double.IsNaN(bounds.SizeX) || double.IsNaN(bounds.SizeY) || double.IsNaN(bounds.SizeZ) || double.IsInfinity(bounds.X) || double.IsInfinity(bounds.Y) || double.IsInfinity(bounds.Z) ||
+               double.IsNaN(bounds.SizeX) || double.IsNaN(bounds.SizeY) || double.IsNaN(bounds.SizeZ) || 
+               double.IsInfinity(bounds.X) || double.IsInfinity(bounds.Y) || double.IsInfinity(bounds.Z) ||
                double.IsInfinity(bounds.SizeX) || double.IsInfinity(bounds.SizeY) || double.IsInfinity(bounds.SizeZ));
     }
     private void Scene_PropertyChanged(object sender, PropertyChangedEventArgs e) {
