@@ -60,7 +60,7 @@ namespace GMEPPlumbing {
             TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
           }
         }
-        /*foreach (var kvp in FullRoutes) {
+        foreach (var kvp in FullRoutes) {
           var routes = kvp.Value;
           var sourceRoutesById = routes
               .Where(fr => fr.RouteItems.FirstOrDefault() is PlumbingSource source && source.TypeId == 2)
@@ -70,7 +70,7 @@ namespace GMEPPlumbing {
                   g => g.ToList()
               );
           var fixtureRoutesById = routes
-              .Where(fr => fr.RouteItems.LastOrDefault() is PlumbingFixture fixture && fixture.TypeAbbreviation == "WH")
+              .Where(fr => fr.RouteItems.LastOrDefault() is PlumbingFixture fixture && (fixture.TypeAbbreviation == "WH" || fixture.TypeAbbreviation == "IWH"))
               .GroupBy(fr => ((PlumbingFixture)fr.RouteItems.Last()).Id)
               .ToDictionary(
                   g => g.Key,
@@ -90,7 +90,11 @@ namespace GMEPPlumbing {
 
             }
           }
-        }*/
+          var allFixtureRoutes = fixtureRoutesById.Values.SelectMany(list => list).ToList();
+          foreach (var fixtureRoute in allFixtureRoutes) {
+            kvp.Value.Remove(fixtureRoute);
+          }
+        }
         ed.WriteMessage("\nPlumbing fixture calculation completed successfully.");
         RoutingControl = new Routing(FullRoutes, BasePointLookup);
         var host = new ElementHost();
