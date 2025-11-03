@@ -51,6 +51,7 @@ namespace GMEPPlumbing {
         BasePointLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp);
         ConvertSiteComponents();
         FullRoutes.Clear();
+        SourceFixtureConnections.Clear();
 
         foreach (var source in Sources) {
           List<string> types = GetSourceOutputTypes(source);
