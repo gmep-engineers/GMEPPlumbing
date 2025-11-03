@@ -58,6 +58,37 @@ namespace GMEPPlumbing {
             TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
           }
         }
+        foreach (var kvp in FullRoutes) {
+          var routes = kvp.Value;
+          var sourceRoutesById = routes
+              .Where(fr => fr.RouteItems.FirstOrDefault() is PlumbingSource source && source.TypeId == 2)
+              .GroupBy(fr => ((PlumbingSource)fr.RouteItems.First()).Id)
+              .ToDictionary(
+                  g => g.Key,
+                  g => g.ToList()
+              );
+          var fixtureRoutesById = routes
+              .Where(fr => fr.RouteItems.LastOrDefault() is PlumbingFixture fixture && fixture.TypeAbbreviation == "WH")
+              .GroupBy(fr => ((PlumbingFixture)fr.RouteItems.Last()).Id)
+              .ToDictionary(
+                  g => g.Key,
+                  g => g.ToList()
+              );
+          foreach (var sourceKvp in sourceRoutesById.Keys.ToList()) {
+            ed.WriteMessage($"\nCombining fixture route for fixture {sourceKvp} with source route(s).");
+            if (fixtureRoutesById.TryGetValue(sourceKvp, out var fixtureRoutes)) {
+              var fixtureRoute = fixtureRoutes.FirstOrDefault();
+              if (fixtureRoute != null) {
+                foreach (var sourceRoute in sourceRoutesById[sourceKvp]) {
+                  sourceRoute.Length += fixtureRoute.Length;
+                  sourceRoute.RouteItems.InsertRange(0, fixtureRoute.RouteItems);
+                }
+              }
+
+            }
+          }
+
+          }
         ed.WriteMessage("\nPlumbing fixture calculation completed successfully.");
         RoutingControl = new Routing(FullRoutes, BasePointLookup);
         var host = new ElementHost();
