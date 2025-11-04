@@ -1,6 +1,7 @@
 ﻿using Org.BouncyCastle.Asn1.Mozilla;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -975,10 +976,22 @@ namespace GMEPPlumbing.Tools {
     public string PipeSize { get; set; } // e.g., "1/2\"", "3/4\""
     public string InnerDiameter { get; set; } = "";
   }
-  public class PipeTypeOption {
+  public class PipeTypeOption: INotifyPropertyChanged {
     public string PipeType { get; set; }
     public List<PressureLossOption> Options { get; set; }
-    public PressureLossOption ChosenOption { get; set; } = null;
+    public PressureLossOption chosenOption  = null;
+    public PressureLossOption ChosenOption {
+      get { return chosenOption; }
+      set {
+        chosenOption = value;
+        OnPropertyChanged(nameof(ChosenOption));
+      }
+    }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void OnPropertyChanged(string name) {
+      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
   }
   public class PressureLossOption {
     public double PressureLossPer100Ft { get; set; }
