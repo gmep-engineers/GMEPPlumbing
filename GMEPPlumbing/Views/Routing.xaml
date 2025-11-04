@@ -67,7 +67,54 @@
                                                         <RowDefinition Height="Auto"/>
                                                         <RowDefinition Height="*"/>
                                                         <RowDefinition Height="*"/>
-                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition>
+                                                            <RowDefinition.Style>
+                                                                <Style TargetType="RowDefinition">
+                                                                    <Setter Property="Height" Value="0"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Value.EnableCopper}" Value="True">
+                                                                            <Setter Property="Height" Value="*"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </RowDefinition.Style>
+                                                        </RowDefinition>
+                                                        <RowDefinition>
+                                                            <RowDefinition.Style>
+                                                                <Style TargetType="RowDefinition">
+                                                                    <Setter Property="Height" Value="0"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Value.EnablePex}" Value="True">
+                                                                            <Setter Property="Height" Value="*"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </RowDefinition.Style>
+                                                        </RowDefinition>
+                                                        <RowDefinition>
+                                                            <RowDefinition.Style>
+                                                                <Style TargetType="RowDefinition">
+                                                                    <Setter Property="Height" Value="0"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Value.EnableCPVCSDRII}" Value="True">
+                                                                            <Setter Property="Height" Value="*"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </RowDefinition.Style>
+                                                        </RowDefinition>
+                                                        <RowDefinition>
+                                                            <RowDefinition.Style>
+                                                                <Style TargetType="RowDefinition">
+                                                                    <Setter Property="Height" Value="0"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Value.EnableCPVCSCH80}" Value="True">
+                                                                            <Setter Property="Height" Value="*"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </RowDefinition.Style>
+                                                        </RowDefinition>
                                                     </Grid.RowDefinitions>
                                                     <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
                                                         <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
@@ -126,6 +173,27 @@
                                                         </StackPanel>
                                                     </Border>
                                                     <ComboBox Grid.Row="8" ItemsSource="{Binding Value.Chart.CopperTypeLChart.Options}" SelectedItem="{Binding Value.Chart.CopperTypeLChart.ChosenOption, Mode=TwoWay}">
+                                                        <ComboBox.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding PressureLossPer100Ft, StringFormat='Pressure Loss: {0} PSI/100ft'}"/>
+                                                            </DataTemplate>
+                                                        </ComboBox.ItemTemplate>
+                                                    </ComboBox>
+                                                    <ComboBox Grid.Row="9" ItemsSource="{Binding Value.Chart.PEXChart.Options}" SelectedItem="{Binding Value.Chart.PEXChart.ChosenOption, Mode=TwoWay}">
+                                                        <ComboBox.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding PressureLossPer100Ft, StringFormat='Pressure Loss: {0} PSI/100ft'}"/>
+                                                            </DataTemplate>
+                                                        </ComboBox.ItemTemplate>
+                                                    </ComboBox>
+                                                    <ComboBox Grid.Row="10" ItemsSource="{Binding Value.Chart.CPVCSDRIIChart.Options}" SelectedItem="{Binding Value.Chart.CPVCSDRIIChart.ChosenOption, Mode=TwoWay}">
+                                                        <ComboBox.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding PressureLossPer100Ft, StringFormat='Pressure Loss: {0} PSI/100ft'}"/>
+                                                            </DataTemplate>
+                                                        </ComboBox.ItemTemplate>
+                                                    </ComboBox>
+                                                    <ComboBox Grid.Row="11" ItemsSource="{Binding Value.Chart.CPVCSCH80Chart.Options}" SelectedItem="{Binding Value.Chart.CPVCSCH80Chart.ChosenOption, Mode=TwoWay}">
                                                         <ComboBox.ItemTemplate>
                                                             <DataTemplate>
                                                                 <TextBlock Text="{Binding PressureLossPer100Ft, StringFormat='Pressure Loss: {0} PSI/100ft'}"/>

@@ -676,6 +676,10 @@ namespace GMEPPlumbing {
     private double _developedSystemLength;
     private double _averagePressureDrop;
     private string _sourceId;
+    private bool _enableCopper = false;
+    private bool _enablePex = false;
+    private bool _enableCPVCSDRII = false;
+    private bool _enableCPVCSCH80 = false;
     public WaterPipeSizingChart Chart { get; set; } = new WaterPipeSizingChart();
 
     public string Description {
@@ -706,6 +710,23 @@ namespace GMEPPlumbing {
       get => _sourceId;
       set { if (_sourceId != value) { _sourceId = value; OnPropertyChanged(); } }
     }
+    public bool EnableCopper {
+      get => _enableCopper;
+      set { if (_enableCopper != value) { _enableCopper = value; OnPropertyChanged(); } }
+    }
+    public bool EnablePex {
+      get => _enablePex;
+      set { if (_enablePex != value) { _enablePex = value; OnPropertyChanged(); } }
+    }
+    public bool EnableCPVCSDRII {
+      get => _enableCPVCSDRII;
+      set { if (_enableCPVCSDRII != value) { _enableCPVCSDRII = value; OnPropertyChanged(); } }
+    }
+    public bool EnableCPVCSCH80 {
+      get => _enableCPVCSCH80;
+      set { if (_enableCPVCSCH80 != value) { _enableCPVCSCH80 = value; OnPropertyChanged(); } }
+    }
+
 
     public ObservableCollection<WaterLoss> Losses { get; } = new ObservableCollection<WaterLoss>();
     public ObservableCollection<WaterAddition> Additions { get; } = new ObservableCollection<WaterAddition>();

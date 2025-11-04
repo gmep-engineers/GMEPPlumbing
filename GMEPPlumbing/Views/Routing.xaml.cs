@@ -875,6 +875,7 @@ namespace GMEPPlumbing.Views
     public async Task GenerateWaterCalculators() {
       WaterCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
+
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
           IsCalculatorEnabled = true;
           if (!WaterCalculators.ContainsKey(plumbingSource.Id)) {
@@ -899,6 +900,29 @@ namespace GMEPPlumbing.Views
               waterAdditions = info.Item4;
             }
             WaterCalculators[plumbingSource.Id] = new WaterCalculator(plumbingSource.Id, name, minSourcePressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
+            foreach (var item in fullRoute.RouteItems) {
+              string pipeType = "";
+              if (item is PlumbingHorizontalRoute hr && !string.IsNullOrEmpty(hr.PipeType))
+                pipeType = hr.PipeType;
+              else if (item is PlumbingVerticalRoute vr && !string.IsNullOrEmpty(vr.PipeType))
+                pipeType = vr.PipeType;
+              if (!string.IsNullOrEmpty(pipeType)) {
+                switch (pipeType) {
+                  case "Copper":
+                    WaterCalculators[plumbingSource.Id].EnableCopper = true;
+                    break;
+                  case "PEX":
+                    WaterCalculators[plumbingSource.Id].EnablePex = true;
+                    break;
+                  case "CPVCSCH80":
+                    WaterCalculators[plumbingSource.Id].EnableCPVCSCH80 = true;
+                    break;
+                  case "CPVCSDRII":
+                    WaterCalculators[plumbingSource.Id].EnableCPVCSDRII = true;
+                    break;
+                }
+              }
+            }
           }
         }
       }
