@@ -754,7 +754,7 @@ namespace GMEPPlumbing.Views
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems.Count == 0) continue;
         double psi = 0;
-        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
           string sourceId = plumbingSource.Id;
           psi = WaterCalculators[sourceId].AveragePressureDrop;
         }
