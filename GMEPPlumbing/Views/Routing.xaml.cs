@@ -875,7 +875,7 @@ namespace GMEPPlumbing.Views
     public async Task GenerateWaterCalculators() {
       WaterCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
-        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
           IsCalculatorEnabled = true;
           if (!WaterCalculators.ContainsKey(plumbingSource.Id)) {
             ObservableCollection<WaterLoss> waterLosses = new ObservableCollection<WaterLoss>();
@@ -883,23 +883,13 @@ namespace GMEPPlumbing.Views
             double maxLength = FullRoutes
               .Where(r => r.RouteItems.Count > 0
                   && r.RouteItems[0] is PlumbingSource src
-                  && src.Id == plumbingSource.Id)
+                  && src.Id == plumbingSource.Id && r.RouteItems.Last() is PlumbingFixture fixture && IsColdWaterFixture(fixture.BlockName))
               .Max(r => r.Length);
-            string name = "";
-            switch(plumbingSource.TypeId) {
-              case 1:
-                name = "Water Meter";
-                break;
-              case 2:
-                name = "Water Heater";
-                break;
-              case 3:
-                name = "Gas Meter";
-                break;
-              case 4:
-                name = "Waste Output";
-                break;
+            string name = "Water Meter";
+            if (plumbingSource.BlockName == "GMEP PLUMBING POINT OF CONNECTION") {
+              name = "Cold Water - Point of Connection";
             }
+           
             double minSourcePressure =  plumbingSource.Pressure;
             Tuple<string, double, ObservableCollection<WaterLoss>, ObservableCollection<WaterAddition>> info  = await ServiceLocator.MariaDBService.GetPlumbingWaterCalculations(plumbingSource.Id);
             if (info != null) {
@@ -912,6 +902,16 @@ namespace GMEPPlumbing.Views
           }
         }
       }
+    }
+    public bool IsColdWaterFixture(string blockName) {
+      var coldWater = new List<string> {
+          "GMEP WH 80",
+          "GMEP WH 50",
+          "GMEP IWH",
+          "GMEP CW FIXTURE POINT",
+          "GMEP CP"
+      };
+      return coldWater.Contains(blockName.ToUpper());
     }
     public async Task GenerateGasCalculators() {
      GasCalculators.Clear();
