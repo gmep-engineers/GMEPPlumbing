@@ -67,6 +67,7 @@
                                                         <RowDefinition Height="Auto"/>
                                                         <RowDefinition Height="*"/>
                                                         <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="*"/>
                                                     </Grid.RowDefinitions>
                                                     <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
                                                         <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
@@ -124,6 +125,13 @@
                                                             <TextBox IsEnabled="False" Text="{Binding Value.AveragePressureDrop}"/>
                                                         </StackPanel>
                                                     </Border>
+                                                    <ComboBox Grid.Row="8" ItemsSource="{Binding Value.Chart.CopperTypeLChart.Options}" SelectedItem="{Binding Value.Chart.CopperTypeLChart.ChosenOption, Mode=TwoWay}">
+                                                        <ComboBox.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding PressureLossPer100Ft, StringFormat='Pressure Loss: {0} PSI/100ft'}"/>
+                                                            </DataTemplate>
+                                                        </ComboBox.ItemTemplate>
+                                                    </ComboBox>
                                                 </Grid>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>

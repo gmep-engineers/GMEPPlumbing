@@ -676,7 +676,7 @@ namespace GMEPPlumbing {
     private double _developedSystemLength;
     private double _averagePressureDrop;
     private string _sourceId;
-    public WaterPipeSizingChart Chart = new WaterPipeSizingChart();
+    public WaterPipeSizingChart Chart { get; set; } = new WaterPipeSizingChart();
 
     public string Description {
       get => _description;
