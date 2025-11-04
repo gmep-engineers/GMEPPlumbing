@@ -676,6 +676,7 @@ namespace GMEPPlumbing {
     private double _developedSystemLength;
     private double _averagePressureDrop;
     private string _sourceId;
+    public WaterPipeSizingChart Chart = new WaterPipeSizingChart();
 
     public string Description {
       get => _description;
@@ -747,6 +748,10 @@ namespace GMEPPlumbing {
       AvailableFrictionPressure = totalPressure;
       // Update the average pressure drop
       AveragePressureDrop = (totalPressure / DevelopedSystemLength) * 100;
+      PickCharts();
+    }
+    public void PickCharts() {
+      Chart.PickCharts(AveragePressureDrop);
     }
 
     private void Losses_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {

@@ -748,15 +748,17 @@ namespace GMEPPlumbing.Views
       GenerateScenes();
     }
 
-
     public void GenerateWaterPipeSizing() {
-      WaterPipeSizingChart chart = new WaterPipeSizingChart();
+     // WaterPipeSizingChart chart = new WaterPipeSizingChart();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems.Count == 0) continue;
-        double psi = 0;
+        WaterCalculator waterCalculator = null;
         if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
           string sourceId = plumbingSource.Id;
-          psi = WaterCalculators[sourceId].AveragePressureDrop;
+          waterCalculator = WaterCalculators[sourceId];
+        }
+        if (waterCalculator == null) {
+          continue;
         }
         foreach (var item in fullRoute.RouteItems) {
           if (item is PlumbingHorizontalRoute horizontalRoute && (horizontalRoute.Type == "Cold Water" || horizontalRoute.Type == "Hot Water")) {
@@ -765,9 +767,8 @@ namespace GMEPPlumbing.Views
               isHot = true;
             }
             horizontalRoute.GenerateGallonsPerMinute();
-            horizontalRoute.PipeSize = chart.FindSize(
+            horizontalRoute.PipeSize = waterCalculator.Chart.FindSize(
               horizontalRoute.PipeType,
-              psi,
               isHot,
               horizontalRoute.GPM
             );
@@ -778,9 +779,8 @@ namespace GMEPPlumbing.Views
               isHot = true;
             }
             verticalRoute.GenerateGallonsPerMinute();
-            verticalRoute.PipeSize = chart.FindSize(
+            verticalRoute.PipeSize = waterCalculator.Chart.FindSize(
               verticalRoute.PipeType,
-              psi,
               isHot,
               verticalRoute.GPM
             );
