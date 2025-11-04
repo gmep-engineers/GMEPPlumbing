@@ -76,6 +76,7 @@ namespace GMEPPlumbing {
                   g => g.Key,
                   g => g.ToList()
               );
+          List<PlumbingFullRoute> routesToRemove = new List<PlumbingFullRoute>();
           ed.WriteMessage($"\nfixtures: {fixtureRoutesById.Count} sources {sourceRoutesById.Count}");
           foreach (var sourceKvp in sourceRoutesById.Keys.ToList()) {
             if (fixtureRoutesById.TryGetValue(sourceKvp, out var fixtureRoutes)) {
@@ -89,10 +90,6 @@ namespace GMEPPlumbing {
               }
 
             }
-          }
-          var allFixtureRoutes = fixtureRoutesById.Values.SelectMany(list => list).ToList();
-          foreach (var fixtureRoute in allFixtureRoutes) {
-            kvp.Value.Remove(fixtureRoute);
           }
         }
         ed.WriteMessage("\nPlumbing fixture calculation completed successfully.");
