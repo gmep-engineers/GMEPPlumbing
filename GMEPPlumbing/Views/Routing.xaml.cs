@@ -54,6 +54,26 @@ namespace GMEPPlumbing.Views
       item?.OnClick();
       e.Handled = false; 
     }
+
+    private void InnerControl_PreviewMouseWheel(object sender, MouseWheelEventArgs e) {
+      var scrollViewer = FindParent<ScrollViewer>(sender as DependencyObject);
+      if (scrollViewer != null) {
+        if (e.Delta != 0) {
+          scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta);
+          e.Handled = true;
+        }
+      }
+    }
+
+    public static T FindParent<T>(DependencyObject child) where T : DependencyObject {
+      DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+      if (parentObject == null) return null;
+      T parent = parentObject as T;
+      if (parent != null)
+        return parent;
+      else
+        return FindParent<T>(parentObject);
+    }
   }
 
   public class Scene : INotifyPropertyChanged {
@@ -1450,4 +1470,5 @@ namespace GMEPPlumbing.Views
   public class ServiceLocator {
     public static MariaDBService MariaDBService { get; } = new MariaDBService();
   }
+
 }
