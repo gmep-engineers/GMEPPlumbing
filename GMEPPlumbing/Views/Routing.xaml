@@ -11,6 +11,7 @@
     <UserControl.Resources>
         <local:AddOneConverter x:Key="AddOneConverter"/>
         <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <local:GPMToFUConverter x:Key="GPMToFUConverter"/>
         <Style x:Key="RotatedTabHeaderStyle" TargetType="TabItem">
             <Setter Property="HeaderTemplate">
                 <Setter.Value>
@@ -180,13 +181,41 @@
                                                                 </Grid.RowDefinitions>
                                                                 <StackPanel Grid.Row="0" Orientation="Vertical">
                                                                     <TextBlock Text="Copper Chart:" FontWeight="Bold" Margin="5" HorizontalAlignment="Center"/>
-                                                                    <ComboBox  ItemsSource="{Binding Value.Chart.CopperTypeLChart.Options}" SelectedItem="{Binding Value.Chart.CopperTypeLChart.ChosenOption, Mode=TwoWay}">
-                                                                        <ComboBox.ItemTemplate>
-                                                                            <DataTemplate>
-                                                                                <TextBlock Text="{Binding PressureLossPer100Ft, StringFormat='Pressure Loss: {0} PSI/100ft'}" HorizontalAlignment="Center"/>
-                                                                            </DataTemplate>
-                                                                        </ComboBox.ItemTemplate>
-                                                                    </ComboBox>
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <ComboBox Grid.Column="0" ItemsSource="{Binding Value.Chart.CopperTypeLChart.Options}" SelectedItem="{Binding Value.Chart.CopperTypeLChart.ChosenOption, Mode=TwoWay}">
+                                                                            <ComboBox.ItemTemplate>
+                                                                                <DataTemplate>
+                                                                                    <StackPanel>
+                                                                                        <TextBlock Text="{Binding PressureLossPer100Ft, StringFormat='Pressure Loss: {0} PSI/100ft'}" HorizontalAlignment="Center"/>
+                                                                                    </StackPanel>
+                                                                                </DataTemplate>
+                                                                            </ComboBox.ItemTemplate>
+                                                                        </ComboBox>
+                                                                        <DataGrid Grid.Column="1" x:Name="PipeSizingChartGrid"
+                                                                            ItemsSource="{Binding Value.Chart.CopperTypeLChart.ChosenOption.Entries}"
+                                                                            AutoGenerateColumns="False"
+                                                                            CanUserAddRows="False"
+                                                                            CanUserDeleteRows="False"
+                                                                            HeadersVisibility="Column"
+                                                                            Margin="10"
+                                                                            GridLinesVisibility="All"
+                                                                            RowHeight="30"
+                                                                            FontFamily="Consolas"
+                                                                            FontSize="16">
+                                                                            <DataGrid.Columns>
+                                                                                <DataGridTextColumn Width="*" Header="PIPE SIZE" Binding="{Binding PipeSize}" />
+                                                                                <DataGridTextColumn Width="*" Header="TANK FU" Binding="{Binding ColdGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                <DataGridTextColumn Width="*" Header="F.V. FU" Binding="{Binding ColdGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=2}" />
+                                                                                <DataGridTextColumn Width="*" Header="GPM" Binding="{Binding ColdGPM}" />
+                                                                                <DataGridTextColumn Width="*" Header="TANK FU - HOT" Binding="{Binding HotGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                <DataGridTextColumn Width="*" Header="GPM - HOT" Binding="{Binding HotGPM}" />
+                                                                            </DataGrid.Columns>
+                                                                        </DataGrid>
+                                                                    </Grid>
                                                                 </StackPanel>
                                                                 <StackPanel Grid.Row="1"  Orientation="Vertical">
                                                                     <TextBlock Text="PEX Chart:" FontWeight="Bold" Margin="5" HorizontalAlignment="Center"/>
