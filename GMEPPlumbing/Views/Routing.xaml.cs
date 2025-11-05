@@ -56,6 +56,9 @@ namespace GMEPPlumbing.Views
     }
 
     private void InnerControl_PreviewMouseWheel(object sender, MouseWheelEventArgs e) {
+      if (IsMouseOverComboBoxPopup())
+        return;
+
       var scrollViewer = FindParent<ScrollViewer>(sender as DependencyObject);
       if (scrollViewer != null) {
         if (e.Delta != 0) {
@@ -64,6 +67,32 @@ namespace GMEPPlumbing.Views
         }
       }
     }
+    private bool IsMouseOverComboBoxPopup() {
+      foreach (var obj in FindVisualChildren<ComboBox>(this)) {
+        if (obj.IsDropDownOpen) {
+          var popup = obj.Template.FindName("PART_Popup", obj) as System.Windows.Controls.Primitives.Popup;
+          if (popup != null && popup.Child != null && popup.Child.IsMouseOver)
+            return true;
+        }
+      }
+      return false;
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject {
+      if (depObj != null) {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++) {
+          DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
+          if (child != null && child is T t) {
+            yield return t;
+          }
+
+          foreach (T childOfChild in FindVisualChildren<T>(child)) {
+            yield return childOfChild;
+          }
+        }
+      }
+    }
+    
 
     public static T FindParent<T>(DependencyObject child) where T : DependencyObject {
       DependencyObject parentObject = VisualTreeHelper.GetParent(child);

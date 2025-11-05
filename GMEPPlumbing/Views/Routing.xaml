@@ -62,7 +62,7 @@
                                     </Grid.RowDefinitions>
                                     <ScrollViewer Grid.Row="0" MaxHeight="400" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                         <StackPanel Orientation="Vertical">
-                                            <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch" PreviewMouseWheel="InnerControl_PreviewMouseWheel">
+                                            <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch" PreviewMouseWheel="InnerControl_PreviewMouseWheel">
                                                 <ListBox.ItemTemplate>
                                                     <DataTemplate>
                                                         <Grid Background="White" Margin="0 0 0 20">
@@ -255,7 +255,7 @@
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
                                             </ListBox>
-                                            <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding GasCalculators}" HorizontalContentAlignment="Stretch" PreviewMouseWheel="InnerControl_PreviewMouseWheel">
+                                            <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding GasCalculators}" HorizontalContentAlignment="Stretch" PreviewMouseWheel="InnerControl_PreviewMouseWheel">
                                                 <ListBox.ItemTemplate>
                                                     <DataTemplate>
                                                         <Grid Background="White" Margin="0 0 0 20">
