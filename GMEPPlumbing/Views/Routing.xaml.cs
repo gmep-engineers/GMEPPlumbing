@@ -103,6 +103,20 @@ namespace GMEPPlumbing.Views
       else
         return FindParent<T>(parentObject);
     }
+
+    private void CalcExpander_Collapsed(object sender, RoutedEventArgs e) {
+      var expander = sender as Expander;
+      if (expander == null) return;
+      var parent = VisualTreeHelper.GetParent(expander);
+      while (parent != null && !(parent is Grid))
+        parent = VisualTreeHelper.GetParent(parent);
+
+      var grid = parent as Grid;
+      if (grid == null || grid.RowDefinitions.Count < 4) return;
+
+      grid.RowDefinitions[1].Height = GridLength.Auto;
+      grid.RowDefinitions[3].Height = new GridLength(1, GridUnitType.Star);
+    }
   }
 
   public class Scene : INotifyPropertyChanged {
