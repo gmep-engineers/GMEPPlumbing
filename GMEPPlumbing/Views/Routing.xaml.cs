@@ -892,7 +892,7 @@ namespace GMEPPlumbing.Views
             }
            
             double minSourcePressure =  plumbingSource.Pressure;
-            Tuple<string, double, ObservableCollection<WaterLoss>, ObservableCollection<WaterAddition>> info  = await ServiceLocator.MariaDBService.GetPlumbingWaterCalculations(plumbingSource.Id);
+            Tuple<string, double, ObservableCollection<WaterLoss>, ObservableCollection<WaterAddition>, Tuple<int, int, int, int>> info  = await ServiceLocator.MariaDBService.GetPlumbingWaterCalculations(plumbingSource.Id);
             if (info != null) {
               name = info.Item1;
               minSourcePressure = info.Item2;
@@ -900,6 +900,9 @@ namespace GMEPPlumbing.Views
               waterAdditions = info.Item4;
             }
             WaterCalculators[plumbingSource.Id] = new WaterCalculator(plumbingSource.Id, name, minSourcePressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
+            if (info != null) {
+              WaterCalculators[plumbingSource.Id].PickChartParameters(info.Item5);
+            }
             foreach (var item in fullRoute.RouteItems) {
               string pipeType = "";
               if (item is PlumbingHorizontalRoute hr && !string.IsNullOrEmpty(hr.PipeType))

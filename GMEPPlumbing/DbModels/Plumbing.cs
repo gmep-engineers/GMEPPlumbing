@@ -811,6 +811,12 @@ namespace GMEPPlumbing {
         DeterminePressure();
       }
     }
+    public void PickChartParameters(Tuple<int,int,int,int> info) {
+      Chart.CopperTypeLChart.ChosenOption = Chart.CopperTypeLChart.Options[info.Item1];
+      Chart.PEXChart.ChosenOption = Chart.PEXChart.Options[info.Item2];
+      Chart.CPVCSDRIIChart.ChosenOption = Chart.CPVCSDRIIChart.Options[info.Item3];
+      Chart.CPVCSCH80Chart.ChosenOption = Chart.CPVCSCH80Chart.Options[info.Item4];
+    }
 
     public event PropertyChangedEventHandler PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
