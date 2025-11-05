@@ -683,7 +683,7 @@ namespace GMEPPlumbing.Tools {
       } }
     } };
     public PipeTypeOption CopperTypeLChart { get; set; } = new PipeTypeOption { PipeType = "Copper", Options = new List<PressureLossOption>() {
-      new PressureLossOption { PressureLossPer100Ft = 4, Entries = new List<WaterPipeSizingEntry>{
+      new PressureLossOption { PressureLossPer100Ft = 1, Entries = new List<WaterPipeSizingEntry>{
         new WaterPipeSizingEntry { PipeSize = "3/4\"", ColdGPM = 2.5, HotGPM = 2 },
         new WaterPipeSizingEntry { PipeSize = "1\"", ColdGPM = 5, HotGPM = 5},
         new WaterPipeSizingEntry { PipeSize = "1-1/4\"", ColdGPM = 9, HotGPM = 9},
