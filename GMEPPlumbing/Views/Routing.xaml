@@ -321,6 +321,7 @@
                                                                 <RowDefinition Height="Auto"/>
                                                                 <RowDefinition Height="*"/>
                                                                 <RowDefinition Height="*"/>
+                                                                <RowDefinition Height="*"/>
                                                             </Grid.RowDefinitions>
                                                             <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70" Background="#FF6E6E70">
                                                                 <StackPanel HorizontalAlignment="Center" Orientation="Vertical" Margin="0 5 0 5">
@@ -350,6 +351,7 @@
                                                                 <TextBlock HorizontalAlignment="Center" Text="{Binding Value.ChosenChart.GasType}" Margin="0,5,0,0"/>
                                                                 <TextBlock HorizontalAlignment="Center" Text="{Binding Value.ChosenChart.Name}"/>
                                                             </StackPanel>
+                                                            <DataGrid Grid.Row="3" ItemsSource="{Binding Value.ChosenChart.CsvTable.DefaultView}" AutoGenerateColumns="True" />
                                                         </Grid>
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>

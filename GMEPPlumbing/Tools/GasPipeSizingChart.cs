@@ -6,6 +6,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections.ObjectModel;
+using System.Data;
+using CsvHelper;
+using System.Globalization;
 
 namespace GMEPPlumbing.Tools {
   public class GasPipeSizingChart {
@@ -14,6 +18,7 @@ namespace GMEPPlumbing.Tools {
     public string GasType { get; set; } = string.Empty;
     public int ChartIndex { get; set; } = 0;
     public string Name { get; set; }
+    public DataTable CsvTable { get; set; } = new DataTable();
     public GasPipeSizingChart(string gasType, string pipeType, int chartIndex, string name) {
       SetChartPath(gasType, pipeType, chartIndex);
       Name = name;
@@ -42,6 +47,7 @@ namespace GMEPPlumbing.Tools {
       }
       string chart = "Chart" + chartIndex.ToString() + ".csv";
       filePath = System.IO.Path.Combine(filePath, chart);
+      LoadCsv(filePath);
 
       FilePath = filePath;
       PipeType = pipeType;
@@ -121,6 +127,37 @@ namespace GMEPPlumbing.Tools {
         }
       }
       return gasEntry;
+    }
+    public void LoadCsv(string filePath) {
+      CsvTable.Clear();
+      CsvTable.Columns.Clear();
+
+      var lines = File.ReadAllLines(filePath);
+      if (lines.Length < 4) return; // Need at least 3 header rows + 1 data row
+
+      var header1 = lines[0].Split(',');
+      var header2 = lines[1].Split(',');
+      var header3 = lines[2].Split(',');
+
+      int colCount = Math.Max(header1.Length, Math.Max(header2.Length, header3.Length));
+
+      // Combine headers with newline separator
+      for (int i = 0; i < colCount; i++) {
+        string h1 = i < header1.Length ? header1[i] : "";
+        string h2 = i < header2.Length ? header2[i] : "";
+        string h3 = i < header3.Length ? header3[i] : "";
+        string combined = $"{h1}\n{h2}\n{h3}".Trim('\n');
+        CsvTable.Columns.Add(combined);
+      }
+
+      // Add data rows
+      for (int i = 3; i < lines.Length; i++) {
+        var row = lines[i].Split(',');
+        // Pad row if short
+        if (row.Length < colCount)
+          row = row.Concat(Enumerable.Repeat("", colCount - row.Length)).ToArray();
+        CsvTable.Rows.Add(row);
+      }
     }
   }
   public class GasEntry {
