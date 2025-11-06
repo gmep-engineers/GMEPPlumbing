@@ -105,17 +105,34 @@ namespace GMEPPlumbing.Views
     }
 
     private void CalcExpander_Collapsed(object sender, RoutedEventArgs e) {
-      var expander = sender as Expander;
-      if (expander == null) return;
-      var parent = VisualTreeHelper.GetParent(expander);
-      while (parent != null && !(parent is Grid))
-        parent = VisualTreeHelper.GetParent(parent);
+      if (sender is Expander expander && expander.Name == "CalcExpander") {
+        if (expander == null) return;
+        var parent = VisualTreeHelper.GetParent(expander);
+        while (parent != null && !(parent is Grid))
+          parent = VisualTreeHelper.GetParent(parent);
 
-      var grid = parent as Grid;
-      if (grid == null || grid.RowDefinitions.Count < 4) return;
+        var grid = parent as Grid;
+        if (grid == null || grid.RowDefinitions.Count < 4) return;
 
-      grid.RowDefinitions[1].Height = GridLength.Auto;
-      grid.RowDefinitions[3].Height = new GridLength(1, GridUnitType.Star);
+        grid.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
+        grid.RowDefinitions[3].Height = new GridLength(20, GridUnitType.Star);
+      }
+      e.Handled = true;
+    }
+    private void CalcExpander_Expanded(object sender, RoutedEventArgs e) {
+      if (sender is Expander expander && expander.Name == "CalcExpander") {
+        if (expander == null) return;
+        var parent = VisualTreeHelper.GetParent(expander);
+        while (parent != null && !(parent is Grid))
+          parent = VisualTreeHelper.GetParent(parent);
+
+        var grid = parent as Grid;
+        if (grid == null || grid.RowDefinitions.Count < 4) return;
+
+        grid.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
+        grid.RowDefinitions[3].Height = new GridLength(1, GridUnitType.Star);
+      }
+      e.Handled = true;
     }
   }
 

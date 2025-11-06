@@ -40,7 +40,7 @@
                             <RowDefinition>
                                 <RowDefinition.Style>
                                     <Style TargetType="RowDefinition">
-                                        <Setter Property="Height" Value="Auto"/>
+                                        <Setter Property="Height" Value="*"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsCalculatorEnabled}" Value="False">
                                                 <Setter Property="Height" Value="0"/>
@@ -50,10 +50,10 @@
                                 </RowDefinition.Style>
                             </RowDefinition>
                             <RowDefinition Height="5"/>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="20*"/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Name}" Margin="0,0,0,5"/>
-                        <Expander x:Name="CalcExpander" Grid.Row="1"  Header="Calculations" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1" Collapsed="CalcExpander_Collapsed">
+                        <Expander x:Name="CalcExpander" Grid.Row="1"  Header="Calculations" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1" Collapsed="CalcExpander_Collapsed" Expanded="CalcExpander_Expanded">
                             <Expander.Content>
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -77,9 +77,8 @@
                                                                 <RowDefinition Height="*"/>
                                                                 <RowDefinition Height="Auto"/>
                                                             </Grid.RowDefinitions>
-                                                            <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                            <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70" Background="#FF6E6E70">
                                                                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
-                                                                    <TextBlock Text="Name: " Margin="5,0,0,0"/>
                                                                     <TextBox Text="{Binding Value.Description, Mode=TwoWay}" MinWidth="100"/>
                                                                 </StackPanel>
                                                             </Border>
@@ -101,7 +100,7 @@
                                                                     <TextBox IsEnabled="False" Text="{Binding Value.DevelopedSystemLength}"/>
                                                                 </StackPanel>
                                                             </Border>
-                                                            <Expander Grid.Row="4" HorizontalAlignment="Stretch" Header="Losses"  IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+                                                            <Expander Grid.Row="4" HorizontalAlignment="Stretch" Header="Losses"  IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1" Collapsed="CalcExpander_Collapsed" Expanded="CalcExpander_Expanded">
                                                                 <Expander.Content>
                                                                     <DataGrid ItemsSource="{Binding Value.Losses}" ColumnWidth="*" AutoGenerateColumns="False">
                                                                         <DataGrid.Columns>
@@ -111,7 +110,7 @@
                                                                     </DataGrid>
                                                                 </Expander.Content>
                                                             </Expander>
-                                                            <Expander Grid.Row="5"  HorizontalAlignment="Stretch" Header="Additions" IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+                                                            <Expander Grid.Row="5"  HorizontalAlignment="Stretch" Header="Additions" IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1" Collapsed="CalcExpander_Collapsed" Expanded="CalcExpander_Expanded">
                                                                 <Expander.Content>
                                                                     <DataGrid ItemsSource="{Binding Value.Additions}" ColumnWidth="*" AutoGenerateColumns="False">
                                                                         <DataGrid.Columns>
@@ -133,7 +132,7 @@
                                                                     <TextBox IsEnabled="False" Text="{Binding Value.AveragePressureDrop}"/>
                                                                 </StackPanel>
                                                             </Border>
-                                                            <Expander Header="Charts" Background="LightGray" IsExpanded="False" Grid.Row="8">
+                                                            <Expander Header="Charts" Background="LightGray" IsExpanded="False" Grid.Row="8" Collapsed="CalcExpander_Collapsed" Expanded="CalcExpander_Expanded">
                                                                 <Expander.Content>
                                                                     <Grid>
                                                                         <Grid.RowDefinitions>
