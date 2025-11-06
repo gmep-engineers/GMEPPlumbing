@@ -565,12 +565,12 @@ namespace GMEPPlumbing {
         new MenuItemViewModel {
           Name = "Natural Gas",
           Children = new ObservableCollection<MenuItemViewModel>(){
-            new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 1)},
-            new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 3.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 2)},
-            new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 6.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 3)},
-            new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 4)},
-            new MenuItemViewModel { Name = "Inlet Pressure: 3.0 psi \nPressure Drop: 2.0 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 5)},
-            new MenuItemViewModel { Name = "Inlet Pressure: 5.0 psi \nPressure Drop: 3.5 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 6)},
+            new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 1, "Inlet Pressure: Less Than 2 psi - Pressure Drop: 0.5 in. w.c. \n Specific Gravity: 0.60")},
+            new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 3.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 2, "Inlet Pressure: Less Than 2 psi \nPressure Drop: 3.0 in. w.c. \nSpecific Gravity: 0.60")},
+            new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 6.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 3, "Inlet Pressure: Less Than 2 psi \nPressure Drop: 6.0 in. w.c. \nSpecific Gravity: 0.60")},
+            new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 4, "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi in. w.c. \nSpecific Gravity: 0.60")},
+            new MenuItemViewModel { Name = "Inlet Pressure: 3.0 psi \nPressure Drop: 2.0 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 5,  "Inlet Pressure: 3.0 psi \nPressure Drop: 2.0 psi in. w.c. \nSpecific Gravity: 0.60")},
+            new MenuItemViewModel { Name = "Inlet Pressure: 5.0 psi \nPressure Drop: 3.5 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 6, "Inlet Pressure: 5.0 psi \nPressure Drop: 3.5 psi in. w.c. \nSpecific Gravity: 0.60")},
           }
           /*Children = new ObservableCollection<MenuItemViewModel> {
             new MenuItemViewModel { Name = "Corrugated Stainless Steel Tubing", Children = new ObservableCollection<MenuItemViewModel>()
@@ -614,10 +614,10 @@ namespace GMEPPlumbing {
         new MenuItemViewModel {
           Name = "Propane",
           Children = new ObservableCollection<MenuItemViewModel>(){
-            new MenuItemViewModel { Name = "Inlet Pressure: 10.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 1)},
-            new MenuItemViewModel { Name = "Inlet Pressure: 10.0 psi \nPressure Drop: 3.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 2)},
-            new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 3)},
-            new MenuItemViewModel { Name = "Inlet Pressure: 11.0 in. w.c. \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 4)},
+            new MenuItemViewModel { Name = "Inlet Pressure: 10.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 1, "Inlet Pressure: 10.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50")},
+            new MenuItemViewModel { Name = "Inlet Pressure: 10.0 psi \nPressure Drop: 3.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 2, "Inlet Pressure: 10.0 psi \nPressure Drop: 3.0 psi \nSpecific Gravity: 1.50")},
+            new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 3, "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50")},
+            new MenuItemViewModel { Name = "Inlet Pressure: 11.0 in. w.c. \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 4, "Inlet Pressure: 11.0 in. w.c. \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 1.50")},
           }
           /*Children = new ObservableCollection<MenuItemViewModel> {
             new MenuItemViewModel { Name = "Corrugated Stainless Steel Tubing", Children = new ObservableCollection<MenuItemViewModel>()

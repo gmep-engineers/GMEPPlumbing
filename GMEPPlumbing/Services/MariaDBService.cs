@@ -946,12 +946,13 @@ namespace GMEPPlumbing.Services
       }
       return Tuple.Create(sourceName, minSourcePressure, losses, additions, Tuple.Create(copperIndex, pexIndex, cpvcsdriiIndex, cpvcsch80Index));
     }
-    public async Task<Tuple<string, string, int, string>> GetPlumbingGasCalculations(string sourceId) {
+    public async Task<Tuple<string, string, int, string, string>> GetPlumbingGasCalculations(string sourceId) {
       string sourceName = "";
       string gasType = "";
       int chartNo = 0;
       string pipeType = "";
       string tempSourceId = "";
+      string chartName = "";
 
       using (var conn = await OpenNewConnectionAsync()) {
         string query = "SELECT * FROM plumbing_gas_calculation_data WHERE source_id = @sourceId";
@@ -964,6 +965,7 @@ namespace GMEPPlumbing.Services
               chartNo = GetSafeInt(reader, "chart_no");
               pipeType = GetSafeString(reader, "pipe_type");
               tempSourceId = GetSafeString(reader, "source_id");
+              chartName = GetSafeString(reader, "chart_name");
             }
           }
         }
@@ -971,7 +973,7 @@ namespace GMEPPlumbing.Services
       if (tempSourceId == "") {
         return null;
       }
-      return Tuple.Create(sourceName, gasType, chartNo, pipeType);
+      return Tuple.Create(sourceName, gasType, chartNo, pipeType, chartName);
     }
     public async Task UpdatePlumbingGasCalculations(GasCalculator calculator) {
       using (var conn = await OpenNewConnectionAsync()) {
@@ -985,19 +987,21 @@ namespace GMEPPlumbing.Services
           }
             string query = @"
                 INSERT INTO plumbing_gas_calculation_data
-                (source_id, source_name, gas_type, pipe_type, chart_no)
-                VALUES (@sourceId, @sourceName, @gasType, @pipeType, @chartNo)
+                (source_id, source_name, gas_type, pipe_type, chart_no, chart_name)
+                VALUES (@sourceId, @sourceName, @gasType, @pipeType, @chartNo, @chartName)
                 ON DUPLICATE KEY UPDATE
                     source_name = @sourceName,
                     gas_type = @gasType,
                     pipe_type = @pipeType,
-                    chart_no = @chartNo";
+                    chart_no = @chartNo,
+                    chart_name = @chartName";
           using (var cmd = new MySqlCommand(query, conn)) {
             cmd.Parameters.AddWithValue("@sourceId", calculator.SourceId);
             cmd.Parameters.AddWithValue("@sourceName", calculator.Description);
             cmd.Parameters.AddWithValue("@gasType", calculator.ChosenChart.GasType);
             cmd.Parameters.AddWithValue("@pipeType", calculator.ChosenChart.PipeType);
             cmd.Parameters.AddWithValue("@chartNo", calculator.ChosenChart.ChartIndex);
+            cmd.Parameters.AddWithValue("@chartName", calculator.ChosenChart.Name);
             await cmd.ExecuteNonQueryAsync();
           }
           transaction.Commit();

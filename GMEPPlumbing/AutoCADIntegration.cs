@@ -125,19 +125,6 @@ namespace GMEPPlumbing
       doc.CommandEnded -= Doc_CommandEnded;
       // ... detach other handlers as needed ...
     }
-    [CommandMethod("TestGasChart")]
-    public void TestGasChart() {
-      var doc = Application.DocumentManager.MdiActiveDocument;
-      if (doc == null) return;
-
-      var db = doc.Database;
-      var ed = doc.Editor;
-      GasPipeSizingChart chart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 2);
-      GasEntry entry = chart.GetData(300, 31);
-      if (entry is SemiRigidCopperGasEntry copperEntry) {
-        ed.WriteMessage($"\nNominal KL: {copperEntry.NominalKL}, Nominal ACR: {copperEntry.NominalACR}, Outside: {copperEntry.OutsideDiameter}, Inside: {copperEntry.InsideDiameter}\n");
-      }
-    }
 
     [CommandMethod("PlumbingHorizontalRoute")]
     public void PlumbingHorizontalRoute() {

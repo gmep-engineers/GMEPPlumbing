@@ -13,8 +13,10 @@ namespace GMEPPlumbing.Tools {
     public string PipeType { get; set; } = string.Empty;
     public string GasType { get; set; } = string.Empty;
     public int ChartIndex { get; set; } = 0;
-    public GasPipeSizingChart(string gasType, string pipeType, int chartIndex) {
+    public string Name { get; set; }
+    public GasPipeSizingChart(string gasType, string pipeType, int chartIndex, string name) {
       SetChartPath(gasType, pipeType, chartIndex);
+      Name = name;
     }
     public void SetChartPath(string gasType, string pipeType, int chartIndex) {
       string directory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);

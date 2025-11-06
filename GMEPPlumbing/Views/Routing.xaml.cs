@@ -1043,9 +1043,9 @@ namespace GMEPPlumbing.Views
                 name = "Waste Output";
                 break;
             }
-            Tuple<string, string, int, string> info = await ServiceLocator.MariaDBService.GetPlumbingGasCalculations(plumbingSource.Id);
+            Tuple<string, string, int, string, string> info = await ServiceLocator.MariaDBService.GetPlumbingGasCalculations(plumbingSource.Id);
             if (info != null) {
-              GasPipeSizingChart gasChart = new GasPipeSizingChart(info.Item2, info.Item4, info.Item3);
+              GasPipeSizingChart gasChart = new GasPipeSizingChart(info.Item2, info.Item4, info.Item3, info.Item4);
               GasCalculators[plumbingSource.Id] = new GasCalculator(plumbingSource.Id, info.Item1, gasChart);
             }
             else {
