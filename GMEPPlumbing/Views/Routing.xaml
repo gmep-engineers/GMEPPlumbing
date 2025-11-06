@@ -187,7 +187,7 @@
                                                                         </Grid.RowDefinitions>
                                                                         <StackPanel Grid.Row="0" Orientation="Vertical">
                                                                             <TextBlock Text="Copper Chart:" FontWeight="Bold" Margin="5" HorizontalAlignment="Center"/>
-                                                                            <ComboBox Grid.Column="0" ItemsSource="{Binding Value.Chart.CopperTypeLChart.Options}" SelectedItem="{Binding Value.Chart.CopperTypeLChart.ChosenOption, Mode=TwoWay}">
+                                                                            <ComboBox ItemsSource="{Binding Value.Chart.CopperTypeLChart.Options}" SelectedItem="{Binding Value.Chart.CopperTypeLChart.ChosenOption, Mode=TwoWay}">
                                                                                 <ComboBox.ItemTemplate>
                                                                                     <DataTemplate>
                                                                                         <StackPanel>
@@ -196,7 +196,7 @@
                                                                                     </DataTemplate>
                                                                                 </ComboBox.ItemTemplate>
                                                                             </ComboBox>
-                                                                            <DataGrid Grid.Column="1" x:Name="PipeSizingChartGrid"
+                                                                            <DataGrid 
                                                                             ItemsSource="{Binding Value.Chart.CopperTypeLChart.ChosenOption.Entries}"
                                                                             AutoGenerateColumns="False"
                                                                             CanUserAddRows="False"
@@ -226,6 +226,25 @@
                                                                                     </DataTemplate>
                                                                                 </ComboBox.ItemTemplate>
                                                                             </ComboBox>
+                                                                            <DataGrid 
+                                                                                ItemsSource="{Binding Value.Chart.PEXChart.ChosenOption.Entries}"
+                                                                                AutoGenerateColumns="False"
+                                                                                CanUserAddRows="False"
+                                                                                CanUserDeleteRows="False"
+                                                                                HeadersVisibility="Column"
+                                                                                Margin="10"
+                                                                                GridLinesVisibility="All"
+                                                                                RowHeight="30"
+                                                                                FontFamily="Consolas"
+                                                                                FontSize="16">     
+                                                                                <DataGrid.Columns>
+                                                                                    <DataGridTextColumn Width="*" Header="PIPE SIZE" Binding="{Binding PipeSize}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU" Binding="{Binding ColdGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM" Binding="{Binding ColdGPM}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU - HOT" Binding="{Binding HotGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM - HOT" Binding="{Binding HotGPM}" />
+                                                                                </DataGrid.Columns>
+                                                                            </DataGrid>
                                                                         </StackPanel>
                                                                         <StackPanel Grid.Row="2" Orientation="Vertical">
                                                                             <TextBlock Text="CPVC SDRII Chart:" FontWeight="Bold" Margin="5" HorizontalAlignment="Center"/>
@@ -236,6 +255,26 @@
                                                                                     </DataTemplate>
                                                                                 </ComboBox.ItemTemplate>
                                                                             </ComboBox>
+                                                                            <DataGrid 
+                                                                                ItemsSource="{Binding Value.Chart.CPVCSDRIIChart.ChosenOption.Entries}"
+                                                                                AutoGenerateColumns="False"
+                                                                                CanUserAddRows="False"
+                                                                                CanUserDeleteRows="False"
+                                                                                HeadersVisibility="Column"
+                                                                                Margin="10"
+                                                                                GridLinesVisibility="All"
+                                                                                RowHeight="30"
+                                                                                FontFamily="Consolas"
+                                                                                FontSize="16">      
+                                                                                <DataGrid.Columns>
+                                                                                    <DataGridTextColumn Width="*" Header="NOMINAL DIAMETER" Binding="{Binding PipeSize}" />
+                                                                                    <DataGridTextColumn Width="*" Header="INNER DIAMETER" Binding="{Binding InnerDiameter}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU" Binding="{Binding ColdGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM" Binding="{Binding ColdGPM}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU - HOT" Binding="{Binding HotGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM - HOT" Binding="{Binding HotGPM}" />
+                                                                                </DataGrid.Columns>
+                                                                            </DataGrid>
                                                                         </StackPanel>
                                                                         <StackPanel Grid.Row="3" Orientation="Vertical">
                                                                             <TextBlock Text="CPVC SCH80 Chart:" FontWeight="Bold" Margin="5" HorizontalAlignment="Center"/>
@@ -246,6 +285,26 @@
                                                                                     </DataTemplate>
                                                                                 </ComboBox.ItemTemplate>
                                                                             </ComboBox>
+                                                                            <DataGrid 
+                                                                                ItemsSource="{Binding Value.Chart.CPVCSCH80Chart.ChosenOption.Entries}"
+                                                                                AutoGenerateColumns="False"
+                                                                                CanUserAddRows="False"
+                                                                                CanUserDeleteRows="False"
+                                                                                HeadersVisibility="Column"
+                                                                                Margin="10"
+                                                                                GridLinesVisibility="All"
+                                                                                RowHeight="30"
+                                                                                FontFamily="Consolas"
+                                                                                FontSize="16">
+                                                                                <DataGrid.Columns>
+                                                                                    <DataGridTextColumn Width="*" Header="NOMINAL DIAMETER" Binding="{Binding PipeSize}" />
+                                                                                    <DataGridTextColumn Width="*" Header="INNER DIAMETER" Binding="{Binding InnerDiameter}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU" Binding="{Binding ColdGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM" Binding="{Binding ColdGPM}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU - HOT" Binding="{Binding HotGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM - HOT" Binding="{Binding HotGPM}" />
+                                                                                </DataGrid.Columns>
+                                                                            </DataGrid>
                                                                         </StackPanel>
                                                                     </Grid>
                                                                 </Expander.Content>
