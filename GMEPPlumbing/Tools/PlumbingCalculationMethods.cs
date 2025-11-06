@@ -27,6 +27,7 @@ namespace GMEPPlumbing {
     public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
     public Routing RoutingControl { get; set; } = null;
     private PaletteSet pw;
+    Dictionary<string, HashSet<string>> SourceFixtureConnections = new Dictionary<string, HashSet<string>>();
 
 
     [CommandMethod("PlumbingFixtureCalc")]
@@ -50,12 +51,45 @@ namespace GMEPPlumbing {
         BasePointLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp);
         ConvertSiteComponents();
         FullRoutes.Clear();
+        SourceFixtureConnections.Clear();
 
         foreach (var source in Sources) {
           List<string> types = GetSourceOutputTypes(source);
           var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= GetSourceSearchDistance(source.BlockName) && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
           foreach (var matchingRoute in matchingRoutes) {
             TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
+          }
+        }
+        foreach (var kvp in FullRoutes) {
+          var routes = kvp.Value;
+          var sourceRoutesById = routes
+              .Where(fr => fr.RouteItems.FirstOrDefault() is PlumbingSource source && source.TypeId == 2)
+              .GroupBy(fr => ((PlumbingSource)fr.RouteItems.First()).Id)
+              .ToDictionary(
+                  g => g.Key,
+                  g => g.ToList()
+              );
+          var fixtureRoutesById = routes
+              .Where(fr => fr.RouteItems.LastOrDefault() is PlumbingFixture fixture && (fixture.TypeAbbreviation == "WH" || fixture.TypeAbbreviation == "IWH"))
+              .GroupBy(fr => ((PlumbingFixture)fr.RouteItems.Last()).Id)
+              .ToDictionary(
+                  g => g.Key,
+                  g => g.ToList()
+              );
+          List<PlumbingFullRoute> routesToRemove = new List<PlumbingFullRoute>();
+          ed.WriteMessage($"\nfixtures: {fixtureRoutesById.Count} sources {sourceRoutesById.Count}");
+          foreach (var sourceKvp in sourceRoutesById.Keys.ToList()) {
+            if (fixtureRoutesById.TryGetValue(sourceKvp, out var fixtureRoutes)) {
+              ed.WriteMessage($"\nCombining fixture route for fixture {sourceKvp} with source route(s).");
+              var fixtureRoute = fixtureRoutes.FirstOrDefault();
+              if (fixtureRoute != null) {
+                foreach (var sourceRoute in sourceRoutesById[sourceKvp]) {
+                  sourceRoute.Length += fixtureRoute.Length;
+                  sourceRoute.RouteItems.InsertRange(0, fixtureRoute.RouteItems);
+                }
+              }
+
+            }
           }
         }
         ed.WriteMessage("\nPlumbing fixture calculation completed successfully.");
@@ -153,11 +187,21 @@ namespace GMEPPlumbing {
         fullRoute.RouteItems = routeObjectsTemp;
         fullRoute.TypeId = typeId;
 
-        if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
-          FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
-        }
+      
+        if (fullRoute.RouteItems[0] is PlumbingSource source2) {
+          if (!SourceFixtureConnections.ContainsKey(source2.Id)) {
+            SourceFixtureConnections[source2.Id] = new HashSet<string>();
+          }
+          if (SourceFixtureConnections[source2.Id].Add(fixture.Id)) {
 
-        FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
+            if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
+              FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
+            }
+
+            FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
+          }
+        }
+        
         int feet = (int)(lengthInInches / 12);
         int inches = (int)Math.Round(lengthInInches % 12);
         ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");

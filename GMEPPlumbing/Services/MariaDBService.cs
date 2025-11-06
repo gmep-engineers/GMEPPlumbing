@@ -889,12 +889,16 @@ namespace GMEPPlumbing.Services
       await command.ExecuteNonQueryAsync();
       await conn.CloseAsync();
     }*/
-    public async Task<Tuple<string, double, ObservableCollection<WaterLoss>, ObservableCollection<WaterAddition>>> GetPlumbingWaterCalculations(string sourceId) {
+    public async Task<Tuple<string, double, ObservableCollection<WaterLoss>, ObservableCollection<WaterAddition>, Tuple<int, int, int, int>>> GetPlumbingWaterCalculations(string sourceId) {
       string sourceName = "";
       double minSourcePressure = 0;
       string tempSourceId = "";
       ObservableCollection<WaterLoss> losses = new ObservableCollection<WaterLoss>();
       ObservableCollection<WaterAddition> additions = new ObservableCollection<WaterAddition>();
+      int copperIndex = 0;
+      int pexIndex = 0;
+      int cpvcsdriiIndex = 0;
+      int cpvcsch80Index = 0;
 
       using (var conn = await OpenNewConnectionAsync()) {
         string query = "SELECT * FROM plumbing_water_calculation_data WHERE source_id = @sourceId";
@@ -905,6 +909,10 @@ namespace GMEPPlumbing.Services
               sourceName = GetSafeString(reader, "source_name");
               minSourcePressure = reader.GetDouble("min_source_pressure");
               tempSourceId = GetSafeString(reader, "source_id");
+              copperIndex = GetSafeInt(reader, "copper_index");
+              pexIndex = GetSafeInt(reader, "pex_index");
+              cpvcsdriiIndex = GetSafeInt(reader, "cpvcsdrii_index");
+              cpvcsch80Index = GetSafeInt(reader, "cpvcsch80_index");
             }
           }
         }
@@ -936,7 +944,7 @@ namespace GMEPPlumbing.Services
       if (tempSourceId == "") {
         return null;
       }
-      return Tuple.Create(sourceName, minSourcePressure, losses, additions);
+      return Tuple.Create(sourceName, minSourcePressure, losses, additions, Tuple.Create(copperIndex, pexIndex, cpvcsdriiIndex, cpvcsch80Index));
     }
     public async Task<Tuple<string, string, int, string>> GetPlumbingGasCalculations(string sourceId) {
       string sourceName = "";
@@ -1041,19 +1049,33 @@ namespace GMEPPlumbing.Services
             }
           }
 
+          int copperIndex = calculator.Chart.CopperTypeLChart.Options.IndexOf(calculator.Chart.CopperTypeLChart.ChosenOption);
+          int pexIndex = calculator.Chart.PEXChart.Options.IndexOf(calculator.Chart.PEXChart.ChosenOption);
+          int cpvcsdriiIndex = calculator.Chart.CPVCSDRIIChart.Options.IndexOf(calculator.Chart.CPVCSDRIIChart.ChosenOption);
+          int cpvcsch80Index = calculator.Chart.CPVCSCH80Chart.Options.IndexOf(calculator.Chart.CPVCSCH80Chart.ChosenOption);
+
           // Insert main calculation data
           string mainQuery = @"
                 INSERT INTO plumbing_water_calculation_data
-                (source_id, source_name, min_source_pressure)
-                VALUES (@sourceId, @sourceName, @minSourcePressure)
+                (source_id, source_name, min_source_pressure, copper_index, pex_index, cpvcsdrii_index, cpvcsch80_index)
+                VALUES (@sourceId, @sourceName, @minSourcePressure, @copperIndex, @pexIndex, @cpvcsdriiIndex, @cpvcsch80Index)
                 ON DUPLICATE KEY UPDATE
                     source_name = @sourceName,
-                    min_source_pressure = @minSourcePressure";
+                    min_source_pressure = @minSourcePressure,
+                    copper_index = @copperIndex,
+                    pex_index = @pexIndex,
+                    cpvcsdrii_index = @cpvcsdriiIndex,
+                    cpvcsch80_index = @cpvcsch80Index";
+
 
           using (var cmd = new MySqlCommand(mainQuery, conn, transaction)) {
             cmd.Parameters.AddWithValue("@sourceId", calculator.SourceId);
             cmd.Parameters.AddWithValue("@sourceName", calculator.Description);
             cmd.Parameters.AddWithValue("@minSourcePressure", calculator.MinSourcePressure);
+            cmd.Parameters.AddWithValue("@copperIndex", copperIndex);
+            cmd.Parameters.AddWithValue("@pexIndex", pexIndex);
+            cmd.Parameters.AddWithValue("@cpvcsdriiIndex", cpvcsdriiIndex);
+            cmd.Parameters.AddWithValue("@cpvcsch80Index", cpvcsch80Index);
             await cmd.ExecuteNonQueryAsync();
           }
           transaction.Commit();

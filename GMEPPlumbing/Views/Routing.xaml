@@ -11,6 +11,7 @@
     <UserControl.Resources>
         <local:AddOneConverter x:Key="AddOneConverter"/>
         <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <local:GPMToFUConverter x:Key="GPMToFUConverter"/>
         <Style x:Key="RotatedTabHeaderStyle" TargetType="TabItem">
             <Setter Property="HeaderTemplate">
                 <Setter.Value>
@@ -39,7 +40,7 @@
                             <RowDefinition>
                                 <RowDefinition.Style>
                                     <Style TargetType="RowDefinition">
-                                        <Setter Property="Height" Value="Auto"/>
+                                        <Setter Property="Height" Value="*"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsCalculatorEnabled}" Value="False">
                                                 <Setter Property="Height" Value="0"/>
@@ -48,136 +49,322 @@
                                     </Style>
                                 </RowDefinition.Style>
                             </RowDefinition>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="5"/>
+                            <RowDefinition Height="20*"/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" FontWeight="Bold" Text="{Binding Name}" Margin="0,0,0,5"/>
-                        <Expander Grid.Row="1" Header="Calculations" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
+                        <Expander x:Name="CalcExpander" Grid.Row="1"  Header="Calculations" IsExpanded="False" Margin="5" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1" Collapsed="CalcExpander_Collapsed" Expanded="CalcExpander_Expanded">
                             <Expander.Content>
-                                <StackPanel Orientation="Vertical">
-                                    <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Background="White" Margin="0 0 0 20">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="*"/>
-                                                        <RowDefinition Height="*"/>
-                                                        <RowDefinition Height="*"/>
-                                                        <RowDefinition Height="*"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                        <RowDefinition Height="*"/>
-                                                    </Grid.RowDefinitions>
-                                                    <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
-                                                            <TextBlock Text="Name: " Margin="5,0,0,0"/>
-                                                            <TextBox Text="{Binding Value.Description, Mode=TwoWay}" MinWidth="100"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                    <Border Grid.Row="1" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
-                                                            <TextBlock Text="Min Source Pressure: " Margin="5,0,0,0"/>
-                                                            <TextBox Text="{Binding Value.MinSourcePressure, Mode=TwoWay}"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                    <Border Grid.Row="2" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
-                                                            <TextBlock Text="System Length: " Margin="5,0,0,0"/>
-                                                            <TextBox IsEnabled="False" Text="{Binding Value.SystemLength}"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                    <Border Grid.Row="3" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
-                                                            <TextBlock Text="Developed System Length: " Margin="5,0,0,0"/>
-                                                            <TextBox IsEnabled="False" Text="{Binding Value.DevelopedSystemLength}"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                    <Expander Grid.Row="4" HorizontalAlignment="Stretch" Header="Losses"  IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
-                                                        <Expander.Content>
-                                                            <DataGrid ItemsSource="{Binding Value.Losses}" ColumnWidth="*" AutoGenerateColumns="False">
-                                                                <DataGrid.Columns>
-                                                                    <DataGridTextColumn Header="Description" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="False"/>
-                                                                    <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}"/>
-                                                                </DataGrid.Columns>
-                                                            </DataGrid>
-                                                        </Expander.Content>
-                                                    </Expander>
-                                                    <Expander Grid.Row="5"  HorizontalAlignment="Stretch" Header="Additions" IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1">
-                                                        <Expander.Content>
-                                                            <DataGrid ItemsSource="{Binding Value.Additions}" ColumnWidth="*" AutoGenerateColumns="False">
-                                                                <DataGrid.Columns>
-                                                                    <DataGridTextColumn Header="Description" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="False"/>
-                                                                    <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}"/>
-                                                                </DataGrid.Columns>
-                                                            </DataGrid>
-                                                        </Expander.Content>
-                                                    </Expander>
-                                                    <Border Grid.Row="6" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
-                                                            <TextBlock Text="Pressure Available For Friction: " Margin="5,0,0,0"/>
-                                                            <TextBox IsEnabled="False" Text="{Binding Value.AvailableFrictionPressure}"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                    <Border Grid.Row="7" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
-                                                            <TextBlock Text="Average Pressure Drop: " Margin="5,0,0,0"/>
-                                                            <TextBox IsEnabled="False" Text="{Binding Value.AveragePressureDrop}"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                    <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding GasCalculators}" HorizontalContentAlignment="Stretch">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Background="White" Margin="0 0 0 20">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                    </Grid.RowDefinitions>
-                                                    <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
-                                                        <StackPanel HorizontalAlignment="Center" Orientation="Vertical" Margin="0 5 0 5">
-                                                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
-                                                                <TextBlock Text="Name: " Margin="5,0,0,0"/>
-                                                                <TextBox Text="{Binding Value.Description, Mode=TwoWay}" MinWidth="100"/>
-                                                            </StackPanel>
-                                                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
-                                                                <TextBlock Text="Gas Type: " Margin="5,0,0,0"/>
-                                                                <TextBlock Text="{Binding Value.ChosenChart.GasType}" Margin="5,0,0,0"/>
-                                                                <TextBlock Text=" - " Margin="5,0,0,0"/>
-                                                                <TextBlock Text="Pipe Type: " Margin="5,0,0,0"/>
-                                                                <TextBlock Text="{Binding Value.ChosenChart.PipeType}" Margin="5,0,0,0"/>
-                                                                <TextBlock Text=" - " Margin="5,0,0,0"/>
-                                                                <TextBlock Text="Chart: " Margin="5,0,0,0"/>
-                                                                <TextBlock Text="{Binding Value.ChosenChart.ChartIndex}" Margin="5,0,0,0"/>
-                                                            </StackPanel>
-                                                        </StackPanel>
-                                                    </Border>
-                                                    <TreeView Grid.Row="1" ItemsSource="{Binding Value.MenuItems}">
-                                                        <TreeView.ItemTemplate>
-                                                            <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                                                                <Grid Width="300" Margin="0 10 0 0">
-                                                                    <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="3*" />
-                                                                        <ColumnDefinition Width="*" />
-                                                                    </Grid.ColumnDefinitions>
-                                                                    <TextBlock Grid.Column="0" Text="{Binding Name}" Margin="0 0 10 0" VerticalAlignment="Center"/>
-                                                                    <Button Grid.Column="1"
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                        <StackPanel Orientation="Vertical">
+                                            <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding WaterCalculators}" HorizontalContentAlignment="Stretch" PreviewMouseWheel="InnerControl_PreviewMouseWheel">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Background="White" Margin="0 0 0 20">
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="*"/>
+                                                                <RowDefinition Height="*"/>
+                                                                <RowDefinition Height="*"/>
+                                                                <RowDefinition Height="*"/>
+                                                                <RowDefinition Height="Auto"/>
+                                                                <RowDefinition Height="Auto"/>
+                                                                <RowDefinition Height="*"/>
+                                                                <RowDefinition Height="*"/>
+                                                                <RowDefinition Height="Auto"/>
+                                                            </Grid.RowDefinitions>
+                                                            <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70" Background="#FF6E6E70">
+                                                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                                    <TextBox Text="{Binding Value.Description, Mode=TwoWay}" MinWidth="100"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <Border Grid.Row="1" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                                    <TextBlock Text="Min Source Pressure: " Margin="5,0,0,0"/>
+                                                                    <TextBox Text="{Binding Value.MinSourcePressure, Mode=TwoWay}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <Border Grid.Row="2" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                                    <TextBlock Text="System Length: " Margin="5,0,0,0"/>
+                                                                    <TextBox IsEnabled="False" Text="{Binding Value.SystemLength}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <Border Grid.Row="3" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                                    <TextBlock Text="Developed System Length: " Margin="5,0,0,0"/>
+                                                                    <TextBox IsEnabled="False" Text="{Binding Value.DevelopedSystemLength}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <Expander Grid.Row="4" HorizontalAlignment="Stretch" Header="Losses"  IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1" Collapsed="CalcExpander_Collapsed" Expanded="CalcExpander_Expanded">
+                                                                <Expander.Content>
+                                                                    <DataGrid ItemsSource="{Binding Value.Losses}" ColumnWidth="*" AutoGenerateColumns="False">
+                                                                        <DataGrid.Columns>
+                                                                            <DataGridTextColumn Header="Description" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="False"/>
+                                                                            <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}"/>
+                                                                        </DataGrid.Columns>
+                                                                    </DataGrid>
+                                                                </Expander.Content>
+                                                            </Expander>
+                                                            <Expander Grid.Row="5"  HorizontalAlignment="Stretch" Header="Additions" IsExpanded="False" Background="#FF4E4E52" Foreground="#FFFFFF" BorderBrush="#FF6E6E70" BorderThickness="1" Collapsed="CalcExpander_Collapsed" Expanded="CalcExpander_Expanded">
+                                                                <Expander.Content>
+                                                                    <DataGrid ItemsSource="{Binding Value.Additions}" ColumnWidth="*" AutoGenerateColumns="False">
+                                                                        <DataGrid.Columns>
+                                                                            <DataGridTextColumn Header="Description" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="False"/>
+                                                                            <DataGridTextColumn Header="Value (PSI)" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}"/>
+                                                                        </DataGrid.Columns>
+                                                                    </DataGrid>
+                                                                </Expander.Content>
+                                                            </Expander>
+                                                            <Border Grid.Row="6" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                                    <TextBlock Text="Pressure Available For Friction: " Margin="5,0,0,0"/>
+                                                                    <TextBox IsEnabled="False" Text="{Binding Value.AvailableFrictionPressure}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <Border Grid.Row="7" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                                    <TextBlock Text="Average Pressure Drop: " Margin="5,0,0,0"/>
+                                                                    <TextBox IsEnabled="False" Text="{Binding Value.AveragePressureDrop}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <Expander Header="Charts" Background="LightGray" IsExpanded="False" Grid.Row="8" Collapsed="CalcExpander_Collapsed" Expanded="CalcExpander_Expanded">
+                                                                <Expander.Content>
+                                                                    <Grid>
+                                                                        <Grid.RowDefinitions>
+                                                                            <RowDefinition>
+                                                                                <RowDefinition.Style>
+                                                                                    <Style TargetType="RowDefinition">
+                                                                                        <Setter Property="Height" Value="0"/>
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding Value.EnableCopper}" Value="True">
+                                                                                                <Setter Property="Height" Value="*"/>
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </RowDefinition.Style>
+                                                                            </RowDefinition>
+                                                                            <RowDefinition>
+                                                                                <RowDefinition.Style>
+                                                                                    <Style TargetType="RowDefinition">
+                                                                                        <Setter Property="Height" Value="0"/>
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding Value.EnablePex}" Value="True">
+                                                                                                <Setter Property="Height" Value="*"/>
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </RowDefinition.Style>
+                                                                            </RowDefinition>
+                                                                            <RowDefinition>
+                                                                                <RowDefinition.Style>
+                                                                                    <Style TargetType="RowDefinition">
+                                                                                        <Setter Property="Height" Value="0"/>
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding Value.EnableCPVCSDRII}" Value="True">
+                                                                                                <Setter Property="Height" Value="*"/>
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </RowDefinition.Style>
+                                                                            </RowDefinition>
+                                                                            <RowDefinition>
+                                                                                <RowDefinition.Style>
+                                                                                    <Style TargetType="RowDefinition">
+                                                                                        <Setter Property="Height" Value="0"/>
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding Value.EnableCPVCSCH80}" Value="True">
+                                                                                                <Setter Property="Height" Value="*"/>
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </RowDefinition.Style>
+                                                                            </RowDefinition>
+                                                                        </Grid.RowDefinitions>
+                                                                        <StackPanel Grid.Row="0" Orientation="Vertical">
+                                                                            <TextBlock Text="Copper Chart:" FontWeight="Bold" Margin="5" HorizontalAlignment="Center"/>
+                                                                            <ComboBox ItemsSource="{Binding Value.Chart.CopperTypeLChart.Options}" SelectedItem="{Binding Value.Chart.CopperTypeLChart.ChosenOption, Mode=TwoWay}">
+                                                                                <ComboBox.ItemTemplate>
+                                                                                    <DataTemplate>
+                                                                                        <StackPanel>
+                                                                                            <TextBlock Text="{Binding PressureLossPer100Ft, StringFormat='Pressure Loss: {0} PSI/100ft'}" HorizontalAlignment="Center"/>
+                                                                                        </StackPanel>
+                                                                                    </DataTemplate>
+                                                                                </ComboBox.ItemTemplate>
+                                                                            </ComboBox>
+                                                                            <DataGrid 
+                                                                            ItemsSource="{Binding Value.Chart.CopperTypeLChart.ChosenOption.Entries}"
+                                                                            AutoGenerateColumns="False"
+                                                                            CanUserAddRows="False"
+                                                                            CanUserDeleteRows="False"
+                                                                            HeadersVisibility="Column"
+                                                                            Margin="10"
+                                                                            GridLinesVisibility="All"
+                                                                            RowHeight="30"
+                                                                            FontFamily="Consolas"
+                                                                            FontSize="16">
+                                                                                <DataGrid.Columns>
+                                                                                    <DataGridTextColumn Width="*" Header="PIPE SIZE" Binding="{Binding PipeSize}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU" Binding="{Binding ColdGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="F.V. FU" Binding="{Binding ColdGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=2}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM" Binding="{Binding ColdGPM}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU - HOT" Binding="{Binding HotGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM - HOT" Binding="{Binding HotGPM}" />
+                                                                                </DataGrid.Columns>
+                                                                            </DataGrid>
+                                                                        </StackPanel>
+                                                                        <StackPanel Grid.Row="1"  Orientation="Vertical">
+                                                                            <TextBlock Text="PEX Chart:" FontWeight="Bold" Margin="5" HorizontalAlignment="Center"/>
+                                                                            <ComboBox ItemsSource="{Binding Value.Chart.PEXChart.Options}" SelectedItem="{Binding Value.Chart.PEXChart.ChosenOption, Mode=TwoWay}">
+                                                                                <ComboBox.ItemTemplate>
+                                                                                    <DataTemplate>
+                                                                                        <TextBlock Text="{Binding PressureLossPer100Ft, StringFormat='Pressure Loss: {0} PSI/100ft'}" HorizontalAlignment="Center"/>
+                                                                                    </DataTemplate>
+                                                                                </ComboBox.ItemTemplate>
+                                                                            </ComboBox>
+                                                                            <DataGrid 
+                                                                                ItemsSource="{Binding Value.Chart.PEXChart.ChosenOption.Entries}"
+                                                                                AutoGenerateColumns="False"
+                                                                                CanUserAddRows="False"
+                                                                                CanUserDeleteRows="False"
+                                                                                HeadersVisibility="Column"
+                                                                                Margin="10"
+                                                                                GridLinesVisibility="All"
+                                                                                RowHeight="30"
+                                                                                FontFamily="Consolas"
+                                                                                FontSize="16">     
+                                                                                <DataGrid.Columns>
+                                                                                    <DataGridTextColumn Width="*" Header="PIPE SIZE" Binding="{Binding PipeSize}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU" Binding="{Binding ColdGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM" Binding="{Binding ColdGPM}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU - HOT" Binding="{Binding HotGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM - HOT" Binding="{Binding HotGPM}" />
+                                                                                </DataGrid.Columns>
+                                                                            </DataGrid>
+                                                                        </StackPanel>
+                                                                        <StackPanel Grid.Row="2" Orientation="Vertical">
+                                                                            <TextBlock Text="CPVC SDRII Chart:" FontWeight="Bold" Margin="5" HorizontalAlignment="Center"/>
+                                                                            <ComboBox ItemsSource="{Binding Value.Chart.CPVCSDRIIChart.Options}" SelectedItem="{Binding Value.Chart.CPVCSDRIIChart.ChosenOption, Mode=TwoWay}">
+                                                                                <ComboBox.ItemTemplate>
+                                                                                    <DataTemplate>
+                                                                                        <TextBlock Text="{Binding PressureLossPer100Ft, StringFormat='Pressure Loss: {0} PSI/100ft'}" HorizontalAlignment="Center"/>
+                                                                                    </DataTemplate>
+                                                                                </ComboBox.ItemTemplate>
+                                                                            </ComboBox>
+                                                                            <DataGrid 
+                                                                                ItemsSource="{Binding Value.Chart.CPVCSDRIIChart.ChosenOption.Entries}"
+                                                                                AutoGenerateColumns="False"
+                                                                                CanUserAddRows="False"
+                                                                                CanUserDeleteRows="False"
+                                                                                HeadersVisibility="Column"
+                                                                                Margin="10"
+                                                                                GridLinesVisibility="All"
+                                                                                RowHeight="30"
+                                                                                FontFamily="Consolas"
+                                                                                FontSize="16">      
+                                                                                <DataGrid.Columns>
+                                                                                    <DataGridTextColumn Width="*" Header="NOMINAL DIAMETER" Binding="{Binding PipeSize}" />
+                                                                                    <DataGridTextColumn Width="*" Header="INNER DIAMETER" Binding="{Binding InnerDiameter}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU" Binding="{Binding ColdGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM" Binding="{Binding ColdGPM}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU - HOT" Binding="{Binding HotGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM - HOT" Binding="{Binding HotGPM}" />
+                                                                                </DataGrid.Columns>
+                                                                            </DataGrid>
+                                                                        </StackPanel>
+                                                                        <StackPanel Grid.Row="3" Orientation="Vertical">
+                                                                            <TextBlock Text="CPVC SCH80 Chart:" FontWeight="Bold" Margin="5" HorizontalAlignment="Center"/>
+                                                                            <ComboBox ItemsSource="{Binding Value.Chart.CPVCSCH80Chart.Options}" SelectedItem="{Binding Value.Chart.CPVCSCH80Chart.ChosenOption, Mode=TwoWay}">
+                                                                                <ComboBox.ItemTemplate>
+                                                                                    <DataTemplate>
+                                                                                        <TextBlock Text="{Binding PressureLossPer100Ft, StringFormat='Pressure Loss: {0} PSI/100ft'}" HorizontalAlignment="Center"/>
+                                                                                    </DataTemplate>
+                                                                                </ComboBox.ItemTemplate>
+                                                                            </ComboBox>
+                                                                            <DataGrid 
+                                                                                ItemsSource="{Binding Value.Chart.CPVCSCH80Chart.ChosenOption.Entries}"
+                                                                                AutoGenerateColumns="False"
+                                                                                CanUserAddRows="False"
+                                                                                CanUserDeleteRows="False"
+                                                                                HeadersVisibility="Column"
+                                                                                Margin="10"
+                                                                                GridLinesVisibility="All"
+                                                                                RowHeight="30"
+                                                                                FontFamily="Consolas"
+                                                                                FontSize="16">
+                                                                                <DataGrid.Columns>
+                                                                                    <DataGridTextColumn Width="*" Header="NOMINAL DIAMETER" Binding="{Binding PipeSize}" />
+                                                                                    <DataGridTextColumn Width="*" Header="INNER DIAMETER" Binding="{Binding InnerDiameter}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU" Binding="{Binding ColdGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM" Binding="{Binding ColdGPM}" />
+                                                                                    <DataGridTextColumn Width="*" Header="TANK FU - HOT" Binding="{Binding HotGPM, Converter={StaticResource GPMToFUConverter}, ConverterParameter=1}" />
+                                                                                    <DataGridTextColumn Width="*" Header="GPM - HOT" Binding="{Binding HotGPM}" />
+                                                                                </DataGrid.Columns>
+                                                                            </DataGrid>
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                </Expander.Content>
+                                                            </Expander>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                            <ListBox Background="LightSlateGray" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" FontSize="15" FontWeight="Bold" ItemsSource="{Binding GasCalculators}" HorizontalContentAlignment="Stretch" PreviewMouseWheel="InnerControl_PreviewMouseWheel">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Background="White" Margin="0 0 0 20">
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto"/>
+                                                                <RowDefinition Height="*"/>
+                                                            </Grid.RowDefinitions>
+                                                            <Border Grid.Row="0" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70">
+                                                                <StackPanel HorizontalAlignment="Center" Orientation="Vertical" Margin="0 5 0 5">
+                                                                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                                        <TextBlock Text="Name: " Margin="5,0,0,0"/>
+                                                                        <TextBox Text="{Binding Value.Description, Mode=TwoWay}" MinWidth="100"/>
+                                                                    </StackPanel>
+                                                                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5 0 5">
+                                                                        <TextBlock Text="Gas Type: " Margin="5,0,0,0"/>
+                                                                        <TextBlock Text="{Binding Value.ChosenChart.GasType}" Margin="5,0,0,0"/>
+                                                                        <TextBlock Text=" - " Margin="5,0,0,0"/>
+                                                                        <TextBlock Text="Pipe Type: " Margin="5,0,0,0"/>
+                                                                        <TextBlock Text="{Binding Value.ChosenChart.PipeType}" Margin="5,0,0,0"/>
+                                                                        <TextBlock Text=" - " Margin="5,0,0,0"/>
+                                                                        <TextBlock Text="Chart: " Margin="5,0,0,0"/>
+                                                                        <TextBlock Text="{Binding Value.ChosenChart.ChartIndex}" Margin="5,0,0,0"/>
+                                                                    </StackPanel>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <TreeView Grid.Row="1" ItemsSource="{Binding Value.MenuItems}">
+                                                                <TreeView.ItemTemplate>
+                                                                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                                                        <Grid Width="300" Margin="0 10 0 0">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="3*" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock Grid.Column="0" Text="{Binding Name}" Margin="0 0 10 0" VerticalAlignment="Center"/>
+                                                                            <Button Grid.Column="1"
                                                                             Click="Button_Click"
                                                                             Content="Select"
                                                                             Visibility="{Binding HasClicked, Converter={StaticResource BoolToVisibilityConverter}}"
                                                                             HorizontalAlignment="Right"
-                                                                            VerticalAlignment="Center"/>            
-                                                                </Grid>
-                                                            </HierarchicalDataTemplate>
-                                                        </TreeView.ItemTemplate>
-                                                    </TreeView>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                    <Border HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70" Background="#FF4E4E52">
+                                                                            VerticalAlignment="Center"/>
+                                                                        </Grid>
+                                                                    </HierarchicalDataTemplate>
+                                                                </TreeView.ItemTemplate>
+                                                            </TreeView>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                    <Border Grid.Row="1" HorizontalAlignment="Stretch" BorderThickness="1" BorderBrush="#FF6E6E70" Background="#FF4E4E52">
                                         <Grid>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto"/>
@@ -220,10 +407,11 @@
                                             </Viewbox>
                                         </Grid>
                                     </Border>
-                                </StackPanel>
+                                </Grid>
                             </Expander.Content>
                         </Expander>
-                        <Grid Grid.Row="2">
+                        <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="LightGray" ShowsPreview="True" Visibility="{Binding IsExpanded, ElementName=CalcExpander, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <Grid Grid.Row="3">
                             <TabControl TabStripPlacement="Left" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
                                 <TabItem Header="Main" Style="{StaticResource RotatedTabHeaderStyle}">
                                     <local:Scene3DView DataContext="{Binding MainScene}" Margin="5"/>

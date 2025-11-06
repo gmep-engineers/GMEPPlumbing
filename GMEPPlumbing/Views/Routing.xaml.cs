@@ -24,6 +24,8 @@ using System.Windows.Input;
 using System.ComponentModel;
 using Autodesk.AutoCAD.GraphicsSystem;
 using static System.Net.Mime.MediaTypeNames;
+using Autodesk.AutoCAD.MacroRecorder;
+using MySqlX.XDevAPI.Common;
 
 namespace GMEPPlumbing.Views
 {
@@ -51,6 +53,86 @@ namespace GMEPPlumbing.Views
       var item = (sender as Button)?.DataContext as MenuItemViewModel;
       item?.OnClick();
       e.Handled = false; 
+    }
+
+    private void InnerControl_PreviewMouseWheel(object sender, MouseWheelEventArgs e) {
+      if (IsMouseOverComboBoxPopup())
+        return;
+
+      var scrollViewer = FindParent<ScrollViewer>(sender as DependencyObject);
+      if (scrollViewer != null) {
+        if (e.Delta != 0) {
+          scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta);
+          e.Handled = true;
+        }
+      }
+    }
+    private bool IsMouseOverComboBoxPopup() {
+      foreach (var obj in FindVisualChildren<ComboBox>(this)) {
+        if (obj.IsDropDownOpen) {
+          var popup = obj.Template.FindName("PART_Popup", obj) as System.Windows.Controls.Primitives.Popup;
+          if (popup != null && popup.Child != null && popup.Child.IsMouseOver)
+            return true;
+        }
+      }
+      return false;
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject {
+      if (depObj != null) {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++) {
+          DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
+          if (child != null && child is T t) {
+            yield return t;
+          }
+
+          foreach (T childOfChild in FindVisualChildren<T>(child)) {
+            yield return childOfChild;
+          }
+        }
+      }
+    }
+    
+
+    public static T FindParent<T>(DependencyObject child) where T : DependencyObject {
+      DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+      if (parentObject == null) return null;
+      T parent = parentObject as T;
+      if (parent != null)
+        return parent;
+      else
+        return FindParent<T>(parentObject);
+    }
+
+    private void CalcExpander_Collapsed(object sender, RoutedEventArgs e) {
+      if (sender is Expander expander && expander.Name == "CalcExpander") {
+        if (expander == null) return;
+        var parent = VisualTreeHelper.GetParent(expander);
+        while (parent != null && !(parent is Grid))
+          parent = VisualTreeHelper.GetParent(parent);
+
+        var grid = parent as Grid;
+        if (grid == null || grid.RowDefinitions.Count < 4) return;
+
+        grid.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
+        grid.RowDefinitions[3].Height = new GridLength(20, GridUnitType.Star);
+      }
+      e.Handled = true;
+    }
+    private void CalcExpander_Expanded(object sender, RoutedEventArgs e) {
+      if (sender is Expander expander && expander.Name == "CalcExpander") {
+        if (expander == null) return;
+        var parent = VisualTreeHelper.GetParent(expander);
+        while (parent != null && !(parent is Grid))
+          parent = VisualTreeHelper.GetParent(parent);
+
+        var grid = parent as Grid;
+        if (grid == null || grid.RowDefinitions.Count < 4) return;
+
+        grid.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
+        grid.RowDefinitions[3].Height = new GridLength(1, GridUnitType.Star);
+      }
+      e.Handled = true;
     }
   }
 
@@ -748,15 +830,17 @@ namespace GMEPPlumbing.Views
       GenerateScenes();
     }
 
-
     public void GenerateWaterPipeSizing() {
-      WaterPipeSizingChart chart = new WaterPipeSizingChart();
+     // WaterPipeSizingChart chart = new WaterPipeSizingChart();
       foreach (var fullRoute in FullRoutes) {
         if (fullRoute.RouteItems.Count == 0) continue;
-        double psi = 0;
-        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
+        WaterCalculator waterCalculator = null;
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
           string sourceId = plumbingSource.Id;
-          psi = WaterCalculators[sourceId].AveragePressureDrop;
+          waterCalculator = WaterCalculators[sourceId];
+        }
+        if (waterCalculator == null) {
+          continue;
         }
         foreach (var item in fullRoute.RouteItems) {
           if (item is PlumbingHorizontalRoute horizontalRoute && (horizontalRoute.Type == "Cold Water" || horizontalRoute.Type == "Hot Water")) {
@@ -765,9 +849,8 @@ namespace GMEPPlumbing.Views
               isHot = true;
             }
             horizontalRoute.GenerateGallonsPerMinute();
-            horizontalRoute.PipeSize = chart.FindSize(
+            horizontalRoute.PipeSize = waterCalculator.Chart.FindSize(
               horizontalRoute.PipeType,
-              psi,
               isHot,
               horizontalRoute.GPM
             );
@@ -778,9 +861,8 @@ namespace GMEPPlumbing.Views
               isHot = true;
             }
             verticalRoute.GenerateGallonsPerMinute();
-            verticalRoute.PipeSize = chart.FindSize(
+            verticalRoute.PipeSize = waterCalculator.Chart.FindSize(
               verticalRoute.PipeType,
-              psi,
               isHot,
               verticalRoute.GPM
             );
@@ -875,7 +957,8 @@ namespace GMEPPlumbing.Views
     public async Task GenerateWaterCalculators() {
       WaterCalculators.Clear();
       foreach (var fullRoute in FullRoutes) {
-        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && (plumbingSource.TypeId == 1 || plumbingSource.TypeId == 2)) {
+
+        if (fullRoute.RouteItems[0] is PlumbingSource plumbingSource && plumbingSource.TypeId == 1) {
           IsCalculatorEnabled = true;
           if (!WaterCalculators.ContainsKey(plumbingSource.Id)) {
             ObservableCollection<WaterLoss> waterLosses = new ObservableCollection<WaterLoss>();
@@ -883,25 +966,15 @@ namespace GMEPPlumbing.Views
             double maxLength = FullRoutes
               .Where(r => r.RouteItems.Count > 0
                   && r.RouteItems[0] is PlumbingSource src
-                  && src.Id == plumbingSource.Id)
+                  && src.Id == plumbingSource.Id && r.RouteItems.Last() is PlumbingFixture fixture && IsColdWaterFixture(fixture.BlockName))
               .Max(r => r.Length);
-            string name = "";
-            switch(plumbingSource.TypeId) {
-              case 1:
-                name = "Water Meter";
-                break;
-              case 2:
-                name = "Water Heater";
-                break;
-              case 3:
-                name = "Gas Meter";
-                break;
-              case 4:
-                name = "Waste Output";
-                break;
+            string name = "Water Meter";
+            if (plumbingSource.BlockName == "GMEP PLUMBING POINT OF CONNECTION") {
+              name = "Cold Water - Point of Connection";
             }
+           
             double minSourcePressure =  plumbingSource.Pressure;
-            Tuple<string, double, ObservableCollection<WaterLoss>, ObservableCollection<WaterAddition>> info  = await ServiceLocator.MariaDBService.GetPlumbingWaterCalculations(plumbingSource.Id);
+            Tuple<string, double, ObservableCollection<WaterLoss>, ObservableCollection<WaterAddition>, Tuple<int, int, int, int>> info  = await ServiceLocator.MariaDBService.GetPlumbingWaterCalculations(plumbingSource.Id);
             if (info != null) {
               name = info.Item1;
               minSourcePressure = info.Item2;
@@ -909,9 +982,45 @@ namespace GMEPPlumbing.Views
               waterAdditions = info.Item4;
             }
             WaterCalculators[plumbingSource.Id] = new WaterCalculator(plumbingSource.Id, name, minSourcePressure, 0, maxLength / 12, (maxLength * 1.3) / 12, 0, waterLosses, waterAdditions);
+            if (info != null) {
+              WaterCalculators[plumbingSource.Id].PickChartParameters(info.Item5);
+            }
+            foreach (var item in fullRoute.RouteItems) {
+              string pipeType = "";
+              if (item is PlumbingHorizontalRoute hr && !string.IsNullOrEmpty(hr.PipeType))
+                pipeType = hr.PipeType;
+              else if (item is PlumbingVerticalRoute vr && !string.IsNullOrEmpty(vr.PipeType))
+                pipeType = vr.PipeType;
+              if (!string.IsNullOrEmpty(pipeType)) {
+                switch (pipeType) {
+                  case "Copper":
+                    WaterCalculators[plumbingSource.Id].EnableCopper = true;
+                    break;
+                  case "PEX":
+                    WaterCalculators[plumbingSource.Id].EnablePex = true;
+                    break;
+                  case "CPVCSCH80":
+                    WaterCalculators[plumbingSource.Id].EnableCPVCSCH80 = true;
+                    break;
+                  case "CPVCSDRII":
+                    WaterCalculators[plumbingSource.Id].EnableCPVCSDRII = true;
+                    break;
+                }
+              }
+            }
           }
         }
       }
+    }
+    public bool IsColdWaterFixture(string blockName) {
+      var coldWater = new List<string> {
+          "GMEP WH 80",
+          "GMEP WH 50",
+          "GMEP IWH",
+          "GMEP CW FIXTURE POINT",
+          "GMEP CP"
+      };
+      return coldWater.Contains(blockName.ToUpper());
     }
     public async Task GenerateGasCalculators() {
      GasCalculators.Clear();
@@ -1289,6 +1398,96 @@ namespace GMEPPlumbing.Views
       throw new NotImplementedException();
     }
   }
+  public class GPMToFUConverter : IValueConverter {
+    SortedDictionary<int, int> flushTankDict = new SortedDictionary<int, int>
+     {
+        // Data from Image 1
+        {0, 1}, {1, 2}, {3, 3}, {4, 4}, {6, 5}, {7, 6}, {8, 7}, {10, 8}, {12, 9}, {13, 10},
+        {15, 11}, {16, 12}, {18, 13}, {20, 14}, {21, 15}, {23, 16}, {24, 17}, {26, 18}, {28, 19},
+        {30, 20}, {32, 21}, {34, 22}, {36, 23}, {39, 24}, {42, 25}, {44, 26}, {46, 27}, {49, 28},
+        {51, 29}, {54, 30}, {56, 31}, {58, 32}, {60, 33}, {63, 34}, {66, 35}, {69, 36}, {74, 37},
+        {78, 38}, {83, 39}, {86, 40}, {90, 41}, {95, 42}, {99, 43}, {103, 44}, {107, 45}, {111, 46},
+        {115, 47}, {119, 48}, {123, 49}, {127, 50}, {130, 51}, {135, 52}, {141, 53}, {146, 54},
+        {151, 55}, {155, 56}, {160, 57}, {165, 58}, {170, 59}, {175, 60}, {185, 62}, {195, 64},
+        {205, 66},
+
+        // Data from Image 2
+        {215, 68}, {225, 70}, {236, 72}, {245, 74}, {254, 76}, {264, 78}, {284, 82}, {294, 84},
+        {305, 86}, {315, 88}, {326, 90}, {337, 92}, {348, 94}, {359, 96}, {370, 98}, {380, 100},
+        {406, 105}, {431, 110}, {455, 115}, {479, 120}, {506, 125}, {533, 130}, {559, 135},
+        {585, 140}, {611, 145}, {638, 150}, {665, 155}, {692, 160}, {719, 165}, {748, 170},
+        {778, 175}, {809, 180}, {840, 185}, {874, 190}, {945, 200}, {1018, 210}, {1091, 220},
+        {1173, 230}, {1254, 240}, {1335, 250}, {1418, 260}, {1500, 270}, {1583, 280}, {1668, 290},
+        {1755, 300}, {1845, 310}, {1926, 320}, {2018, 330}, {2110, 340}, {2204, 350}, {2298, 360},
+        {2388, 370}, {2480, 380}, {2575, 390}, {2670, 400}, {2765, 410}, {2862, 420}, {2960, 430},
+        {3060, 440}, {3150, 450}, {3620, 500}, {4070, 550}, {4480, 600}, {5380, 700}, {6280, 800},
+        {7280, 900},
+
+        // Data from Image 3
+        {8300, 1000}, {9320, 1100}, {10340, 1200}, {11360, 1300}, {12380, 1400}, {13400, 1500},
+        {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
+        {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
+    };
+
+    SortedDictionary<int, int> flushValveDict = new SortedDictionary<int, int>
+    {
+      // Data from Image 1
+        {0, 21},{6, 23}, {7, 24}, {8, 25}, {9, 26}, {10, 27}, {11, 28}, {12, 29}, {13, 30}, {14, 31},
+        {15, 32}, {16, 33}, {18, 34}, {20, 35}, {21, 36}, {23, 37}, {25, 38}, {26, 39}, {28, 40},
+        {30, 41}, {31, 42}, {33, 43}, {35, 44}, {37, 45}, {39, 46}, {42, 47}, {44, 48}, {46, 49},
+        {48, 50}, {50, 51}, {52, 52}, {54, 53}, {57, 54}, {60, 55}, {63, 56}, {66, 57}, {69, 58},
+        {73, 59}, {76, 60}, {82, 62}, {88, 64}, {95, 66},
+
+        // Data from Image 2
+        {102, 68}, {108, 70}, {116, 72}, {124, 74}, {132, 76}, {140, 78}, {158, 82}, {168, 84},
+        {176, 86}, {186, 88}, {195, 90}, {205, 92}, {214, 94}, {223, 96}, {234, 98}, {245, 100},
+        {270, 105}, {295, 110}, {329, 115}, {365, 120}, {396, 125}, {430, 130}, {460, 135},
+        {490, 140}, {521, 145}, {559, 150}, {596, 155}, {631, 160}, {666, 165}, {700, 170},
+        {739, 175}, {775, 180}, {811, 185}, {850, 190}, {931, 200}, {1009, 210}, {1091, 220},
+        {1173, 230}, {1254, 240}, {1335, 250}, {1418, 260}, {1500, 270}, {1583, 280}, {1668, 290},
+        {1755, 300}, {1845, 310}, {1926, 320}, {2018, 330}, {2110, 340}, {2204, 350}, {2298, 360},
+        {2388, 370}, {2480, 380}, {2575, 390}, {2670, 400}, {2765, 410}, {2862, 420}, {2960, 430},
+        {3060, 440}, {3150, 450}, {3620, 500}, {4070, 550}, {4480, 600}, {5380, 700}, {6280, 800},
+        {7280, 900},
+
+        // Data from Image 3
+        {8300, 1000}, {9320, 1100}, {10340, 1200}, {11360, 1300}, {12380, 1400}, {13400, 1500},
+        {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
+        {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
+    };
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+      int flowTypeId = 0;
+      if (parameter is string s && int.TryParse(s, out int parsed))
+        flowTypeId = parsed;
+      else
+        return 0;
+      var lookup = flowTypeId == 1 ? flushTankDict : flushValveDict;
+     
+      if (flowTypeId != 1 && flowTypeId != 2) {
+        return 0;
+      }
+
+      int result = 0;
+      bool found = false;
+      foreach (var kvp in lookup.Reverse()) {
+        if (value is double num && num <= kvp.Value) {
+          result = kvp.Key;
+          found = true;
+        }
+      }
+      if (!found) {
+        result = lookup.Last().Key;
+      }
+      if (result == 0) {
+        return "-";
+      }
+
+      return result;
+    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+      throw new NotImplementedException();
+    }
+  }
   public static class TextVisual3DExtensions {
     public static readonly DependencyProperty BasePointIdProperty =
         DependencyProperty.RegisterAttached(
@@ -1339,4 +1538,5 @@ namespace GMEPPlumbing.Views
   public class ServiceLocator {
     public static MariaDBService MariaDBService { get; } = new MariaDBService();
   }
+
 }

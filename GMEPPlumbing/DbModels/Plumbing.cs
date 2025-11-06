@@ -676,6 +676,11 @@ namespace GMEPPlumbing {
     private double _developedSystemLength;
     private double _averagePressureDrop;
     private string _sourceId;
+    private bool _enableCopper = false;
+    private bool _enablePex = false;
+    private bool _enableCPVCSDRII = false;
+    private bool _enableCPVCSCH80 = false;
+    public WaterPipeSizingChart Chart { get; set; } = new WaterPipeSizingChart();
 
     public string Description {
       get => _description;
@@ -705,6 +710,23 @@ namespace GMEPPlumbing {
       get => _sourceId;
       set { if (_sourceId != value) { _sourceId = value; OnPropertyChanged(); } }
     }
+    public bool EnableCopper {
+      get => _enableCopper;
+      set { if (_enableCopper != value) { _enableCopper = value; OnPropertyChanged(); } }
+    }
+    public bool EnablePex {
+      get => _enablePex;
+      set { if (_enablePex != value) { _enablePex = value; OnPropertyChanged(); } }
+    }
+    public bool EnableCPVCSDRII {
+      get => _enableCPVCSDRII;
+      set { if (_enableCPVCSDRII != value) { _enableCPVCSDRII = value; OnPropertyChanged(); } }
+    }
+    public bool EnableCPVCSCH80 {
+      get => _enableCPVCSCH80;
+      set { if (_enableCPVCSCH80 != value) { _enableCPVCSCH80 = value; OnPropertyChanged(); } }
+    }
+
 
     public ObservableCollection<WaterLoss> Losses { get; } = new ObservableCollection<WaterLoss>();
     public ObservableCollection<WaterAddition> Additions { get; } = new ObservableCollection<WaterAddition>();
@@ -747,6 +769,10 @@ namespace GMEPPlumbing {
       AvailableFrictionPressure = totalPressure;
       // Update the average pressure drop
       AveragePressureDrop = (totalPressure / DevelopedSystemLength) * 100;
+      PickCharts();
+    }
+    public void PickCharts() {
+      Chart.PickCharts(AveragePressureDrop);
     }
 
     private void Losses_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {
@@ -784,6 +810,12 @@ namespace GMEPPlumbing {
       if (e.PropertyName == nameof(WaterAddition.Value)) {
         DeterminePressure();
       }
+    }
+    public void PickChartParameters(Tuple<int,int,int,int> info) {
+      Chart.CopperTypeLChart.ChosenOption = Chart.CopperTypeLChart.Options[info.Item1];
+      Chart.PEXChart.ChosenOption = Chart.PEXChart.Options[info.Item2];
+      Chart.CPVCSDRIIChart.ChosenOption = Chart.CPVCSDRIIChart.Options[info.Item3];
+      Chart.CPVCSCH80Chart.ChosenOption = Chart.CPVCSCH80Chart.Options[info.Item4];
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
