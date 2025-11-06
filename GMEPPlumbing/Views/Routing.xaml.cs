@@ -1410,12 +1410,12 @@ namespace GMEPPlumbing.Views
         {8300, 1000}, {9320, 1100}, {10340, 1200}, {11360, 1300}, {12380, 1400}, {13400, 1500},
         {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
         {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
-      };
+    };
 
     SortedDictionary<int, int> flushValveDict = new SortedDictionary<int, int>
     {
-        // Data from Image 1
-        {6, 23}, {7, 24}, {8, 25}, {9, 26}, {10, 27}, {11, 28}, {12, 29}, {13, 30}, {14, 31},
+      // Data from Image 1
+        {0, 21},{6, 23}, {7, 24}, {8, 25}, {9, 26}, {10, 27}, {11, 28}, {12, 29}, {13, 30}, {14, 31},
         {15, 32}, {16, 33}, {18, 34}, {20, 35}, {21, 36}, {23, 37}, {25, 38}, {26, 39}, {28, 40},
         {30, 41}, {31, 42}, {33, 43}, {35, 44}, {37, 45}, {39, 46}, {42, 47}, {44, 48}, {46, 49},
         {48, 50}, {50, 51}, {52, 52}, {54, 53}, {57, 54}, {60, 55}, {63, 56}, {66, 57}, {69, 58},
@@ -1437,26 +1437,34 @@ namespace GMEPPlumbing.Views
         {8300, 1000}, {9320, 1100}, {10340, 1200}, {11360, 1300}, {12380, 1400}, {13400, 1500},
         {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
         {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
-      };
+    };
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-      int result = 0;
-      if (parameter is int FlowTypeId) {
-        var lookup = FlowTypeId == 1 ? flushTankDict : flushValveDict;
-        if (FlowTypeId != 1 && FlowTypeId != 2) {
-          return 0;
-        }
-        bool found = false;
-        foreach (var kvp in lookup) {
-          if (value is int num && num <= kvp.Value) {
-            result = kvp.Key;
-            found = true;
-          }
-        }
-        if (!found) {
-          result = lookup.Last().Key;
-        }
-        
+      int flowTypeId = 0;
+      if (parameter is string s && int.TryParse(s, out int parsed))
+        flowTypeId = parsed;
+      else
+        return 0;
+      var lookup = flowTypeId == 1 ? flushTankDict : flushValveDict;
+     
+      if (flowTypeId != 1 && flowTypeId != 2) {
+        return 0;
       }
+
+      int result = 0;
+      bool found = false;
+      foreach (var kvp in lookup.Reverse()) {
+        if (value is double num && num <= kvp.Value) {
+          result = kvp.Key;
+          found = true;
+        }
+      }
+      if (!found) {
+        result = lookup.Last().Key;
+      }
+      if (result == 0) {
+        return "-";
+      }
+
       return result;
     }
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
