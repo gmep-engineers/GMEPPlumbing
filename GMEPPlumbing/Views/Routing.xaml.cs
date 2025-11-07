@@ -135,7 +135,6 @@ namespace GMEPPlumbing.Views
       e.Handled = true;
     }
     private void DataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e) {
-      // Get the index from the column name (e.g., "Col0", "Col1", ...)
       if (e.PropertyName.StartsWith("Col")) {
         var grid = sender as DataGrid;
         if (grid?.DataContext is GasCalculator vm && vm.ChosenChart != null) {
@@ -143,8 +142,14 @@ namespace GMEPPlumbing.Views
           if (int.TryParse(e.PropertyName.Substring(3), out colIndex)) {
             var headers = vm.ChosenChart.DisplayHeaders;
             if (colIndex < headers.Count) {
-              // Set header with newlines
               e.Column.Header = headers[colIndex];
+            }
+            if (colIndex == 1)
+            {
+              e.Column.Width = DataGridLength.Auto;
+            }
+            else {
+              e.Column.Width = new DataGridLength(1, DataGridLengthUnitType.Star);
             }
           }
         }
