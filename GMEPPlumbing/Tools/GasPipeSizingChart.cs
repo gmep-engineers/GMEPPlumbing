@@ -18,6 +18,7 @@ namespace GMEPPlumbing.Tools {
     public string GasType { get; set; } = string.Empty;
     public int ChartIndex { get; set; } = 0;
     public string Name { get; set; }
+    public List<string> DisplayHeaders { get; private set; } = new List<string>();
     public DataTable CsvTable { get; set; } = new DataTable();
     public GasPipeSizingChart(string gasType, string pipeType, int chartIndex, string name) {
       SetChartPath(gasType, pipeType, chartIndex);
@@ -131,9 +132,10 @@ namespace GMEPPlumbing.Tools {
     public void LoadCsv(string filePath) {
       CsvTable.Clear();
       CsvTable.Columns.Clear();
+      DisplayHeaders.Clear();
 
       var lines = File.ReadAllLines(filePath);
-      if (lines.Length < 4) return; // Need at least 3 header rows + 1 data row
+      if (lines.Length < 4) return;
 
       var header1 = lines[0].Split(',');
       var header2 = lines[1].Split(',');
@@ -141,26 +143,27 @@ namespace GMEPPlumbing.Tools {
 
       int colCount = Math.Max(header1.Length, Math.Max(header2.Length, header3.Length));
 
-      // Combine headers with newline separator
       for (int i = 0; i < colCount; i++) {
         string h1 = i < header1.Length ? header1[i] : "";
         string h2 = i < header2.Length ? header2[i] : "";
         string h3 = i < header3.Length ? header3[i] : "";
-        string combined = $"{h1}\n{h2}\n{h3}".Trim('\n');
-        CsvTable.Columns.Add(combined);
+        string displayHeader = $"{h1}\n{h2}\n{h3}".Trim('\n');
+        DisplayHeaders.Add(displayHeader);
+
+        // Safe column name for binding
+        string safeName = $"Col{i}";
+        CsvTable.Columns.Add(safeName);
       }
 
-      // Add data rows
       for (int i = 3; i < lines.Length; i++) {
         var row = lines[i].Split(',');
-        // Pad row if short
         if (row.Length < colCount)
           row = row.Concat(Enumerable.Repeat("", colCount - row.Length)).ToArray();
         CsvTable.Rows.Add(row);
       }
     }
   }
-  public class GasEntry {
+    public class GasEntry {
     public string Name { get; set; }
   }
   public class StainlessSteelGasEntry : GasEntry {
