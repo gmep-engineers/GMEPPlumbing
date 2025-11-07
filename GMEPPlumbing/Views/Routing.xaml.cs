@@ -20,12 +20,20 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using HelixToolkit.Wpf;
 using GMEPPlumbing.Tools;
-using System.Windows.Input;
 using System.ComponentModel;
 using Autodesk.AutoCAD.GraphicsSystem;
 using static System.Net.Mime.MediaTypeNames;
 using Autodesk.AutoCAD.MacroRecorder;
 using MySqlX.XDevAPI.Common;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Colors;
+using Application = Autodesk.AutoCAD.ApplicationServices.Application;
+using Color = System.Windows.Media.Color;
+using Table = Autodesk.AutoCAD.DatabaseServices.Table;
+using Visibility = System.Windows.Visibility;
+
 
 namespace GMEPPlumbing.Views
 {
@@ -151,6 +159,80 @@ namespace GMEPPlumbing.Views
             else {
               e.Column.Width = new DataGridLength(1, DataGridLengthUnitType.Star);
             }
+          }
+        }
+      }
+    }
+    private void PlaceWaterChart_Click(object sender, RoutedEventArgs e) {
+      if (sender is Button button && button.CommandParameter is PipeTypeOption option) {
+        MessageBox.Show("Select insertion point in AutoCAD drawing area.");
+        Document doc = Application.DocumentManager.MdiActiveDocument;
+        Database db = doc.Database;
+        Editor ed = doc.Editor;
+
+        PromptPointResult ppr = ed.GetPoint("\nSpecify insertion point for the chart: ");
+        if (ppr.Status != PromptStatus.OK) {
+          return;
+        }
+
+        using (DocumentLock docLock = doc.LockDocument()) {
+          using (Transaction tr = db.TransactionManager.StartTransaction()) {
+            int dataRows = option.chosenOption.Entries.Count;
+            int totalRows = dataRows + 4;
+            int totalCols = 6;
+
+            Table table = new Table();
+            table.TableStyle = db.Tablestyle;
+            table.Position = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
+            table.SetSize(option.chosenOption.Entries.Count + 4, 6);
+
+            table.SetSize(totalRows, totalCols);
+
+            for (int i = 0; i < totalCols; i++)
+              table.Columns[i].Width = 1.2;
+            for (int i = 0; i < totalRows; i++)
+              table.Rows[i].Height = 0.5;
+
+            table.Cells[0, 0].TextString = "COPPER TYPE L PIPE SIZING CHART";
+            table.Cells[0, 0].TextHeight = 0.35;
+            table.Cells[0, 0].Alignment = CellAlignment.MiddleCenter;
+            table.MergeCells(CellRange.Create(table, 0, 0, 0, totalCols - 1));
+
+            table.Cells[1, 0].TextString = "FOR VELOCITY OF 8FPS (CW) AND 5FPS(HW); PRESSURE LOSS PER 100FT IN PSI=1.4";
+            table.Cells[1, 0].TextHeight = 0.2;
+            table.Cells[1, 0].Alignment = CellAlignment.MiddleCenter;
+            table.MergeCells(CellRange.Create(table, 1, 0, 1, totalCols - 1));
+
+            table.Cells[2, 0].TextString = "PIPE SIZE";
+            table.Cells[2, 1].TextString = "COLD WATER";
+            table.MergeCells(CellRange.Create(table, 2, 1, 2, 3));
+            table.Cells[2, 4].TextString = "HOT WATER";
+            table.MergeCells(CellRange.Create(table, 2, 4, 2, 5));
+            for (int c = 0; c < totalCols; c++) {
+              table.Cells[2, c].TextHeight = 0.18;
+              table.Cells[2, c].Alignment = CellAlignment.MiddleCenter;
+            }
+
+            table.Cells[3, 1].TextString = "TANK FU";
+            table.Cells[3, 2].TextString = "F.V. FU";
+            table.Cells[3, 3].TextString = "GPM";
+            table.Cells[3, 4].TextString = "TANK FU";
+            table.Cells[3, 5].TextString = "GPM";
+            table.Cells[3, 0].TextString = "";
+            for (int c = 0; c < totalCols; c++) {
+              table.Cells[3, c].TextHeight = 0.18;
+              table.Cells[3, c].Alignment = CellAlignment.MiddleCenter;
+            }
+
+            // Add table to model space
+            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+            BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+            btr.AppendEntity(table);
+            tr.AddNewlyCreatedDBObject(table, true);
+
+            tr.Commit();
+
+
           }
         }
       }

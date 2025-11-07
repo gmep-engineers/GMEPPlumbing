@@ -993,10 +993,6 @@ namespace GMEPPlumbing.Tools {
     protected void OnPropertyChanged(string name) {
       PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
-    public void PlaceChosenOptionOnCAD() {
-   
-    }
-
   }
   public class PressureLossOption {
     public double PressureLossPer100Ft { get; set; }
