@@ -188,28 +188,29 @@ namespace GMEPPlumbing.Views
 
             table.SetSize(totalRows, totalCols);
 
-            for (int i = 0; i < totalCols; i++)
-              table.Columns[i].Width = 1.2;
+            for (int i = 0; i < totalCols; i++) {
+              if (i == 0)
+                table.Columns[i].Width = 3.375;
+              else
+                table.Columns[i].Width = 1.125;
+            }
             for (int i = 0; i < totalRows; i++)
-              table.Rows[i].Height = 0.5;
+              table.Rows[i].Height = 0.375;
+            double psi = option.chosenOption.PressureLossPer100Ft;
+            string combinedText = $@"{{\H0.75x;COPPER TYPE L PIPE SIZING CHART}}\P{{\H0.5x;FOR VELOCITY OF 8FPS (CW) AND 5FPS(HW); PRESSURE LOSS PER 100FT IN PSI={psi}}}";
 
-            table.Cells[0, 0].TextString = "COPPER TYPE L PIPE SIZING CHART";
-            table.Cells[0, 0].TextHeight = 0.35;
+            table.Cells[0, 0].TextString = combinedText;
             table.Cells[0, 0].Alignment = CellAlignment.MiddleCenter;
-            table.MergeCells(CellRange.Create(table, 0, 0, 0, totalCols - 1));
-
-            table.Cells[1, 0].TextString = "FOR VELOCITY OF 8FPS (CW) AND 5FPS(HW); PRESSURE LOSS PER 100FT IN PSI=1.4";
-            table.Cells[1, 0].TextHeight = 0.2;
-            table.Cells[1, 0].Alignment = CellAlignment.MiddleCenter;
-            table.MergeCells(CellRange.Create(table, 1, 0, 1, totalCols - 1));
+            table.MergeCells(CellRange.Create(table, 0, 0, 1, totalCols - 1));
 
             table.Cells[2, 0].TextString = "PIPE SIZE";
+            table.MergeCells(CellRange.Create(table, 2, 0, 3, 0));
             table.Cells[2, 1].TextString = "COLD WATER";
             table.MergeCells(CellRange.Create(table, 2, 1, 2, 3));
             table.Cells[2, 4].TextString = "HOT WATER";
             table.MergeCells(CellRange.Create(table, 2, 4, 2, 5));
             for (int c = 0; c < totalCols; c++) {
-              table.Cells[2, c].TextHeight = 0.18;
+              table.Cells[2, c].TextHeight = 0.15;
               table.Cells[2, c].Alignment = CellAlignment.MiddleCenter;
             }
 
@@ -220,13 +221,16 @@ namespace GMEPPlumbing.Views
             table.Cells[3, 5].TextString = "GPM";
             table.Cells[3, 0].TextString = "";
             for (int c = 0; c < totalCols; c++) {
-              table.Cells[3, c].TextHeight = 0.18;
+              table.Cells[3, c].TextHeight = 0.1;
               table.Cells[3, c].Alignment = CellAlignment.MiddleCenter;
             }
 
-            // Add table to model space
+            // Add table to current space
             BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-            BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+            LayoutManager lm = LayoutManager.Current;
+            ObjectId layoutId = lm.GetLayoutId(lm.CurrentLayout);
+            Layout layout = (Layout)tr.GetObject(layoutId, OpenMode.ForRead);
+            BlockTableRecord btr = (BlockTableRecord)tr.GetObject(layout.BlockTableRecordId, OpenMode.ForWrite);
             btr.AppendEntity(table);
             tr.AddNewlyCreatedDBObject(table, true);
 
