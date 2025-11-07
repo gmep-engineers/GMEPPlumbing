@@ -1420,7 +1420,28 @@ namespace GMEPPlumbing.Views
     }
   }
   public class GPMToFUConverter : IValueConverter {
-    SortedDictionary<int, int> flushTankDict = new SortedDictionary<int, int>
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+      int flowTypeId = 0;
+      if (parameter is string s && int.TryParse(s, out int parsed))
+        flowTypeId = parsed;
+      else
+        return 0;
+      int result = 0;
+      if (value is double gpm) {
+        result = GPMToFUTransformer.Convert(gpm, flowTypeId);
+      }
+      if (result == 0) {
+        return "-";
+      }
+
+      return result;
+    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+      throw new NotImplementedException();
+    }
+  }
+  public class GPMToFUTransformer {
+    static SortedDictionary<int, int> flushTankDict = new SortedDictionary<int, int>
      {
         // Data from Image 1
         {0, 1}, {1, 2}, {3, 3}, {4, 4}, {6, 5}, {7, 6}, {8, 7}, {10, 8}, {12, 9}, {13, 10},
@@ -1450,7 +1471,7 @@ namespace GMEPPlumbing.Views
         {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
     };
 
-    SortedDictionary<int, int> flushValveDict = new SortedDictionary<int, int>
+    static SortedDictionary<int, int> flushValveDict = new SortedDictionary<int, int>
     {
       // Data from Image 1
         {0, 21},{6, 23}, {7, 24}, {8, 25}, {9, 26}, {10, 27}, {11, 28}, {12, 29}, {13, 30}, {14, 31},
@@ -1476,22 +1497,15 @@ namespace GMEPPlumbing.Views
         {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
         {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
     };
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-      int flowTypeId = 0;
-      if (parameter is string s && int.TryParse(s, out int parsed))
-        flowTypeId = parsed;
-      else
-        return 0;
+    public static int Convert(double gpm, int flowTypeId) {
       var lookup = flowTypeId == 1 ? flushTankDict : flushValveDict;
-     
       if (flowTypeId != 1 && flowTypeId != 2) {
         return 0;
       }
-
       int result = 0;
       bool found = false;
       foreach (var kvp in lookup.Reverse()) {
-        if (value is double num && num <= kvp.Value) {
+        if (gpm <= kvp.Value) {
           result = kvp.Key;
           found = true;
         }
@@ -1499,14 +1513,7 @@ namespace GMEPPlumbing.Views
       if (!found) {
         result = lookup.Last().Key;
       }
-      if (result == 0) {
-        return "-";
-      }
-
       return result;
-    }
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-      throw new NotImplementedException();
     }
   }
   public static class TextVisual3DExtensions {

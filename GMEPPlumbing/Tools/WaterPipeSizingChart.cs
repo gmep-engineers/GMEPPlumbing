@@ -1,4 +1,5 @@
-﻿using Org.BouncyCastle.Asn1.Mozilla;
+﻿using GMEPPlumbing.Views;
+using Org.BouncyCastle.Asn1.Mozilla;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -992,6 +993,10 @@ namespace GMEPPlumbing.Tools {
     protected void OnPropertyChanged(string name) {
       PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
+    public void PlaceChosenOptionOnCAD() {
+   
+    }
+
   }
   public class PressureLossOption {
     public double PressureLossPer100Ft { get; set; }
