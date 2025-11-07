@@ -144,7 +144,7 @@ namespace GMEPPlumbing.Views
             if (colIndex < headers.Count) {
               e.Column.Header = headers[colIndex];
             }
-            if (colIndex == 1)
+            if (colIndex == 1 || colIndex == 0)
             {
               e.Column.Width = DataGridLength.Auto;
             }
