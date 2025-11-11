@@ -20,12 +20,20 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using HelixToolkit.Wpf;
 using GMEPPlumbing.Tools;
-using System.Windows.Input;
 using System.ComponentModel;
 using Autodesk.AutoCAD.GraphicsSystem;
 using static System.Net.Mime.MediaTypeNames;
 using Autodesk.AutoCAD.MacroRecorder;
 using MySqlX.XDevAPI.Common;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Colors;
+using Application = Autodesk.AutoCAD.ApplicationServices.Application;
+using Color = System.Windows.Media.Color;
+using Table = Autodesk.AutoCAD.DatabaseServices.Table;
+using Visibility = System.Windows.Visibility;
+
 
 namespace GMEPPlumbing.Views
 {
@@ -133,6 +141,37 @@ namespace GMEPPlumbing.Views
         grid.RowDefinitions[3].Height = new GridLength(1, GridUnitType.Star);
       }
       e.Handled = true;
+    }
+    private void DataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e) {
+      if (e.PropertyName.StartsWith("Col")) {
+        var grid = sender as DataGrid;
+        if (grid?.DataContext is GasCalculator vm && vm.ChosenChart != null) {
+          int colIndex;
+          if (int.TryParse(e.PropertyName.Substring(3), out colIndex)) {
+            var headers = vm.ChosenChart.DisplayHeaders;
+            if (colIndex < headers.Count) {
+              e.Column.Header = headers[colIndex];
+            }
+            if (colIndex == 1 || colIndex == 0)
+            {
+              e.Column.Width = DataGridLength.Auto;
+            }
+            else {
+              e.Column.Width = new DataGridLength(1, DataGridLengthUnitType.Star);
+            }
+          }
+        }
+      }
+    }
+    private void PlaceWaterChart_Click(object sender, RoutedEventArgs e) {
+      if (sender is Button button && button.CommandParameter is PipeTypeOption option) {
+        if(option.PipeType == "Copper") {
+          ChartPlacer.PlaceCopperChart(option.ChosenOption);
+        }
+        if (option.PipeType == "PEX") {
+          ChartPlacer.PlacePEXChart(option.ChosenOption);
+        }
+      }
     }
   }
 
@@ -1043,9 +1082,9 @@ namespace GMEPPlumbing.Views
                 name = "Waste Output";
                 break;
             }
-            Tuple<string, string, int, string> info = await ServiceLocator.MariaDBService.GetPlumbingGasCalculations(plumbingSource.Id);
+            Tuple<string, string, int, string, string> info = await ServiceLocator.MariaDBService.GetPlumbingGasCalculations(plumbingSource.Id);
             if (info != null) {
-              GasPipeSizingChart gasChart = new GasPipeSizingChart(info.Item2, info.Item4, info.Item3);
+              GasPipeSizingChart gasChart = new GasPipeSizingChart(info.Item2, info.Item4, info.Item3, info.Item4);
               GasCalculators[plumbingSource.Id] = new GasCalculator(plumbingSource.Id, info.Item1, gasChart);
             }
             else {
@@ -1399,7 +1438,28 @@ namespace GMEPPlumbing.Views
     }
   }
   public class GPMToFUConverter : IValueConverter {
-    SortedDictionary<int, int> flushTankDict = new SortedDictionary<int, int>
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+      int flowTypeId = 0;
+      if (parameter is string s && int.TryParse(s, out int parsed))
+        flowTypeId = parsed;
+      else
+        return 0;
+      int result = 0;
+      if (value is double gpm) {
+        result = GPMToFUTransformer.Convert(gpm, flowTypeId);
+      }
+      if (result == 0) {
+        return "-";
+      }
+
+      return result;
+    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+      throw new NotImplementedException();
+    }
+  }
+  public class GPMToFUTransformer {
+    static SortedDictionary<int, int> flushTankDict = new SortedDictionary<int, int>
      {
         // Data from Image 1
         {0, 1}, {1, 2}, {3, 3}, {4, 4}, {6, 5}, {7, 6}, {8, 7}, {10, 8}, {12, 9}, {13, 10},
@@ -1429,7 +1489,7 @@ namespace GMEPPlumbing.Views
         {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
     };
 
-    SortedDictionary<int, int> flushValveDict = new SortedDictionary<int, int>
+    static SortedDictionary<int, int> flushValveDict = new SortedDictionary<int, int>
     {
       // Data from Image 1
         {0, 21},{6, 23}, {7, 24}, {8, 25}, {9, 26}, {10, 27}, {11, 28}, {12, 29}, {13, 30}, {14, 31},
@@ -1455,22 +1515,15 @@ namespace GMEPPlumbing.Views
         {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
         {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
     };
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-      int flowTypeId = 0;
-      if (parameter is string s && int.TryParse(s, out int parsed))
-        flowTypeId = parsed;
-      else
-        return 0;
+    public static int Convert(double gpm, int flowTypeId) {
       var lookup = flowTypeId == 1 ? flushTankDict : flushValveDict;
-     
       if (flowTypeId != 1 && flowTypeId != 2) {
         return 0;
       }
-
       int result = 0;
       bool found = false;
       foreach (var kvp in lookup.Reverse()) {
-        if (value is double num && num <= kvp.Value) {
+        if (gpm <= kvp.Value) {
           result = kvp.Key;
           found = true;
         }
@@ -1478,14 +1531,7 @@ namespace GMEPPlumbing.Views
       if (!found) {
         result = lookup.Last().Key;
       }
-      if (result == 0) {
-        return "-";
-      }
-
       return result;
-    }
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-      throw new NotImplementedException();
     }
   }
   public static class TextVisual3DExtensions {
@@ -1537,6 +1583,225 @@ namespace GMEPPlumbing.Views
   }
   public class ServiceLocator {
     public static MariaDBService MariaDBService { get; } = new MariaDBService();
+  }
+  public class ChartPlacer {
+    public static void PlaceCopperChart(PressureLossOption option) {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+
+      PromptPointResult ppr = ed.GetPoint("\nSpecify insertion point for the chart: ");
+      if (ppr.Status != PromptStatus.OK) {
+        return;
+      }
+
+      using (DocumentLock docLock = doc.LockDocument()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          TextStyleTable tst = (TextStyleTable)tr.GetObject(db.TextStyleTableId, OpenMode.ForRead);
+          ObjectId standardTextStyleId = tst["gmep"];
+
+          int dataRows = option.Entries.Count;
+          int totalRows = dataRows + 5;
+          int totalCols = 6;
+
+          Table table = new Table();
+          table.TableStyle = db.Tablestyle;
+          table.Position = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
+          table.Layer = "P-TEXT";
+
+          table.SetSize(totalRows, totalCols);
+
+          for (int i = 0; i < totalCols; i++) {
+            if (i == 0)
+              table.Columns[i].Width = 3.375;
+            else
+              table.Columns[i].Width = 1.125;
+          }
+          for (int i = 0; i < totalRows; i++)
+            table.Rows[i].Height = 0.375;
+          double psi = option.PressureLossPer100Ft;
+          string combinedText = $@"{{\H0.75x;COPPER TYPE L PIPE SIZING CHART}}\P{{\H0.5x;FOR VELOCITY OF 8FPS (CW) AND 5FPS(HW); PRESSURE LOSS PER 100FT IN PSI={psi}}}";
+
+          table.Cells[0, 0].TextString = combinedText;
+          table.Cells[0, 0].Alignment = CellAlignment.MiddleCenter;
+          table.Cells[0, 0].TextStyleId = standardTextStyleId;
+          table.MergeCells(CellRange.Create(table, 0, 0, 1, totalCols - 1));
+
+          table.Cells[2, 0].TextString = "PIPE SIZE";
+          table.MergeCells(CellRange.Create(table, 2, 0, 3, 0));
+          table.Cells[2, 1].TextString = "COLD WATER";
+          table.MergeCells(CellRange.Create(table, 2, 1, 2, 3));
+          table.Cells[2, 4].TextString = "HOT WATER";
+          table.MergeCells(CellRange.Create(table, 2, 4, 2, 5));
+          for (int c = 0; c < totalCols; c++) {
+            table.Cells[2, c].TextHeight = 0.15;
+            table.Cells[2, c].Alignment = CellAlignment.MiddleCenter;
+            table.Cells[2, c].TextStyleId = standardTextStyleId;
+          }
+
+          table.Cells[3, 1].TextString = "TANK FU";
+          table.Cells[3, 2].TextString = "F.V. FU";
+          table.Cells[3, 3].TextString = "GPM";
+          table.Cells[3, 4].TextString = "TANK FU";
+          table.Cells[3, 5].TextString = "GPM";
+          table.Cells[3, 0].TextString = "";
+          for (int c = 0; c < totalCols; c++) {
+            table.Cells[3, c].TextHeight = 0.1;
+            table.Cells[3, c].Alignment = CellAlignment.MiddleCenter;
+            table.Cells[3, c].TextStyleId = standardTextStyleId;
+          }
+          foreach (var entry in option.Entries.Select((value, index) => new { value, index })) {
+            int rowIndex = entry.index + 4;
+
+            int coldTankFU = GPMToFUTransformer.Convert(entry.value.ColdGPM, 1);
+            int coldFVFU = GPMToFUTransformer.Convert(entry.value.ColdGPM, 2);
+            double coldGPM = entry.value.ColdGPM;
+            int hotTankFU = GPMToFUTransformer.Convert(entry.value.HotGPM, 1);
+            double hotGPM = entry.value.HotGPM;
+
+            table.Cells[rowIndex, 0].TextString = entry.value.PipeSize;
+            table.Cells[rowIndex, 1].TextString = coldTankFU == 0 ? "-" : coldTankFU.ToString();
+            table.Cells[rowIndex, 2].TextString = coldFVFU == 0 ? "-" : coldFVFU.ToString();
+            table.Cells[rowIndex, 3].TextString = coldGPM == 0 ? "-" : coldGPM.ToString();
+            table.Cells[rowIndex, 4].TextString = hotTankFU == 0 ? "-" : hotTankFU.ToString();
+            table.Cells[rowIndex, 5].TextString = hotGPM == 0 ? "-" : hotGPM.ToString();
+
+            for (int c = 0; c < totalCols; c++) {
+              table.Cells[rowIndex, c].TextHeight = 0.15;
+              table.Cells[rowIndex, c].Alignment = CellAlignment.MiddleCenter;
+              table.Cells[rowIndex, c].TextStyleId = standardTextStyleId;
+            }
+          }
+          int footerRow = totalRows - 1;
+          table.Cells[footerRow, 0].TextString = "BASED ON CHART A 105.1(1) OF APPENDIX A IN THE CALIFORNIA PLUMBING CODE(CPC2022)";
+          table.Cells[footerRow, 0].TextHeight = 0.13;
+          table.Cells[footerRow, 0].Alignment = CellAlignment.MiddleCenter;
+          table.Cells[footerRow, 0].TextStyleId = standardTextStyleId;
+          table.MergeCells(CellRange.Create(table, footerRow, 0, footerRow, totalCols - 1));
+
+
+          // Add table to current space
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          LayoutManager lm = LayoutManager.Current;
+          ObjectId layoutId = lm.GetLayoutId(lm.CurrentLayout);
+          Layout layout = (Layout)tr.GetObject(layoutId, OpenMode.ForRead);
+          BlockTableRecord btr = (BlockTableRecord)tr.GetObject(layout.BlockTableRecordId, OpenMode.ForWrite);
+          btr.AppendEntity(table);
+          tr.AddNewlyCreatedDBObject(table, true);
+
+          tr.Commit();
+
+
+        }
+      }
+    }
+    public static void PlacePEXChart(PressureLossOption option) {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+
+      PromptPointResult ppr = ed.GetPoint("\nSpecify insertion point for the chart: ");
+      if (ppr.Status != PromptStatus.OK) {
+        return;
+      }
+
+      using (DocumentLock docLock = doc.LockDocument()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          TextStyleTable tst = (TextStyleTable)tr.GetObject(db.TextStyleTableId, OpenMode.ForRead);
+          ObjectId standardTextStyleId = tst["gmep"];
+
+          int dataRows = option.Entries.Count;
+          int totalRows = dataRows + 5;
+          int totalCols = 5;
+
+          Table table = new Table();
+          table.TableStyle = db.Tablestyle;
+          table.Position = new Point3d(ppr.Value.X, ppr.Value.Y, 0);
+          table.Layer = "P-TEXT";
+
+          table.SetSize(totalRows, totalCols);
+
+          for (int i = 0; i < totalCols; i++) {
+            if (i == 0)
+              table.Columns[i].Width = 3.375;
+            else
+              table.Columns[i].Width = 1.125;
+          }
+          for (int i = 0; i < totalRows; i++)
+            table.Rows[i].Height = 0.375;
+          double psi = option.PressureLossPer100Ft;
+          string combinedText = $@"{{\H0.75x;PEX PIPE SIZING CHART}}\P{{\H0.5x;FOR VELOCITY OF 8FPS (CW) AND 5FPS(HW); PRESSURE LOSS PER 100FT IN PSI={psi}}}";
+
+          table.Cells[0, 0].TextString = combinedText;
+          table.Cells[0, 0].Alignment = CellAlignment.MiddleCenter;
+          table.Cells[0, 0].TextStyleId = standardTextStyleId;
+          table.MergeCells(CellRange.Create(table, 0, 0, 1, totalCols - 1));
+
+          table.Cells[2, 0].TextString = "PIPE SIZE";
+          table.MergeCells(CellRange.Create(table, 2, 0, 3, 0));
+          table.Cells[2, 1].TextString = "COLD WATER";
+          table.MergeCells(CellRange.Create(table, 2, 1, 2, 2));
+          table.Cells[2, 3].TextString = "HOT WATER";
+          table.MergeCells(CellRange.Create(table, 2, 3, 2, 4));
+          for (int c = 0; c < totalCols; c++) {
+            table.Cells[2, c].TextHeight = 0.15;
+            table.Cells[2, c].Alignment = CellAlignment.MiddleCenter;
+            table.Cells[2, c].TextStyleId = standardTextStyleId;
+          }
+
+          table.Cells[3, 1].TextString = "TANK FU";
+          table.Cells[3, 2].TextString = "GPM";
+          table.Cells[3, 3].TextString = "TANK FU";
+          table.Cells[3, 4].TextString = "GPM";
+          for (int c = 0; c < totalCols; c++) {
+            table.Cells[3, c].TextHeight = 0.1;
+            table.Cells[3, c].Alignment = CellAlignment.MiddleCenter;
+            table.Cells[3, c].TextStyleId = standardTextStyleId;
+          }
+          foreach (var entry in option.Entries.Select((value, index) => new { value, index })) {
+            int rowIndex = entry.index + 4;
+
+            int coldTankFU = GPMToFUTransformer.Convert(entry.value.ColdGPM, 1);
+            int coldFVFU = GPMToFUTransformer.Convert(entry.value.ColdGPM, 2);
+            double coldGPM = entry.value.ColdGPM;
+            int hotTankFU = GPMToFUTransformer.Convert(entry.value.HotGPM, 1);
+            double hotGPM = entry.value.HotGPM;
+
+            table.Cells[rowIndex, 0].TextString = entry.value.PipeSize;
+            table.Cells[rowIndex, 1].TextString = coldTankFU == 0 ? "-" : coldTankFU.ToString();
+            table.Cells[rowIndex, 2].TextString = coldGPM == 0 ? "-" : coldGPM.ToString();
+            table.Cells[rowIndex, 3].TextString = hotTankFU == 0 ? "-" : hotTankFU.ToString();
+            table.Cells[rowIndex, 4].TextString = hotGPM == 0 ? "-" : hotGPM.ToString();
+
+            for (int c = 0; c < totalCols; c++) {
+              table.Cells[rowIndex, c].TextHeight = 0.15;
+              table.Cells[rowIndex, c].Alignment = CellAlignment.MiddleCenter;
+              table.Cells[rowIndex, c].TextStyleId = standardTextStyleId;
+            }
+          }
+          int footerRow = totalRows - 1;
+          table.Cells[footerRow, 0].TextString = "BASED ON UPONOR AQUAPEX PRESSURE LOSS TABLES IN CH 4 OF THE PLUMBING DESIGN ASSISTANCE MANUAL";
+          table.Cells[footerRow, 0].TextHeight = 0.13;
+          table.Cells[footerRow, 0].Alignment = CellAlignment.MiddleCenter;
+          table.Cells[footerRow, 0].TextStyleId = standardTextStyleId;
+          table.MergeCells(CellRange.Create(table, footerRow, 0, footerRow, totalCols - 1));
+
+
+          // Add table to current space
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          LayoutManager lm = LayoutManager.Current;
+          ObjectId layoutId = lm.GetLayoutId(lm.CurrentLayout);
+          Layout layout = (Layout)tr.GetObject(layoutId, OpenMode.ForRead);
+          BlockTableRecord btr = (BlockTableRecord)tr.GetObject(layout.BlockTableRecordId, OpenMode.ForWrite);
+          btr.AppendEntity(table);
+          tr.AddNewlyCreatedDBObject(table, true);
+
+          tr.Commit();
+
+
+        }
+      }
+    }
   }
 
 }

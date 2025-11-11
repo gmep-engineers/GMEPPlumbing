@@ -1,42 +1,52 @@
-﻿using Autodesk.AutoCAD.Runtime;
-using GMEPPlumbing.Services;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Autodesk.AutoCAD.ApplicationServices;
-using Exception = System.Exception;
-using Autodesk.AutoCAD.Geometry;
-using GMEPPlumbing.Views;
 using System.Windows.Forms.Integration;
-using Autodesk.AutoCAD.Windows;
 using System.Windows.Input;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.Windows;
+using GMEPPlumbing.Services;
+using GMEPPlumbing.Views;
+using Exception = System.Exception;
 
-namespace GMEPPlumbing {
-  class PlumbingCalculationMethods {
+namespace GMEPPlumbing
+{
+  class PlumbingCalculationMethods
+  {
     public MariaDBService MariaDBService { get; set; } = new MariaDBService();
     public string ProjectId { get; private set; } = string.Empty;
-    public List<PlumbingPlanBasePoint> BasePoints { get; private set; } = new List<PlumbingPlanBasePoint>();
-    public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; private set; } = new Dictionary<string, PlumbingPlanBasePoint>();
+    public List<PlumbingPlanBasePoint> BasePoints { get; private set; } =
+      new List<PlumbingPlanBasePoint>();
+    public Dictionary<string, PlumbingPlanBasePoint> BasePointLookup { get; private set; } =
+      new Dictionary<string, PlumbingPlanBasePoint>();
     public List<PlumbingSource> Sources { get; private set; } = new List<PlumbingSource>();
-    public List<PlumbingHorizontalRoute> HorizontalRoutes { get; private set; } = new List<PlumbingHorizontalRoute>();
-    public List<PlumbingVerticalRoute> VerticalRoutes { get; private set; } = new List<PlumbingVerticalRoute>();
+    public List<PlumbingHorizontalRoute> HorizontalRoutes { get; private set; } =
+      new List<PlumbingHorizontalRoute>();
+    public List<PlumbingVerticalRoute> VerticalRoutes { get; private set; } =
+      new List<PlumbingVerticalRoute>();
     public List<PlumbingFixture> PlumbingFixtures { get; set; } = new List<PlumbingFixture>();
-    public List<PlumbingAccessory> PlumbingAccessories { get; set; } = new List<PlumbingAccessory>();
-    public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } = new Dictionary<string, List<PlumbingFullRoute>>();
+    public List<PlumbingAccessory> PlumbingAccessories { get; set; } =
+      new List<PlumbingAccessory>();
+    public Dictionary<string, List<PlumbingFullRoute>> FullRoutes { get; set; } =
+      new Dictionary<string, List<PlumbingFullRoute>>();
     public Routing RoutingControl { get; set; } = null;
     private PaletteSet pw;
-    Dictionary<string, HashSet<string>> SourceFixtureConnections = new Dictionary<string, HashSet<string>>();
-
+    Dictionary<string, HashSet<string>> SourceFixtureConnections =
+      new Dictionary<string, HashSet<string>>();
 
     [CommandMethod("PlumbingFixtureCalc")]
-    public async void PlumbingFixtureCalc() {
+    public async void PlumbingFixtureCalc()
+    {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
 
-      try {
+      try
+      {
         System.Windows.Input.Mouse.OverrideCursor = Cursors.Wait;
 
         await AutoCADIntegration.SaveInfo();
@@ -53,42 +63,58 @@ namespace GMEPPlumbing {
         FullRoutes.Clear();
         SourceFixtureConnections.Clear();
 
-        foreach (var source in Sources) {
+        foreach (var source in Sources)
+        {
           List<string> types = GetSourceOutputTypes(source);
-          var matchingRoutes = HorizontalRoutes.Where(route => route.StartPoint.DistanceTo(source.Position) <= GetSourceSearchDistance(source.BlockName) && route.BasePointId == source.BasePointId && types.Contains(route.Type)).ToList();
-          foreach (var matchingRoute in matchingRoutes) {
+          var matchingRoutes = HorizontalRoutes
+            .Where(route =>
+              route.StartPoint.DistanceTo(source.Position)
+                <= GetSourceSearchDistance(source.BlockName)
+              && route.BasePointId == source.BasePointId
+              && types.Contains(route.Type)
+            )
+            .ToList();
+          foreach (var matchingRoute in matchingRoutes)
+          {
             TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
           }
         }
-        foreach (var kvp in FullRoutes) {
+        foreach (var kvp in FullRoutes)
+        {
           var routes = kvp.Value;
           var sourceRoutesById = routes
-              .Where(fr => fr.RouteItems.FirstOrDefault() is PlumbingSource source && source.TypeId == 2)
-              .GroupBy(fr => ((PlumbingSource)fr.RouteItems.First()).Id)
-              .ToDictionary(
-                  g => g.Key,
-                  g => g.ToList()
-              );
+            .Where(fr =>
+              fr.RouteItems.FirstOrDefault() is PlumbingSource source && source.TypeId == 2
+            )
+            .GroupBy(fr => ((PlumbingSource)fr.RouteItems.First()).Id)
+            .ToDictionary(g => g.Key, g => g.ToList());
           var fixtureRoutesById = routes
-              .Where(fr => fr.RouteItems.LastOrDefault() is PlumbingFixture fixture && (fixture.TypeAbbreviation == "WH" || fixture.TypeAbbreviation == "IWH"))
-              .GroupBy(fr => ((PlumbingFixture)fr.RouteItems.Last()).Id)
-              .ToDictionary(
-                  g => g.Key,
-                  g => g.ToList()
-              );
+            .Where(fr =>
+              fr.RouteItems.LastOrDefault() is PlumbingFixture fixture
+              && (fixture.TypeAbbreviation == "WH" || fixture.TypeAbbreviation == "IWH")
+            )
+            .GroupBy(fr => ((PlumbingFixture)fr.RouteItems.Last()).Id)
+            .ToDictionary(g => g.Key, g => g.ToList());
           List<PlumbingFullRoute> routesToRemove = new List<PlumbingFullRoute>();
-          ed.WriteMessage($"\nfixtures: {fixtureRoutesById.Count} sources {sourceRoutesById.Count}");
-          foreach (var sourceKvp in sourceRoutesById.Keys.ToList()) {
-            if (fixtureRoutesById.TryGetValue(sourceKvp, out var fixtureRoutes)) {
-              ed.WriteMessage($"\nCombining fixture route for fixture {sourceKvp} with source route(s).");
+          ed.WriteMessage(
+            $"\nfixtures: {fixtureRoutesById.Count} sources {sourceRoutesById.Count}"
+          );
+          foreach (var sourceKvp in sourceRoutesById.Keys.ToList())
+          {
+            if (fixtureRoutesById.TryGetValue(sourceKvp, out var fixtureRoutes))
+            {
+              ed.WriteMessage(
+                $"\nCombining fixture route for fixture {sourceKvp} with source route(s)."
+              );
               var fixtureRoute = fixtureRoutes.FirstOrDefault();
-              if (fixtureRoute != null) {
-                foreach (var sourceRoute in sourceRoutesById[sourceKvp]) {
+              if (fixtureRoute != null)
+              {
+                foreach (var sourceRoute in sourceRoutesById[sourceKvp])
+                {
                   sourceRoute.Length += fixtureRoute.Length;
                   sourceRoute.RouteItems.InsertRange(0, fixtureRoute.RouteItems);
                 }
               }
-
             }
           }
         }
@@ -110,19 +136,29 @@ namespace GMEPPlumbing {
         pw.Dock = DockSides.Left;
         pw.RolledUp = false;
       }
-      catch (Exception ex) {
+      catch (Exception ex)
+      {
         ed.WriteMessage($"\nError: {ex.Message}");
         ed.WriteMessage($"\nStack Trace: {ex.StackTrace}");
-        if (ex.InnerException != null) {
+        if (ex.InnerException != null)
+        {
           ed.WriteMessage($"\nInner Exception: {ex.InnerException.Message}");
           ed.WriteMessage($"\nInner Stack Trace: {ex.InnerException.StackTrace}");
         }
       }
-      finally {
+      finally
+      {
         System.Windows.Input.Mouse.OverrideCursor = null;
       }
     }
-    public Tuple<double, int, double> TraverseHorizontalRoute(PlumbingHorizontalRoute route, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+
+    public Tuple<double, int, double> TraverseHorizontalRoute(
+      PlumbingHorizontalRoute route,
+      HashSet<string> visited = null,
+      double fullRouteLength = 0,
+      List<Object> routeObjects = null
+    )
+    {
       if (visited == null)
         visited = new HashSet<string>();
 
@@ -138,7 +174,9 @@ namespace GMEPPlumbing {
       var db = doc.Database;
       var ed = doc.Editor;
 
-      ed.WriteMessage($"\nTraversing horizontal route: {route.Id} from {route.StartPoint} to {route.EndPoint}");
+      ed.WriteMessage(
+        $"\nTraversing horizontal route: {route.Id} from {route.StartPoint} to {route.EndPoint}"
+      );
       Dictionary<PlumbingHorizontalRoute, double> childRoutes = FindNearbyHorizontalRoutes(route);
       List<PlumbingVerticalRoute> verticalRoutes = FindNearbyVerticalRoutes(route);
       List<PlumbingFixture> fixtures = FindNearbyFixtures(route);
@@ -148,19 +186,26 @@ namespace GMEPPlumbing {
       int flowTypeId = 1;
       double longestRunLength = 0;
 
-
       //Fixtures
-      foreach (var fixture in fixtures) {
-        PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(fixture.CatalogId);
-        ed.WriteMessage($"\nFixture {fixture.Id} has a demand of {catalogItem.FixtureDemand} fixture units.");
+      foreach (var fixture in fixtures)
+      {
+        PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(
+          fixture.CatalogId
+        );
+        ed.WriteMessage(
+          $"\nFixture {fixture.Id} has a demand of {catalogItem.FixtureDemand} fixture units."
+        );
         double units = (double)catalogItem.FixtureDemand;
-        if (route.Type == "Hot Water") {
+        if (route.Type == "Hot Water")
+        {
           units = (double)catalogItem.HotDemand;
         }
-        if (route.Type == "Gas") {
+        if (route.Type == "Gas")
+        {
           units = catalogItem.Cfh;
         }
-        if (route.Type == "Waste" || route.Type == "Vent") {
+        if (route.Type == "Waste" || route.Type == "Vent")
+        {
           units = catalogItem.Dfu;
         }
         fixtureUnits += units;
@@ -174,7 +219,8 @@ namespace GMEPPlumbing {
         routeObjectsTemp.Add(fixture);
 
         int typeId = 0;
-        if (routeObjectsTemp[0] is PlumbingSource source) {
+        if (routeObjectsTemp[0] is PlumbingSource source)
+        {
           typeId = source.TypeId;
         }
 
@@ -187,32 +233,45 @@ namespace GMEPPlumbing {
         fullRoute.RouteItems = routeObjectsTemp;
         fullRoute.TypeId = typeId;
 
-      
-        if (fullRoute.RouteItems[0] is PlumbingSource source2) {
-          if (!SourceFixtureConnections.ContainsKey(source2.Id)) {
+        if (fullRoute.RouteItems[0] is PlumbingSource source2)
+        {
+          if (!SourceFixtureConnections.ContainsKey(source2.Id))
+          {
             SourceFixtureConnections[source2.Id] = new HashSet<string>();
           }
-          if (SourceFixtureConnections[source2.Id].Add(fixture.Id)) {
-
-            if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId)) {
-              FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] = new List<PlumbingFullRoute>();
+          if (SourceFixtureConnections[source2.Id].Add(fixture.Id))
+          {
+            if (!FullRoutes.ContainsKey(BasePointLookup[fixture.BasePointId].ViewportId))
+            {
+              FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId] =
+                new List<PlumbingFullRoute>();
             }
 
             FullRoutes[BasePointLookup[fixture.BasePointId].ViewportId].Add(fullRoute);
           }
         }
-        
+
         int feet = (int)(lengthInInches / 12);
         int inches = (int)Math.Round(lengthInInches % 12);
-        ed.WriteMessage($"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches.");
+        ed.WriteMessage(
+          $"\nFixture {fixture.Id} at {fixture.Position} with route length of {feet} feet {inches} inches."
+        );
       }
 
       //accessories
-      foreach(var accessory in accessories) {
+      foreach (var accessory in accessories)
+      {
         double length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
         routeObjectsTemp.Add(route);
-        Tuple<double, int, double> accessoryResult = TraverseAccessory(accessory, flowTypeId, longestRunLength, visited, length, routeObjectsTemp);
+        Tuple<double, int, double> accessoryResult = TraverseAccessory(
+          accessory,
+          flowTypeId,
+          longestRunLength,
+          visited,
+          length,
+          routeObjectsTemp
+        );
         fixtureUnits += accessoryResult.Item1;
         flowTypeId = (flowTypeId == 2) ? 2 : accessoryResult.Item2;
         longestRunLength = Math.Max(longestRunLength, accessoryResult.Item3);
@@ -222,80 +281,118 @@ namespace GMEPPlumbing {
       }
 
       //Vertical Routes
-      foreach (var verticalRoute in verticalRoutes) {
+      foreach (var verticalRoute in verticalRoutes)
+      {
         double length = fullRouteLength + route.StartPoint.DistanceTo(route.EndPoint);
         List<Object> routeObjectsTemp = new List<Object>(routeObjects);
         routeObjectsTemp.Add(route);
-        SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects = GetVerticalRoutesByIdOrdered(verticalRoute.VerticalRouteId, verticalRoute.IsUp, verticalRoute.BasePointId);
-        ed.WriteMessage($"\nTraversing vertical route: {verticalRoute.Id} with {verticalRouteObjects.Count} segments.");
-        int matchingKey = verticalRouteObjects.FirstOrDefault(kvp => kvp.Value.Id == verticalRoute.Id).Key;
+        SortedDictionary<int, PlumbingVerticalRoute> verticalRouteObjects =
+          GetVerticalRoutesByIdOrdered(
+            verticalRoute.VerticalRouteId,
+            verticalRoute.IsUp,
+            verticalRoute.BasePointId
+          );
+        ed.WriteMessage(
+          $"\nTraversing vertical route: {verticalRoute.Id} with {verticalRouteObjects.Count} segments."
+        );
+        int matchingKey = verticalRouteObjects
+          .FirstOrDefault(kvp => kvp.Value.Id == verticalRoute.Id)
+          .Key;
 
         double entryPointZ = route.EndPoint.Z;
 
         double endVerticalRoute = 0;
-        if (verticalRoute.IsUp) {
-          if (verticalRoute.NodeTypeId != 3) {
+        if (verticalRoute.IsUp)
+        {
+          if (verticalRoute.NodeTypeId != 3)
+          {
             endVerticalRoute = verticalRoute.Position.Z + (verticalRoute.Length * 12);
           }
-          else {
+          else
+          {
             endVerticalRoute = verticalRoute.Position.Z;
           }
         }
-        else {
-          if (verticalRoute.NodeTypeId == 3) {
+        else
+        {
+          if (verticalRoute.NodeTypeId == 3)
+          {
             endVerticalRoute = verticalRoute.Position.Z - (verticalRoute.Length * 12);
           }
-          else {
+          else
+          {
             endVerticalRoute = verticalRoute.Position.Z;
           }
         }
         double newLength = Math.Abs(endVerticalRoute - entryPointZ) / 12.0;
 
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
-         verticalRoute.Id,
-         verticalRoute.ProjectId,
-         verticalRoute.Type,
-         verticalRoute.Position,
-         verticalRoute.VerticalRouteId,
-         verticalRoute.BasePointId,
-         verticalRoute.StartHeight,
-         newLength,
-         verticalRoute.NodeTypeId,
-         verticalRoute.PipeType,
-         verticalRoute.IsUp
-       );
+          verticalRoute.Id,
+          verticalRoute.ProjectId,
+          verticalRoute.Type,
+          verticalRoute.Position,
+          verticalRoute.VerticalRouteId,
+          verticalRoute.BasePointId,
+          verticalRoute.StartHeight,
+          newLength,
+          verticalRoute.NodeTypeId,
+          verticalRoute.PipeType,
+          verticalRoute.IsUp
+        );
         bool isUpRoute = (verticalRoute.NodeTypeId == 1 || verticalRoute.NodeTypeId == 2);
-        if (verticalRoute.IsUp == isUpRoute) {
-          adjustedRoute.Position = new Point3d(verticalRoute.Position.X, verticalRoute.Position.Y, entryPointZ);
+        if (verticalRoute.IsUp == isUpRoute)
+        {
+          adjustedRoute.Position = new Point3d(
+            verticalRoute.Position.X,
+            verticalRoute.Position.Y,
+            entryPointZ
+          );
         }
         routeObjectsTemp.Add(adjustedRoute);
         length += adjustedRoute.Length * 12;
         //adding all entries to be taken away from
-        foreach (var kvp in verticalRouteObjects.Reverse()) {
+        foreach (var kvp in verticalRouteObjects.Reverse())
+        {
           routeObjectsTemp.Add(kvp.Value);
           length += kvp.Value.Length * 12;
         }
-        foreach (var kvp in verticalRouteObjects) {
+        foreach (var kvp in verticalRouteObjects)
+        {
           var verticalRoute2 = kvp.Value;
-          if (adjustedRoute.IsUp) {
-            if (verticalRoute2.NodeTypeId == 3) {
+          if (adjustedRoute.IsUp)
+          {
+            if (verticalRoute2.NodeTypeId == 3)
+            {
               entryPointZ = verticalRoute2.Position.Z - (verticalRoute2.Length * 12);
             }
-            else {
+            else
+            {
               entryPointZ = verticalRoute2.Position.Z;
             }
           }
-          else {
-            if (verticalRoute2.NodeTypeId == 3) {
+          else
+          {
+            if (verticalRoute2.NodeTypeId == 3)
+            {
               entryPointZ = verticalRoute2.Position.Z;
             }
-            else {
+            else
+            {
               entryPointZ = verticalRoute2.Position.Z + (verticalRoute2.Length * 12);
             }
           }
           routeObjectsTemp.Remove(routeObjectsTemp.Last());
           length -= kvp.Value.Length * 12;
-          Tuple<double, int, double> verticalRoute2Result = TraverseVerticalRoute(verticalRoute2, entryPointZ, fixtureUnits, flowTypeId, longestRunLength, visited, length, routeObjectsTemp);
+          Tuple<double, int, double> verticalRoute2Result = TraverseVerticalRoute(
+            verticalRoute2,
+            entryPointZ,
+            fixtureUnits,
+            flowTypeId,
+            longestRunLength,
+            visited,
+            length,
+            routeObjectsTemp
+          );
           fixtureUnits += verticalRoute2Result.Item1;
           flowTypeId = (flowTypeId == 2) ? 2 : verticalRoute2Result.Item2;
           longestRunLength = Math.Max(longestRunLength, verticalRoute2Result.Item3);
@@ -303,7 +400,16 @@ namespace GMEPPlumbing {
         entryPointZ = route.EndPoint.Z;
         routeObjectsTemp.Remove(routeObjectsTemp.Last());
         length -= adjustedRoute.Length * 12;
-        Tuple<double, int, double> verticalRouteResult = TraverseVerticalRoute(adjustedRoute, entryPointZ, fixtureUnits, flowTypeId, longestRunLength, visited, length, routeObjectsTemp);
+        Tuple<double, int, double> verticalRouteResult = TraverseVerticalRoute(
+          adjustedRoute,
+          entryPointZ,
+          fixtureUnits,
+          flowTypeId,
+          longestRunLength,
+          visited,
+          length,
+          routeObjectsTemp
+        );
         fixtureUnits += verticalRouteResult.Item1;
         flowTypeId = (flowTypeId == 2) ? 2 : verticalRouteResult.Item2;
         longestRunLength = Math.Max(longestRunLength, verticalRouteResult.Item3);
@@ -313,21 +419,28 @@ namespace GMEPPlumbing {
       }
 
       //Horizontal Routes
-      foreach (var childRoute in childRoutes) {
-        if (childRoute.Key.Id != route.Id) {
+      foreach (var childRoute in childRoutes)
+      {
+        if (childRoute.Key.Id != route.Id)
+        {
           var routeObjectsTemp = new List<Object>(routeObjects);
           var adjustedRoute = new PlumbingHorizontalRoute(
-           route.Id,
-           route.ProjectId,
-           route.Type,
-           route.StartPoint,
-           getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value),
-           route.BasePointId,
-           route.PipeType,
-           route.Slope
+            route.Id,
+            route.ProjectId,
+            route.Type,
+            route.StartPoint,
+            getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value),
+            route.BasePointId,
+            route.PipeType,
+            route.Slope
           );
           routeObjectsTemp.Add(adjustedRoute);
-          Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(childRoute.Key, visited, fullRouteLength + childRoute.Value, routeObjectsTemp);
+          Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(
+            childRoute.Key,
+            visited,
+            fullRouteLength + childRoute.Value,
+            routeObjectsTemp
+          );
           // Add to the total for this route
           fixtureUnits += childRouteResult.Item1;
           flowTypeId = (flowTypeId == 2) ? 2 : childRouteResult.Item2;
@@ -338,12 +451,20 @@ namespace GMEPPlumbing {
         }
       }
 
-
-
       return new Tuple<double, int, double>(fixtureUnits, flowTypeId, longestRunLength);
-
     }
-    public Tuple<double, int, double> TraverseVerticalRoute(PlumbingVerticalRoute route, double entryPointZ, double fixtureUnits, int flowTypeId, double longestRunLength, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+
+    public Tuple<double, int, double> TraverseVerticalRoute(
+      PlumbingVerticalRoute route,
+      double entryPointZ,
+      double fixtureUnits,
+      int flowTypeId,
+      double longestRunLength,
+      HashSet<string> visited = null,
+      double fullRouteLength = 0,
+      List<Object> routeObjects = null
+    )
+    {
       if (visited == null)
         visited = new HashSet<string>();
 
@@ -363,29 +484,45 @@ namespace GMEPPlumbing {
 
       double startHeight = route.Position.Z;
       double endHeight = route.Position.Z + (route.Length * 12);
-      if (route.NodeTypeId == 3) {
+      if (route.NodeTypeId == 3)
+      {
         startHeight = route.Position.Z - (route.Length * 12);
         endHeight = route.Position.Z;
       }
 
       double startZ = entryPointZ;
       double endZ = 0;
-      if (route.IsUp) {
+      if (route.IsUp)
+      {
         endZ = endHeight;
       }
-      else {
+      else
+      {
         endZ = startHeight;
       }
 
       ed.WriteMessage($"\nTraversing vertical route: {route.Id} at position {route.Position}");
 
       List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
-        .Where(r => (r.Type == route.Type || ((r.Type == "Vent" || r.Type == "Waste" || r.Type == "Grease Waste") && (route.Type == "Vent" || route.Type == "Waste" || route.Type == "Grease Waste"))) && r.BasePointId == route.BasePointId && routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0 && r.StartPoint.Z >= Math.Min(startZ, endZ) && r.StartPoint.Z <= Math.Max(startZ, endZ))
+        .Where(r =>
+          (
+            r.Type == route.Type
+            || (
+              (r.Type == "Vent" || r.Type == "Waste" || r.Type == "Grease Waste")
+              && (route.Type == "Vent" || route.Type == "Waste" || route.Type == "Grease Waste")
+            )
+          )
+          && r.BasePointId == route.BasePointId
+          && routePos.DistanceTo(new Point3d(r.StartPoint.X, r.StartPoint.Y, 0)) <= 3.0
+          && r.StartPoint.Z >= Math.Min(startZ, endZ)
+          && r.StartPoint.Z <= Math.Max(startZ, endZ)
+        )
         .OrderByDescending(r => Math.Abs(r.StartPoint.Z - startZ))
         .ToList();
 
       bool isUpRoute = (route.NodeTypeId == 1 || route.NodeTypeId == 2);
-      foreach (var childRoute in childRoutes) {
+      foreach (var childRoute in childRoutes)
+      {
         double newLength = Math.Abs(startZ - childRoute.StartPoint.Z) / 12.0;
 
         PlumbingVerticalRoute adjustedRoute = new PlumbingVerticalRoute(
@@ -401,14 +538,24 @@ namespace GMEPPlumbing {
           route.PipeType,
           route.IsUp
         );
-        if (route.IsUp != isUpRoute) {
-          adjustedRoute.Position = new Point3d(route.Position.X, route.Position.Y, childRoute.StartPoint.Z);
+        if (route.IsUp != isUpRoute)
+        {
+          adjustedRoute.Position = new Point3d(
+            route.Position.X,
+            route.Position.Y,
+            childRoute.StartPoint.Z
+          );
         }
 
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
 
-        Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(childRoute, visited, fullRouteLength + (adjustedRoute.Length * 12), routeObjectsTemp);
+        Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(
+          childRoute,
+          visited,
+          fullRouteLength + (adjustedRoute.Length * 12),
+          routeObjectsTemp
+        );
         fixtureUnitsSoFar += childRouteResult.Item1;
         flowTypeIdTemp = (flowTypeIdTemp == 2) ? 2 : childRouteResult.Item2;
         longestRunLength = Math.Max(longestRunLength, childRouteResult.Item3);
@@ -418,7 +565,16 @@ namespace GMEPPlumbing {
       }
       return new Tuple<double, int, double>(fixtureUnitsSoFar, flowTypeIdTemp, longestRunLength);
     }
-    public Tuple<double, int, double> TraverseAccessory(PlumbingAccessory accessory, int flowTypeId, double longestRunLength, HashSet<string> visited = null, double fullRouteLength = 0, List<Object> routeObjects = null) {
+
+    public Tuple<double, int, double> TraverseAccessory(
+      PlumbingAccessory accessory,
+      int flowTypeId,
+      double longestRunLength,
+      HashSet<string> visited = null,
+      double fullRouteLength = 0,
+      List<Object> routeObjects = null
+    )
+    {
       if (visited == null)
         visited = new HashSet<string>();
 
@@ -435,32 +591,49 @@ namespace GMEPPlumbing {
       var db = doc.Database;
       var ed = doc.Editor;
 
-      ed.WriteMessage($"\nTraversing vertical route: {accessory.Id} at position {accessory.Position}");
+      ed.WriteMessage(
+        $"\nTraversing vertical route: {accessory.Id} at position {accessory.Position}"
+      );
 
       List<PlumbingHorizontalRoute> childRoutes = HorizontalRoutes
-        .Where(r => GetAccessoryInputTypes(accessory).Contains(r.Type) && r.StartPoint.DistanceTo(accessory.Position) <= 8.0)
+        .Where(r =>
+          GetAccessoryInputTypes(accessory).Contains(r.Type)
+          && r.StartPoint.DistanceTo(accessory.Position) <= 8.0
+        )
         .ToList();
 
-      foreach (var childRoute in childRoutes) {
+      foreach (var childRoute in childRoutes)
+      {
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(accessory);
-        Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(childRoute, visited, fullRouteLength, routeObjectsTemp);
+        Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(
+          childRoute,
+          visited,
+          fullRouteLength,
+          routeObjectsTemp
+        );
         fixtureUnitsSoFar += childRouteResult.Item1;
         flowTypeIdTemp = (flowTypeIdTemp == 2) ? 2 : childRouteResult.Item2;
         longestRunLength = Math.Max(longestRunLength, childRouteResult.Item3);
       }
       return new Tuple<double, int, double>(fixtureUnitsSoFar, flowTypeIdTemp, longestRunLength);
     }
-    private Point3d getPointAtLength(Point3d start, Point3d end, double length) {
+
+    private Point3d getPointAtLength(Point3d start, Point3d end, double length)
+    {
       var direction = end - start;
       var totalLength = direction.Length;
-      if (totalLength == 0) return start; // Avoid division by zero
+      if (totalLength == 0)
+        return start; // Avoid division by zero
       var ratio = length / totalLength;
       return start + (direction * ratio);
     }
-    private List<string> GetSourceOutputTypes(PlumbingSource source) {
+
+    private List<string> GetSourceOutputTypes(PlumbingSource source)
+    {
       var types = new List<string>();
-      switch (source.TypeId) {
+      switch (source.TypeId)
+      {
         case 1:
           types.Add("Cold Water");
           break;
@@ -481,9 +654,11 @@ namespace GMEPPlumbing {
       return types;
     }
 
-    private List<string> GetFixtureInputTypes(PlumbingFixture fixture) {
+    private List<string> GetFixtureInputTypes(PlumbingFixture fixture)
+    {
       var types = new List<string>();
-      switch (fixture.BlockName) {
+      switch (fixture.BlockName)
+      {
         case "GMEP FD":
           types.Add("Waste");
           types.Add("Grease Waste");
@@ -513,9 +688,12 @@ namespace GMEPPlumbing {
       }
       return types;
     }
-    private List<string> GetAccessoryInputTypes(PlumbingAccessory accessory) {
+
+    private List<string> GetAccessoryInputTypes(PlumbingAccessory accessory)
+    {
       var types = new List<string>();
-      switch (accessory.TypeId) {
+      switch (accessory.TypeId)
+      {
         case 1:
         case 2:
         case 3:
@@ -532,18 +710,27 @@ namespace GMEPPlumbing {
       }
       return types;
     }
-    private double GetPointToSegmentDistance(Point3d pt, Point3d segStart, Point3d segEnd, out double segmentLength) {
+
+    private double GetPointToSegmentDistance(
+      Point3d pt,
+      Point3d segStart,
+      Point3d segEnd,
+      out double segmentLength
+    )
+    {
       var v = segEnd - segStart;
       var w = pt - segStart;
 
       double c1 = v.DotProduct(w);
-      if (c1 <= 0) {
+      if (c1 <= 0)
+      {
         segmentLength = 0;
         return pt.DistanceTo(segStart);
       }
 
       double c2 = v.DotProduct(v);
-      if (c2 <= c1) {
+      if (c2 <= c1)
+      {
         segmentLength = v.Length;
         return pt.DistanceTo(segEnd);
       }
@@ -554,33 +741,63 @@ namespace GMEPPlumbing {
       return pt.DistanceTo(pb);
     }
 
-    public Dictionary<PlumbingHorizontalRoute, double> FindNearbyHorizontalRoutes(PlumbingHorizontalRoute targetRoute) {
+    public Dictionary<PlumbingHorizontalRoute, double> FindNearbyHorizontalRoutes(
+      PlumbingHorizontalRoute targetRoute
+    )
+    {
       var result = new Dictionary<PlumbingHorizontalRoute, double>();
-      foreach (var route in HorizontalRoutes) {
-        if (route.Id == targetRoute.Id || route.BasePointId != targetRoute.BasePointId || route.Type != targetRoute.Type) {
-          if (!((route.Type == "Waste" || route.Type == "Grease Waste" || route.Type == "Vent") && (targetRoute.Type == "Waste" || targetRoute.Type == "Grease Waste" || targetRoute.Type == "Vent"))) {
+      foreach (var route in HorizontalRoutes)
+      {
+        if (
+          route.Id == targetRoute.Id
+          || route.BasePointId != targetRoute.BasePointId
+          || route.Type != targetRoute.Type
+        )
+        {
+          if (
+            !(
+              (route.Type == "Waste" || route.Type == "Grease Waste" || route.Type == "Vent")
+              && (
+                targetRoute.Type == "Waste"
+                || targetRoute.Type == "Grease Waste"
+                || targetRoute.Type == "Vent"
+              )
+            )
+          )
+          {
             continue;
           }
         }
 
         // 1. Target route's trajectory: endpoint extended in its direction
         Vector3d targetDir = targetRoute.EndPoint - targetRoute.StartPoint;
-        if (targetDir.Length > 0) {
+        if (targetDir.Length > 0)
+        {
           targetDir = targetDir.GetNormal();
           Point3d targetTrajectoryPoint = targetRoute.EndPoint + targetDir * 2;
           double segLen;
-          double distToRoute = GetPointToSegmentDistance(targetTrajectoryPoint, route.StartPoint, route.EndPoint, out segLen);
-          if (distToRoute <= 2) {
-            Point3d closestPoint = GetClosestPointOnSegment(targetTrajectoryPoint, route.StartPoint, route.EndPoint);
+          double distToRoute = GetPointToSegmentDistance(
+            targetTrajectoryPoint,
+            route.StartPoint,
+            route.EndPoint,
+            out segLen
+          );
+          if (distToRoute <= 2)
+          {
+            Point3d closestPoint = GetClosestPointOnSegment(
+              targetTrajectoryPoint,
+              route.StartPoint,
+              route.EndPoint
+            );
             var adjustedRoute = new PlumbingHorizontalRoute(
-                route.Id,
-                route.ProjectId,
-                route.Type,
-                closestPoint, // new start point
-                route.EndPoint,
-                route.BasePointId,
-                route.PipeType,
-                route.Slope
+              route.Id,
+              route.ProjectId,
+              route.Type,
+              closestPoint, // new start point
+              route.EndPoint,
+              route.BasePointId,
+              route.PipeType,
+              route.Slope
             );
             result[adjustedRoute] = targetRoute.StartPoint.DistanceTo(targetRoute.EndPoint);
             continue;
@@ -589,22 +806,33 @@ namespace GMEPPlumbing {
 
         // 2. Candidate route's reverse trajectory: startpoint extended backward
         Vector3d routeDir = route.EndPoint - route.StartPoint;
-        if (routeDir.Length > 0) {
+        if (routeDir.Length > 0)
+        {
           routeDir = routeDir.GetNormal();
           Point3d routeReverseTrajectoryPoint = route.StartPoint - routeDir * 2;
           double segLen;
-          double distToTarget = GetPointToSegmentDistance(routeReverseTrajectoryPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segLen);
-          if (distToTarget <= 2) {
-            Point3d closestPoint = GetClosestPointOnSegment(routeReverseTrajectoryPoint, route.StartPoint, route.EndPoint);
+          double distToTarget = GetPointToSegmentDistance(
+            routeReverseTrajectoryPoint,
+            targetRoute.StartPoint,
+            targetRoute.EndPoint,
+            out segLen
+          );
+          if (distToTarget <= 2)
+          {
+            Point3d closestPoint = GetClosestPointOnSegment(
+              routeReverseTrajectoryPoint,
+              route.StartPoint,
+              route.EndPoint
+            );
             var adjustedRoute = new PlumbingHorizontalRoute(
-                route.Id,
-                route.ProjectId,
-                route.Type,
-                closestPoint, // new start point
-                route.EndPoint,
-                route.BasePointId,
-                route.PipeType,
-                route.Slope
+              route.Id,
+              route.ProjectId,
+              route.Type,
+              closestPoint, // new start point
+              route.EndPoint,
+              route.BasePointId,
+              route.PipeType,
+              route.Slope
             );
             result[adjustedRoute] = segLen;
             continue;
@@ -612,27 +840,43 @@ namespace GMEPPlumbing {
         }
         // 3. Segments intersect
         Point3d intersectionPoint;
-        if (DoSegmentsIntersect(targetRoute.StartPoint, targetRoute.EndPoint, route.StartPoint, route.EndPoint, out intersectionPoint)) {
+        if (
+          DoSegmentsIntersect(
+            targetRoute.StartPoint,
+            targetRoute.EndPoint,
+            route.StartPoint,
+            route.EndPoint,
+            out intersectionPoint
+          )
+        )
+        {
           double segLen;
-          GetPointToSegmentDistance(intersectionPoint, targetRoute.StartPoint, targetRoute.EndPoint, out segLen);
+          GetPointToSegmentDistance(
+            intersectionPoint,
+            targetRoute.StartPoint,
+            targetRoute.EndPoint,
+            out segLen
+          );
           var adjustedRoute = new PlumbingHorizontalRoute(
-                route.Id,
-                route.ProjectId,
-                route.Type,
-                intersectionPoint, // new start point
-                route.EndPoint,
-                route.BasePointId,
-                route.PipeType,
-                route.Slope
-            );
+            route.Id,
+            route.ProjectId,
+            route.Type,
+            intersectionPoint, // new start point
+            route.EndPoint,
+            route.BasePointId,
+            route.PipeType,
+            route.Slope
+          );
           result[adjustedRoute] = segLen;
         }
       }
       result.OrderByDescending(kvp => kvp.Value); // Sort by distance
       return result;
     }
+
     // Helper: Find the closest point on a segment to a given point
-    private Point3d GetClosestPointOnSegment(Point3d pt, Point3d segStart, Point3d segEnd) {
+    private Point3d GetClosestPointOnSegment(Point3d pt, Point3d segStart, Point3d segEnd)
+    {
       var v = segEnd - segStart;
       var w = pt - segStart;
 
@@ -647,31 +891,55 @@ namespace GMEPPlumbing {
       double b = c1 / c2;
       return segStart + (v * b);
     }
-    private bool DoSegmentsIntersect(Point3d p1, Point3d p2, Point3d q1, Point3d q2, out Point3d intersectionPoint) {
+
+    private bool DoSegmentsIntersect(
+      Point3d p1,
+      Point3d p2,
+      Point3d q1,
+      Point3d q2,
+      out Point3d intersectionPoint
+    )
+    {
       // 2D intersection (ignoring Z)
-      double x1 = p1.X, y1 = p1.Y, x2 = p2.X, y2 = p2.Y;
-      double x3 = q1.X, y3 = q1.Y, x4 = q2.X, y4 = q2.Y;
+      double x1 = p1.X,
+        y1 = p1.Y,
+        x2 = p2.X,
+        y2 = p2.Y;
+      double x3 = q1.X,
+        y3 = q1.Y,
+        x4 = q2.X,
+        y4 = q2.Y;
 
       double d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-      if (Math.Abs(d) < 1e-10) {
+      if (Math.Abs(d) < 1e-10)
+      {
         intersectionPoint = default(Point3d);
         return false; // Parallel or colinear
       }
 
-      double pre = (x1 * y2 - y1 * x2), post = (x3 * y4 - y3 * x4);
+      double pre = (x1 * y2 - y1 * x2),
+        post = (x3 * y4 - y3 * x4);
       double x = (pre * (x3 - x4) - (x1 - x2) * post) / d;
       double y = (pre * (y3 - y4) - (y1 - y2) * post) / d;
 
       // Check if intersection is within both segments
-      if (x < Math.Min(x1, x2) - 1e-10 || x > Math.Max(x1, x2) + 1e-10 ||
-          x < Math.Min(x3, x4) - 1e-10 || x > Math.Max(x3, x4) + 1e-10 ||
-          y < Math.Min(y1, y2) - 1e-10 || y > Math.Max(y1, y2) + 1e-10 ||
-          y < Math.Min(y3, y4) - 1e-10 || y > Math.Max(y3, y4) + 1e-10) {
+      if (
+        x < Math.Min(x1, x2) - 1e-10
+        || x > Math.Max(x1, x2) + 1e-10
+        || x < Math.Min(x3, x4) - 1e-10
+        || x > Math.Max(x3, x4) + 1e-10
+        || y < Math.Min(y1, y2) - 1e-10
+        || y > Math.Max(y1, y2) + 1e-10
+        || y < Math.Min(y3, y4) - 1e-10
+        || y > Math.Max(y3, y4) + 1e-10
+      )
+      {
         intersectionPoint = default(Point3d);
         return false;
       }
       //Checking Z heights, can change later
-      if (p2.Z != q1.Z && p1.Z != q2.Z) {
+      if (p2.Z != q1.Z && p1.Z != q2.Z)
+      {
         intersectionPoint = default(Point3d);
         return false; // They only touch at endpoints
       }
@@ -681,51 +949,76 @@ namespace GMEPPlumbing {
 
       // Check if intersection is close to any endpoint
       bool closeToEndpoint =
-          intersectionPoint.DistanceTo(p1) < tolerance ||
-          intersectionPoint.DistanceTo(p2) < tolerance ||
-          intersectionPoint.DistanceTo(q1) < tolerance ||
-          intersectionPoint.DistanceTo(q2) < tolerance;
+        intersectionPoint.DistanceTo(p1) < tolerance
+        || intersectionPoint.DistanceTo(p2) < tolerance
+        || intersectionPoint.DistanceTo(q1) < tolerance
+        || intersectionPoint.DistanceTo(q2) < tolerance;
 
-      if (!closeToEndpoint) {
+      if (!closeToEndpoint)
+      {
         intersectionPoint = default(Point3d);
         return false;
       }
 
       return true;
     }
-    public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute) {
+
+    public List<PlumbingVerticalRoute> FindNearbyVerticalRoutes(PlumbingHorizontalRoute targetRoute)
+    {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
       Point3d endPoint = new Point3d(targetRoute.EndPoint.X, targetRoute.EndPoint.Y, 0);
 
-      return VerticalRoutes.Where(route => {
-        if (route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type) {
-          ed.WriteMessage($"\nChecking vertical route {route.Id} for target route {targetRoute.Id}");
-          Point3d routePos = new Point3d(route.Position.X, route.Position.Y, 0);
-          double startHeight = route.Position.Z;
-          double endHeight = route.Position.Z + (route.Length * 12); // Convert feet to inches
-          if (route.NodeTypeId == 3) {
-            startHeight = route.Position.Z - (route.Length * 12); // For down routes, adjust start height
-            endHeight = route.Position.Z;
+      return VerticalRoutes
+        .Where(route =>
+        {
+          if (route.BasePointId == targetRoute.BasePointId && route.Type == targetRoute.Type)
+          {
+            ed.WriteMessage(
+              $"\nChecking vertical route {route.Id} for target route {targetRoute.Id}"
+            );
+            Point3d routePos = new Point3d(route.Position.X, route.Position.Y, 0);
+            double startHeight = route.Position.Z;
+            double endHeight = route.Position.Z + (route.Length * 12); // Convert feet to inches
+            if (route.NodeTypeId == 3)
+            {
+              startHeight = route.Position.Z - (route.Length * 12); // For down routes, adjust start height
+              endHeight = route.Position.Z;
+            }
+            if (
+              targetRoute.EndPoint.Z >= startHeight
+              && targetRoute.EndPoint.Z <= endHeight
+              && endPoint.DistanceTo(routePos) < 3.0
+            )
+            {
+              return true;
+            }
           }
-          if (targetRoute.EndPoint.Z >= startHeight && targetRoute.EndPoint.Z <= endHeight && endPoint.DistanceTo(routePos) < 3.0) {
-            return true;
-          }
-        }
-        return false;
-      }
-      ).ToList();
+          return false;
+        })
+        .ToList();
     }
-    public List<PlumbingFixture> FindNearbyFixtures(PlumbingHorizontalRoute targetRoute) {
-      return PlumbingFixtures.Select(list => list)
-       .Where(fixture => targetRoute.EndPoint.DistanceTo(fixture.Position) <= GetFixtureSearchDistance(fixture.BlockName) && fixture.BasePointId == targetRoute.BasePointId && GetFixtureInputTypes(fixture).Contains(targetRoute.Type))
-       .GroupBy(fixture => fixture.Id)
-       .Select(g => g.First())
-       .ToList();
+
+    public List<PlumbingFixture> FindNearbyFixtures(PlumbingHorizontalRoute targetRoute)
+    {
+      return PlumbingFixtures
+        .Select(list => list)
+        .Where(fixture =>
+          targetRoute.EndPoint.DistanceTo(fixture.Position)
+            <= GetFixtureSearchDistance(fixture.BlockName)
+          && fixture.BasePointId == targetRoute.BasePointId
+          && GetFixtureInputTypes(fixture).Contains(targetRoute.Type)
+        )
+        .GroupBy(fixture => fixture.Id)
+        .Select(g => g.First())
+        .ToList();
     }
-    private double GetFixtureSearchDistance(string blockName) {
-      switch(blockName) {
+
+    private double GetFixtureSearchDistance(string blockName)
+    {
+      switch (blockName)
+      {
         case "GMEP DRAIN":
         case "GMEP WH 50":
         case "GMEP WH 85":
@@ -737,8 +1030,11 @@ namespace GMEPPlumbing {
           return 8.0;
       }
     }
-    private double GetSourceSearchDistance(string blockName) {
-      switch (blockName) {
+
+    private double GetSourceSearchDistance(string blockName)
+    {
+      switch (blockName)
+      {
         case "GMEP WH 50":
         case "GMEP WH 85":
         case "GMEP PLUMBING VENT EXIT":
@@ -750,12 +1046,18 @@ namespace GMEPPlumbing {
       }
     }
 
-    public List<PlumbingAccessory> FindNearbyAccessories(PlumbingHorizontalRoute targetRoute) {
-      return PlumbingAccessories.Select(list => list)
-       .Where(accessory => targetRoute.EndPoint.DistanceTo(accessory.Position) <= 8.0 && accessory.BasePointId == targetRoute.BasePointId && GetAccessoryInputTypes(accessory).Contains(targetRoute.Type))
-       .GroupBy(accessory => accessory.Id)
-       .Select(g => g.First())
-       .ToList();
+    public List<PlumbingAccessory> FindNearbyAccessories(PlumbingHorizontalRoute targetRoute)
+    {
+      return PlumbingAccessories
+        .Select(list => list)
+        .Where(accessory =>
+          targetRoute.EndPoint.DistanceTo(accessory.Position) <= 8.0
+          && accessory.BasePointId == targetRoute.BasePointId
+          && GetAccessoryInputTypes(accessory).Contains(targetRoute.Type)
+        )
+        .GroupBy(accessory => accessory.Id)
+        .Select(g => g.First())
+        .ToList();
     }
 
     /*public PlumbingVerticalRoute FindVerticalRouteEnd(PlumbingVerticalRoute route, out double height, out SortedDictionary<int, PlumbingVerticalRoute> routes) {
@@ -785,14 +1087,20 @@ namespace GMEPPlumbing {
 
       return endRoute;
     }*/
-    public SortedDictionary<int, PlumbingVerticalRoute> GetVerticalRoutesByIdOrdered(string verticalRouteId, bool isUp, string basePointId) {
+    public SortedDictionary<int, PlumbingVerticalRoute> GetVerticalRoutesByIdOrdered(
+      string verticalRouteId,
+      bool isUp,
+      string basePointId
+    )
+    {
       var basePointFloorLookup = BasePoints.ToDictionary(bp => bp.Id, bp => bp.Floor);
-
 
       // Get all routes for this verticalRouteId and with a valid base point
       var routes = VerticalRoutes
-          .Where(vr => vr.VerticalRouteId == verticalRouteId && basePointFloorLookup.ContainsKey(vr.BasePointId))
-          .ToList();
+        .Where(vr =>
+          vr.VerticalRouteId == verticalRouteId && basePointFloorLookup.ContainsKey(vr.BasePointId)
+        )
+        .ToList();
 
       if (routes.Count == 0)
         return new SortedDictionary<int, PlumbingVerticalRoute>();
@@ -802,78 +1110,130 @@ namespace GMEPPlumbing {
 
       // Filter by direction
       var filtered = routes
-          .Where(vr =>
-              (isUp && basePointFloorLookup[vr.BasePointId] > basePointFloor) ||
-              (!isUp && basePointFloorLookup[vr.BasePointId] < basePointFloor)
-          )
-          .ToDictionary(
-              vr => basePointFloorLookup[vr.BasePointId],
-              vr => vr
-          );
+        .Where(vr =>
+          (isUp && basePointFloorLookup[vr.BasePointId] > basePointFloor)
+          || (!isUp && basePointFloorLookup[vr.BasePointId] < basePointFloor)
+        )
+        .ToDictionary(vr => basePointFloorLookup[vr.BasePointId], vr => vr);
 
       // Sort accordingly
       var sorted = isUp
-          ? new SortedDictionary<int, PlumbingVerticalRoute>(filtered, Comparer<int>.Create((a, b) => b.CompareTo(a)))
-          : new SortedDictionary<int, PlumbingVerticalRoute>(filtered);
+        ? new SortedDictionary<int, PlumbingVerticalRoute>(
+          filtered,
+          Comparer<int>.Create((a, b) => b.CompareTo(a))
+        )
+        : new SortedDictionary<int, PlumbingVerticalRoute>(filtered);
 
       return sorted;
     }
-    public void ConvertSiteComponents() {
+
+    public void ConvertSiteComponents()
+    {
       var doc = Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
 
-      foreach (var route in VerticalRoutes) {
+      foreach (var route in VerticalRoutes)
+      {
         var bp = BasePointLookup[route.BasePointId];
-        if (bp.IsSite) {
-          var mainBp = BasePoints.FirstOrDefault(x => !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
-          var siteRefBp = BasePoints.FirstOrDefault(x => !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+        if (bp.IsSite)
+        {
+          var mainBp = BasePoints.FirstOrDefault(x =>
+            !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor
+          );
+          var siteRefBp = BasePoints.FirstOrDefault(x =>
+            !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor
+          );
 
-          if (mainBp != null && siteRefBp != null) {
-            Vector3d componentOffset = new Vector3d(route.Position.X - bp.Point.X, route.Position.Y - bp.Point.Y, route.Position.Z);
+          if (mainBp != null && siteRefBp != null)
+          {
+            Vector3d componentOffset = new Vector3d(
+              route.Position.X - bp.Point.X,
+              route.Position.Y - bp.Point.Y,
+              route.Position.Z
+            );
             route.Position = siteRefBp.Point + componentOffset;
             route.BasePointId = mainBp.Id;
           }
         }
       }
-      foreach (var route in HorizontalRoutes) {
+      foreach (var route in HorizontalRoutes)
+      {
         var bp = BasePointLookup[route.BasePointId];
-        if (bp.IsSite) {
-          var mainBp = BasePoints.FirstOrDefault(x => !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
-          var siteRefBp = BasePoints.FirstOrDefault(x => !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+        if (bp.IsSite)
+        {
+          var mainBp = BasePoints.FirstOrDefault(x =>
+            !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor
+          );
+          var siteRefBp = BasePoints.FirstOrDefault(x =>
+            !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor
+          );
 
-          if (mainBp != null && siteRefBp != null) {
-            Vector3d componentOffsetStart = new Vector3d(route.StartPoint.X - bp.Point.X, route.StartPoint.Y - bp.Point.Y, route.StartPoint.Z);
-            Vector3d componentOffsetEnd = new Vector3d(route.EndPoint.X - bp.Point.X , route.EndPoint.Y - bp.Point.Y, route.EndPoint.Z);
+          if (mainBp != null && siteRefBp != null)
+          {
+            Vector3d componentOffsetStart = new Vector3d(
+              route.StartPoint.X - bp.Point.X,
+              route.StartPoint.Y - bp.Point.Y,
+              route.StartPoint.Z
+            );
+            Vector3d componentOffsetEnd = new Vector3d(
+              route.EndPoint.X - bp.Point.X,
+              route.EndPoint.Y - bp.Point.Y,
+              route.EndPoint.Z
+            );
             route.StartPoint = siteRefBp.Point + componentOffsetStart;
             route.EndPoint = siteRefBp.Point + componentOffsetEnd;
             route.BasePointId = mainBp.Id;
-            ed.WriteMessage($"\nConverted horizontal route {route.Id} to main base point {mainBp.Id} at position {route.StartPoint} to {route.EndPoint}");
+            ed.WriteMessage(
+              $"\nConverted horizontal route {route.Id} to main base point {mainBp.Id} at position {route.StartPoint} to {route.EndPoint}"
+            );
             ed.WriteMessage($"\nSiteRef point is {siteRefBp.Point}");
           }
         }
       }
-      foreach (var fixture in PlumbingFixtures) {
+      foreach (var fixture in PlumbingFixtures)
+      {
         var bp = BasePointLookup[fixture.BasePointId];
-        if (bp.IsSite) {
-          var mainBp = BasePoints.FirstOrDefault(x => !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
-          var siteRefBp = BasePoints.FirstOrDefault(x => !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+        if (bp.IsSite)
+        {
+          var mainBp = BasePoints.FirstOrDefault(x =>
+            !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor
+          );
+          var siteRefBp = BasePoints.FirstOrDefault(x =>
+            !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor
+          );
 
-          if (mainBp != null && siteRefBp != null) {
-            Vector3d componentOffset = new Vector3d(fixture.Position.X - bp.Point.X, fixture.Position.Y - bp.Point.Y, fixture.Position.Z);
+          if (mainBp != null && siteRefBp != null)
+          {
+            Vector3d componentOffset = new Vector3d(
+              fixture.Position.X - bp.Point.X,
+              fixture.Position.Y - bp.Point.Y,
+              fixture.Position.Z
+            );
             fixture.Position = siteRefBp.Point + componentOffset;
             fixture.BasePointId = mainBp.Id;
           }
         }
       }
-      foreach (var source in Sources) {
+      foreach (var source in Sources)
+      {
         var bp = BasePointLookup[source.BasePointId];
-        if (bp.IsSite) {
-          var mainBp = BasePoints.FirstOrDefault(x => !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
-          var siteRefBp = BasePoints.FirstOrDefault(x => !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor);
+        if (bp.IsSite)
+        {
+          var mainBp = BasePoints.FirstOrDefault(x =>
+            !x.IsSite && !x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor
+          );
+          var siteRefBp = BasePoints.FirstOrDefault(x =>
+            !x.IsSite && x.IsSiteRef && x.ViewportId == bp.ViewportId && x.Floor == bp.Floor
+          );
 
-          if (mainBp != null && siteRefBp != null) {
-            Vector3d componentOffset = new Vector3d(source.Position.X - bp.Point.X, source.Position.Y - bp.Point.Y, source.Position.Z);
+          if (mainBp != null && siteRefBp != null)
+          {
+            Vector3d componentOffset = new Vector3d(
+              source.Position.X - bp.Point.X,
+              source.Position.Y - bp.Point.Y,
+              source.Position.Z
+            );
             source.Position = siteRefBp.Point + componentOffset;
             source.BasePointId = mainBp.Id;
           }

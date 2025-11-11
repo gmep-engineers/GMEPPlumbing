@@ -2,27 +2,27 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Windows.Controls;
 using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.Runtime;
-using MongoDB.Driver.Core.Misc;
-using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.DatabaseServices.Filters;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
-using System.Security.Cryptography.X509Certificates;
+using MongoDB.Driver.Core.Misc;
 
 namespace GMEPPlumbing
 {
@@ -58,8 +58,14 @@ namespace GMEPPlumbing
     //public static bool SettingFlag= false;
 
     [CommandMethod("SetPlumbingRouteHeight")]
-    public static void SetPlumbingRouteHeight() {
-      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+    public static void SetPlumbingRouteHeight()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
 
@@ -69,25 +75,36 @@ namespace GMEPPlumbing
       double? newHeight = null;
 
       // 1. Find the current route height (read-only, no transaction needed for just reading)
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
-        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
-          if (!id.IsValid) continue;
+        BlockTableRecord basePointBlock = (BlockTableRecord)
+          tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+        {
+          if (!id.IsValid)
+            continue;
           var anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord;
-          if (anonymousBtr == null) continue;
-          foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+          if (anonymousBtr == null)
+            continue;
+          foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+          {
             var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-            if (entity == null) continue;
+            if (entity == null)
+              continue;
             var pc = entity.DynamicBlockReferencePropertyCollection;
             string basePointId = "";
-            foreach (DynamicBlockReferenceProperty prop in pc) {
+            foreach (DynamicBlockReferenceProperty prop in pc)
+            {
               if (prop.PropertyName == "id")
                 basePointId = prop.Value.ToString();
             }
-            if (basePointId == GUID) {
-              foreach (DynamicBlockReferenceProperty prop in pc) {
-                if (prop.PropertyName == "route_height" && prop.Value != null) {
+            if (basePointId == GUID)
+            {
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "route_height" && prop.Value != null)
+                {
                   routeHeight = Convert.ToDouble(prop.Value);
                   break;
                 }
@@ -98,26 +115,39 @@ namespace GMEPPlumbing
       }
 
       // 2. Prompt for new value (outside transaction)
-      PromptDoubleOptions promptDoubleOptions = new PromptDoubleOptions("\nEnter the plumbing route height: ");
+      PromptDoubleOptions promptDoubleOptions = new PromptDoubleOptions(
+        "\nEnter the plumbing route height: "
+      );
       promptDoubleOptions.AllowNegative = true;
       promptDoubleOptions.DefaultValue = routeHeight;
 
-      while (true) {
+      while (true)
+      {
         PromptDoubleResult promptDoubleResult = ed.GetDouble(promptDoubleOptions);
-        if (promptDoubleResult.Status == PromptStatus.OK) {
-          if (promptDoubleResult.Value > heightLimits.Item2 ||  promptDoubleResult.Value < heightLimits.Item1) {
-            ed.WriteMessage($"\nHeight cannot be more than {heightLimits.Item2} or less than {heightLimits.Item1}.");
-            promptDoubleOptions.Message = $"\nHeight cannot be more than {heightLimits.Item2} or less than {heightLimits.Item1}. Please enter a valid height: ";
+        if (promptDoubleResult.Status == PromptStatus.OK)
+        {
+          if (
+            promptDoubleResult.Value > heightLimits.Item2
+            || promptDoubleResult.Value < heightLimits.Item1
+          )
+          {
+            ed.WriteMessage(
+              $"\nHeight cannot be more than {heightLimits.Item2} or less than {heightLimits.Item1}."
+            );
+            promptDoubleOptions.Message =
+              $"\nHeight cannot be more than {heightLimits.Item2} or less than {heightLimits.Item1}. Please enter a valid height: ";
             continue;
           }
           newHeight = promptDoubleResult.Value;
           break;
         }
-        else if (promptDoubleResult.Status == PromptStatus.Cancel) {
+        else if (promptDoubleResult.Status == PromptStatus.Cancel)
+        {
           ed.WriteMessage("\nOperation cancelled.");
           return;
         }
-        else {
+        else
+        {
           ed.WriteMessage("\nInvalid input. Please enter a valid height.");
           continue;
         }
@@ -129,25 +159,37 @@ namespace GMEPPlumbing
       IsEditing = true;
       // 3. Now perform the write in a transaction
       using (DocumentLock docLock = doc.LockDocument())
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
-        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
-          if (!id.IsValid) continue;
+        BlockTableRecord basePointBlock = (BlockTableRecord)
+          tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+        {
+          if (!id.IsValid)
+            continue;
           var anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord;
-          if (anonymousBtr == null) continue;
-          foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+          if (anonymousBtr == null)
+            continue;
+          foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+          {
             var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
-            if (entity == null) continue;
+            if (entity == null)
+              continue;
             var pc = entity.DynamicBlockReferencePropertyCollection;
             string basePointId = "";
-            foreach (DynamicBlockReferenceProperty prop in pc) {
+            foreach (DynamicBlockReferenceProperty prop in pc)
+            {
               if (prop.PropertyName == "id")
                 basePointId = prop.Value.ToString();
             }
-            if (basePointId == GUID) {;
-              foreach (DynamicBlockReferenceProperty propWrite in pc) {
-                if (propWrite.PropertyName == "route_height") {
+            if (basePointId == GUID)
+            {
+              ;
+              foreach (DynamicBlockReferenceProperty propWrite in pc)
+              {
+                if (propWrite.PropertyName == "route_height")
+                {
                   propWrite.Value = newHeight.Value;
                   ActiveRouteHeight = newHeight.Value;
                   break;
@@ -161,36 +203,65 @@ namespace GMEPPlumbing
       IsEditing = false;
     }
 
-    public static double GetPlumbingRouteHeight() {
-      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+    public static double GetPlumbingRouteHeight()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
-      if (ActiveRouteHeight == -1) {
+      if (ActiveRouteHeight == -1)
+      {
         SetActiveView();
       }
       return ActiveRouteHeight;
     }
 
-    public static Tuple<double, double> GetHeightLimits(string GUID, bool endCaps = false, bool upToNextFloor = false) {
-      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+    public static Tuple<double, double> GetHeightLimits(
+      string GUID,
+      bool endCaps = false,
+      bool upToNextFloor = false
+    )
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
       Tuple<double, double> heightLimits = new Tuple<double, double>(0, 0);
 
-     
-      List<PlumbingPlanBasePoint> basePoints = AutoCADIntegration.GetPlumbingBasePointsFromCAD().OrderBy(i => i.Floor).Where(i => !i.IsSiteRef).ToList();
+      List<PlumbingPlanBasePoint> basePoints = AutoCADIntegration
+        .GetPlumbingBasePointsFromCAD()
+        .OrderBy(i => i.Floor)
+        .Where(i => !i.IsSiteRef)
+        .ToList();
       PlumbingPlanBasePoint selectedBasePoint = basePoints.Find(bp => bp.Id == GUID);
-      if (selectedBasePoint == null) {
+      if (selectedBasePoint == null)
+      {
         ed.WriteMessage("\nNo base point found. Please set an active view.");
         return heightLimits;
       }
-      List<PlumbingPlanBasePoint> viewBasePoints = basePoints.FindAll(bp => bp.ViewportId == selectedBasePoint.ViewportId && bp.IsSite == selectedBasePoint.IsSite).OrderBy(i => i.Floor).ToList();
-
+      List<PlumbingPlanBasePoint> viewBasePoints = basePoints
+        .FindAll(bp =>
+          bp.ViewportId == selectedBasePoint.ViewportId && bp.IsSite == selectedBasePoint.IsSite
+        )
+        .OrderBy(i => i.Floor)
+        .ToList();
 
       double ceilingHeight = selectedBasePoint.CeilingHeight;
-      if (upToNextFloor) {
-        PlumbingPlanBasePoint upperFloor = viewBasePoints.Find(bp => bp.Floor == selectedBasePoint.Floor + 1);
-        if (upperFloor != null) {
+      if (upToNextFloor)
+      {
+        PlumbingPlanBasePoint upperFloor = viewBasePoints.Find(bp =>
+          bp.Floor == selectedBasePoint.Floor + 1
+        );
+        if (upperFloor != null)
+        {
           ceilingHeight = upperFloor.FloorHeight;
         }
       }
@@ -198,21 +269,19 @@ namespace GMEPPlumbing
 
       double upperHeightLimit = ceilingHeight - floorHeight;
       double lowerHeightLimit = 0;
-      if (!endCaps) {
-        if (viewBasePoints.Last() == selectedBasePoint) {
+      if (!endCaps)
+      {
+        if (viewBasePoints.Last() == selectedBasePoint)
+        {
           upperHeightLimit = 10000;
         }
-        if (viewBasePoints.First() == selectedBasePoint) {
+        if (viewBasePoints.First() == selectedBasePoint)
+        {
           lowerHeightLimit = -10000;
         }
       }
 
-      heightLimits = new Tuple<double, double>(
-        lowerHeightLimit,
-        upperHeightLimit
-      );
-      
-      
+      heightLimits = new Tuple<double, double>(lowerHeightLimit, upperHeightLimit);
 
       return heightLimits;
     }
@@ -252,18 +321,34 @@ namespace GMEPPlumbing
     }
 
     [CommandMethod("SetActiveView")]
-    public static void SetActiveViewMethod() {
+    public static void SetActiveViewMethod()
+    {
       SetActiveView();
     }
-    public static void SetActiveView(string message = "\nPick View: ") {
-      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+
+    public static void SetActiveView(string message = "\nPick View: ")
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
-      List<PlumbingPlanBasePoint> basePoints =  AutoCADIntegration.GetPlumbingBasePointsFromCAD().Where(i => i.IsRoof == false).OrderBy(i => i.Floor).ToList();
-      Dictionary<string, List<PlumbingPlanBasePoint>> basePointDict = new Dictionary<string, List<PlumbingPlanBasePoint>>();
-      foreach (var bp in basePoints) {
-        if (!bp.IsSiteRef && bp.Id != "0") {
-          if (!basePointDict.ContainsKey(bp.ViewportId)) {
+      List<PlumbingPlanBasePoint> basePoints = AutoCADIntegration
+        .GetPlumbingBasePointsFromCAD()
+        .Where(i => i.IsRoof == false)
+        .OrderBy(i => i.Floor)
+        .ToList();
+      Dictionary<string, List<PlumbingPlanBasePoint>> basePointDict =
+        new Dictionary<string, List<PlumbingPlanBasePoint>>();
+      foreach (var bp in basePoints)
+      {
+        if (!bp.IsSiteRef && bp.Id != "0")
+        {
+          if (!basePointDict.ContainsKey(bp.ViewportId))
+          {
             basePointDict[bp.ViewportId] = new List<PlumbingPlanBasePoint>();
           }
           basePointDict[bp.ViewportId].Add(bp);
@@ -271,33 +356,42 @@ namespace GMEPPlumbing
       }
 
       List<string> keywords = new List<string>();
-      foreach (var key in basePointDict.Keys) {
+      foreach (var key in basePointDict.Keys)
+      {
         PlumbingPlanBasePoint bp = basePointDict[key][0];
         string planName = bp.Plan;
-        string viewport =bp.Type ;
-        if (planName != "" && viewport != "") {
+        string viewport = bp.Type;
+        if (planName != "" && viewport != "")
+        {
           string keyword = planName + ":" + viewport;
-          if (!keywords.Contains(keyword)) {
+          if (!keywords.Contains(keyword))
+          {
             keywords.Add(keyword);
           }
-          else {
-            int count = keywords.Count(x => x == keyword || (x.StartsWith(keyword + "(") && x.EndsWith(")")));
+          else
+          {
+            int count = keywords.Count(x =>
+              x == keyword || (x.StartsWith(keyword + "(") && x.EndsWith(")"))
+            );
             keywords.Add(keyword + "(" + (count + 1).ToString() + ")");
           }
         }
       }
       PromptKeywordOptions promptOptions = new PromptKeywordOptions(message);
-      foreach (var keyword in keywords) {
+      foreach (var keyword in keywords)
+      {
         promptOptions.Keywords.Add(keyword);
       }
       PromptResult pr = ed.GetKeywords(promptOptions);
-      if (pr.Status != PromptStatus.OK) {
+      if (pr.Status != PromptStatus.OK)
+      {
         ed.WriteMessage("\nOperation cancelled.");
         return;
       }
       string resultKeyword = pr.StringResult;
       int index = keywords.IndexOf(resultKeyword);
-      if (index < 0 || index >= basePoints.Count) {
+      if (index < 0 || index >= basePoints.Count)
+      {
         ed.WriteMessage("\nInvalid view selection. Operation cancelled.");
         return;
       }
@@ -306,14 +400,17 @@ namespace GMEPPlumbing
 
       PromptKeywordOptions floorOptions = new PromptKeywordOptions("\nPick Floor: ");
       List<string> keywords2 = new List<string>();
-      foreach (var point in chosenBasePoints) {
+      foreach (var point in chosenBasePoints)
+      {
         string keyword = point.Floor.ToString();
-        if (point.IsSite) {
+        if (point.IsSite)
+        {
           keyword += "(Site)";
         }
         keywords2.Add(keyword);
       }
-      foreach(var keyword in keywords2) {
+      foreach (var keyword in keywords2)
+      {
         floorOptions.Keywords.Add(keyword);
       }
       PromptResult floorResult = ed.GetKeywords(floorOptions);
@@ -327,22 +424,26 @@ namespace GMEPPlumbing
       string basePointId = chosenPoint.Id;
       double routeHeight = chosenPoint.RouteHeight;
       string viewId = chosenPoint.ViewportId;
-      bool isSite = chosenPoint.IsSite; 
+      bool isSite = chosenPoint.IsSite;
 
       List<string> viewTypes = new List<string>();
-      if (chosenPoint.Type.Contains("Water")) {
+      if (chosenPoint.Type.Contains("Water"))
+      {
         viewTypes.Add("Water");
       }
-      if (chosenPoint.Type.Contains("Gas")) {
+      if (chosenPoint.Type.Contains("Gas"))
+      {
         viewTypes.Add("Gas");
       }
-      if (chosenPoint.Type.Contains("Sewer-Vent")) {
+      if (chosenPoint.Type.Contains("Sewer-Vent"))
+      {
         viewTypes.Add("Sewer-Vent");
       }
-      if (chosenPoint.Type.Contains("Storm")) {
+      if (chosenPoint.Type.Contains("Storm"))
+      {
         viewTypes.Add("Storm");
       }
-  
+
       AutoCADIntegration.ZoomToPoint(ed, chosenPoint.Point);
       ActiveBasePointId = basePointId;
       ActiveFloorHeight = floorHeight;
@@ -354,18 +455,24 @@ namespace GMEPPlumbing
       ActiveViewId = viewId;
       ActiveIsSite = isSite;
     }
-    public static void SetActiveViewSpecific(PlumbingPlanBasePoint chosenPoint) {
+
+    public static void SetActiveViewSpecific(PlumbingPlanBasePoint chosenPoint)
+    {
       List<string> viewTypes = new List<string>();
-      if (chosenPoint.Type.Contains("Water")) {
+      if (chosenPoint.Type.Contains("Water"))
+      {
         viewTypes.Add("Water");
       }
-      if (chosenPoint.Type.Contains("Gas")) {
+      if (chosenPoint.Type.Contains("Gas"))
+      {
         viewTypes.Add("Gas");
       }
-      if (chosenPoint.Type.Contains("Sewer-Vent")) {
+      if (chosenPoint.Type.Contains("Sewer-Vent"))
+      {
         viewTypes.Add("Sewer-Vent");
       }
-      if (chosenPoint.Type.Contains("Storm")) {
+      if (chosenPoint.Type.Contains("Storm"))
+      {
         viewTypes.Add("Storm");
       }
       ActiveBasePointId = chosenPoint.Id;
@@ -378,28 +485,48 @@ namespace GMEPPlumbing
       ActiveViewId = chosenPoint.ViewportId;
       ActiveIsSite = chosenPoint.IsSite;
     }
-    public static string GetActiveView() {
-      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+
+    public static string GetActiveView()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
-      if (string.IsNullOrEmpty(ActiveBasePointId)) {
+      if (string.IsNullOrEmpty(ActiveBasePointId))
+      {
         SetActiveView();
       }
 
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord basePointBlock = (BlockTableRecord)tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
+        BlockTableRecord basePointBlock = (BlockTableRecord)
+          tr.GetObject(bt["GMEP_PLUMBING_BASEPOINT"], OpenMode.ForRead);
 
-        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds()) {
-          if (id.IsValid) {
-            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
-              if (anonymousBtr != null) {
-                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+        foreach (ObjectId id in basePointBlock.GetAnonymousBlockIds())
+        {
+          if (id.IsValid)
+          {
+            using (
+              BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord
+            )
+            {
+              if (anonymousBtr != null)
+              {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                {
                   var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                   var pc = entity.DynamicBlockReferencePropertyCollection;
-                  foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "Id") {
-                      if (prop.Value.ToString() == ActiveBasePointId) {
+                  foreach (DynamicBlockReferenceProperty prop in pc)
+                  {
+                    if (prop.PropertyName == "Id")
+                    {
+                      if (prop.Value.ToString() == ActiveBasePointId)
+                      {
                         AutoCADIntegration.ZoomToBlock(ed, entity);
                       }
                     }
@@ -413,9 +540,16 @@ namespace GMEPPlumbing
       }
       return ActiveBasePointId;
     }
+
     [CommandMethod("SetProjectType")]
-    public static void SetProjectType() {
-      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+    public static void SetProjectType()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
       Editor ed = doc.Editor;
 
       PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nSelect Project Type: ");
@@ -424,20 +558,23 @@ namespace GMEPPlumbing
       promptOptions.AllowNone = false;
 
       PromptResult pr = ed.GetKeywords(promptOptions);
-      if (pr.Status == PromptStatus.OK) {
-        if (pr.StringResult == "Residential") {
+      if (pr.Status == PromptStatus.OK)
+      {
+        if (pr.StringResult == "Residential")
+        {
           IsResidential = true;
         }
-        else {
+        else
+        {
           IsResidential = false;
         }
         ed.WriteMessage($"\nProject type set to {pr.StringResult}.");
       }
-      else {
+      else
+      {
         ed.WriteMessage("\nOperation cancelled.");
       }
     }
-
 
     public static string GetProjectNoFromFileName()
     {
@@ -478,7 +615,8 @@ namespace GMEPPlumbing
         return null;
       }
       ObjectId blockId = bt[blockName];
-      if (blockId == ObjectId.Null || !blockId.IsValid) {
+      if (blockId == ObjectId.Null || !blockId.IsValid)
+      {
         Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
           $"Block '{blockName}' has an invalid ObjectId."
         );
@@ -501,31 +639,48 @@ namespace GMEPPlumbing
       BlockReference br = new BlockReference(point, blockId);
       return br;
     }
-    public static void CreateEllipseJig() {
-      var ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
-      if (Scale == -1.0) {
+
+    public static void CreateEllipseJig()
+    {
+      var ed = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument
+        .Editor;
+      if (Scale == -1.0)
+      {
         SetScale();
       }
       PromptPointResult ppr = ed.GetPoint("\nSelect first point for ellipse:");
       if (ppr.Status != PromptStatus.OK)
         return;
 
-      EllipseJig jig = new EllipseJig(ppr.Value); 
+      EllipseJig jig = new EllipseJig(ppr.Value);
       PromptResult res = ed.Drag(jig);
-      if (res.Status == PromptStatus.OK) {
-        using (var tr = ed.Document.Database.TransactionManager.StartTransaction()) {
-          BlockTable bt = (BlockTable)tr.GetObject(ed.Document.Database.BlockTableId, OpenMode.ForRead);
-          BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+      if (res.Status == PromptStatus.OK)
+      {
+        using (var tr = ed.Document.Database.TransactionManager.StartTransaction())
+        {
+          BlockTable bt = (BlockTable)
+            tr.GetObject(ed.Document.Database.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord btr = (BlockTableRecord)
+            tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
           btr.AppendEntity(jig.Entity);
           tr.AddNewlyCreatedDBObject(jig.Entity, true);
           tr.Commit();
         }
         DynamicLineJig lineJig = new DynamicLineJig(jig._endPoint, Scale, "", false);
         PromptResult dynaLineJigRes = ed.Drag(lineJig);
-        if (dynaLineJigRes.Status == PromptStatus.OK) {
-          using (var tr = ed.Document.Database.TransactionManager.StartTransaction()) {
-            BlockTable bt = (BlockTable)tr.GetObject(ed.Document.Database.BlockTableId, OpenMode.ForRead);
-            BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        if (dynaLineJigRes.Status == PromptStatus.OK)
+        {
+          using (var tr = ed.Document.Database.TransactionManager.StartTransaction())
+          {
+            BlockTable bt = (BlockTable)
+              tr.GetObject(ed.Document.Database.BlockTableId, OpenMode.ForRead);
+            BlockTableRecord btr = (BlockTableRecord)
+              tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
             btr.AppendEntity(lineJig.line);
             tr.AddNewlyCreatedDBObject(lineJig.line, true);
             tr.Commit();
@@ -533,12 +688,14 @@ namespace GMEPPlumbing
         }
       }
     }
+
     public static Tuple<Point3d, Point3d> CreateArrowJig(
       string layerName,
       Point3d center,
       bool createHorizontalLeg = true,
       Point3d? promptPoint = null
-    ) {
+    )
+    {
       Document acDoc = Autodesk
         .AutoCAD
         .ApplicationServices
@@ -549,11 +706,13 @@ namespace GMEPPlumbing
       Editor ed = acDoc.Editor;
 
       Point3d thirdClickPoint = Point3d.Origin;
-      if (Scale == -1.0) {
+      if (Scale == -1.0)
+      {
         SetScale();
       }
 
-      if (Scale == -1.0) {
+      if (Scale == -1.0)
+      {
         Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
           "Please set the scale using the SetScale command before creating objects."
         );
@@ -561,27 +720,33 @@ namespace GMEPPlumbing
       }
       Point3d leaderPoint;
       Point3d insertionPoint;
-      using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction()) {
+      using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+      {
         BlockTable acBlkTbl =
           acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
         /*BlockTableRecord acBlkTblRec =
           acTrans.GetObject(acBlkTbl[$"ar{Scale}"], OpenMode.ForRead) as BlockTableRecord;*/
         BlockTableRecord acBlkTblRec =
           acTrans.GetObject(acBlkTbl[$"ar0.25"], OpenMode.ForRead) as BlockTableRecord;
-        if (acBlkTblRec == null || !acBlkTblRec.ObjectId.IsValid) {
+        if (acBlkTblRec == null || !acBlkTblRec.ObjectId.IsValid)
+        {
           Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
             $"Block 'ar{Scale}' not found in the BlockTable."
           );
           return new Tuple<Point3d, Point3d>(Point3d.Origin, Point3d.Origin);
         }
-        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId)) {
+        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId))
+        {
           ArrowJig arrowJig = new ArrowJig(acBlkRef, center);
-          if (promptPoint.HasValue) {
+          if (promptPoint.HasValue)
+          {
             arrowJig.Set((Point3d)promptPoint);
           }
-          else {
+          else
+          {
             PromptResult promptResult = ed.Drag(arrowJig);
-            if (promptResult.Status != PromptStatus.OK) {
+            if (promptResult.Status != PromptStatus.OK)
+            {
               return new Tuple<Point3d, Point3d>(Point3d.Origin, Point3d.Origin);
             }
           }
@@ -596,17 +761,16 @@ namespace GMEPPlumbing
           acBlkRef.Layer = layerName;
 
           acTrans.Commit();
-
         }
       }
-
 
       Line line = new Line(leaderPoint, insertionPoint);
       line.Layer = layerName;
 
       Vector3d direction = leaderPoint - insertionPoint;
       double angle = direction.GetAngleTo(Vector3d.XAxis, Vector3d.ZAxis);
-      using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction()) {
+      using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction())
+      {
         BlockTableRecord btr = (BlockTableRecord)
           tr.GetObject(acDoc.Database.CurrentSpaceId, OpenMode.ForWrite);
         btr.AppendEntity(line);
@@ -614,11 +778,14 @@ namespace GMEPPlumbing
 
         tr.Commit();
       }
-      if (angle != 0 && angle != Math.PI && createHorizontalLeg) {
-        using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction()) {
+      if (angle != 0 && angle != Math.PI && createHorizontalLeg)
+      {
+        using (Transaction tr = acDoc.Database.TransactionManager.StartTransaction())
+        {
           DynamicLineJig lineJig = new DynamicLineJig(insertionPoint, Scale);
           PromptResult dynaLineJigRes = ed.Drag(lineJig);
-          if (dynaLineJigRes.Status == PromptStatus.OK) {
+          if (dynaLineJigRes.Status == PromptStatus.OK)
+          {
             BlockTableRecord btr = (BlockTableRecord)
               tr.GetObject(acDoc.Database.CurrentSpaceId, OpenMode.ForWrite);
             btr.AppendEntity(lineJig.line);
@@ -665,7 +832,8 @@ namespace GMEPPlumbing
       double textHeight = (baseScale / Scale) * baseTextHeight;
 
       string userText = defaultText;
-      if (underline) {
+      if (underline)
+      {
         userText = "%%U" + userText;
       }
 

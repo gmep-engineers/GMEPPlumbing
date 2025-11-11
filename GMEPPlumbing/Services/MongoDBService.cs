@@ -1,16 +1,16 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Threading.Tasks;
+using System.Windows.Markup;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.EditorInput;
 using GMEPPlumbing.ViewModels;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Threading.Tasks;
-using System.Windows.Markup;
 
 namespace GMEPPlumbing.Services
 {
@@ -38,8 +38,8 @@ namespace GMEPPlumbing.Services
         WriteToCommandLine($"DLL directory: {dllDirectory}");
 
         var builder = new ConfigurationBuilder()
-            .SetBasePath(dllDirectory)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+          .SetBasePath(dllDirectory)
+          .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
         IConfiguration configuration = builder.Build();
         var connectionString = configuration.GetConnectionString("MongoDB");
@@ -67,7 +67,10 @@ namespace GMEPPlumbing.Services
     }
 
     // Create
-    public static async Task<WaterSystemData> CreateDrawingDataAsync(WaterSystemData data, string drawingId)
+    public static async Task<WaterSystemData> CreateDrawingDataAsync(
+      WaterSystemData data,
+      string drawingId
+    )
     {
       try
       {
@@ -101,14 +104,21 @@ namespace GMEPPlumbing.Services
     }
 
     // Update
-    public static async Task<bool> UpdateDrawingDataAsync(WaterSystemData data, string currentDrawingId)
+    public static async Task<bool> UpdateDrawingDataAsync(
+      WaterSystemData data,
+      string currentDrawingId
+    )
     {
       try
       {
         var collection = _database.GetCollection<WaterSystemDataWrapper>(CollectionName);
         var filter = Builders<WaterSystemDataWrapper>.Filter.Eq(w => w.Id, currentDrawingId);
         var update = Builders<WaterSystemDataWrapper>.Update.Set(w => w.Data, data);
-        var result = await collection.UpdateOneAsync(filter, update, new UpdateOptions { IsUpsert = true });
+        var result = await collection.UpdateOneAsync(
+          filter,
+          update,
+          new UpdateOptions { IsUpsert = true }
+        );
         return result.IsAcknowledged && (result.ModifiedCount > 0 || result.UpsertedId != null);
       }
       catch (Exception ex)
@@ -120,7 +130,9 @@ namespace GMEPPlumbing.Services
 
     private static void WriteToCommandLine(string message)
     {
-      Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\n" + message);
+      Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
+        "\n" + message
+      );
     }
   }
 }
