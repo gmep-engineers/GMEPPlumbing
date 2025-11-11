@@ -1,7 +1,4 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
-using GMEPPlumbing.Commands;
-using GMEPPlumbing.Services;
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -9,6 +6,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 using System.Windows.Markup;
+using Autodesk.AutoCAD.ApplicationServices;
+using GMEPPlumbing.Commands;
+using GMEPPlumbing.Services;
 
 namespace GMEPPlumbing.ViewModels
 {
@@ -29,14 +29,15 @@ namespace GMEPPlumbing.ViewModels
     public ObservableCollection<ComboBoxItem> SectionHeaderOptions2 { get; set; }
 
     public WaterSystemViewModel(
-        WaterMeterLossCalculationService waterMeterLoss,
-        WaterStaticLossService waterStaticLoss,
-        WaterTotalLossService waterTotalLoss,
-        WaterPressureAvailableService waterPressureAvailable,
-        WaterDevelopedLengthService waterDevelopedLength,
-        WaterRemainingPressurePer100FeetService waterRemainingPressurePer100Feet,
-        WaterAdditionalLosses waterAdditionalLossesService,
-        WaterAdditionalLosses waterAdditionalLossesService2)
+      WaterMeterLossCalculationService waterMeterLoss,
+      WaterStaticLossService waterStaticLoss,
+      WaterTotalLossService waterTotalLoss,
+      WaterPressureAvailableService waterPressureAvailable,
+      WaterDevelopedLengthService waterDevelopedLength,
+      WaterRemainingPressurePer100FeetService waterRemainingPressurePer100Feet,
+      WaterAdditionalLosses waterAdditionalLossesService,
+      WaterAdditionalLosses waterAdditionalLossesService2
+    )
     {
       _waterMeterLossService = waterMeterLoss;
       _waterStaticLossService = waterStaticLoss;
@@ -49,15 +50,18 @@ namespace GMEPPlumbing.ViewModels
 
       SectionHeaderOptions1 = new ObservableCollection<ComboBoxItem>
       {
-          new ComboBoxItem { Content = "TYPICAL WATER CALCULATIONS" },
-          new ComboBoxItem { Content = "TYPICAL WATER CALCULATIONS FOR MAIN CPVC PIPE TO THE UNIT SUBMETER" },
+        new ComboBoxItem { Content = "TYPICAL WATER CALCULATIONS" },
+        new ComboBoxItem
+        {
+          Content = "TYPICAL WATER CALCULATIONS FOR MAIN CPVC PIPE TO THE UNIT SUBMETER",
+        },
       };
 
       SelectedSectionHeader1 = SectionHeader1;
 
       SectionHeaderOptions2 = new ObservableCollection<ComboBoxItem>
       {
-          new ComboBoxItem { Content = "TYPICAL WATER CALCULATIONS FOR PEX PIPE INSIDE THE UNIT" }
+        new ComboBoxItem { Content = "TYPICAL WATER CALCULATIONS FOR PEX PIPE INSIDE THE UNIT" },
       };
 
       SelectedSectionHeader2 = SectionHeader2;
@@ -502,7 +506,10 @@ namespace GMEPPlumbing.ViewModels
 
     private void UpdateSelectedSectionHeader2(string value)
     {
-      if (!string.IsNullOrEmpty(value) && !SectionHeaderOptions2.Any(item => (string)item.Content == value))
+      if (
+        !string.IsNullOrEmpty(value)
+        && !SectionHeaderOptions2.Any(item => (string)item.Content == value)
+      )
       {
         SectionHeaderOptions2.Add(new ComboBoxItem { Content = value });
       }
@@ -697,7 +704,10 @@ namespace GMEPPlumbing.ViewModels
 
     private void CalculateMeterLoss(double meterSize)
     {
-      var (pressureLoss, message) = _waterMeterLossService.CalculateWaterMeterLoss(meterSize, FixtureCalculation);
+      var (pressureLoss, message) = _waterMeterLossService.CalculateWaterMeterLoss(
+        meterSize,
+        FixtureCalculation
+      );
 
       if (pressureLoss.HasValue)
       {
@@ -721,27 +731,46 @@ namespace GMEPPlumbing.ViewModels
 
     private void CalculateTotalLoss()
     {
-      TotalLoss = _waterTotalLossService.CalculateTotalLoss(MeterLoss, StaticLoss, PressureRequiredOrAtUnit, BackflowPressureLoss, PrvPressureLoss, AdditionalLossesTotal);
+      TotalLoss = _waterTotalLossService.CalculateTotalLoss(
+        MeterLoss,
+        StaticLoss,
+        PressureRequiredOrAtUnit,
+        BackflowPressureLoss,
+        PrvPressureLoss,
+        AdditionalLossesTotal
+      );
     }
 
     private void CalculateWaterPressureAvailable()
     {
-      PressureAvailable = _waterPressureAvailableService.CalculateAvailableWaterPressure(StreetLowPressure, TotalLoss);
+      PressureAvailable = _waterPressureAvailableService.CalculateAvailableWaterPressure(
+        StreetLowPressure,
+        TotalLoss
+      );
     }
 
     private void CalculateWaterDevelopedLength()
     {
-      DevelopedLength = _waterDevelopedLengthService.CalculateDevelopedLength(SystemLength, DevelopedLengthPercentage);
+      DevelopedLength = _waterDevelopedLengthService.CalculateDevelopedLength(
+        SystemLength,
+        DevelopedLengthPercentage
+      );
     }
 
     private void CalculateWaterPressureRemainingPer100Feet()
     {
-      AveragePressureDrop = _waterRemainingPressurePer100FeetService.CalculateRemainingPressurePer100Feet(PressureAvailable, DevelopedLength);
+      AveragePressureDrop =
+        _waterRemainingPressurePer100FeetService.CalculateRemainingPressurePer100Feet(
+          PressureAvailable,
+          DevelopedLength
+        );
     }
 
     public void UpdateAdditionalLosses()
     {
-      AdditionalLossesTotal = _waterAdditionalLossesService.CalculateTotalAdditionalLosses(AdditionalLosses);
+      AdditionalLossesTotal = _waterAdditionalLossesService.CalculateTotalAdditionalLosses(
+        AdditionalLosses
+      );
     }
 
     #endregion Calculation Methods for Section 1
@@ -758,7 +787,10 @@ namespace GMEPPlumbing.ViewModels
 
     private void CalculateMeterLoss2(double meterSize)
     {
-      var (pressureLoss, message) = _waterMeterLossService.CalculateWaterMeterLoss(meterSize, FixtureCalculation2);
+      var (pressureLoss, message) = _waterMeterLossService.CalculateWaterMeterLoss(
+        meterSize,
+        FixtureCalculation2
+      );
 
       if (pressureLoss.HasValue)
       {
@@ -777,27 +809,46 @@ namespace GMEPPlumbing.ViewModels
 
     private void CalculateTotalLoss2()
     {
-      TotalLoss2 = _waterTotalLossService.CalculateTotalLoss(MeterLoss2, 0, PressureRequired2, 0, 0, AdditionalLossesTotal2);
+      TotalLoss2 = _waterTotalLossService.CalculateTotalLoss(
+        MeterLoss2,
+        0,
+        PressureRequired2,
+        0,
+        0,
+        AdditionalLossesTotal2
+      );
     }
 
     private void CalculateWaterPressureAvailable2()
     {
-      PressureAvailable2 = _waterPressureAvailableService.CalculateAvailableWaterPressure(PressureRequiredOrAtUnit, TotalLoss2);
+      PressureAvailable2 = _waterPressureAvailableService.CalculateAvailableWaterPressure(
+        PressureRequiredOrAtUnit,
+        TotalLoss2
+      );
     }
 
     private void CalculateWaterDevelopedLength2()
     {
-      DevelopedLength2 = _waterDevelopedLengthService.CalculateDevelopedLength(SystemLength2, DevelopedLengthPercentage);
+      DevelopedLength2 = _waterDevelopedLengthService.CalculateDevelopedLength(
+        SystemLength2,
+        DevelopedLengthPercentage
+      );
     }
 
     private void CalculateWaterPressureRemainingPer100Feet2()
     {
-      AveragePressureDrop2 = _waterRemainingPressurePer100FeetService.CalculateRemainingPressurePer100Feet(PressureAvailable2, DevelopedLength2);
+      AveragePressureDrop2 =
+        _waterRemainingPressurePer100FeetService.CalculateRemainingPressurePer100Feet(
+          PressureAvailable2,
+          DevelopedLength2
+        );
     }
 
     public void UpdateAdditionalLosses2()
     {
-      AdditionalLossesTotal2 = _waterAdditionalLossesService2.CalculateTotalAdditionalLosses(AdditionalLosses2);
+      AdditionalLossesTotal2 = _waterAdditionalLossesService2.CalculateTotalAdditionalLosses(
+        AdditionalLosses2
+      );
     }
 
     public void AddAdditionalLoss(string title, string amount)
@@ -831,9 +882,14 @@ namespace GMEPPlumbing.ViewModels
       PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+    protected bool SetProperty<T>(
+      ref T field,
+      T value,
+      [CallerMemberName] string propertyName = null
+    )
     {
-      if (Equals(field, value)) return false;
+      if (Equals(field, value))
+        return false;
       field = value;
       OnPropertyChanged(propertyName);
       return true;
@@ -889,13 +945,14 @@ namespace GMEPPlumbing.ViewModels
         AveragePressureDrop2 = AveragePressureDrop2,
         AdditionalLossesTotal2 = AdditionalLossesTotal2,
         AdditionalLosses = new ObservableCollection<AdditionalLoss>(AdditionalLosses),
-        AdditionalLosses2 = new ObservableCollection<AdditionalLoss>(AdditionalLosses2)
+        AdditionalLosses2 = new ObservableCollection<AdditionalLoss>(AdditionalLosses2),
       };
     }
 
     public void UpdatePropertiesFromData(WaterSystemData data)
     {
-      if (data == null) return;
+      if (data == null)
+        return;
 
       SectionHeader1 = data.SectionHeader1;
       UpdateSelectedSectionHeader1(data.SectionHeader1);
@@ -1018,7 +1075,12 @@ namespace GMEPPlumbing.ViewModels
 
       // If not a regular double, try parsing as a fraction
       var parts = input.Split('/');
-      if (parts.Length == 2 && int.TryParse(parts[0], out int numerator) && int.TryParse(parts[1], out int denominator) && denominator != 0)
+      if (
+        parts.Length == 2
+        && int.TryParse(parts[0], out int numerator)
+        && int.TryParse(parts[1], out int denominator)
+        && denominator != 0
+      )
       {
         result = (double)numerator / denominator;
         return true;

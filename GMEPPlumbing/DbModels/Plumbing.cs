@@ -8,13 +8,15 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using GMEPPlumbing.Tools;
-using System.Windows.Media;
 
-namespace GMEPPlumbing {
-  public class PlumbingAccessory {
+namespace GMEPPlumbing
+{
+  public class PlumbingAccessory
+  {
     public string Id;
     public string ProjectId;
     public string BasePointId;
@@ -22,6 +24,7 @@ namespace GMEPPlumbing {
     public double Rotation;
     public int TypeId;
     public string Type;
+
     public PlumbingAccessory(
       string id,
       string projectId,
@@ -30,7 +33,8 @@ namespace GMEPPlumbing {
       double rotation,
       int typeId,
       string type
-    ) {
+    )
+    {
       Id = id;
       ProjectId = projectId;
       BasePointId = basePointId;
@@ -40,7 +44,9 @@ namespace GMEPPlumbing {
       Type = type;
     }
   }
-  public class PlumbingAccessoryType {
+
+  public class PlumbingAccessoryType
+  {
     public int Id;
     public string Name;
     public string Label;
@@ -55,8 +61,8 @@ namespace GMEPPlumbing {
       string category,
       string blockName,
       List<string> types
-
-    ) {
+    )
+    {
       Id = id;
       Name = name;
       BlockName = blockName;
@@ -65,7 +71,9 @@ namespace GMEPPlumbing {
       Types = types;
     }
   }
-  public class PlumbingFixture {
+
+  public class PlumbingFixture
+  {
     public string Id;
     public string ProjectId;
     public Point3d Position;
@@ -76,6 +84,7 @@ namespace GMEPPlumbing {
     public string BasePointId;
     public string BlockName;
     public int FlowTypeId;
+
     public PlumbingFixture(
       string id,
       string projectId,
@@ -87,7 +96,8 @@ namespace GMEPPlumbing {
       string basePointId,
       string blockName,
       int flowTypeId
-    ) {
+    )
+    {
       Id = id;
       ProjectId = projectId;
       Position = position;
@@ -100,27 +110,30 @@ namespace GMEPPlumbing {
       FlowTypeId = flowTypeId;
     }
   }
-  
-  public class PlumbingFixtureType {
+
+  public class PlumbingFixtureType
+  {
     public int Id;
     public string Name;
     public string Abbreviation;
-    public PlumbingFixtureType(
-      int id,
-      string name,
-      string abbreviation
-    ) {
+
+    public PlumbingFixtureType(int id, string name, string abbreviation)
+    {
       Id = id;
       Name = name;
       Abbreviation = abbreviation;
     }
   }
-  public class PlumbingFullRoute {
+
+  public class PlumbingFullRoute
+  {
     public double Length { get; set; }
     public List<Object> RouteItems { get; set; }
     public int TypeId { get; set; }
   }
-  public class PlumbingFixtureCatalogItem {
+
+  public class PlumbingFixtureCatalogItem
+  {
     public int Id;
     public int TypeId;
     public string Description;
@@ -165,7 +178,8 @@ namespace GMEPPlumbing {
       bool residential,
       bool commercial,
       bool island
-    ) {
+    )
+    {
       Id = id;
       TypeId = typeId;
       Description = description;
@@ -190,7 +204,8 @@ namespace GMEPPlumbing {
     }
   }
 
-  public class PlumbingSource {
+  public class PlumbingSource
+  {
     public string Id;
     public string ProjectId;
     public Point3d Position;
@@ -207,7 +222,8 @@ namespace GMEPPlumbing {
       string basePointId,
       double pressure,
       string blockName
-    ) {
+    )
+    {
       Id = id;
       ProjectId = projectId;
       Position = position;
@@ -218,16 +234,20 @@ namespace GMEPPlumbing {
     }
   }
 
-  public class PlumbingSourceType {
+  public class PlumbingSourceType
+  {
     public int Id;
     public string Type;
 
-    public PlumbingSourceType(int id, string type) {
+    public PlumbingSourceType(int id, string type)
+    {
       Id = id;
       Type = type;
     }
   }
-  public class RouteInfoBox {
+
+  public class RouteInfoBox
+  {
     public string ViewportId { get; set; }
     public string ProjectId { get; set; }
 
@@ -249,7 +269,22 @@ namespace GMEPPlumbing {
     public string DirectionDescription { get; set; }
     public bool IsVerticalRoute { get; set; } = false;
 
-    public RouteInfoBox(string projectId, string viewportId, string componentId, string basePointId, string pipeSize, string type, string locationDescription, string sourceDescription, string units, string longestRunLength, string directionDescription, bool isVerticalRoute, string segmentLength) {
+    public RouteInfoBox(
+      string projectId,
+      string viewportId,
+      string componentId,
+      string basePointId,
+      string pipeSize,
+      string type,
+      string locationDescription,
+      string sourceDescription,
+      string units,
+      string longestRunLength,
+      string directionDescription,
+      bool isVerticalRoute,
+      string segmentLength
+    )
+    {
       ViewportId = viewportId;
       ProjectId = projectId;
 
@@ -273,7 +308,8 @@ namespace GMEPPlumbing {
     }
   }
 
-  public class PlumbingPlanBasePoint {
+  public class PlumbingPlanBasePoint
+  {
     public string Id;
     public string ProjectId;
     public string ViewportId;
@@ -288,8 +324,21 @@ namespace GMEPPlumbing {
     public bool IsSiteRef { get; set; } = false;
     public bool IsRoof { get; set; } = false;
 
-
-    public PlumbingPlanBasePoint(string id, string projectId, Point3d point, string plan, string type, string viewportId, int floor, double floorHeight, double ceilingHeight, bool isSite, bool isSiteRef, bool isRoof) {
+    public PlumbingPlanBasePoint(
+      string id,
+      string projectId,
+      Point3d point,
+      string plan,
+      string type,
+      string viewportId,
+      int floor,
+      double floorHeight,
+      double ceilingHeight,
+      bool isSite,
+      bool isSiteRef,
+      bool isRoof
+    )
+    {
       Id = id;
       ProjectId = projectId;
       ViewportId = viewportId;
@@ -304,7 +353,9 @@ namespace GMEPPlumbing {
       IsRoof = isRoof;
     }
   }
-  public class PlumbingHorizontalRoute {
+
+  public class PlumbingHorizontalRoute
+  {
     public string Id;
     public string ProjectId;
     public string Type;
@@ -318,6 +369,7 @@ namespace GMEPPlumbing {
     public double LongestRunLength { get; set; } = 0;
     public string PipeSize { get; set; } = "";
     public double Slope { get; set; } = 0;
+
     public PlumbingHorizontalRoute(
       string id,
       string projectId,
@@ -327,7 +379,8 @@ namespace GMEPPlumbing {
       string basePointId,
       string pipeType,
       double slope
-    ) {
+    )
+    {
       Id = id;
       Type = type;
       ProjectId = projectId;
@@ -337,76 +390,310 @@ namespace GMEPPlumbing {
       PipeType = pipeType;
       Slope = slope;
     }
-    public void GenerateGallonsPerMinute() {
+
+    public void GenerateGallonsPerMinute()
+    {
       // Key: fixture units, Value: gpm
       // All values from the provided charts
       SortedDictionary<int, int> flushTankDict = new SortedDictionary<int, int>
       {
         // Data from Image 1
-        {0, 1}, {1, 2}, {3, 3}, {4, 4}, {6, 5}, {7, 6}, {8, 7}, {10, 8}, {12, 9}, {13, 10},
-        {15, 11}, {16, 12}, {18, 13}, {20, 14}, {21, 15}, {23, 16}, {24, 17}, {26, 18}, {28, 19},
-        {30, 20}, {32, 21}, {34, 22}, {36, 23}, {39, 24}, {42, 25}, {44, 26}, {46, 27}, {49, 28},
-        {51, 29}, {54, 30}, {56, 31}, {58, 32}, {60, 33}, {63, 34}, {66, 35}, {69, 36}, {74, 37},
-        {78, 38}, {83, 39}, {86, 40}, {90, 41}, {95, 42}, {99, 43}, {103, 44}, {107, 45}, {111, 46},
-        {115, 47}, {119, 48}, {123, 49}, {127, 50}, {130, 51}, {135, 52}, {141, 53}, {146, 54},
-        {151, 55}, {155, 56}, {160, 57}, {165, 58}, {170, 59}, {175, 60}, {185, 62}, {195, 64},
-        {205, 66},
-
+        { 0, 1 },
+        { 1, 2 },
+        { 3, 3 },
+        { 4, 4 },
+        { 6, 5 },
+        { 7, 6 },
+        { 8, 7 },
+        { 10, 8 },
+        { 12, 9 },
+        { 13, 10 },
+        { 15, 11 },
+        { 16, 12 },
+        { 18, 13 },
+        { 20, 14 },
+        { 21, 15 },
+        { 23, 16 },
+        { 24, 17 },
+        { 26, 18 },
+        { 28, 19 },
+        { 30, 20 },
+        { 32, 21 },
+        { 34, 22 },
+        { 36, 23 },
+        { 39, 24 },
+        { 42, 25 },
+        { 44, 26 },
+        { 46, 27 },
+        { 49, 28 },
+        { 51, 29 },
+        { 54, 30 },
+        { 56, 31 },
+        { 58, 32 },
+        { 60, 33 },
+        { 63, 34 },
+        { 66, 35 },
+        { 69, 36 },
+        { 74, 37 },
+        { 78, 38 },
+        { 83, 39 },
+        { 86, 40 },
+        { 90, 41 },
+        { 95, 42 },
+        { 99, 43 },
+        { 103, 44 },
+        { 107, 45 },
+        { 111, 46 },
+        { 115, 47 },
+        { 119, 48 },
+        { 123, 49 },
+        { 127, 50 },
+        { 130, 51 },
+        { 135, 52 },
+        { 141, 53 },
+        { 146, 54 },
+        { 151, 55 },
+        { 155, 56 },
+        { 160, 57 },
+        { 165, 58 },
+        { 170, 59 },
+        { 175, 60 },
+        { 185, 62 },
+        { 195, 64 },
+        { 205, 66 },
         // Data from Image 2
-        {215, 68}, {225, 70}, {236, 72}, {245, 74}, {254, 76}, {264, 78}, {284, 82}, {294, 84},
-        {305, 86}, {315, 88}, {326, 90}, {337, 92}, {348, 94}, {359, 96}, {370, 98}, {380, 100},
-        {406, 105}, {431, 110}, {455, 115}, {479, 120}, {506, 125}, {533, 130}, {559, 135},
-        {585, 140}, {611, 145}, {638, 150}, {665, 155}, {692, 160}, {719, 165}, {748, 170},
-        {778, 175}, {809, 180}, {840, 185}, {874, 190}, {945, 200}, {1018, 210}, {1091, 220},
-        {1173, 230}, {1254, 240}, {1335, 250}, {1418, 260}, {1500, 270}, {1583, 280}, {1668, 290},
-        {1755, 300}, {1845, 310}, {1926, 320}, {2018, 330}, {2110, 340}, {2204, 350}, {2298, 360},
-        {2388, 370}, {2480, 380}, {2575, 390}, {2670, 400}, {2765, 410}, {2862, 420}, {2960, 430},
-        {3060, 440}, {3150, 450}, {3620, 500}, {4070, 550}, {4480, 600}, {5380, 700}, {6280, 800},
-        {7280, 900},
-
+        { 215, 68 },
+        { 225, 70 },
+        { 236, 72 },
+        { 245, 74 },
+        { 254, 76 },
+        { 264, 78 },
+        { 284, 82 },
+        { 294, 84 },
+        { 305, 86 },
+        { 315, 88 },
+        { 326, 90 },
+        { 337, 92 },
+        { 348, 94 },
+        { 359, 96 },
+        { 370, 98 },
+        { 380, 100 },
+        { 406, 105 },
+        { 431, 110 },
+        { 455, 115 },
+        { 479, 120 },
+        { 506, 125 },
+        { 533, 130 },
+        { 559, 135 },
+        { 585, 140 },
+        { 611, 145 },
+        { 638, 150 },
+        { 665, 155 },
+        { 692, 160 },
+        { 719, 165 },
+        { 748, 170 },
+        { 778, 175 },
+        { 809, 180 },
+        { 840, 185 },
+        { 874, 190 },
+        { 945, 200 },
+        { 1018, 210 },
+        { 1091, 220 },
+        { 1173, 230 },
+        { 1254, 240 },
+        { 1335, 250 },
+        { 1418, 260 },
+        { 1500, 270 },
+        { 1583, 280 },
+        { 1668, 290 },
+        { 1755, 300 },
+        { 1845, 310 },
+        { 1926, 320 },
+        { 2018, 330 },
+        { 2110, 340 },
+        { 2204, 350 },
+        { 2298, 360 },
+        { 2388, 370 },
+        { 2480, 380 },
+        { 2575, 390 },
+        { 2670, 400 },
+        { 2765, 410 },
+        { 2862, 420 },
+        { 2960, 430 },
+        { 3060, 440 },
+        { 3150, 450 },
+        { 3620, 500 },
+        { 4070, 550 },
+        { 4480, 600 },
+        { 5380, 700 },
+        { 6280, 800 },
+        { 7280, 900 },
         // Data from Image 3
-        {8300, 1000}, {9320, 1100}, {10340, 1200}, {11360, 1300}, {12380, 1400}, {13400, 1500},
-        {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
-        {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
+        { 8300, 1000 },
+        { 9320, 1100 },
+        { 10340, 1200 },
+        { 11360, 1300 },
+        { 12380, 1400 },
+        { 13400, 1500 },
+        { 14420, 1600 },
+        { 15440, 1700 },
+        { 16460, 1800 },
+        { 17480, 1900 },
+        { 18500, 2000 },
+        { 19520, 2100 },
+        { 20540, 2200 },
+        { 21560, 2300 },
+        { 22580, 2400 },
+        { 23600, 2500 },
+        { 24620, 2600 },
+        { 25640, 2700 },
       };
 
       SortedDictionary<int, int> flushValveDict = new SortedDictionary<int, int>
       {
         // Data from Image 1
-        {6, 23}, {7, 24}, {8, 25}, {9, 26}, {10, 27}, {11, 28}, {12, 29}, {13, 30}, {14, 31},
-        {15, 32}, {16, 33}, {18, 34}, {20, 35}, {21, 36}, {23, 37}, {25, 38}, {26, 39}, {28, 40},
-        {30, 41}, {31, 42}, {33, 43}, {35, 44}, {37, 45}, {39, 46}, {42, 47}, {44, 48}, {46, 49},
-        {48, 50}, {50, 51}, {52, 52}, {54, 53}, {57, 54}, {60, 55}, {63, 56}, {66, 57}, {69, 58},
-        {73, 59}, {76, 60}, {82, 62}, {88, 64}, {95, 66},
-
+        { 6, 23 },
+        { 7, 24 },
+        { 8, 25 },
+        { 9, 26 },
+        { 10, 27 },
+        { 11, 28 },
+        { 12, 29 },
+        { 13, 30 },
+        { 14, 31 },
+        { 15, 32 },
+        { 16, 33 },
+        { 18, 34 },
+        { 20, 35 },
+        { 21, 36 },
+        { 23, 37 },
+        { 25, 38 },
+        { 26, 39 },
+        { 28, 40 },
+        { 30, 41 },
+        { 31, 42 },
+        { 33, 43 },
+        { 35, 44 },
+        { 37, 45 },
+        { 39, 46 },
+        { 42, 47 },
+        { 44, 48 },
+        { 46, 49 },
+        { 48, 50 },
+        { 50, 51 },
+        { 52, 52 },
+        { 54, 53 },
+        { 57, 54 },
+        { 60, 55 },
+        { 63, 56 },
+        { 66, 57 },
+        { 69, 58 },
+        { 73, 59 },
+        { 76, 60 },
+        { 82, 62 },
+        { 88, 64 },
+        { 95, 66 },
         // Data from Image 2
-        {102, 68}, {108, 70}, {116, 72}, {124, 74}, {132, 76}, {140, 78}, {158, 82}, {168, 84},
-        {176, 86}, {186, 88}, {195, 90}, {205, 92}, {214, 94}, {223, 96}, {234, 98}, {245, 100},
-        {270, 105}, {295, 110}, {329, 115}, {365, 120}, {396, 125}, {430, 130}, {460, 135},
-        {490, 140}, {521, 145}, {559, 150}, {596, 155}, {631, 160}, {666, 165}, {700, 170},
-        {739, 175}, {775, 180}, {811, 185}, {850, 190}, {931, 200}, {1009, 210}, {1091, 220},
-        {1173, 230}, {1254, 240}, {1335, 250}, {1418, 260}, {1500, 270}, {1583, 280}, {1668, 290},
-        {1755, 300}, {1845, 310}, {1926, 320}, {2018, 330}, {2110, 340}, {2204, 350}, {2298, 360},
-        {2388, 370}, {2480, 380}, {2575, 390}, {2670, 400}, {2765, 410}, {2862, 420}, {2960, 430},
-        {3060, 440}, {3150, 450}, {3620, 500}, {4070, 550}, {4480, 600}, {5380, 700}, {6280, 800},
-        {7280, 900},
-
+        { 102, 68 },
+        { 108, 70 },
+        { 116, 72 },
+        { 124, 74 },
+        { 132, 76 },
+        { 140, 78 },
+        { 158, 82 },
+        { 168, 84 },
+        { 176, 86 },
+        { 186, 88 },
+        { 195, 90 },
+        { 205, 92 },
+        { 214, 94 },
+        { 223, 96 },
+        { 234, 98 },
+        { 245, 100 },
+        { 270, 105 },
+        { 295, 110 },
+        { 329, 115 },
+        { 365, 120 },
+        { 396, 125 },
+        { 430, 130 },
+        { 460, 135 },
+        { 490, 140 },
+        { 521, 145 },
+        { 559, 150 },
+        { 596, 155 },
+        { 631, 160 },
+        { 666, 165 },
+        { 700, 170 },
+        { 739, 175 },
+        { 775, 180 },
+        { 811, 185 },
+        { 850, 190 },
+        { 931, 200 },
+        { 1009, 210 },
+        { 1091, 220 },
+        { 1173, 230 },
+        { 1254, 240 },
+        { 1335, 250 },
+        { 1418, 260 },
+        { 1500, 270 },
+        { 1583, 280 },
+        { 1668, 290 },
+        { 1755, 300 },
+        { 1845, 310 },
+        { 1926, 320 },
+        { 2018, 330 },
+        { 2110, 340 },
+        { 2204, 350 },
+        { 2298, 360 },
+        { 2388, 370 },
+        { 2480, 380 },
+        { 2575, 390 },
+        { 2670, 400 },
+        { 2765, 410 },
+        { 2862, 420 },
+        { 2960, 430 },
+        { 3060, 440 },
+        { 3150, 450 },
+        { 3620, 500 },
+        { 4070, 550 },
+        { 4480, 600 },
+        { 5380, 700 },
+        { 6280, 800 },
+        { 7280, 900 },
         // Data from Image 3
-        {8300, 1000}, {9320, 1100}, {10340, 1200}, {11360, 1300}, {12380, 1400}, {13400, 1500},
-        {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
-        {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
+        { 8300, 1000 },
+        { 9320, 1100 },
+        { 10340, 1200 },
+        { 11360, 1300 },
+        { 12380, 1400 },
+        { 13400, 1500 },
+        { 14420, 1600 },
+        { 15440, 1700 },
+        { 16460, 1800 },
+        { 17480, 1900 },
+        { 18500, 2000 },
+        { 19520, 2100 },
+        { 20540, 2200 },
+        { 21560, 2300 },
+        { 22580, 2400 },
+        { 23600, 2500 },
+        { 24620, 2600 },
+        { 25640, 2700 },
       };
 
       var lookup = FlowTypeId == 1 ? flushTankDict : flushValveDict;
 
-      if (FlowTypeId != 1 && FlowTypeId != 2) { 
+      if (FlowTypeId != 1 && FlowTypeId != 2)
+      {
         GPM = 0;
         return;
       }
 
       // Find the minimum gpm for which fixtureUnits <= key
-      foreach (var kvp in lookup) {
-        if (FixtureUnits <= kvp.Key) {
+      foreach (var kvp in lookup)
+      {
+        if (FixtureUnits <= kvp.Key)
+        {
           GPM = kvp.Value;
           return;
         }
@@ -415,7 +702,9 @@ namespace GMEPPlumbing {
       return;
     }
   }
-  public class PlumbingVerticalRoute {
+
+  public class PlumbingVerticalRoute
+  {
     public string Id;
     public string ProjectId;
     public string Type;
@@ -428,7 +717,7 @@ namespace GMEPPlumbing {
     public string PipeType;
     public bool IsUp;
     public double Rotation;
-    
+
     public double FixtureUnits { get; set; } = 0;
     public int FlowTypeId { get; set; } = 1;
     public int GPM { get; set; } = 0;
@@ -448,7 +737,8 @@ namespace GMEPPlumbing {
       int nodeTypeId,
       string pipeType,
       bool isUp
-    ) {
+    )
+    {
       Id = id;
       ProjectId = projectId;
       Position = position;
@@ -461,77 +751,312 @@ namespace GMEPPlumbing {
       PipeType = pipeType;
       IsUp = isUp;
     }
+
     public PlumbingVerticalRoute() { }
-    public void GenerateGallonsPerMinute() {
+
+    public void GenerateGallonsPerMinute()
+    {
       // Key: fixture units, Value: gpm
       // All values from the provided charts
       SortedDictionary<int, int> flushTankDict = new SortedDictionary<int, int>
       {
         // Data from Image 1
-        {0, 1}, {1, 2}, {3, 3}, {4, 4}, {6, 5}, {7, 6}, {8, 7}, {10, 8}, {12, 9}, {13, 10},
-        {15, 11}, {16, 12}, {18, 13}, {20, 14}, {21, 15}, {23, 16}, {24, 17}, {26, 18}, {28, 19},
-        {30, 20}, {32, 21}, {34, 22}, {36, 23}, {39, 24}, {42, 25}, {44, 26}, {46, 27}, {49, 28},
-        {51, 29}, {54, 30}, {56, 31}, {58, 32}, {60, 33}, {63, 34}, {66, 35}, {69, 36}, {74, 37},
-        {78, 38}, {83, 39}, {86, 40}, {90, 41}, {95, 42}, {99, 43}, {103, 44}, {107, 45}, {111, 46},
-        {115, 47}, {119, 48}, {123, 49}, {127, 50}, {130, 51}, {135, 52}, {141, 53}, {146, 54},
-        {151, 55}, {155, 56}, {160, 57}, {165, 58}, {170, 59}, {175, 60}, {185, 62}, {195, 64},
-        {205, 66},
-
+        { 0, 1 },
+        { 1, 2 },
+        { 3, 3 },
+        { 4, 4 },
+        { 6, 5 },
+        { 7, 6 },
+        { 8, 7 },
+        { 10, 8 },
+        { 12, 9 },
+        { 13, 10 },
+        { 15, 11 },
+        { 16, 12 },
+        { 18, 13 },
+        { 20, 14 },
+        { 21, 15 },
+        { 23, 16 },
+        { 24, 17 },
+        { 26, 18 },
+        { 28, 19 },
+        { 30, 20 },
+        { 32, 21 },
+        { 34, 22 },
+        { 36, 23 },
+        { 39, 24 },
+        { 42, 25 },
+        { 44, 26 },
+        { 46, 27 },
+        { 49, 28 },
+        { 51, 29 },
+        { 54, 30 },
+        { 56, 31 },
+        { 58, 32 },
+        { 60, 33 },
+        { 63, 34 },
+        { 66, 35 },
+        { 69, 36 },
+        { 74, 37 },
+        { 78, 38 },
+        { 83, 39 },
+        { 86, 40 },
+        { 90, 41 },
+        { 95, 42 },
+        { 99, 43 },
+        { 103, 44 },
+        { 107, 45 },
+        { 111, 46 },
+        { 115, 47 },
+        { 119, 48 },
+        { 123, 49 },
+        { 127, 50 },
+        { 130, 51 },
+        { 135, 52 },
+        { 141, 53 },
+        { 146, 54 },
+        { 151, 55 },
+        { 155, 56 },
+        { 160, 57 },
+        { 165, 58 },
+        { 170, 59 },
+        { 175, 60 },
+        { 185, 62 },
+        { 195, 64 },
+        { 205, 66 },
         // Data from Image 2
-        {215, 68}, {225, 70}, {236, 72}, {245, 74}, {254, 76}, {264, 78}, {284, 82}, {294, 84},
-        {305, 86}, {315, 88}, {326, 90}, {337, 92}, {348, 94}, {359, 96}, {370, 98}, {380, 100},
-        {406, 105}, {431, 110}, {455, 115}, {479, 120}, {506, 125}, {533, 130}, {559, 135},
-        {585, 140}, {611, 145}, {638, 150}, {665, 155}, {692, 160}, {719, 165}, {748, 170},
-        {778, 175}, {809, 180}, {840, 185}, {874, 190}, {945, 200}, {1018, 210}, {1091, 220},
-        {1173, 230}, {1254, 240}, {1335, 250}, {1418, 260}, {1500, 270}, {1583, 280}, {1668, 290},
-        {1755, 300}, {1845, 310}, {1926, 320}, {2018, 330}, {2110, 340}, {2204, 350}, {2298, 360},
-        {2388, 370}, {2480, 380}, {2575, 390}, {2670, 400}, {2765, 410}, {2862, 420}, {2960, 430},
-        {3060, 440}, {3150, 450}, {3620, 500}, {4070, 550}, {4480, 600}, {5380, 700}, {6280, 800},
-        {7280, 900},
-
+        { 215, 68 },
+        { 225, 70 },
+        { 236, 72 },
+        { 245, 74 },
+        { 254, 76 },
+        { 264, 78 },
+        { 284, 82 },
+        { 294, 84 },
+        { 305, 86 },
+        { 315, 88 },
+        { 326, 90 },
+        { 337, 92 },
+        { 348, 94 },
+        { 359, 96 },
+        { 370, 98 },
+        { 380, 100 },
+        { 406, 105 },
+        { 431, 110 },
+        { 455, 115 },
+        { 479, 120 },
+        { 506, 125 },
+        { 533, 130 },
+        { 559, 135 },
+        { 585, 140 },
+        { 611, 145 },
+        { 638, 150 },
+        { 665, 155 },
+        { 692, 160 },
+        { 719, 165 },
+        { 748, 170 },
+        { 778, 175 },
+        { 809, 180 },
+        { 840, 185 },
+        { 874, 190 },
+        { 945, 200 },
+        { 1018, 210 },
+        { 1091, 220 },
+        { 1173, 230 },
+        { 1254, 240 },
+        { 1335, 250 },
+        { 1418, 260 },
+        { 1500, 270 },
+        { 1583, 280 },
+        { 1668, 290 },
+        { 1755, 300 },
+        { 1845, 310 },
+        { 1926, 320 },
+        { 2018, 330 },
+        { 2110, 340 },
+        { 2204, 350 },
+        { 2298, 360 },
+        { 2388, 370 },
+        { 2480, 380 },
+        { 2575, 390 },
+        { 2670, 400 },
+        { 2765, 410 },
+        { 2862, 420 },
+        { 2960, 430 },
+        { 3060, 440 },
+        { 3150, 450 },
+        { 3620, 500 },
+        { 4070, 550 },
+        { 4480, 600 },
+        { 5380, 700 },
+        { 6280, 800 },
+        { 7280, 900 },
         // Data from Image 3
-        {8300, 1000}, {9320, 1100}, {10340, 1200}, {11360, 1300}, {12380, 1400}, {13400, 1500},
-        {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
-        {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
+        { 8300, 1000 },
+        { 9320, 1100 },
+        { 10340, 1200 },
+        { 11360, 1300 },
+        { 12380, 1400 },
+        { 13400, 1500 },
+        { 14420, 1600 },
+        { 15440, 1700 },
+        { 16460, 1800 },
+        { 17480, 1900 },
+        { 18500, 2000 },
+        { 19520, 2100 },
+        { 20540, 2200 },
+        { 21560, 2300 },
+        { 22580, 2400 },
+        { 23600, 2500 },
+        { 24620, 2600 },
+        { 25640, 2700 },
       };
 
       SortedDictionary<int, int> flushValveDict = new SortedDictionary<int, int>
       {
         // Data from Image 1
-        {6, 23}, {7, 24}, {8, 25}, {9, 26}, {10, 27}, {11, 28}, {12, 29}, {13, 30}, {14, 31},
-        {15, 32}, {16, 33}, {18, 34}, {20, 35}, {21, 36}, {23, 37}, {25, 38}, {26, 39}, {28, 40},
-        {30, 41}, {31, 42}, {33, 43}, {35, 44}, {37, 45}, {39, 46}, {42, 47}, {44, 48}, {46, 49},
-        {48, 50}, {50, 51}, {52, 52}, {54, 53}, {57, 54}, {60, 55}, {63, 56}, {66, 57}, {69, 58},
-        {73, 59}, {76, 60}, {82, 62}, {88, 64}, {95, 66},
-
+        { 6, 23 },
+        { 7, 24 },
+        { 8, 25 },
+        { 9, 26 },
+        { 10, 27 },
+        { 11, 28 },
+        { 12, 29 },
+        { 13, 30 },
+        { 14, 31 },
+        { 15, 32 },
+        { 16, 33 },
+        { 18, 34 },
+        { 20, 35 },
+        { 21, 36 },
+        { 23, 37 },
+        { 25, 38 },
+        { 26, 39 },
+        { 28, 40 },
+        { 30, 41 },
+        { 31, 42 },
+        { 33, 43 },
+        { 35, 44 },
+        { 37, 45 },
+        { 39, 46 },
+        { 42, 47 },
+        { 44, 48 },
+        { 46, 49 },
+        { 48, 50 },
+        { 50, 51 },
+        { 52, 52 },
+        { 54, 53 },
+        { 57, 54 },
+        { 60, 55 },
+        { 63, 56 },
+        { 66, 57 },
+        { 69, 58 },
+        { 73, 59 },
+        { 76, 60 },
+        { 82, 62 },
+        { 88, 64 },
+        { 95, 66 },
         // Data from Image 2
-        {102, 68}, {108, 70}, {116, 72}, {124, 74}, {132, 76}, {140, 78}, {158, 82}, {168, 84},
-        {176, 86}, {186, 88}, {195, 90}, {205, 92}, {214, 94}, {223, 96}, {234, 98}, {245, 100},
-        {270, 105}, {295, 110}, {329, 115}, {365, 120}, {396, 125}, {430, 130}, {460, 135},
-        {490, 140}, {521, 145}, {559, 150}, {596, 155}, {631, 160}, {666, 165}, {700, 170},
-        {739, 175}, {775, 180}, {811, 185}, {850, 190}, {931, 200}, {1009, 210}, {1091, 220},
-        {1173, 230}, {1254, 240}, {1335, 250}, {1418, 260}, {1500, 270}, {1583, 280}, {1668, 290},
-        {1755, 300}, {1845, 310}, {1926, 320}, {2018, 330}, {2110, 340}, {2204, 350}, {2298, 360},
-        {2388, 370}, {2480, 380}, {2575, 390}, {2670, 400}, {2765, 410}, {2862, 420}, {2960, 430},
-        {3060, 440}, {3150, 450}, {3620, 500}, {4070, 550}, {4480, 600}, {5380, 700}, {6280, 800},
-        {7280, 900},
-
+        { 102, 68 },
+        { 108, 70 },
+        { 116, 72 },
+        { 124, 74 },
+        { 132, 76 },
+        { 140, 78 },
+        { 158, 82 },
+        { 168, 84 },
+        { 176, 86 },
+        { 186, 88 },
+        { 195, 90 },
+        { 205, 92 },
+        { 214, 94 },
+        { 223, 96 },
+        { 234, 98 },
+        { 245, 100 },
+        { 270, 105 },
+        { 295, 110 },
+        { 329, 115 },
+        { 365, 120 },
+        { 396, 125 },
+        { 430, 130 },
+        { 460, 135 },
+        { 490, 140 },
+        { 521, 145 },
+        { 559, 150 },
+        { 596, 155 },
+        { 631, 160 },
+        { 666, 165 },
+        { 700, 170 },
+        { 739, 175 },
+        { 775, 180 },
+        { 811, 185 },
+        { 850, 190 },
+        { 931, 200 },
+        { 1009, 210 },
+        { 1091, 220 },
+        { 1173, 230 },
+        { 1254, 240 },
+        { 1335, 250 },
+        { 1418, 260 },
+        { 1500, 270 },
+        { 1583, 280 },
+        { 1668, 290 },
+        { 1755, 300 },
+        { 1845, 310 },
+        { 1926, 320 },
+        { 2018, 330 },
+        { 2110, 340 },
+        { 2204, 350 },
+        { 2298, 360 },
+        { 2388, 370 },
+        { 2480, 380 },
+        { 2575, 390 },
+        { 2670, 400 },
+        { 2765, 410 },
+        { 2862, 420 },
+        { 2960, 430 },
+        { 3060, 440 },
+        { 3150, 450 },
+        { 3620, 500 },
+        { 4070, 550 },
+        { 4480, 600 },
+        { 5380, 700 },
+        { 6280, 800 },
+        { 7280, 900 },
         // Data from Image 3
-        {8300, 1000}, {9320, 1100}, {10340, 1200}, {11360, 1300}, {12380, 1400}, {13400, 1500},
-        {14420, 1600}, {15440, 1700}, {16460, 1800}, {17480, 1900}, {18500, 2000}, {19520, 2100},
-        {20540, 2200}, {21560, 2300}, {22580, 2400}, {23600, 2500}, {24620, 2600}, {25640, 2700}
+        { 8300, 1000 },
+        { 9320, 1100 },
+        { 10340, 1200 },
+        { 11360, 1300 },
+        { 12380, 1400 },
+        { 13400, 1500 },
+        { 14420, 1600 },
+        { 15440, 1700 },
+        { 16460, 1800 },
+        { 17480, 1900 },
+        { 18500, 2000 },
+        { 19520, 2100 },
+        { 20540, 2200 },
+        { 21560, 2300 },
+        { 22580, 2400 },
+        { 23600, 2500 },
+        { 24620, 2600 },
+        { 25640, 2700 },
       };
 
       var lookup = FlowTypeId == 1 ? flushTankDict : flushValveDict;
 
-      if (FlowTypeId != 1 && FlowTypeId != 2) {
+      if (FlowTypeId != 1 && FlowTypeId != 2)
+      {
         GPM = 0;
         return;
       }
 
       // Find the minimum gpm for which fixtureUnits <= key
-      foreach (var kvp in lookup) {
-        if (FixtureUnits <= kvp.Key) {
+      foreach (var kvp in lookup)
+      {
+        if (FixtureUnits <= kvp.Key)
+        {
           GPM = kvp.Value;
           return;
         }
@@ -540,38 +1065,135 @@ namespace GMEPPlumbing {
       return;
     }
   }
-  public class GasCalculator: INotifyPropertyChanged {
+
+  public class GasCalculator : INotifyPropertyChanged
+  {
     public GasPipeSizingChart _chosenChart;
 
     public ObservableCollection<MenuItemViewModel> MenuItems { get; set; }
-      
+
     string _description;
-    public GasPipeSizingChart ChosenChart {
+    public GasPipeSizingChart ChosenChart
+    {
       get => _chosenChart;
-      set { if (_chosenChart != value) { _chosenChart = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_chosenChart != value)
+        {
+          _chosenChart = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public string Description {
+    public string Description
+    {
       get => _description;
-      set { if (_description != value) { _description = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_description != value)
+        {
+          _description = value;
+          OnPropertyChanged();
+        }
+      }
     }
     public string _sourceId;
-    public string SourceId {
+    public string SourceId
+    {
       get => _sourceId;
-      set { if (_sourceId != value) { _sourceId = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_sourceId != value)
+        {
+          _sourceId = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public GasCalculator(string sourceId, string description, GasPipeSizingChart chosenChart = null) {
+
+    public GasCalculator(string sourceId, string description, GasPipeSizingChart chosenChart = null)
+    {
       SourceId = sourceId;
-      MenuItems = new ObservableCollection<MenuItemViewModel> {
-        new MenuItemViewModel {
+      MenuItems = new ObservableCollection<MenuItemViewModel>
+      {
+        new MenuItemViewModel
+        {
           Name = "Natural Gas",
-          Children = new ObservableCollection<MenuItemViewModel>(){
-            new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 1, "Inlet Pressure: Less Than 2 psi - Pressure Drop: 0.5 in. w.c. - Specific Gravity: 0.60")},
-            new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 3.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 2, "Inlet Pressure: Less Than 2 psi - Pressure Drop: 3.0 in. w.c. - Specific Gravity: 0.60")},
-            new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 6.0 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 3, "Inlet Pressure: Less Than 2 psi - Pressure Drop: 6.0 in. w.c. - Specific Gravity: 0.60")},
-            new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 4, "Inlet Pressure: 2.0 psi - Pressure Drop: 1.0 psi in. w.c. - Specific Gravity: 0.60")},
-            new MenuItemViewModel { Name = "Inlet Pressure: 3.0 psi \nPressure Drop: 2.0 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 5,  "Inlet Pressure: 3.0 psi - Pressure Drop: 2.0 psi in. w.c. - Specific Gravity: 0.60")},
-            new MenuItemViewModel { Name = "Inlet Pressure: 5.0 psi \nPressure Drop: 3.5 psi in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 6, "Inlet Pressure: 5.0 psi - Pressure Drop: 3.5 psi in. w.c. - Specific Gravity: 0.60")},
-          }
+          Children = new ObservableCollection<MenuItemViewModel>()
+          {
+            new MenuItemViewModel
+            {
+              Name =
+                "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 0.60",
+              Clicked = () =>
+                ChosenChart = new GasPipeSizingChart(
+                  "Natural Gas",
+                  "Schedule 40 Metallic Pipe",
+                  1,
+                  "Inlet Pressure: Less Than 2 psi - Pressure Drop: 0.5 in. w.c. - Specific Gravity: 0.60"
+                ),
+            },
+            new MenuItemViewModel
+            {
+              Name =
+                "Inlet Pressure: Less Than 2 psi \nPressure Drop: 3.0 in. w.c. \nSpecific Gravity: 0.60",
+              Clicked = () =>
+                ChosenChart = new GasPipeSizingChart(
+                  "Natural Gas",
+                  "Schedule 40 Metallic Pipe",
+                  2,
+                  "Inlet Pressure: Less Than 2 psi - Pressure Drop: 3.0 in. w.c. - Specific Gravity: 0.60"
+                ),
+            },
+            new MenuItemViewModel
+            {
+              Name =
+                "Inlet Pressure: Less Than 2 psi \nPressure Drop: 6.0 in. w.c. \nSpecific Gravity: 0.60",
+              Clicked = () =>
+                ChosenChart = new GasPipeSizingChart(
+                  "Natural Gas",
+                  "Schedule 40 Metallic Pipe",
+                  3,
+                  "Inlet Pressure: Less Than 2 psi - Pressure Drop: 6.0 in. w.c. - Specific Gravity: 0.60"
+                ),
+            },
+            new MenuItemViewModel
+            {
+              Name =
+                "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi in. w.c. \nSpecific Gravity: 0.60",
+              Clicked = () =>
+                ChosenChart = new GasPipeSizingChart(
+                  "Natural Gas",
+                  "Schedule 40 Metallic Pipe",
+                  4,
+                  "Inlet Pressure: 2.0 psi - Pressure Drop: 1.0 psi in. w.c. - Specific Gravity: 0.60"
+                ),
+            },
+            new MenuItemViewModel
+            {
+              Name =
+                "Inlet Pressure: 3.0 psi \nPressure Drop: 2.0 psi in. w.c. \nSpecific Gravity: 0.60",
+              Clicked = () =>
+                ChosenChart = new GasPipeSizingChart(
+                  "Natural Gas",
+                  "Schedule 40 Metallic Pipe",
+                  5,
+                  "Inlet Pressure: 3.0 psi - Pressure Drop: 2.0 psi in. w.c. - Specific Gravity: 0.60"
+                ),
+            },
+            new MenuItemViewModel
+            {
+              Name =
+                "Inlet Pressure: 5.0 psi \nPressure Drop: 3.5 psi in. w.c. \nSpecific Gravity: 0.60",
+              Clicked = () =>
+                ChosenChart = new GasPipeSizingChart(
+                  "Natural Gas",
+                  "Schedule 40 Metallic Pipe",
+                  6,
+                  "Inlet Pressure: 5.0 psi - Pressure Drop: 3.5 psi in. w.c. - Specific Gravity: 0.60"
+                ),
+            },
+          },
           /*Children = new ObservableCollection<MenuItemViewModel> {
             new MenuItemViewModel { Name = "Corrugated Stainless Steel Tubing", Children = new ObservableCollection<MenuItemViewModel>()
             {
@@ -590,7 +1212,7 @@ namespace GMEPPlumbing {
               new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 5)},
               new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.5 psi \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 6)},
               new MenuItemViewModel { Name = "Inlet Pressure: 5.0 psi \nPressure Drop: 3.5 psi \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Semi-Rigid Copper Tubing", 7)},
-            } 
+            }
             },
             new MenuItemViewModel { Name = "Polyethylene Plastic Pipe", Children = new ObservableCollection<MenuItemViewModel>(){
               new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.3 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 1)},
@@ -598,7 +1220,7 @@ namespace GMEPPlumbing {
               new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 3)},
               new MenuItemViewModel { Name = "(CTS)\nInlet Pressure: Less Than 2 psi \nPressure Drop: 0.3 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 4)},
               new MenuItemViewModel { Name = "(CTS)\nInlet Pressure: Less Than 2 psi \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Polyethylene Plastic Pipe", 5)},
-            } 
+            }
             },
             new MenuItemViewModel { Name = "Schedule 40 Metallic Pipe", Children = new ObservableCollection<MenuItemViewModel>(){
               new MenuItemViewModel { Name = "Inlet Pressure: Less Than 2 psi \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 0.60", Clicked = () => ChosenChart = new GasPipeSizingChart("Natural Gas", "Schedule 40 Metallic Pipe", 1)},
@@ -611,14 +1233,57 @@ namespace GMEPPlumbing {
             },
           }*/
         },
-        new MenuItemViewModel {
+        new MenuItemViewModel
+        {
           Name = "Propane",
-          Children = new ObservableCollection<MenuItemViewModel>(){
-            new MenuItemViewModel { Name = "Inlet Pressure: 10.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 1, "Inlet Pressure: 10.0 psi - Pressure Drop: 1.0 psi - Specific Gravity: 1.50")},
-            new MenuItemViewModel { Name = "Inlet Pressure: 10.0 psi \nPressure Drop: 3.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 2, "Inlet Pressure: 10.0 psi - Pressure Drop: 3.0 psi - Specific Gravity: 1.50")},
-            new MenuItemViewModel { Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 3, "Inlet Pressure: 2.0 psi - Pressure Drop: 1.0 psi - Specific Gravity: 1.50")},
-            new MenuItemViewModel { Name = "Inlet Pressure: 11.0 in. w.c. \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 1.50", Clicked = () => ChosenChart = new GasPipeSizingChart("Propane", "Schedule 40 Metallic Pipe", 4, "Inlet Pressure: 11.0 in. w.c. - Pressure Drop: 0.5 in. w.c. - Specific Gravity: 1.50")},
-          }
+          Children = new ObservableCollection<MenuItemViewModel>()
+          {
+            new MenuItemViewModel
+            {
+              Name = "Inlet Pressure: 10.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50",
+              Clicked = () =>
+                ChosenChart = new GasPipeSizingChart(
+                  "Propane",
+                  "Schedule 40 Metallic Pipe",
+                  1,
+                  "Inlet Pressure: 10.0 psi - Pressure Drop: 1.0 psi - Specific Gravity: 1.50"
+                ),
+            },
+            new MenuItemViewModel
+            {
+              Name = "Inlet Pressure: 10.0 psi \nPressure Drop: 3.0 psi \nSpecific Gravity: 1.50",
+              Clicked = () =>
+                ChosenChart = new GasPipeSizingChart(
+                  "Propane",
+                  "Schedule 40 Metallic Pipe",
+                  2,
+                  "Inlet Pressure: 10.0 psi - Pressure Drop: 3.0 psi - Specific Gravity: 1.50"
+                ),
+            },
+            new MenuItemViewModel
+            {
+              Name = "Inlet Pressure: 2.0 psi \nPressure Drop: 1.0 psi \nSpecific Gravity: 1.50",
+              Clicked = () =>
+                ChosenChart = new GasPipeSizingChart(
+                  "Propane",
+                  "Schedule 40 Metallic Pipe",
+                  3,
+                  "Inlet Pressure: 2.0 psi - Pressure Drop: 1.0 psi - Specific Gravity: 1.50"
+                ),
+            },
+            new MenuItemViewModel
+            {
+              Name =
+                "Inlet Pressure: 11.0 in. w.c. \nPressure Drop: 0.5 in. w.c. \nSpecific Gravity: 1.50",
+              Clicked = () =>
+                ChosenChart = new GasPipeSizingChart(
+                  "Propane",
+                  "Schedule 40 Metallic Pipe",
+                  4,
+                  "Inlet Pressure: 11.0 in. w.c. - Pressure Drop: 0.5 in. w.c. - Specific Gravity: 1.50"
+                ),
+            },
+          },
           /*Children = new ObservableCollection<MenuItemViewModel> {
             new MenuItemViewModel { Name = "Corrugated Stainless Steel Tubing", Children = new ObservableCollection<MenuItemViewModel>()
             {
@@ -647,28 +1312,34 @@ namespace GMEPPlumbing {
             }
             },
           }*/
-        }
+        },
       };
       Description = description;
       ChosenChart = chosenChart;
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
-    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
+      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
   }
-  public class MenuItemViewModel {
+
+  public class MenuItemViewModel
+  {
     public string Name { get; set; }
     public ObservableCollection<MenuItemViewModel> Children { get; set; }
     public bool HasClicked => Clicked != null;
     public Action Clicked { get; set; } // Add this line
 
     // Optionally, a method to invoke the click
-    public void OnClick() {
+    public void OnClick()
+    {
       Clicked?.Invoke();
     }
   }
-  public class WaterCalculator : INotifyPropertyChanged {
+
+  public class WaterCalculator : INotifyPropertyChanged
+  {
     private string _description;
     private double _minSourcePressure;
     private double _availableFrictionPressure;
@@ -682,64 +1353,156 @@ namespace GMEPPlumbing {
     private bool _enableCPVCSCH80 = false;
     public WaterPipeSizingChart Chart { get; set; } = new WaterPipeSizingChart();
 
-    public string Description {
+    public string Description
+    {
       get => _description;
-      set { if (_description != value) { _description = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_description != value)
+        {
+          _description = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public double MinSourcePressure {
+    public double MinSourcePressure
+    {
       get => _minSourcePressure;
-      set { if (_minSourcePressure != value) { _minSourcePressure = value; OnPropertyChanged(); DeterminePressure(); } }
+      set
+      {
+        if (_minSourcePressure != value)
+        {
+          _minSourcePressure = value;
+          OnPropertyChanged();
+          DeterminePressure();
+        }
+      }
     }
-    public double AvailableFrictionPressure {
+    public double AvailableFrictionPressure
+    {
       get => _availableFrictionPressure;
-      set { if (_availableFrictionPressure != value) { _availableFrictionPressure = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_availableFrictionPressure != value)
+        {
+          _availableFrictionPressure = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public double SystemLength {
+    public double SystemLength
+    {
       get => _systemLength;
-      set { if (_systemLength != value) { _systemLength = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_systemLength != value)
+        {
+          _systemLength = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public double DevelopedSystemLength {
+    public double DevelopedSystemLength
+    {
       get => _developedSystemLength;
-      set { if (_developedSystemLength != value) { _developedSystemLength = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_developedSystemLength != value)
+        {
+          _developedSystemLength = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public double AveragePressureDrop {
+    public double AveragePressureDrop
+    {
       get => _averagePressureDrop;
-      set { if (_averagePressureDrop != value) { _averagePressureDrop = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_averagePressureDrop != value)
+        {
+          _averagePressureDrop = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public string SourceId {
+    public string SourceId
+    {
       get => _sourceId;
-      set { if (_sourceId != value) { _sourceId = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_sourceId != value)
+        {
+          _sourceId = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public bool EnableCopper {
+    public bool EnableCopper
+    {
       get => _enableCopper;
-      set { if (_enableCopper != value) { _enableCopper = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_enableCopper != value)
+        {
+          _enableCopper = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public bool EnablePex {
+    public bool EnablePex
+    {
       get => _enablePex;
-      set { if (_enablePex != value) { _enablePex = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_enablePex != value)
+        {
+          _enablePex = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public bool EnableCPVCSDRII {
+    public bool EnableCPVCSDRII
+    {
       get => _enableCPVCSDRII;
-      set { if (_enableCPVCSDRII != value) { _enableCPVCSDRII = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_enableCPVCSDRII != value)
+        {
+          _enableCPVCSDRII = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public bool EnableCPVCSCH80 {
+    public bool EnableCPVCSCH80
+    {
       get => _enableCPVCSCH80;
-      set { if (_enableCPVCSCH80 != value) { _enableCPVCSCH80 = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_enableCPVCSCH80 != value)
+        {
+          _enableCPVCSCH80 = value;
+          OnPropertyChanged();
+        }
+      }
     }
-
 
     public ObservableCollection<WaterLoss> Losses { get; } = new ObservableCollection<WaterLoss>();
-    public ObservableCollection<WaterAddition> Additions { get; } = new ObservableCollection<WaterAddition>();
+    public ObservableCollection<WaterAddition> Additions { get; } =
+      new ObservableCollection<WaterAddition>();
 
-
-    public WaterCalculator(string sourceId, string description,
-        double minSourcePressure,
-        double availableFrictionPressure,
-        double systemLength,
-        double developedSystemLength,
-        double averagePressureDrop,
-        ObservableCollection<WaterLoss> losses,
-        ObservableCollection<WaterAddition> additions) {
+    public WaterCalculator(
+      string sourceId,
+      string description,
+      double minSourcePressure,
+      double availableFrictionPressure,
+      double systemLength,
+      double developedSystemLength,
+      double averagePressureDrop,
+      ObservableCollection<WaterLoss> losses,
+      ObservableCollection<WaterAddition> additions
+    )
+    {
       SourceId = sourceId;
       Description = description;
       MinSourcePressure = minSourcePressure;
@@ -748,20 +1511,24 @@ namespace GMEPPlumbing {
       DevelopedSystemLength = developedSystemLength;
       AveragePressureDrop = averagePressureDrop;
       if (losses != null)
-        foreach (var loss in losses) { 
+        foreach (var loss in losses)
+        {
           loss.PropertyChanged += LossItem_PropertyChanged;
-          Losses.Add(loss); 
+          Losses.Add(loss);
         }
       if (additions != null)
-        foreach (var addition in additions) {
+        foreach (var addition in additions)
+        {
           addition.PropertyChanged += AdditionItem_PropertyChanged;
-          Additions.Add(addition); 
+          Additions.Add(addition);
         }
       Losses.CollectionChanged += Losses_CollectionChanged;
       Additions.CollectionChanged += Additions_CollectionChanged;
       DeterminePressure();
     }
-    public void DeterminePressure() {
+
+    public void DeterminePressure()
+    {
       // Calculate the total pressure loss
       double totalLoss = Losses.Sum(l => l.Value);
       double totalAddition = Additions.Sum(a => a.Value);
@@ -771,16 +1538,24 @@ namespace GMEPPlumbing {
       AveragePressureDrop = (totalPressure / DevelopedSystemLength) * 100;
       PickCharts();
     }
-    public void PickCharts() {
+
+    public void PickCharts()
+    {
       Chart.PickCharts(AveragePressureDrop);
     }
 
-    private void Losses_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {
-      if (e.NewItems != null) {
+    private void Losses_CollectionChanged(
+      object sender,
+      System.Collections.Specialized.NotifyCollectionChangedEventArgs e
+    )
+    {
+      if (e.NewItems != null)
+      {
         foreach (WaterLoss item in e.NewItems)
           item.PropertyChanged += LossItem_PropertyChanged;
       }
-      if (e.OldItems != null) {
+      if (e.OldItems != null)
+      {
         foreach (WaterLoss item in e.OldItems)
           item.PropertyChanged -= LossItem_PropertyChanged;
         DeterminePressure();
@@ -788,30 +1563,43 @@ namespace GMEPPlumbing {
       // Optionally, handle Reset (e.Action == Reset) if you clear the collection
     }
 
-    private void Additions_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {
-      if (e.NewItems != null) {
+    private void Additions_CollectionChanged(
+      object sender,
+      System.Collections.Specialized.NotifyCollectionChangedEventArgs e
+    )
+    {
+      if (e.NewItems != null)
+      {
         foreach (WaterAddition item in e.NewItems)
           item.PropertyChanged += AdditionItem_PropertyChanged;
       }
-      if (e.OldItems != null) {
+      if (e.OldItems != null)
+      {
         foreach (WaterAddition item in e.OldItems)
           item.PropertyChanged -= AdditionItem_PropertyChanged;
         DeterminePressure();
       }
       // Optionally, handle Reset (e.Action == Reset) if you clear the collection
     }
-    private void LossItem_PropertyChanged(object sender, PropertyChangedEventArgs e) {
-      if (e.PropertyName == nameof(WaterLoss.Value)) {
+
+    private void LossItem_PropertyChanged(object sender, PropertyChangedEventArgs e)
+    {
+      if (e.PropertyName == nameof(WaterLoss.Value))
+      {
         DeterminePressure();
       }
     }
 
-    private void AdditionItem_PropertyChanged(object sender, PropertyChangedEventArgs e) {
-      if (e.PropertyName == nameof(WaterAddition.Value)) {
+    private void AdditionItem_PropertyChanged(object sender, PropertyChangedEventArgs e)
+    {
+      if (e.PropertyName == nameof(WaterAddition.Value))
+      {
         DeterminePressure();
       }
     }
-    public void PickChartParameters(Tuple<int,int,int,int> info) {
+
+    public void PickChartParameters(Tuple<int, int, int, int> info)
+    {
       Chart.CopperTypeLChart.ChosenOption = Chart.CopperTypeLChart.Options[info.Item1];
       Chart.PEXChart.ChosenOption = Chart.PEXChart.Options[info.Item2];
       Chart.CPVCSDRIIChart.ChosenOption = Chart.CPVCSDRIIChart.Options[info.Item3];
@@ -819,54 +1607,96 @@ namespace GMEPPlumbing {
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
-    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
+      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
   }
-  public class WaterLoss : INotifyPropertyChanged {
+
+  public class WaterLoss : INotifyPropertyChanged
+  {
     private string _description = "";
     private double _value = 0.0;
 
-    public string Description {
+    public string Description
+    {
       get => _description;
-      set { if (_description != value) { _description = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_description != value)
+        {
+          _description = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public double Value {
+    public double Value
+    {
       get => _value;
-      set { if (_value != value) { _value = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_value != value)
+        {
+          _value = value;
+          OnPropertyChanged();
+        }
+      }
     }
 
-    public WaterLoss(string description, double value) {
+    public WaterLoss(string description, double value)
+    {
       Description = description;
       Value = value;
     }
+
     public WaterLoss() { }
 
     public event PropertyChangedEventHandler PropertyChanged;
-    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
+      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
   }
 
-  public class WaterAddition : INotifyPropertyChanged {
+  public class WaterAddition : INotifyPropertyChanged
+  {
     private string _description = "";
     private double _value = 0.0;
 
-    public string Description {
+    public string Description
+    {
       get => _description;
-      set { if (_description != value) { _description = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_description != value)
+        {
+          _description = value;
+          OnPropertyChanged();
+        }
+      }
     }
-    public double Value {
+    public double Value
+    {
       get => _value;
-      set { if (_value != value) { _value = value; OnPropertyChanged(); } }
+      set
+      {
+        if (_value != value)
+        {
+          _value = value;
+          OnPropertyChanged();
+        }
+      }
     }
 
-    public WaterAddition(string description, double value) {
+    public WaterAddition(string description, double value)
+    {
       Description = description;
       Value = value;
     }
+
     public WaterAddition() { }
 
     public event PropertyChangedEventHandler PropertyChanged;
-    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
+      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
   }
 }
