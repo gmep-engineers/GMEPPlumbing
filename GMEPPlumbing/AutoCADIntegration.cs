@@ -175,6 +175,10 @@ namespace GMEPPlumbing
       string fixtureDropId = null
     )
     {
+      if (CADObjectCommands.ProjectType == ProjectType.NotSet)
+      {
+        CADObjectCommands.AutoSetProjectType();
+      }
       List<PlumbingHorizontalRoute> horizontalRoutes = new List<PlumbingHorizontalRoute>();
       string BasePointId = CADObjectCommands.GetActiveView();
 
@@ -254,7 +258,7 @@ namespace GMEPPlumbing
         || result == "Hot Water"
       )
       {
-        if (CADObjectCommands.IsResidential)
+        if (CADObjectCommands.ProjectType == ProjectType.Residential)
         {
           if (CADObjectCommands.ActiveIsSite)
           {
@@ -767,6 +771,10 @@ namespace GMEPPlumbing
       bool ToRoof = false
     )
     {
+      if (CADObjectCommands.ProjectType == ProjectType.NotSet)
+      {
+        CADObjectCommands.AutoSetProjectType();
+      }
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null)
         return null;
@@ -856,7 +864,7 @@ namespace GMEPPlumbing
       string pipeType = "";
       if (type == "ColdWater" || type == "HotWater")
       {
-        if (CADObjectCommands.IsResidential)
+        if (CADObjectCommands.ProjectType == ProjectType.Residential)
         {
           if (CADObjectCommands.ActiveIsSite)
           {
@@ -2017,6 +2025,10 @@ namespace GMEPPlumbing
     [CommandMethod("SETPLUMBINGBASEPOINT")]
     public async void SetPlumbingBasePoint()
     {
+      if (CADObjectCommands.ProjectType == ProjectType.NotSet)
+      {
+        CADObjectCommands.AutoSetProjectType();
+      }
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null)
         return;
@@ -2028,7 +2040,7 @@ namespace GMEPPlumbing
       var prompt = new Views.BasePointPromptWindow();
       bool? result = prompt.ShowDialog();
       double currentFloorHeight = -10;
-      if (!CADObjectCommands.IsResidential)
+      if (CADObjectCommands.ProjectType != ProjectType.Residential)
       {
         currentFloorHeight = -15;
       }
@@ -2142,7 +2154,8 @@ namespace GMEPPlumbing
           ceilingHeightOptions.AllowNegative = false;
           ceilingHeightOptions.AllowZero = false;
           ceilingHeightOptions.DefaultValue = currentFloorHeight + 10;
-          if (!CADObjectCommands.IsResidential)
+
+          if (CADObjectCommands.ProjectType != ProjectType.Residential)
           {
             ceilingHeightOptions.DefaultValue = currentFloorHeight + 15;
           }
@@ -3447,6 +3460,10 @@ namespace GMEPPlumbing
       double? blockRotation = null
     )
     {
+      if (CADObjectCommands.ProjectType == ProjectType.NotSet)
+      {
+        CADObjectCommands.AutoSetProjectType();
+      }
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
 
@@ -3491,11 +3508,11 @@ namespace GMEPPlumbing
               )
               && (
                 (
-                  CADObjectCommands.IsResidential
+                  CADObjectCommands.ProjectType == ProjectType.Residential
                   && !catalogItems.All(item => item.Residential == false)
                 )
                 || (
-                  !CADObjectCommands.IsResidential
+                  CADObjectCommands.ProjectType != ProjectType.Residential
                   && !catalogItems.All(item => item.Commercial == false)
                 )
               )
@@ -3543,8 +3560,8 @@ namespace GMEPPlumbing
               )
             )
             && (
-              (CADObjectCommands.IsResidential && i.Residential == true)
-              || (!CADObjectCommands.IsResidential && i.Commercial == true)
+              (CADObjectCommands.ProjectType == ProjectType.Residential && i.Residential == true)
+              || (CADObjectCommands.ProjectType != ProjectType.Residential && i.Commercial == true)
             )
           )
           {
@@ -4460,6 +4477,10 @@ namespace GMEPPlumbing
       double? blockRotation = null
     )
     {
+      if (CADObjectCommands.ProjectType == ProjectType.NotSet)
+      {
+        CADObjectCommands.AutoSetProjectType();
+      }
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
 
@@ -4505,11 +4526,11 @@ namespace GMEPPlumbing
               && (!catalogItems.All(item => !item.Island))
               && (
                 (
-                  CADObjectCommands.IsResidential
+                  CADObjectCommands.ProjectType == ProjectType.Residential
                   && !catalogItems.All(item => item.Residential == false)
                 )
                 || (
-                  !CADObjectCommands.IsResidential
+                  CADObjectCommands.ProjectType != ProjectType.Residential
                   && !catalogItems.All(item => item.Commercial == false)
                 )
               )
@@ -4557,8 +4578,8 @@ namespace GMEPPlumbing
               )
             )
             && (
-              (CADObjectCommands.IsResidential && i.Residential == true)
-              || (!CADObjectCommands.IsResidential && i.Commercial == true)
+              (CADObjectCommands.ProjectType == ProjectType.Residential && i.Residential == true)
+              || (CADObjectCommands.ProjectType != ProjectType.Residential && i.Commercial == true)
             )
             && i.Island
           )
@@ -5369,6 +5390,10 @@ namespace GMEPPlumbing
       double? blockRotation = null
     )
     {
+      if (CADObjectCommands.ProjectType == ProjectType.NotSet)
+      {
+        CADObjectCommands.AutoSetProjectType();
+      }
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
 
@@ -5434,11 +5459,11 @@ namespace GMEPPlumbing
               && (!catalogItems.All(item => !item.Island))
               && (
                 (
-                  CADObjectCommands.IsResidential
+                  CADObjectCommands.ProjectType == ProjectType.Residential
                   && !catalogItems.All(item => item.Residential == false)
                 )
                 || (
-                  !CADObjectCommands.IsResidential
+                  CADObjectCommands.ProjectType != ProjectType.Residential
                   && !catalogItems.All(item => item.Commercial == false)
                 )
               )
@@ -5486,8 +5511,8 @@ namespace GMEPPlumbing
               )
             )
             && (
-              (CADObjectCommands.IsResidential && i.Residential == true)
-              || (!CADObjectCommands.IsResidential && i.Commercial == true)
+              (CADObjectCommands.ProjectType == ProjectType.Residential && i.Residential == true)
+              || (CADObjectCommands.ProjectType != ProjectType.Residential && i.Commercial == true)
             )
             && i.Island
           )
@@ -6349,6 +6374,10 @@ namespace GMEPPlumbing
       double? blockRotation = null
     )
     {
+      if (CADObjectCommands.ProjectType == ProjectType.NotSet)
+      {
+        CADObjectCommands.AutoSetProjectType();
+      }
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
 
@@ -6405,11 +6434,11 @@ namespace GMEPPlumbing
               )
               && (
                 (
-                  CADObjectCommands.IsResidential
+                  CADObjectCommands.ProjectType == ProjectType.Residential
                   && !catalogItems.All(item => item.Residential == false)
                 )
                 || (
-                  !CADObjectCommands.IsResidential
+                  CADObjectCommands.ProjectType != ProjectType.Residential
                   && !catalogItems.All(item => item.Commercial == false)
                 )
               )
@@ -6469,8 +6498,8 @@ namespace GMEPPlumbing
               || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && i.GasBlockNames != "")
             )
             && (
-              (CADObjectCommands.IsResidential && i.Residential == true)
-              || (!CADObjectCommands.IsResidential && i.Commercial == true)
+              (CADObjectCommands.ProjectType == ProjectType.Residential && i.Residential == true)
+              || (CADObjectCommands.ProjectType != ProjectType.Residential && i.Commercial == true)
             )
           )
           {
@@ -7298,6 +7327,10 @@ namespace GMEPPlumbing
       double? blockRotation = null
     )
     {
+      if (CADObjectCommands.ProjectType == ProjectType.NotSet)
+      {
+        CADObjectCommands.AutoSetProjectType();
+      }
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
       string projectId = MariaDBService.GetProjectIdSync(projectNo);
 
@@ -7356,11 +7389,11 @@ namespace GMEPPlumbing
               )
               && (
                 (
-                  CADObjectCommands.IsResidential
+                  CADObjectCommands.ProjectType == ProjectType.Residential
                   && !catalogItems.All(item => item.Residential == false)
                 )
                 || (
-                  !CADObjectCommands.IsResidential
+                  CADObjectCommands.ProjectType != ProjectType.Residential
                   && !catalogItems.All(item => item.Commercial == false)
                 )
               )
@@ -7420,8 +7453,8 @@ namespace GMEPPlumbing
               || (CADObjectCommands.ActiveViewTypes.Contains("Gas") && i.GasBlockNames != "")
             )
             && (
-              (CADObjectCommands.IsResidential && i.Residential == true)
-              || (!CADObjectCommands.IsResidential && i.Commercial == true)
+              (CADObjectCommands.ProjectType == ProjectType.Residential && i.Residential == true)
+              || (CADObjectCommands.ProjectType != ProjectType.Residential && i.Commercial == true)
             )
           )
           {

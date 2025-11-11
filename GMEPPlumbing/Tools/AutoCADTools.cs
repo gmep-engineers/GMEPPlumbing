@@ -11,6 +11,13 @@ using Autodesk.AutoCAD.Runtime;
 
 namespace GMEPPlumbing
 {
+  public enum ProjectType
+  {
+    Residential,
+    Commercial,
+    NotSet,
+  }
+
   public class CADObjectCommands
   {
     public static double Scale { get; set; } = -1.0;
@@ -36,7 +43,7 @@ namespace GMEPPlumbing
 
     public static List<string> ActiveViewTypes = new List<string>();
 
-    public static bool IsResidential { get; set; } = false;
+    public static ProjectType ProjectType = ProjectType.NotSet;
 
     public static bool ActiveIsSite { get; set; } = false;
 
@@ -552,41 +559,6 @@ namespace GMEPPlumbing
       return ActiveBasePointId;
     }
 
-    [CommandMethod("SetProjectType")]
-    public static void SetProjectType()
-    {
-      Document doc = Autodesk
-        .AutoCAD
-        .ApplicationServices
-        .Application
-        .DocumentManager
-        .MdiActiveDocument;
-      Editor ed = doc.Editor;
-
-      PromptKeywordOptions promptOptions = new PromptKeywordOptions("\nSelect Project Type: ");
-      promptOptions.Keywords.Add("Residential");
-      promptOptions.Keywords.Add("Commercial");
-      promptOptions.AllowNone = false;
-
-      PromptResult pr = ed.GetKeywords(promptOptions);
-      if (pr.Status == PromptStatus.OK)
-      {
-        if (pr.StringResult == "Residential")
-        {
-          IsResidential = true;
-        }
-        else
-        {
-          IsResidential = false;
-        }
-        ed.WriteMessage($"\nProject type set to {pr.StringResult}.");
-      }
-      else
-      {
-        ed.WriteMessage("\nOperation cancelled.");
-      }
-    }
-
     public static string GetProjectNoFromFileName()
     {
       Document doc = Autodesk
@@ -807,6 +779,56 @@ namespace GMEPPlumbing
         }
       }
       return new Tuple<Point3d, Point3d>(insertionPoint, thirdClickPoint);
+    }
+
+    [CommandMethod("AutoSetProjectType")]
+    public static void AutoSetProjectType()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        LayoutManager lm = LayoutManager.Current;
+        var existSheetNames = new List<string>();
+        var layoutDict = db.LayoutDictionaryId.GetObject(OpenMode.ForRead) as DBDictionary;
+        foreach (var layout in layoutDict)
+        {
+          existSheetNames.Add(layout.Key);
+        }
+        foreach (string layoutName in existSheetNames)
+        {
+          Layout layout = tr.GetObject(lm.GetLayoutId(layoutName), OpenMode.ForRead) as Layout;
+
+          var paperSpace =
+            tr.GetObject(layout.BlockTableRecordId, OpenMode.ForRead) as BlockTableRecord;
+          foreach (ObjectId id in paperSpace)
+          {
+            if (id.ObjectClass.Name == "AcDbBlockReference")
+            {
+              BlockReference br = tr.GetObject(id, OpenMode.ForRead) as BlockReference;
+              BlockTableRecord btr =
+                tr.GetObject(br.BlockTableRecord, OpenMode.ForRead) as BlockTableRecord;
+              string name = br.IsDynamicBlock
+                ? ((BlockTableRecord)br.DynamicBlockTableRecord.GetObject(OpenMode.ForRead)).Name
+                : br.Name;
+              if (name == "Pex sizing chart(CW10_HW8)")
+              {
+                ProjectType = ProjectType.Residential;
+                tr.Commit();
+                return;
+              }
+            }
+          }
+        }
+      }
+      ProjectType = ProjectType.Commercial;
     }
 
     public static void CreateTextWithJig(
