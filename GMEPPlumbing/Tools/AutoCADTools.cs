@@ -2,27 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
-using System.Windows.Controls;
-using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.DatabaseServices.Filters;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.Windows;
-using MongoDB.Driver.Core.Misc;
 
 namespace GMEPPlumbing
 {
@@ -54,6 +39,8 @@ namespace GMEPPlumbing
     public static bool IsResidential { get; set; } = false;
 
     public static bool ActiveIsSite { get; set; } = false;
+
+    public static double WasteGrade = 0.02;
 
     //public static bool SettingFlag= false;
 
@@ -284,6 +271,30 @@ namespace GMEPPlumbing
       heightLimits = new Tuple<double, double>(lowerHeightLimit, upperHeightLimit);
 
       return heightLimits;
+    }
+
+    [CommandMethod("SetWasteGrade")]
+    public static void SetWasteGrade()
+    {
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var ed = doc.Editor;
+      PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
+      pko3.Keywords.Add("1%");
+      pko3.Keywords.Add("2%");
+      PromptResult pr3 = ed.GetKeywords(pko3);
+      if (pr3.Status != PromptStatus.OK)
+      {
+        ed.WriteMessage("\nCommand cancelled.");
+        //routeHeightDisplay.Disable();
+      }
+      if (pr3.StringResult == "1%")
+      {
+        WasteGrade = 0.01;
+      }
+      else if (pr3.StringResult == "2%")
+      {
+        WasteGrade = 0.02;
+      }
     }
 
     [CommandMethod("SetScale")]

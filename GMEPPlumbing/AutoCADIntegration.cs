@@ -377,24 +377,24 @@ namespace GMEPPlumbing
       double slope = 0;
       if (result == "Waste" || result == "Vent" || result == "GreaseWaste")
       {
-        PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
-        pko3.Keywords.Add("1%");
-        pko3.Keywords.Add("2%");
-        PromptResult pr3 = ed.GetKeywords(pko3);
-        if (pr3.Status != PromptStatus.OK)
-        {
-          ed.WriteMessage("\nCommand cancelled.");
-          //routeHeightDisplay.Disable();
-          return horizontalRoutes;
-        }
-        if (pr3.StringResult == "1%")
-        {
-          slope = 0.01;
-        }
-        else if (pr3.StringResult == "2%")
-        {
-          slope = 0.02;
-        }
+        slope = CADObjectCommands.WasteGrade;
+        //PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
+        //pko3.Keywords.Add("1%");
+        //pko3.Keywords.Add("2%");
+        //PromptResult pr3 = ed.GetKeywords(pko3);
+        //if (pr3.Status != PromptStatus.OK)
+        //{
+        //  ed.WriteMessage("\nCommand cancelled.");
+        //  return horizontalRoutes;
+        //}
+        //if (pr3.StringResult == "1%")
+        //{
+        //  slope = 0.01;
+        //}
+        //else if (pr3.StringResult == "2%")
+        //{
+        //  slope = 0.02;
+        //}
       }
       if (selectStart)
       {
@@ -483,24 +483,25 @@ namespace GMEPPlumbing
         slope = 0;
         if (result == "Waste" || result == "Vent" || result == "GreaseWaste")
         {
-          PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
-          pko3.Keywords.Add("1%");
-          pko3.Keywords.Add("2%");
-          PromptResult pr3 = ed.GetKeywords(pko3);
-          if (pr3.Status != PromptStatus.OK)
-          {
-            ed.WriteMessage("\nCommand cancelled.");
-            //routeHeightDisplay.Disable();
-            break;
-          }
-          if (pr3.StringResult == "1%")
-          {
-            slope = 0.01;
-          }
-          else if (pr3.StringResult == "2%")
-          {
-            slope = 0.02;
-          }
+          slope = CADObjectCommands.WasteGrade;
+          //PromptKeywordOptions pko3 = new PromptKeywordOptions("\nWhat is the slope? (1% or 2%)");
+          //pko3.Keywords.Add("1%");
+          //pko3.Keywords.Add("2%");
+          //PromptResult pr3 = ed.GetKeywords(pko3);
+          //if (pr3.Status != PromptStatus.OK)
+          //{
+          //  ed.WriteMessage("\nCommand cancelled.");
+          //  //routeHeightDisplay.Disable();
+          //  break;
+          //}
+          //if (pr3.StringResult == "1%")
+          //{
+          //  slope = 0.01;
+          //}
+          //else if (pr3.StringResult == "2%")
+          //{
+          //  slope = 0.02;
+          //}
         }
 
         //Select a starting point/object
