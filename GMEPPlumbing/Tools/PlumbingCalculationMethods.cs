@@ -38,6 +38,7 @@ namespace GMEPPlumbing
     Dictionary<string, HashSet<string>> SourceFixtureConnections =
       new Dictionary<string, HashSet<string>>();
 
+    [CommandMethod("PFC")]
     [CommandMethod("PlumbingFixtureCalc")]
     public async void PlumbingFixtureCalc()
     {

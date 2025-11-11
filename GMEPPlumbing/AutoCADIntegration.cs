@@ -136,18 +136,21 @@ namespace GMEPPlumbing
       // ... detach other handlers as needed ...
     }
 
+    [CommandMethod("PHR")]
     [CommandMethod("PlumbingHorizontalRoute")]
     public void PlumbingHorizontalRoute()
     {
       HorizontalRoute();
     }
 
+    [CommandMethod("GPHR")]
     [CommandMethod("PlumbingHorizontalRouteGround")]
     public void PlumbingHorizontalRouteGround()
     {
       HorizontalRoute(0);
     }
 
+    [CommandMethod("FHPHR")]
     [CommandMethod("PlumbingHorizontalRouteFixtureHeight")]
     public void PlumbingHorizontalRouteFixtureHeight()
     {
@@ -155,6 +158,7 @@ namespace GMEPPlumbing
       HorizontalRoute(routeHeight);
     }
 
+    [CommandMethod("VPHR")]
     [CommandMethod("PlumbingHorizontalRouteVariable")]
     public void PlumbingHorizontalRouteVariable()
     {
@@ -477,8 +481,9 @@ namespace GMEPPlumbing
         //routeGUIDS.Add(LineGUID2);
         AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType, slope, fixtureDropId);
         if (hasArrows)
+        // HERE discern between waste and water, add waste style arrows to waste route
         {
-          AddArrowsToLine(addedLineId2, LineGUID2);
+          AddArrowsToLine(addedLineId2, LineGUID2, slope);
         }
       }
 
@@ -635,7 +640,8 @@ namespace GMEPPlumbing
         AttachRouteXData(addedLineId, LineGUID, BasePointId, pipeType, slope, fixtureDropId);
         if (hasArrows)
         {
-          AddArrowsToLine(addedLineId, LineGUID);
+          // HERE add waste style arrows if waste route
+          AddArrowsToLine(addedLineId, LineGUID, slope);
         }
       }
       //routeHeightDisplay.Disable();
@@ -750,6 +756,7 @@ namespace GMEPPlumbing
       //AddArrowsToLine(addedLineId, LineGUID);
     }
 
+    [CommandMethod("PVR")]
     [CommandMethod("PlumbingVerticalRoute")]
     public async void PlumbingVerticalRoute()
     {
@@ -2022,8 +2029,9 @@ namespace GMEPPlumbing
       return verticalRoutes;
     }
 
-    [CommandMethod("SETPLUMBINGBASEPOINT")]
-    public async void SetPlumbingBasePoint()
+    [CommandMethod("PBP")]
+    [CommandMethod("PLUMBINGBASEPOINT")]
+    public async void PlumbingBasePoint()
     {
       if (CADObjectCommands.ProjectType == ProjectType.NotSet)
       {
@@ -2325,8 +2333,9 @@ namespace GMEPPlumbing
       SettingObjects = false;
     }
 
-    [CommandMethod("SETPLUMBINGSITEBASEPOINT")]
-    public async void SetPlumbingSiteBasePoint()
+    [CommandMethod("PSBP")]
+    [CommandMethod("PLUMBINGSITEBASEPOINT")]
+    public async void PlumbingSiteBasePoint()
     {
       SettingObjects = true;
 
@@ -2644,7 +2653,7 @@ namespace GMEPPlumbing
       ed.WriteMessage(message);
     }
 
-    private void AddArrowsToLine(ObjectId lineId, string lineGUID)
+    private void AddArrowsToLine(ObjectId lineId, string lineGUID, double slope)
     {
       var doc = Application.DocumentManager.MdiActiveDocument;
       if (doc == null)
@@ -2661,6 +2670,10 @@ namespace GMEPPlumbing
           double arrowLength = 5.0;
           double arrowSize = 3.0;
           string blockName = "GMEP_PLUMBING_LINE_ARROW";
+          if (slope > 0)
+          {
+            blockName = "GMEP_PLUMBING_LINE_ARROW_WASTE";
+          }
 
           Vector3d dir = (line.EndPoint - line.StartPoint).GetNormal();
           double angle = dir.AngleOnPlane(new Plane(Point3d.Origin, Vector3d.ZAxis));
@@ -2681,10 +2694,15 @@ namespace GMEPPlumbing
           if (jigResult.Status != PromptStatus.OK)
             break;
           Point3d arrowPos = lineArrowJig.InsertionPoint;
+          string layer = line.Layer;
+          if (slope > 0)
+          {
+            layer = "P-WV-TEXT";
+          }
           BlockReference arrowRef = new BlockReference(arrowPos, blockDefId)
           {
             Rotation = angle,
-            Layer = line.Layer,
+            Layer = layer,
           };
           btr.AppendEntity(arrowRef);
           tr.AddNewlyCreatedDBObject(arrowRef, true);
@@ -2698,6 +2716,14 @@ namespace GMEPPlumbing
             }
           }
           tr.Commit();
+        }
+        if (slope > 0)
+        {
+          CADObjectCommands.CreateTextWithJig(
+            "P-WV-TEXT",
+            TextHorizontalMode.TextLeft,
+            (slope * 100).ToString() + "%"
+          );
         }
       }
     }
@@ -4464,6 +4490,7 @@ namespace GMEPPlumbing
       }
     }
 
+    [CommandMethod("IPF")]
     [CommandMethod("PLUMBINGISLANDFIXTURE")]
     public void PlumbingIslandFixture()
     {
@@ -5377,6 +5404,7 @@ namespace GMEPPlumbing
       //routeHeightDisplay.Disable();
     }
 
+    [CommandMethod("RPF")]
     [CommandMethod("PLUMBINGRISEFIXTURE")]
     public void PlumbingRiseFixture()
     {
@@ -6361,6 +6389,7 @@ namespace GMEPPlumbing
       }
     }
 
+    [CommandMethod("XPF")]
     [CommandMethod("PlumbingExtendedFixture")]
     public void PlumbingExtendedFixture()
     {
@@ -7314,6 +7343,7 @@ namespace GMEPPlumbing
       }
     }
 
+    [CommandMethod("SPF")]
     [CommandMethod("PlumbingSharedFixture")]
     public void PlumbingSharedFixture()
     {
@@ -8659,6 +8689,7 @@ namespace GMEPPlumbing
       return route;
     }
 
+    [CommandMethod("SRC")]
     [CommandMethod("PlumbingSource")]
     public void CreatePlumbingSource()
     {
@@ -11029,6 +11060,7 @@ namespace GMEPPlumbing
       VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "Up", null);
     }
 
+    [CommandMethod("DN")]
     [CommandMethod("DOWN")]
     public async void Down()
     {
@@ -11036,6 +11068,7 @@ namespace GMEPPlumbing
       VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "Down", null);
     }
 
+    [CommandMethod("U2C")]
     [CommandMethod("UPTOCEILING")]
     public async void UpToCeiling()
     {
@@ -11043,6 +11076,7 @@ namespace GMEPPlumbing
       VerticalRoute(null, null, CADObjectCommands.ActiveFloor, "UpToCeiling");
     }
 
+    [CommandMethod("D2F")]
     [CommandMethod("DOWNTOFLOOR")]
     public async void DownToFloor()
     {

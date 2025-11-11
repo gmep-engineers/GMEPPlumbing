@@ -51,8 +51,8 @@ namespace GMEPPlumbing
 
     //public static bool SettingFlag= false;
 
-    [CommandMethod("SetPlumbingRouteHeight")]
-    public static void SetPlumbingRouteHeight()
+    [CommandMethod("PlumbingRouteHeight")]
+    public static void PlumbingRouteHeight()
     {
       Document doc = Autodesk
         .AutoCAD
