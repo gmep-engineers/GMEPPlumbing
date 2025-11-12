@@ -64,6 +64,9 @@ namespace GMEPPlumbing
         FullRoutes.Clear();
         SourceFixtureConnections.Clear();
 
+        Console.WriteLine("projid " + ProjectId);
+        Console.WriteLine("Sources len " + Sources.Count);
+
         foreach (var source in Sources)
         {
           List<string> types = GetSourceOutputTypes(source);
@@ -1022,7 +1025,7 @@ namespace GMEPPlumbing
       {
         case "GMEP DRAIN":
         case "GMEP WH 50":
-        case "GMEP WH 85":
+        case "GMEP WH 80":
           return 2;
         case "GMEP FD":
         case "GMEP CP":
@@ -1037,7 +1040,7 @@ namespace GMEPPlumbing
       switch (blockName)
       {
         case "GMEP WH 50":
-        case "GMEP WH 85":
+        case "GMEP WH 80":
         case "GMEP PLUMBING VENT EXIT":
           return 2;
         case "GMEP PLUMBING POINT OF CONNECTION":

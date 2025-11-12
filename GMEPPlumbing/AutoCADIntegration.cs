@@ -1002,7 +1002,7 @@ namespace GMEPPlumbing
                     {
                       tempViewGUID = prop.Value.ToString();
                     }
-                    if (prop.PropertyName == "id")
+                    if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
                     {
                       if (prop.Value.ToString() == basePointGUID)
                       {
@@ -1114,7 +1114,7 @@ namespace GMEPPlumbing
               tempFloor = Convert.ToInt32(prop.Value);
               floors.Add(tempFloor);
             }
-            if (prop.PropertyName == "id")
+            if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
             {
               if (prop.Value.ToString() == basePointGUID)
               {
@@ -1211,7 +1211,7 @@ namespace GMEPPlumbing
               floor = Convert.ToInt32(prop.Value);
               BasePointRefs[floor] = entity2;
             }
-            if (prop.PropertyName == "id")
+            if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
             {
               guid = prop.Value.ToString();
             }
@@ -8605,7 +8605,7 @@ namespace GMEPPlumbing
           {
             BasePointId = prop.Value?.ToString();
           }
-          if (prop.PropertyName == "id")
+          if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
           {
             Id = prop.Value?.ToString();
           }
@@ -9489,7 +9489,7 @@ namespace GMEPPlumbing
                     var pc = entity.DynamicBlockReferencePropertyCollection;
                     foreach (DynamicBlockReferenceProperty prop in pc)
                     {
-                      if (prop.PropertyName == "id")
+                      if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
                       {
                         string basePointId = prop.Value?.ToString();
                         if (!string.IsNullOrEmpty(basePointId) && basePointId != "0")
@@ -9702,7 +9702,7 @@ namespace GMEPPlumbing
           double pos_y = 0;
           foreach (DynamicBlockReferenceProperty prop in pc)
           {
-            if (prop.PropertyName == "id")
+            if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
             {
               Id = prop.Value?.ToString();
             }
@@ -10026,7 +10026,7 @@ namespace GMEPPlumbing
                         {
                           BasePointId = prop.Value?.ToString();
                         }
-                        if (prop.PropertyName == "id")
+                        if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
                         {
                           Id = prop.Value?.ToString();
                         }
@@ -10244,7 +10244,7 @@ namespace GMEPPlumbing
                       {
                         Plan = prop.Value?.ToString();
                       }
-                      if (prop.PropertyName == "id")
+                      if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
                       {
                         Id = prop.Value?.ToString();
                       }
@@ -10717,7 +10717,7 @@ namespace GMEPPlumbing
 
                       foreach (DynamicBlockReferenceProperty prop in pc)
                       {
-                        if (prop.PropertyName == "id")
+                        if (prop.PropertyName == "id" && prop.Value?.ToString() != "0")
                         {
                           GUID = prop.Value?.ToString();
                         }
@@ -10741,6 +10741,10 @@ namespace GMEPPlumbing
                         //pressure = Convert.ToDouble(prop.Value);
                         //}
                       }
+                      if (String.IsNullOrEmpty(GUID))
+                      {
+                        continue;
+                      }
                       if (name == "GMEP WH 50" || name == "GMEP WH 80" || name == "GMEP IWH")
                       {
                         typeId = 2;
@@ -10761,6 +10765,7 @@ namespace GMEPPlumbing
                             entity.Position.Z
                           );
                         }
+                        Console.WriteLine("GUID " + GUID);
                         PlumbingSource source = new PlumbingSource(
                           GUID,
                           ProjectId,
@@ -10851,7 +10856,7 @@ namespace GMEPPlumbing
 
                       foreach (DynamicBlockReferenceProperty prop in pc)
                       {
-                        if (prop.PropertyName == "id")
+                        if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
                         {
                           GUID = prop.Value?.ToString();
                         }
@@ -10984,7 +10989,7 @@ namespace GMEPPlumbing
 
                       foreach (DynamicBlockReferenceProperty prop in pc)
                       {
-                        if (prop.PropertyName == "id")
+                        if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
                         {
                           GUID = prop.Value?.ToString();
                         }
@@ -11116,7 +11121,7 @@ namespace GMEPPlumbing
           var pc = blockRef.DynamicBlockReferencePropertyCollection;
           foreach (DynamicBlockReferenceProperty prop in pc)
           {
-            if (prop.PropertyName == "id")
+            if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
             {
               Id = prop.Value?.ToString();
             }
@@ -11289,7 +11294,7 @@ namespace GMEPPlumbing
           DynamicBlockReferenceProperty prop in blockRef2.DynamicBlockReferencePropertyCollection
         )
         {
-          if (prop.PropertyName == "id")
+          if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
           {
             Id = prop.Value.ToString();
           }

@@ -136,7 +136,7 @@ namespace GMEPPlumbing.Views
                 blockReference.DynamicBlockReferencePropertyCollection;
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
-                if (prop.PropertyName == "id")
+                if (prop.PropertyName == "id" && prop.Value.ToString() != "0")
                 {
                   List<RouteInfoBox> boxes = RouteInfoBoxes
                     .Where(r => r.ComponentId == prop.Value.ToString())
