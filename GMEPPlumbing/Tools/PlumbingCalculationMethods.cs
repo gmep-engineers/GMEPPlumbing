@@ -1,15 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms.Integration;
 using System.Windows.Input;
 using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
 using GMEPPlumbing.Services;
+using GMEPPlumbing.Tools;
 using GMEPPlumbing.Views;
 using Exception = System.Exception;
 
@@ -46,6 +51,25 @@ namespace GMEPPlumbing
       var db = doc.Database;
       var ed = doc.Editor;
 
+      double pressureLoss = 7;
+
+      var promptStringOptions = new PromptStringOptions("\nEnter the % pressure loss per 100ft: ");
+      var promptStringResult = ed.GetString(promptStringOptions);
+
+      if (promptStringResult.Status == PromptStatus.OK)
+      {
+        string plString = promptStringResult.StringResult;
+
+        if (double.TryParse(plString, out pressureLoss))
+        {
+          ed.WriteMessage($"\nPressure loss set to {plString}%.");
+        }
+        else
+        {
+          ed.WriteMessage($"\nInvalid format. Please enter the pressure loss as a whole number.");
+        }
+      }
+
       try
       {
         System.Windows.Input.Mouse.OverrideCursor = Cursors.Wait;
@@ -64,13 +88,10 @@ namespace GMEPPlumbing
         FullRoutes.Clear();
         SourceFixtureConnections.Clear();
 
-        Console.WriteLine("projid " + ProjectId);
-        Console.WriteLine("Sources len " + Sources.Count);
-
         foreach (var source in Sources)
         {
           List<string> types = GetSourceOutputTypes(source);
-          var matchingRoutes = HorizontalRoutes
+          var systemStartRoutes = HorizontalRoutes
             .Where(route =>
               route.StartPoint.DistanceTo(source.Position)
                 <= GetSourceSearchDistance(source.BlockName)
@@ -78,11 +99,16 @@ namespace GMEPPlumbing
               && types.Contains(route.Type)
             )
             .ToList();
-          foreach (var matchingRoute in matchingRoutes)
+          foreach (var rt in systemStartRoutes)
           {
-            TraverseHorizontalRoute(matchingRoute, null, 0, new List<Object>() { source });
+            (int systemInches, List<PlumbingFixture> systemFixtures) = TraverseHorizontalRoute(
+              rt,
+              pressureLoss
+            );
           }
         }
+
+        /*
         foreach (var kvp in FullRoutes)
         {
           var routes = kvp.Value;
@@ -139,6 +165,7 @@ namespace GMEPPlumbing
         pw.Visible = true;
         pw.Dock = DockSides.Left;
         pw.RolledUp = false;
+        */
       }
       catch (Exception ex)
       {
@@ -156,7 +183,166 @@ namespace GMEPPlumbing
       }
     }
 
-    public Tuple<double, int, double> TraverseHorizontalRoute(
+    public (int, List<PlumbingFixture>) TraverseHorizontalRoute(
+      PlumbingHorizontalRoute route,
+      double pressureLoss,
+      int currentRouteInches = 0
+    )
+    {
+      double realRtInches = Math.Sqrt(
+        Math.Pow(route.EndPoint.X - route.StartPoint.X, 2)
+          + Math.Pow(route.EndPoint.Y - route.StartPoint.Y, 2)
+      );
+
+      double rtInches = (int)Math.Round(realRtInches);
+
+      int longestRunInches = 0;
+      List<PlumbingFixture> currentRouteFixtures = new List<PlumbingFixture>();
+      for (int i = 0; i < rtInches + 2; i++)
+      {
+        double unitVectorX = (route.EndPoint.X - route.StartPoint.X) / realRtInches;
+        double unitVectorY = (route.EndPoint.Y - route.StartPoint.Y) / realRtInches;
+        int currX = (int)Math.Round(route.StartPoint.X + unitVectorX);
+        int currY = (int)Math.Round(route.StartPoint.Y + unitVectorY);
+
+        List<PlumbingHorizontalRoute> intersetingHorizontalRoutes = HorizontalRoutes.FindAll(
+          (r) => r.StartPosX == currX && r.StartPosY == currY
+        );
+        List<PlumbingVerticalRoute> intersectingsVerticalRoutes = VerticalRoutes.FindAll(
+          (r) => r.PosX == currX && r.PosY == currY
+        );
+        List<PlumbingFixture> intersectingFixtures = PlumbingFixtures.FindAll(
+          (f) => f.PosX == currX && f.PosY == currY
+        );
+        List<PlumbingAccessory> accessories = PlumbingAccessories.FindAll(
+          (a) => a.PosX == currX && a.PosY == currY
+        );
+
+        foreach (var horizontalRoute in intersetingHorizontalRoutes)
+        {
+          (int thisRunInches, List<PlumbingFixture> nextRouteFixtures) = TraverseHorizontalRoute(
+            horizontalRoute,
+            pressureLoss,
+            currentRouteInches + i
+          );
+          if (thisRunInches > longestRunInches)
+          {
+            longestRunInches = thisRunInches;
+          }
+          currentRouteFixtures.AddRange(nextRouteFixtures);
+        }
+
+        foreach (var verticalRoute in intersectingsVerticalRoutes)
+        {
+          (int thisRunInches, List<PlumbingFixture> nextRouteFixtures) = TraverseVerticalRoute(
+            verticalRoute,
+            pressureLoss,
+            currentRouteInches + i
+          );
+          if (thisRunInches > longestRunInches)
+          {
+            longestRunInches = thisRunInches;
+          }
+          currentRouteFixtures.AddRange(nextRouteFixtures);
+        }
+
+        foreach (var fixture in intersectingFixtures)
+        {
+          currentRouteFixtures.Add(fixture);
+        }
+      }
+      double totalFixtureUnits = 0;
+      foreach (var fixture in currentRouteFixtures)
+      {
+        PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(
+          fixture.CatalogId
+        );
+        totalFixtureUnits += (double)catalogItem.FixtureDemand;
+      }
+      route.FixtureUnits = totalFixtureUnits;
+      WaterPipeSizingChart chart = new WaterPipeSizingChart();
+      PressureLossOption opt = chart.CopperTypeLChart.Options.Find(
+        (o) => o.PressureLossPer100Ft == pressureLoss
+      );
+      route.GenerateGallonsPerMinute();
+
+      string pipeSize = chart.FindSize("Copper", false, route.GPM, pressureLoss);
+      Point3d midpoint = new Point3d(
+        (route.StartPoint.X + route.EndPoint.X) / 2,
+        (route.StartPoint.Y + route.EndPoint.Y) / 2,
+        (route.StartPoint.Z + route.EndPoint.Z) / 2
+      );
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      double rotation = 0;
+
+      using (DocumentLock docLock = doc.LockDocument())
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        if (
+          Math.Abs(route.StartPoint.X - route.EndPoint.X)
+          > Math.Abs(route.StartPoint.Y - route.EndPoint.Y)
+        )
+        {
+          // route is more horizontal than vertical so place vertical label
+          CADObjectCommands.CreateAndPositionText(
+            tr,
+            pipeSize,
+            "gmep",
+            4.5,
+            1,
+            7,
+            "P-HC-PPLM-TEXT-3RD",
+            midpoint
+          );
+          rotation = 1.5708;
+        }
+        else
+        {
+          // route is more vertical than horizontal so place horizontal label
+          CADObjectCommands.CreateAndPositionText(
+            tr,
+            pipeSize,
+            "gmep",
+            4.5,
+            1,
+            7,
+            "P-HC-PPLM-TEXT-3RD",
+            midpoint
+          );
+        }
+
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        string blockName = "PLUMBING LABEL";
+        ObjectId labelBlock = bt[blockName];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(midpoint.X, midpoint.Y, 0),
+            labelBlock
+          )
+        )
+        {
+          acBlkRef.Layer = "P-HC-PPLM-TEXT-3RD";
+          acBlkRef.Rotation = rotation;
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        tr.Commit();
+      }
+      return (longestRunInches, currentRouteFixtures);
+    }
+
+    public Tuple<double, int, double> OldTraverseHorizontalRoute(
       PlumbingHorizontalRoute route,
       HashSet<string> visited = null,
       double fullRouteLength = 0,
@@ -387,7 +573,7 @@ namespace GMEPPlumbing
           }
           routeObjectsTemp.Remove(routeObjectsTemp.Last());
           length -= kvp.Value.Length * 12;
-          Tuple<double, int, double> verticalRoute2Result = TraverseVerticalRoute(
+          Tuple<double, int, double> verticalRoute2Result = OldTraverseVerticalRoute(
             verticalRoute2,
             entryPointZ,
             fixtureUnits,
@@ -404,7 +590,7 @@ namespace GMEPPlumbing
         entryPointZ = route.EndPoint.Z;
         routeObjectsTemp.Remove(routeObjectsTemp.Last());
         length -= adjustedRoute.Length * 12;
-        Tuple<double, int, double> verticalRouteResult = TraverseVerticalRoute(
+        Tuple<double, int, double> verticalRouteResult = OldTraverseVerticalRoute(
           adjustedRoute,
           entryPointZ,
           fixtureUnits,
@@ -439,7 +625,7 @@ namespace GMEPPlumbing
             route.Slope
           );
           routeObjectsTemp.Add(adjustedRoute);
-          Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(
+          Tuple<double, int, double> childRouteResult = OldTraverseHorizontalRoute(
             childRoute.Key,
             visited,
             fullRouteLength + childRoute.Value,
@@ -458,7 +644,56 @@ namespace GMEPPlumbing
       return new Tuple<double, int, double>(fixtureUnits, flowTypeId, longestRunLength);
     }
 
-    public Tuple<double, int, double> TraverseVerticalRoute(
+    public (int, List<PlumbingFixture>) TraverseVerticalRoute(
+      PlumbingVerticalRoute route,
+      double pressureLoss,
+      int currentRouteInches = 0
+    )
+    {
+      int rtLength = (int)Math.Round(route.Length);
+
+      int longestRunInches = 0;
+      List<PlumbingFixture> currentRouteFixtures = new List<PlumbingFixture>();
+      for (int i = 0; i < rtLength; i++)
+      {
+        List<PlumbingHorizontalRoute> intersectingHorizontalRoutes = HorizontalRoutes.FindAll(
+          (r) => r.StartPosX == route.PosX && r.StartPosY == route.PosY && r.StartPosZ == route.EndZ
+        );
+        List<PlumbingFixture> intersectingFixtures = PlumbingFixtures.FindAll(
+          (f) => f.PosX == route.PosX && f.PosY == route.PosY && f.PosZ == route.EndZ
+        );
+        foreach (var horizontalRoute in intersectingHorizontalRoutes)
+        {
+          (int thisRunInches, List<PlumbingFixture> nextRouteFixtures) = TraverseHorizontalRoute(
+            horizontalRoute,
+            pressureLoss,
+            currentRouteInches + i
+          );
+          if (thisRunInches > longestRunInches)
+          {
+            longestRunInches = thisRunInches;
+          }
+          currentRouteFixtures.AddRange(nextRouteFixtures);
+        }
+        foreach (var fixture in intersectingFixtures)
+        {
+          currentRouteFixtures.Add(fixture);
+        }
+      }
+
+      double totalFixtureUnits = 0;
+      foreach (var fixture in currentRouteFixtures)
+      {
+        PlumbingFixtureCatalogItem catalogItem = MariaDBService.GetPlumbingFixtureCatalogItemById(
+          fixture.CatalogId
+        );
+        totalFixtureUnits += (double)catalogItem.FixtureDemand;
+      }
+      route.FixtureUnits = totalFixtureUnits;
+      return (longestRunInches, currentRouteFixtures);
+    }
+
+    public Tuple<double, int, double> OldTraverseVerticalRoute(
       PlumbingVerticalRoute route,
       double entryPointZ,
       double fixtureUnits,
@@ -554,7 +789,7 @@ namespace GMEPPlumbing
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(adjustedRoute);
 
-        Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(
+        Tuple<double, int, double> childRouteResult = OldTraverseHorizontalRoute(
           childRoute,
           visited,
           fullRouteLength + (adjustedRoute.Length * 12),
@@ -610,7 +845,7 @@ namespace GMEPPlumbing
       {
         List<object> routeObjectsTemp = new List<object>(routeObjects);
         routeObjectsTemp.Add(accessory);
-        Tuple<double, int, double> childRouteResult = TraverseHorizontalRoute(
+        Tuple<double, int, double> childRouteResult = OldTraverseHorizontalRoute(
           childRoute,
           visited,
           fullRouteLength,

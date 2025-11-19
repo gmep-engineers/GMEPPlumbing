@@ -4753,7 +4753,7 @@ namespace GMEPPlumbing.Tools
       }
     }
 
-    public string FindSize(string pipeType, bool isHot, double gpm)
+    public string FindSize(string pipeType, bool isHot, double gpm, double pressureLoss)
     {
       PipeTypeOption searchChart = null;
       if (pipeType == "Copper")
@@ -4772,6 +4772,10 @@ namespace GMEPPlumbing.Tools
       {
         searchChart = CPVCSDRIIChart;
       }
+
+      searchChart.ChosenOption = searchChart.Options.Find(
+        (o) => o.PressureLossPer100Ft >= pressureLoss
+      );
 
       WaterPipeSizingEntry result = null;
       if (isHot)

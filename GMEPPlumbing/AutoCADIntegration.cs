@@ -481,7 +481,6 @@ namespace GMEPPlumbing
         //routeGUIDS.Add(LineGUID2);
         AttachRouteXData(addedLineId2, LineGUID2, BasePointId, pipeType, slope, fixtureDropId);
         if (hasArrows)
-        // HERE discern between waste and water, add waste style arrows to waste route
         {
           AddArrowsToLine(addedLineId2, LineGUID2, slope);
         }
@@ -10765,7 +10764,6 @@ namespace GMEPPlumbing
                             entity.Position.Z
                           );
                         }
-                        Console.WriteLine("GUID " + GUID);
                         PlumbingSource source = new PlumbingSource(
                           GUID,
                           ProjectId,

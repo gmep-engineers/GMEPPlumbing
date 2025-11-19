@@ -25,6 +25,9 @@ namespace GMEPPlumbing
     public int TypeId;
     public string Type;
 
+    public int PosX;
+    public int PosY;
+
     public PlumbingAccessory(
       string id,
       string projectId,
@@ -42,6 +45,9 @@ namespace GMEPPlumbing
       Rotation = rotation;
       TypeId = typeId;
       Type = type;
+
+      PosX = (int)Math.Round(position.X);
+      PosY = (int)Math.Round(position.Y);
     }
   }
 
@@ -85,6 +91,10 @@ namespace GMEPPlumbing
     public string BlockName;
     public int FlowTypeId;
 
+    public int PosX;
+    public int PosY;
+    public int PosZ;
+
     public PlumbingFixture(
       string id,
       string projectId,
@@ -108,6 +118,11 @@ namespace GMEPPlumbing
       BasePointId = basePointId;
       BlockName = blockName;
       FlowTypeId = flowTypeId;
+
+      // HERE factor in rotation
+      PosX = (int)Math.Round(position.X);
+      PosY = (int)Math.Round(position.Y);
+      PosZ = (int)Math.Round(position.Z);
     }
   }
 
@@ -370,6 +385,13 @@ namespace GMEPPlumbing
     public string PipeSize { get; set; } = "";
     public double Slope { get; set; } = 0;
 
+    public int StartPosX;
+    public int StartPosY;
+    public int StartPosZ;
+    public int EndPosX;
+    public int EndPosY;
+    public int EndPosZ;
+
     public PlumbingHorizontalRoute(
       string id,
       string projectId,
@@ -389,6 +411,13 @@ namespace GMEPPlumbing
       BasePointId = basePointId;
       PipeType = pipeType;
       Slope = slope;
+
+      StartPosX = (int)Math.Round(startPoint.X);
+      StartPosY = (int)Math.Round(startPoint.Y);
+      StartPosZ = (int)Math.Round(startPoint.Z);
+      EndPosX = (int)Math.Round(endPoint.X);
+      EndPosX = (int)Math.Round(endPoint.Y);
+      EndPosZ = (int)Math.Round(endPoint.Z);
     }
 
     public void GenerateGallonsPerMinute()
@@ -718,6 +747,12 @@ namespace GMEPPlumbing
     public bool IsUp;
     public double Rotation;
 
+    public int PosX;
+    public int PosY;
+
+    public int StartZ;
+    public int EndZ;
+
     public double FixtureUnits { get; set; } = 0;
     public int FlowTypeId { get; set; } = 1;
     public int GPM { get; set; } = 0;
@@ -750,6 +785,19 @@ namespace GMEPPlumbing
       Type = type;
       PipeType = pipeType;
       IsUp = isUp;
+
+      PosX = (int)Math.Round(position.X);
+      PosY = (int)Math.Round(position.Y);
+
+      StartZ = (int)Math.Round(position.Z);
+      if (isUp)
+      {
+        EndZ = StartZ + (int)Math.Round(Length);
+      }
+      else
+      {
+        EndZ = StartZ - (int)Math.Round(Length);
+      }
     }
 
     public PlumbingVerticalRoute() { }

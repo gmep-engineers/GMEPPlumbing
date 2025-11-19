@@ -831,6 +831,147 @@ namespace GMEPPlumbing
       ProjectType = ProjectType.Commercial;
     }
 
+    public static ObjectId GetTextStyleId(string styleName)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      var textStyleTable = (TextStyleTable)db.TextStyleTableId.GetObject(OpenMode.ForRead);
+
+      if (textStyleTable.Has(styleName))
+      {
+        return textStyleTable[styleName];
+      }
+      else
+      {
+        // Return the ObjectId of the "Standard" style
+        return textStyleTable["Standard"];
+      }
+    }
+
+    private static ObjectId CreateText(
+      string content,
+      string style,
+      TextHorizontalMode horizontalMode,
+      TextVerticalMode verticalMode,
+      double height,
+      double widthFactor,
+      Autodesk.AutoCAD.Colors.Color color,
+      string layer,
+      AttachmentPoint justify = AttachmentPoint.BaseLeft
+    )
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+
+      // Check if the layer exists
+      using (var tr = db.TransactionManager.StartTransaction())
+      {
+        var layerTable = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForRead);
+
+        if (!layerTable.Has(layer))
+        {
+          // Layer doesn't exist, create it
+          var newLayer = new LayerTableRecord();
+          newLayer.Name = layer;
+
+          layerTable.UpgradeOpen();
+          layerTable.Add(newLayer);
+          tr.AddNewlyCreatedDBObject(newLayer, true);
+        }
+
+        tr.Commit();
+      }
+
+      using (var tr = doc.TransactionManager.StartTransaction())
+      {
+        var textStyleId = GetTextStyleId(style);
+        var textStyle = (TextStyleTableRecord)tr.GetObject(textStyleId, OpenMode.ForRead);
+        if (
+          textStyle.FileName.ToLower().Contains("architxt")
+          || textStyle.FileName.ToLower().Contains("a2")
+        )
+        {
+          if (widthFactor > 0.85)
+          {
+            widthFactor = 0.85;
+          }
+          content = content.Replace("\u03A6", "\u0081");
+        }
+
+        var text = new DBText
+        {
+          TextString = content,
+          Height = height,
+          WidthFactor = widthFactor,
+          Color = color,
+          Layer = layer,
+          TextStyleId = textStyleId,
+          HorizontalMode = horizontalMode,
+          VerticalMode = verticalMode,
+          Justify = justify,
+        };
+
+        var currentSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+        currentSpace.AppendEntity(text);
+        tr.AddNewlyCreatedDBObject(text, true);
+
+        tr.Commit();
+
+        return text.ObjectId;
+      }
+    }
+
+    public static ObjectId CreateAndPositionText(
+      Transaction tr,
+      string content,
+      string style,
+      double height,
+      double widthFactor,
+      int colorIndex,
+      string layerName,
+      Point3d position,
+      TextHorizontalMode horizontalMode = TextHorizontalMode.TextLeft,
+      TextVerticalMode verticalMode = TextVerticalMode.TextBase,
+      AttachmentPoint justify = AttachmentPoint.BaseLeft
+    )
+    {
+      var color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(
+        Autodesk.AutoCAD.Colors.ColorMethod.ByLayer,
+        (short)colorIndex
+      );
+      var textId = CreateText(
+        content,
+        style,
+        horizontalMode,
+        verticalMode,
+        height,
+        widthFactor,
+        color,
+        layerName,
+        justify
+      );
+      var text = (DBText)tr.GetObject(textId, OpenMode.ForWrite);
+      if (justify == AttachmentPoint.BaseLeft)
+      {
+        text.Position = position;
+      }
+      else
+      {
+        text.AlignmentPoint = position;
+      }
+      return textId;
+    }
+
     public static void CreateTextWithJig(
       string layerName,
       TextHorizontalMode horizontalMode,
