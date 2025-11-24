@@ -374,6 +374,8 @@ namespace GMEPPlumbing
     public string Id;
     public string ProjectId;
     public string Type;
+    public string TypeAbbreviation;
+    public int TypeId;
     public Point3d StartPoint;
     public Point3d EndPoint;
     public string BasePointId;
@@ -392,6 +394,8 @@ namespace GMEPPlumbing
     public int EndPosY;
     public int EndPosZ;
 
+    public string Layer;
+
     public PlumbingHorizontalRoute(
       string id,
       string projectId,
@@ -400,7 +404,8 @@ namespace GMEPPlumbing
       Point3d endPoint,
       string basePointId,
       string pipeType,
-      double slope
+      double slope,
+      string layer
     )
     {
       Id = id;
@@ -411,6 +416,7 @@ namespace GMEPPlumbing
       BasePointId = basePointId;
       PipeType = pipeType;
       Slope = slope;
+      Layer = layer;
 
       StartPosX = (int)Math.Round(startPoint.X);
       StartPosY = (int)Math.Round(startPoint.Y);
@@ -418,6 +424,33 @@ namespace GMEPPlumbing
       EndPosX = (int)Math.Round(endPoint.X);
       EndPosX = (int)Math.Round(endPoint.Y);
       EndPosZ = (int)Math.Round(endPoint.Z);
+
+      if (type == "Cold Water")
+      {
+        TypeAbbreviation = "CW";
+        TypeId = 1;
+      }
+
+      if (type == "Hot Water")
+      {
+        TypeAbbreviation = "HW";
+        TypeId = 2;
+      }
+      if (type == "Waste")
+      {
+        TypeAbbreviation = "W";
+        TypeId = 3;
+      }
+      if (type == "Vent")
+      {
+        TypeAbbreviation = "V";
+        TypeId = 4;
+      }
+      if (type == "Gas")
+      {
+        TypeAbbreviation = "G";
+        TypeId = 5;
+      }
     }
 
     public void GenerateGallonsPerMinute()

@@ -88,6 +88,8 @@ namespace GMEPPlumbing
         FullRoutes.Clear();
         SourceFixtureConnections.Clear();
 
+        var existingRouteIds = GetExistingLabelTextObjectIds();
+
         foreach (var source in Sources)
         {
           List<string> types = GetSourceOutputTypes(source);
@@ -103,7 +105,8 @@ namespace GMEPPlumbing
           {
             (int systemInches, List<PlumbingFixture> systemFixtures) = TraverseHorizontalRoute(
               rt,
-              pressureLoss
+              pressureLoss,
+              existingRouteIds
             );
           }
         }
@@ -183,9 +186,52 @@ namespace GMEPPlumbing
       }
     }
 
+    public Dictionary<string, ObjectId> GetExistingLabelTextObjectIds()
+    {
+      Dictionary<string, ObjectId> existingLabels = new Dictionary<string, ObjectId>();
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      using (DocumentLock docLock = doc.LockDocument())
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        foreach (ObjectId id in modelSpace)
+        {
+          try
+          {
+            DBText text = (DBText)tr.GetObject(id, OpenMode.ForWrite);
+            if (text != null)
+            {
+              if (
+                text.Hyperlinks.Count > 0
+                && !string.IsNullOrEmpty(text.Hyperlinks[0].SubLocation)
+                && Guid.TryParse(text.Hyperlinks[0].SubLocation, out _)
+              )
+              {
+                existingLabels[text.Hyperlinks[0].SubLocation] = text.ObjectId;
+              }
+            }
+          }
+          catch { }
+        }
+      }
+      return existingLabels;
+    }
+
     public (int, List<PlumbingFixture>) TraverseHorizontalRoute(
       PlumbingHorizontalRoute route,
       double pressureLoss,
+      Dictionary<string, ObjectId> existingRouteIds,
       int currentRouteInches = 0
     )
     {
@@ -198,14 +244,14 @@ namespace GMEPPlumbing
 
       int longestRunInches = 0;
       List<PlumbingFixture> currentRouteFixtures = new List<PlumbingFixture>();
-      for (int i = 0; i < rtInches + 2; i++)
+      for (int i = 2; i < rtInches + 2; i++)
       {
         double unitVectorX = (route.EndPoint.X - route.StartPoint.X) / realRtInches;
         double unitVectorY = (route.EndPoint.Y - route.StartPoint.Y) / realRtInches;
-        int currX = (int)Math.Round(route.StartPoint.X + unitVectorX);
-        int currY = (int)Math.Round(route.StartPoint.Y + unitVectorY);
+        int currX = (int)Math.Round(route.StartPoint.X + (unitVectorX * i));
+        int currY = (int)Math.Round(route.StartPoint.Y + (unitVectorX * i));
 
-        List<PlumbingHorizontalRoute> intersetingHorizontalRoutes = HorizontalRoutes.FindAll(
+        List<PlumbingHorizontalRoute> intersectingHorizontalRoutes = HorizontalRoutes.FindAll(
           (r) => r.StartPosX == currX && r.StartPosY == currY
         );
         List<PlumbingVerticalRoute> intersectingsVerticalRoutes = VerticalRoutes.FindAll(
@@ -217,19 +263,49 @@ namespace GMEPPlumbing
         List<PlumbingAccessory> accessories = PlumbingAccessories.FindAll(
           (a) => a.PosX == currX && a.PosY == currY
         );
-
-        foreach (var horizontalRoute in intersetingHorizontalRoutes)
+        foreach (var horizontalRoute in intersectingHorizontalRoutes)
         {
-          (int thisRunInches, List<PlumbingFixture> nextRouteFixtures) = TraverseHorizontalRoute(
-            horizontalRoute,
-            pressureLoss,
-            currentRouteInches + i
-          );
-          if (thisRunInches > longestRunInches)
+          if (horizontalRoute == route)
           {
-            longestRunInches = thisRunInches;
+            continue;
           }
-          currentRouteFixtures.AddRange(nextRouteFixtures);
+          if (horizontalRoute.Layer == "Defpoints")
+          {
+            // look 15 inches ahead for a vertical route
+            currX = (int)Math.Round(route.StartPoint.X + (unitVectorX * (i + 15)));
+            currY = (int)Math.Round(route.StartPoint.Y + (unitVectorX * (i + 15)));
+            intersectingsVerticalRoutes = VerticalRoutes.FindAll(
+              (r) => r.PosX == currX && r.PosY == currY
+            );
+            PlumbingVerticalRoute verticalRoute = VerticalRoutes
+              .FindAll((r) => r.PosX == currX && r.PosY == currY)
+              .FirstOrDefault();
+            (int thisRunInches, List<PlumbingFixture> nextRouteFixtures) = TraverseVerticalRoute(
+              verticalRoute,
+              pressureLoss,
+              existingRouteIds,
+              currentRouteInches + i
+            );
+            if (thisRunInches > longestRunInches)
+            {
+              longestRunInches = thisRunInches;
+            }
+            currentRouteFixtures.AddRange(nextRouteFixtures);
+          }
+          else
+          {
+            (int thisRunInches, List<PlumbingFixture> nextRouteFixtures) = TraverseHorizontalRoute(
+              horizontalRoute,
+              pressureLoss,
+              existingRouteIds,
+              currentRouteInches + i
+            );
+            if (thisRunInches > longestRunInches)
+            {
+              longestRunInches = thisRunInches;
+            }
+            currentRouteFixtures.AddRange(nextRouteFixtures);
+          }
         }
 
         foreach (var verticalRoute in intersectingsVerticalRoutes)
@@ -237,6 +313,7 @@ namespace GMEPPlumbing
           (int thisRunInches, List<PlumbingFixture> nextRouteFixtures) = TraverseVerticalRoute(
             verticalRoute,
             pressureLoss,
+            existingRouteIds,
             currentRouteInches + i
           );
           if (thisRunInches > longestRunInches)
@@ -267,11 +344,10 @@ namespace GMEPPlumbing
       route.GenerateGallonsPerMinute();
 
       string pipeSize = chart.FindSize("Copper", false, route.GPM, pressureLoss);
-      Point3d midpoint = new Point3d(
-        (route.StartPoint.X + route.EndPoint.X) / 2,
-        (route.StartPoint.Y + route.EndPoint.Y) / 2,
-        (route.StartPoint.Z + route.EndPoint.Z) / 2
-      );
+      pipeSize = pipeSize.Replace("Pipe Size: ", "");
+
+      pipeSize += route.TypeAbbreviation;
+
       Document doc = Autodesk
         .AutoCAD
         .ApplicationServices
@@ -281,16 +357,36 @@ namespace GMEPPlumbing
       Database db = doc.Database;
       double rotation = 0;
 
+      if (existingRouteIds.ContainsKey(route.Id))
+      {
+        using (DocumentLock docLock = doc.LockDocument())
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          DBText text = (DBText)tr.GetObject(existingRouteIds[route.Id], OpenMode.ForWrite);
+          text.TextString = pipeSize;
+          tr.Commit();
+        }
+        return (longestRunInches, currentRouteFixtures);
+      }
+
+      Point3d midpoint = new Point3d(
+        (route.StartPoint.X + route.EndPoint.X) / 2,
+        (route.StartPoint.Y + route.EndPoint.Y) / 2,
+        (route.StartPoint.Z + route.EndPoint.Z) / 2
+      );
+
       using (DocumentLock docLock = doc.LockDocument())
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
+        ObjectId pipeSizeTextObjectId;
         if (
           Math.Abs(route.StartPoint.X - route.EndPoint.X)
           > Math.Abs(route.StartPoint.Y - route.EndPoint.Y)
         )
         {
           // route is more horizontal than vertical so place vertical label
-          CADObjectCommands.CreateAndPositionText(
+          Point3d insertionPoint = new Point3d(midpoint.X, midpoint.Y - 20, midpoint.Z);
+          pipeSizeTextObjectId = CADObjectCommands.CreateAndPositionText(
             tr,
             pipeSize,
             "gmep",
@@ -298,14 +394,34 @@ namespace GMEPPlumbing
             1,
             7,
             "P-HC-PPLM-TEXT-3RD",
-            midpoint
+            insertionPoint,
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseCenter
           );
+          rotation = 1.5708;
+          insertionPoint = new Point3d(midpoint.X, midpoint.Y - 12, midpoint.Z);
+          CADObjectCommands.CreateAndPositionText(
+            tr,
+            "ABV. CLG.",
+            "gmep",
+            4.5,
+            1,
+            7,
+            "P-HC-PPLM-TEXT-3RD",
+            insertionPoint,
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseCenter
+          );
+
           rotation = 1.5708;
         }
         else
         {
           // route is more vertical than horizontal so place horizontal label
-          CADObjectCommands.CreateAndPositionText(
+          Point3d insertionPoint = new Point3d(midpoint.X - 12, midpoint.Y, midpoint.Z);
+          pipeSizeTextObjectId = CADObjectCommands.CreateAndPositionText(
             tr,
             pipeSize,
             "gmep",
@@ -313,7 +429,24 @@ namespace GMEPPlumbing
             1,
             7,
             "P-HC-PPLM-TEXT-3RD",
-            midpoint
+            insertionPoint,
+            TextHorizontalMode.TextLeft,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseRight
+          );
+          insertionPoint = new Point3d(midpoint.X - 12, midpoint.Y - 7.75, midpoint.Z);
+          CADObjectCommands.CreateAndPositionText(
+            tr,
+            "ABV. CLG.",
+            "gmep",
+            4.5,
+            1,
+            7,
+            "P-HC-PPLM-TEXT-3RD",
+            insertionPoint,
+            TextHorizontalMode.TextLeft,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseRight
           );
         }
 
@@ -337,6 +470,13 @@ namespace GMEPPlumbing
           acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
           tr.AddNewlyCreatedDBObject(acBlkRef, true);
         }
+
+        var pipeSizeTextObject = (DBText)tr.GetObject(pipeSizeTextObjectId, OpenMode.ForWrite);
+
+        HyperLink pipeSizeAttr = new HyperLink();
+        pipeSizeAttr.SubLocation = route.Id;
+        pipeSizeTextObject.Hyperlinks.Add(pipeSizeAttr);
+
         tr.Commit();
       }
       return (longestRunInches, currentRouteFixtures);
@@ -622,7 +762,8 @@ namespace GMEPPlumbing
             getPointAtLength(route.StartPoint, route.EndPoint, childRoute.Value),
             route.BasePointId,
             route.PipeType,
-            route.Slope
+            route.Slope,
+            route.Layer
           );
           routeObjectsTemp.Add(adjustedRoute);
           Tuple<double, int, double> childRouteResult = OldTraverseHorizontalRoute(
@@ -647,6 +788,7 @@ namespace GMEPPlumbing
     public (int, List<PlumbingFixture>) TraverseVerticalRoute(
       PlumbingVerticalRoute route,
       double pressureLoss,
+      Dictionary<string, ObjectId> existingRouteIds,
       int currentRouteInches = 0
     )
     {
@@ -667,6 +809,7 @@ namespace GMEPPlumbing
           (int thisRunInches, List<PlumbingFixture> nextRouteFixtures) = TraverseHorizontalRoute(
             horizontalRoute,
             pressureLoss,
+            existingRouteIds,
             currentRouteInches + i
           );
           if (thisRunInches > longestRunInches)
@@ -1036,7 +1179,8 @@ namespace GMEPPlumbing
               route.EndPoint,
               route.BasePointId,
               route.PipeType,
-              route.Slope
+              route.Slope,
+              route.Layer
             );
             result[adjustedRoute] = targetRoute.StartPoint.DistanceTo(targetRoute.EndPoint);
             continue;
@@ -1071,7 +1215,8 @@ namespace GMEPPlumbing
               route.EndPoint,
               route.BasePointId,
               route.PipeType,
-              route.Slope
+              route.Slope,
+              route.Layer
             );
             result[adjustedRoute] = segLen;
             continue;
@@ -1104,7 +1249,8 @@ namespace GMEPPlumbing
             route.EndPoint,
             route.BasePointId,
             route.PipeType,
-            route.Slope
+            route.Slope,
+            route.Layer
           );
           result[adjustedRoute] = segLen;
         }

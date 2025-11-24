@@ -467,7 +467,8 @@ namespace GMEPPlumbing
             line.EndPoint,
             BasePointId,
             pipeType,
-            slope
+            slope,
+            layer
           );
           horizontalRoutes.Add(firstRoute);
 
@@ -623,7 +624,8 @@ namespace GMEPPlumbing
             line.EndPoint,
             BasePointId,
             pipeType,
-            slope
+            slope,
+            layer
           );
           horizontalRoutes.Add(nextRoute);
 
@@ -653,7 +655,8 @@ namespace GMEPPlumbing
       double height,
       Point3d startPoint,
       Point3d? endPoint = null,
-      string fixtureDropId = ""
+      string fixtureDropId = "",
+      string layer = ""
     )
     {
       var doc = Application.DocumentManager.MdiActiveDocument;
@@ -669,37 +672,38 @@ namespace GMEPPlumbing
       ObjectId addedLineId = ObjectId.Null;
       string LineGUID = Guid.NewGuid().ToString();
 
-      string layer = "";
-
-      switch (type)
+      if (string.IsNullOrEmpty(layer))
       {
-        case "Hot Water":
-        case "HotWater":
-          layer = "P-DOMW-HOTW";
-          break;
-        case "Cold Water":
-        case "ColdWater":
-          layer = "P-DOMW-CWTR";
-          break;
-        case "Gas":
-          layer = "P-GAS";
-          break;
-        case "Grease Waste":
-        case "GreaseWaste":
-          layer = "P-GREASE-WASTE";
-          break;
-        case "Waste":
-          layer = "P-WV-W-BELOW";
-          break;
-        case "Vent":
-          layer = "P-WV-VENT";
-          break;
-        /*case "Storm":
-            layer = "GMEP_PLUMBING_STORM";
-            break;*/
-        default:
-          ed.WriteMessage("\nInvalid route type selected.");
-          return;
+        switch (type)
+        {
+          case "Hot Water":
+          case "HotWater":
+            layer = "P-DOMW-HOTW";
+            break;
+          case "Cold Water":
+          case "ColdWater":
+            layer = "P-DOMW-CWTR";
+            break;
+          case "Gas":
+            layer = "P-GAS";
+            break;
+          case "Grease Waste":
+          case "GreaseWaste":
+            layer = "P-GREASE-WASTE";
+            break;
+          case "Waste":
+            layer = "P-WV-W-BELOW";
+            break;
+          case "Vent":
+            layer = "P-WV-VENT";
+            break;
+          /*case "Storm":
+              layer = "GMEP_PLUMBING_STORM";
+              break;*/
+          default:
+            ed.WriteMessage("\nInvalid route type selected.");
+            return;
+        }
       }
 
       if (endPoint == null)
@@ -3810,13 +3814,24 @@ namespace GMEPPlumbing
                   .First()
                   .Value;
 
-                double offsetDistance = 11.25;
-                double offsetDistance2 = 2.125;
+                double offsetDistance = 11;
+                double offsetDistance2 = 2;
                 double offsetX = offsetDistance * Math.Cos(route.Rotation + (Math.PI / 2));
                 double offsetY = offsetDistance * Math.Sin(route.Rotation + (Math.PI / 2));
+
+                double offsetXDefpoints =
+                  (offsetDistance + 4) * Math.Cos(route.Rotation + (Math.PI / 2));
+
+                double offsetYDefpoints =
+                  (offsetDistance + 4) * Math.Sin(route.Rotation + (Math.PI / 2));
                 Point3d newPoint = new Point3d(
                   route.Position.X + offsetX,
                   route.Position.Y + offsetY,
+                  route.Position.Z
+                );
+                Point3d newPointDefpoints = new Point3d(
+                  route.Position.X + offsetXDefpoints,
+                  route.Position.Y + offsetYDefpoints,
                   route.Position.Z
                 );
                 Vector3d direction = new Vector3d(
@@ -3825,6 +3840,16 @@ namespace GMEPPlumbing
                   0
                 );
                 Vector3d offset2 = direction.GetNormal() * offsetDistance2;
+
+                SpecializedHorizontalRoute(
+                  "ColdWater",
+                  route.PipeType,
+                  route.StartHeight,
+                  newPointDefpoints,
+                  newPoint,
+                  route.Id,
+                  "Defpoints"
+                );
 
                 SpecializedHorizontalRoute(
                   "ColdWater",
@@ -4095,6 +4120,28 @@ namespace GMEPPlumbing
                 0
               );
               Vector3d offset2 = direction.GetNormal() * offsetDistance2;
+
+              double offsetXDefpoints =
+                (offsetDistance + 4) * Math.Cos(route.Rotation + (Math.PI / 2));
+
+              double offsetYDefpoints =
+                (offsetDistance + 4) * Math.Sin(route.Rotation + (Math.PI / 2));
+
+              Point3d newPointDefpoints = new Point3d(
+                route.Position.X + offsetXDefpoints,
+                route.Position.Y + offsetYDefpoints,
+                route.Position.Z
+              );
+
+              SpecializedHorizontalRoute(
+                "ColdWater",
+                route.PipeType,
+                route.StartHeight,
+                newPointDefpoints,
+                newPoint,
+                route.Id,
+                "Defpoints"
+              );
 
               SpecializedHorizontalRoute(
                 "HotWater",
@@ -9919,7 +9966,8 @@ namespace GMEPPlumbing
                   line.EndPoint,
                   values[2].Value.ToString(),
                   values[3].Value.ToString(),
-                  (double)values[4].Value
+                  (double)values[4].Value,
+                  line.Layer
                 );
                 if (route.Type == "Waste" || route.Type == "Vent" || route.Type == "Grease Waste")
                 {
@@ -9931,7 +9979,8 @@ namespace GMEPPlumbing
                     line.StartPoint,
                     values[2].Value.ToString(),
                     values[3].Value.ToString(),
-                    (double)values[4].Value
+                    (double)values[4].Value,
+                    line.Layer
                   );
                 }
                 routes.Add(route);
@@ -10562,7 +10611,8 @@ namespace GMEPPlumbing
                           hotWaterPosition,
                           basepointId,
                           "PEX",
-                          0
+                          0,
+                          "P-HC-DOMW-HOTR"
                         );
                         PlumbingHorizontalRoute coldWaterRoute = new PlumbingHorizontalRoute(
                           Guid.NewGuid().ToString(),
@@ -10572,7 +10622,8 @@ namespace GMEPPlumbing
                           coldWaterPosition,
                           basepointId,
                           "PEX",
-                          0
+                          0,
+                          "P-HC-DOMW-CWTR"
                         );
                         routes.Add(hotWaterRoute);
                         routes.Add(coldWaterRoute);
@@ -10645,7 +10696,8 @@ namespace GMEPPlumbing
                         position,
                         basepointId,
                         "",
-                        0
+                        0,
+                        "P-WV-VENT"
                       );
                       routes.Add(route);
                     }
